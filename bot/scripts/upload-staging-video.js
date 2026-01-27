@@ -1,9 +1,9 @@
 /**
- * Upload Registration Video to Staging (Bug Buster) WABA
+ * Upload Registration Video to Staging WABA
  *
  * Run: node scripts/upload-staging-video.js
  *
- * This uploads the registration video to the Bug Buster WABA and outputs
+ * This uploads the registration video to the staging WABA and outputs
  * the media ID to set in Railway staging environment.
  */
 
@@ -22,7 +22,7 @@ const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 const VIDEO_PATH = process.argv[2] || './registrationvideo.mp4';
 
 async function uploadVideo() {
-  console.log('=== Uploading Registration Video to Bug Buster WABA ===\n');
+  console.log('=== Uploading Registration Video to Staging WABA ===\n');
 
   // Check video exists
   if (!fs.existsSync(VIDEO_PATH)) {
@@ -58,7 +58,7 @@ async function uploadVideo() {
 
     const mediaId = response.data.id;
 
-    console.log('SUCCESS! Video uploaded to Bug Buster WABA\n');
+    console.log('SUCCESS! Video uploaded to Staging WABA\n');
     console.log('='.repeat(60));
     console.log('\nMEDIA ID:', mediaId);
     console.log('\n='.repeat(60));
