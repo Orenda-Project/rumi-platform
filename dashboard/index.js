@@ -1,5 +1,5 @@
 /**
- * Digital Coach - Admin Dashboard
+ * Rumi - Admin Dashboard
  *
  * Provides a web interface for monitoring bot activity and viewing conversations
  */
@@ -3647,7 +3647,7 @@ app.listen(PORT, '0.0.0.0', () => {
   }
 
   console.log(`\n${'='.repeat(70)}`);
-  console.log(`📊 Digital Coach (Rumi) Dashboard v${version}`);
+  console.log(`📊 Rumi Dashboard v${version}`);
   console.log(`${'='.repeat(70)}`);
   console.log(`✅ Running on http://0.0.0.0:${PORT}`);
   console.log(`🔗 Health Check: http://0.0.0.0:${PORT}/health`);

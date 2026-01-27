@@ -5,7 +5,7 @@
 When you edit the portal in Lovable:
 1. Lovable commits to `rumi-portal_v1.2` repo
 2. GitHub Action **automatically** builds the frontend
-3. GitHub Action **automatically** pushes to `digital-coach-dashboard` repo
+3. GitHub Action **automatically** pushes to `rumi-dashboard` repo
 4. Railway **automatically** deploys to production
 
 **Total time from Lovable save → Live: ~3-5 minutes** ✅
@@ -133,7 +133,7 @@ Here's what happens under the hood:
    - Runs `npm run build` (creates `dist/` folder)
 
 3. **Checkout Backend Repo**
-   - Downloads `digital-coach-dashboard` code using your `GH_PAT` token
+   - Downloads `rumi-dashboard` code using your `GH_PAT` token
 
 4. **Copy Build Files**
    - Clears old `portal-frontend/dist/`
@@ -142,10 +142,10 @@ Here's what happens under the hood:
 5. **Commit & Push**
    - Commits with message: "🚀 Auto-deploy: Update portal frontend from Lovable"
    - Includes source repo, commit hash, and who triggered it
-   - Pushes to `digital-coach-dashboard` main branch
+   - Pushes to `rumi-dashboard` main branch
 
 6. **Railway Auto-Deploys**
-   - Railway detects push to `digital-coach-dashboard`
+   - Railway detects push to `rumi-dashboard`
    - Builds and deploys automatically
 
 ---

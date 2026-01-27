@@ -119,7 +119,7 @@ Railway provides automatic deployments from GitHub with built-in HTTPS and envir
    ```bash
    railway link
    ```
-   Select "digital coach" from the list.
+   Select your Rumi project from the list.
 
 4. **Set Environment Variables**:
    ```bash
@@ -680,7 +680,7 @@ app.post('/webhook', limiter, async (req, res) => {
 
 **Setup**:
 ```bash
-heroku create digital-coach-bot
+heroku create rumi-bot
 heroku config:set WHATSAPP_TOKEN=...
 git push heroku main
 ```

@@ -42,7 +42,7 @@ async function investigate() {
   // Check for module loading errors
   console.log('0a. Checking for module/require errors...');
   const moduleErrors = await queryAxiom(
-    '["digital-coach-logs"] | where msg contains "require" or msg contains "module" or msg contains "Cannot find" or msg contains "import" | order by _time desc | take 10'
+    '["rumi-logs"] | where msg contains "require" or msg contains "module" or msg contains "Cannot find" or msg contains "import" | order by _time desc | take 10'
   );
   console.log(`   Found: ${moduleErrors.rowsMatched} rows`);
   if (moduleErrors.matches.length > 0) {
@@ -54,7 +54,7 @@ async function investigate() {
   // 0. Check when staging was last deployed
   console.log('0. Checking for deployment/startup logs...');
   const deployLogs = await queryAxiom(
-    '["digital-coach-logs"] | where msg contains "started" or msg contains "Digital Coach" or msg contains "version" | order by _time desc | take 10'
+    '["rumi-logs"] | where msg contains "started" or msg contains "Rumi" or msg contains "version" | order by _time desc | take 10'
   );
   console.log(`   Found: ${deployLogs.rowsMatched} rows`);
   if (deployLogs.matches.length > 0) {
@@ -66,7 +66,7 @@ async function investigate() {
   // 1. Search for Balochi-related logs
   console.log('1. Searching for Balochi-related logs...');
   const balochiLogs = await queryAxiom(
-    '["digital-coach-logs"] | where msg contains "balochi" or msg contains "bal-PK" or msg contains "bal" | order by _time desc | take 20'
+    '["rumi-logs"] | where msg contains "balochi" or msg contains "bal-PK" or msg contains "bal" | order by _time desc | take 20'
   );
   console.log(`   Found: ${balochiLogs.rowsMatched} rows`);
   if (balochiLogs.matches.length > 0) {
@@ -78,7 +78,7 @@ async function investigate() {
   // 2. Search for enhanced language prompt logs
   console.log('\n2. Searching for "enhanced language prompt" logs...');
   const enhancedLogs = await queryAxiom(
-    '["digital-coach-logs"] | where msg contains "enhanced" or msg contains "language prompt" | order by _time desc | take 10'
+    '["rumi-logs"] | where msg contains "enhanced" or msg contains "language prompt" | order by _time desc | take 10'
   );
   console.log(`   Found: ${enhancedLogs.rowsMatched} rows`);
   if (enhancedLogs.matches.length > 0) {
@@ -90,7 +90,7 @@ async function investigate() {
   // 3. Search for language detection logs
   console.log('\n3. Searching for language detection logs...');
   const langDetectLogs = await queryAxiom(
-    '["digital-coach-logs"] | where msg contains "language" or msg contains "detected" | order by _time desc | take 20'
+    '["rumi-logs"] | where msg contains "language" or msg contains "detected" | order by _time desc | take 20'
   );
   console.log(`   Found: ${langDetectLogs.rowsMatched} rows`);
   if (langDetectLogs.matches.length > 0) {
@@ -102,7 +102,7 @@ async function investigate() {
   // 4. Check staging errors
   console.log('\n4. Checking staging errors...');
   const stagingErrors = await queryAxiom(
-    '["digital-coach-logs"] | where service == "digital-coach-staging" and level == "error" | order by _time desc | take 10'
+    '["rumi-logs"] | where service == "rumi-staging" and level == "error" | order by _time desc | take 10'
   );
   console.log(`   Found: ${stagingErrors.rowsMatched} errors`);
   if (stagingErrors.matches.length > 0) {
@@ -114,7 +114,7 @@ async function investigate() {
   // 5. Recent staging logs to see what's happening
   console.log('\n5. Most recent staging logs...');
   const recentStaging = await queryAxiom(
-    '["digital-coach-logs"] | where service == "digital-coach-staging" | order by _time desc | take 10'
+    '["rumi-logs"] | where service == "rumi-staging" | order by _time desc | take 10'
   );
   console.log(`   Found: ${recentStaging.rowsMatched} total staging logs`);
   if (recentStaging.matches.length > 0) {
@@ -129,7 +129,7 @@ async function investigate() {
   // 6. Check for any message processing logs
   console.log('\n6. Recent message processing logs...');
   const msgProcessing = await queryAxiom(
-    '["digital-coach-logs"] | where msg contains "message" or msg contains "webhook" or msg contains "processing" | order by _time desc | take 15'
+    '["rumi-logs"] | where msg contains "message" or msg contains "webhook" or msg contains "processing" | order by _time desc | take 15'
   );
   console.log(`   Found: ${msgProcessing.rowsMatched} rows`);
   if (msgProcessing.matches.length > 0) {
@@ -144,7 +144,7 @@ async function investigate() {
   // 7. Check for user language field
   console.log('\n7. Logs with confirmedLanguage or language field...');
   const langField = await queryAxiom(
-    '["digital-coach-logs"] | where confirmedLanguage != "" or language != "" | order by _time desc | take 10'
+    '["rumi-logs"] | where confirmedLanguage != "" or language != "" | order by _time desc | take 10'
   );
   console.log(`   Found: ${langField.rowsMatched} rows`);
   if (langField.matches.length > 0) {

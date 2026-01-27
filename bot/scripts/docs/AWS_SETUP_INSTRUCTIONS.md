@@ -1,6 +1,8 @@
 # AWS SQS Setup Instructions
 
-This guide will help you set up AWS SQS queues for the Rumi Digital Coach Bot.
+> **Note**: Rumi now uses **BullMQ** (Redis-based) for job queues by default. These AWS SQS instructions are provided as an alternative for teams that prefer AWS infrastructure. See the main setup guide for the default BullMQ configuration.
+
+This guide will help you set up AWS SQS queues for the Rumi bot.
 
 ## Prerequisites
 

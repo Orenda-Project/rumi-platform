@@ -1369,7 +1369,7 @@ app.get('/health', (req, res) => {
 
   res.json({
     status: 'healthy',
-    service: 'Digital Coach (Rumi) WhatsApp Bot',
+    service: 'Rumi WhatsApp Bot',
     version: version,
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
@@ -1513,7 +1513,7 @@ app.listen(constants.PORT, () => {
   }
 
   const startupMessage = `\n${'='.repeat(70)}
-🤖 Digital Coach (Rumi) v${version}
+🤖 Rumi v${version}
 ${'='.repeat(70)}
 
 ✅ Server running on port ${constants.PORT}

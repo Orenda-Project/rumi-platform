@@ -1,6 +1,6 @@
 /**
  * Retention Analytics Service
- * Calculates cohort retention rates for Digital Coach platform with RLS enforcement
+ * Calculates cohort retention rates for Rumi platform with RLS enforcement
  *
  * Key Concepts:
  * - Retention: Did user return to platform? (Day 0 = 100%, Week 1+ = % returned)

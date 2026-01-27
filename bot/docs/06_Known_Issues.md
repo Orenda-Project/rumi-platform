@@ -365,7 +365,7 @@ When reporting a new issue, include:
 
 **Where to Report**:
 - GitHub Issues: https://github.com/your-org/whatsapp-ai-bot/issues
-- Internal Slack: #digital-coach-bugs
+- Internal Slack: #rumi-bugs
 
 ---
 

@@ -23,8 +23,8 @@ const path = require('path');
 const isStaging = process.env.STAGING === 'true';
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const META_APP_ID = isStaging
-  ? '1450020156490206'  // Bug Buster app (staging)
-  : process.env.META_APP_ID || '2002410153890842'; // Digital Coach app (production)
+  ? process.env.META_APP_ID_STAGING || ''  // Staging Meta app ID
+  : process.env.META_APP_ID || ''; // Your Meta app ID
 const API_VERSION = 'v21.0';
 
 // Video paths - all 4 feature videos

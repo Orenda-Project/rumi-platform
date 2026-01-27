@@ -1,5 +1,5 @@
 /**
- * Digital Coach - Admin Dashboard
+ * Rumi - Admin Dashboard
  *
  * Provides a web interface for monitoring bot activity and viewing conversations
  */

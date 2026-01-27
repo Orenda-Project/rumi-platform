@@ -341,7 +341,7 @@ async function runTests() {
       'Should accept valid PR URL'
     );
     assert.strictEqual(
-      byofService.validatePrUrl('https://github.com/your-org/digital-coach-dashboard/pull/45'),
+      byofService.validatePrUrl('https://github.com/your-org/rumi-dashboard/pull/45'),
       true,
       'Should accept dashboard PR URL'
     );

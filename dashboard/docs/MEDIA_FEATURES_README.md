@@ -43,7 +43,7 @@ This update adds media playback and document viewing capabilities to the Digital
 Run the migration to add media columns:
 
 ```bash
-cd digital-coach-dashboard
+cd rumi-dashboard
 node scripts/apply-media-migration.js
 ```
 

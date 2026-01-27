@@ -27,7 +27,7 @@ This runbook documents the procedure for updating DNS records when Railway custo
 
 ## During Change (Railway Dashboard)
 
-1. [ ] Navigate to Railway → Digital Coach project → digital-coach-dashboard
+1. [ ] Navigate to Railway → Rumi project → rumi-dashboard
 2. [ ] Go to Settings → Domains
 3. [ ] If removing domain: **NOTE THE WARNING** and copy current CNAME
 4. [ ] Make the required changes

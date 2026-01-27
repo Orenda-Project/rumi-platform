@@ -4,7 +4,7 @@
 # Tests all 12 portal API endpoints
 # Usage: ./test-portal-api.sh [base_url]
 # Example: ./test-portal-api.sh http://localhost:4000
-# Example: ./test-portal-api.sh https://digital-coach-dashboard.railway.app
+# Example: ./test-portal-api.sh https://your-dashboard.up.railway.app
 
 BASE_URL="${1:-http://localhost:4000}"
 API_URL="$BASE_URL/api/portal"

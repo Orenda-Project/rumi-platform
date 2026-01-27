@@ -103,7 +103,7 @@ describe('GitHub API Service', () => {
 
       expect(repos['observability']).toEqual({
         owner: 'your-org',
-        repo: 'digital-coach-dashboard',
+        repo: 'rumi-dashboard',
         branch: 'main'
       });
 

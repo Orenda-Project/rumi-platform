@@ -1,5 +1,5 @@
 /**
- * Digital Coach Dashboard - Cluster Wrapper
+ * Rumi Dashboard - Cluster Wrapper
  *
  * Uses Node.js cluster module to spawn multiple worker processes.
  * This prevents a single slow request (like GPT processing) from blocking
@@ -19,7 +19,7 @@ const CLUSTER_ENABLED = process.env.CLUSTER_ENABLED !== 'false'; // Enabled by d
 
 if (CLUSTER_ENABLED && cluster.isPrimary) {
   console.log(`\n${'='.repeat(70)}`);
-  console.log('🚀 Digital Coach Dashboard - Cluster Mode');
+  console.log('🚀 Rumi Dashboard - Cluster Mode');
   console.log(`${'='.repeat(70)}`);
   console.log(`📊 Primary process ${process.pid} is running`);
   console.log(`🔧 Spawning ${NUM_WORKERS} worker processes...`);

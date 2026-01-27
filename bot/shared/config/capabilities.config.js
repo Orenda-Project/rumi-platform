@@ -1,5 +1,5 @@
 /**
- * Digital Coach Capabilities Configuration
+ * Rumi Capabilities Configuration
  *
  * ⚠️ IMPORTANT: When adding new features to the bot, update this file!
  *

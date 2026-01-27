@@ -25,7 +25,7 @@ const path = require('path');
 const isStaging = process.env.STAGING === 'true';
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
-const META_APP_ID = process.env.META_APP_ID || '1450020156490206'; // Shams app ID for staging
+const META_APP_ID = process.env.META_APP_ID || ''; // Your Meta app ID
 const API_VERSION = 'v21.0';
 
 // Feature videos to upload
