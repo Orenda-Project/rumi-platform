@@ -787,22 +787,22 @@ async function getApproversForNotification() {
  */
 async function sendNotification(phoneNumber, message) {
   try {
-    // ATTAR WhatsApp credentials from environment
-    const attarPhoneId = process.env.ATTAR_PHONE_ID;
-    const attarAccessToken = process.env.ATTAR_ACCESS_TOKEN;
+    // Notification WhatsApp credentials from environment
+    const notifyPhoneId = process.env.NOTIFICATION_PHONE_ID;
+    const notifyAccessToken = process.env.NOTIFICATION_ACCESS_TOKEN;
 
-    if (!attarPhoneId || !attarAccessToken) {
-      console.warn('[BYOF] ATTAR credentials not configured, skipping notification');
-      return { success: true, skipped: true, reason: 'ATTAR not configured' };
+    if (!notifyPhoneId || !notifyAccessToken) {
+      console.warn('[BYOF] Notification credentials not configured, skipping notification');
+      return { success: true, skipped: true, reason: 'Notification not configured' };
     }
 
-    // Send WhatsApp message via ATTAR
+    // Send WhatsApp notification message
     const response = await fetch(
-      `https://graph.facebook.com/${GRAPH_API_VERSION}/${attarPhoneId}/messages`,
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${notifyPhoneId}/messages`,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${attarAccessToken}`,
+          'Authorization': `Bearer ${notifyAccessToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
