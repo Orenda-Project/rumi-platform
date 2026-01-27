@@ -5,22 +5,17 @@
   "main": "whatsapp-bot.js",
   "scripts": {
     "start": "node whatsapp-bot.js",
-    "start:bot": "node bot/index.js",
     "start:dashboard": "node dashboard/index.js",
     "start:coaching-worker": "node workers/coaching-processor.js",
     "start:worker": "node workers/bullmq-worker.js",
-    "test": "node test-whatsapp.js",
+    "start:stale-worker": "node workers/stale-session.worker.js",
     "test:jest": "jest",
     "test:db": "node tests/test-database.js",
     "dev": "node whatsapp-bot.js",
-    "dev:bot": "node bot/index.js",
     "dev:dashboard": "node dashboard/index.js",
     "dev:coaching-worker": "node workers/coaching-processor.js",
     "dev:worker": "node workers/bullmq-worker.js",
-    "start:stale-worker": "node workers/stale-session.worker.js",
-    "chat": "node scripts/local-chat-test.js",
-    "send": "node scripts/test-send-message.js",
-    "simulate": "node scripts/simulate-webhook.js"
+    "simulate": "node scripts/testing/simulate-webhook.js"
   },
   "keywords": [
     "whatsapp",
