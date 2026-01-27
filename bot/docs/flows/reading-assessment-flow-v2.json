@@ -2,7 +2,7 @@
   "_comment": "WhatsApp Flow for Reading Assessment v3.0 - Multi-Screen with Data Passing",
   "_instructions": [
     "1. Copy this JSON to Meta Business Manager > WhatsApp Manager > Flows",
-    "2. Flow ID (staging): 870222682369657",
+    "2. Set READING_ASSESSMENT_FLOW_ID env var to the created Flow ID",
     "3. IMPORTANT: Update the flow in Meta Business Manager - this file is just reference",
     "4. Screen 1 (BASIC_INFO): Collects name, language, assessment mode",
     "5. Screen 2 (OPTIONS): Shows level/scope options, completes flow"
