@@ -1,4 +1,4 @@
--- Digital Coach WhatsApp Bot - Database Schema
+-- Rumi WhatsApp Bot - Database Schema
 -- Version: v3.0
 -- Database: Supabase (PostgreSQL)
 -- Created: November 3, 2025

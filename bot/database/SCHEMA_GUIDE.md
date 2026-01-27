@@ -1,4 +1,4 @@
-# Digital Coach Database Schema Guide
+# Rumi Database Schema Guide
 
 **Version:** v3.0
 **Last Updated:** November 2025
@@ -38,7 +38,7 @@ Without a schema, our data would be messy and disorganized. The schema ensures:
 
 ## Overview of Our Database
 
-Our Digital Coach WhatsApp Bot database is organized into **9 main tables** (plus one for tracking the schema version). Think of each table as a specialized filing cabinet:
+Our Rumi WhatsApp Bot database is organized into **9 main tables** (plus one for tracking the schema version). Think of each table as a specialized filing cabinet:
 
 | Table Name | What It Stores | Why It Matters |
 |------------|----------------|----------------|

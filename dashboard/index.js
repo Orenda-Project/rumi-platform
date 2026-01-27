@@ -3572,7 +3572,7 @@ app.get('/health', (req, res) => {
 
   res.json({
     status: 'healthy',
-    service: 'Digital Coach (Rumi) Dashboard',
+    service: 'Rumi Dashboard',
     version: version,
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),

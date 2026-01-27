@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# AWS SQS Setup Script for Rumi Digital Coach Bot
+# AWS SQS Setup Script for Rumi Bot
 # This script creates FIFO queues for coaching job processing
 # Run this script after configuring AWS CLI credentials
 
