@@ -22,7 +22,7 @@ module.exports = {
   testMatch: [
     '**/tests/**/*.test.js',
     '!**/node_modules/**',
-    '!**/bugbuster/**'  // Exclude bugbuster tests (separate test runner)
+    '!**/e2e/**'  // Exclude E2E tests (separate test runner)
   ],
 
   // Setup files

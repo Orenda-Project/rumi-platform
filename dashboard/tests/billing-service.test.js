@@ -153,23 +153,6 @@ async function runTests() {
   // ROUTE AND VIEW TESTS
   // ============================================================
 
-  // Test 10: API Health section exists in bugbuster.ejs
-  console.log('Test 10: API Health section exists in QA dashboard');
-  try {
-    const viewPath = path.join(__dirname, '../views/bugbuster.ejs');
-    const viewContent = fs.readFileSync(viewPath, 'utf8');
-
-    assert.ok(
-      viewContent.includes('API Health') || viewContent.includes('apiHealth'),
-      'bugbuster.ejs should contain API Health section'
-    );
-    console.log('  ✓ PASSED\n');
-    passed++;
-  } catch (e) {
-    console.log(`  ✗ FAILED: ${e.message}\n`);
-    failed++;
-  }
-
   // ============================================================
   // SUMMARY
   // ============================================================
