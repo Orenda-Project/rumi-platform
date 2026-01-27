@@ -26,12 +26,12 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
+      - name: Run unit tests
+        run: npm test
+
       - name: Install bot dependencies
         working-directory: bot
         run: npm ci
-
-      - name: Run unit tests
-        run: npm test
 
       - name: Verify no hardcoded credentials
         run: |
@@ -54,10 +54,6 @@ jobs:
           node-version: 20
 
       - name: Install root dependencies
-        run: npm ci
-
-      - name: Install bot dependencies
-        working-directory: bot
         run: npm ci
 
       - name: Check for security patterns
