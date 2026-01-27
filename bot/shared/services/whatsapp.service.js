@@ -6,6 +6,8 @@ const { logToFile } = require('../utils/logger');
 const { downloadFromR2, extractKeyFromUrl } = require('../storage/r2');
 
 const ASSETS_BASE_URL = process.env.ASSETS_BASE_URL || 'https://your-domain.com/assets';
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
+const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
 /**
  * WhatsApp Service
@@ -36,7 +38,7 @@ class WhatsAppService {
       const cleanMessage = this._removeEmotionTags(message);
 
       const response = await fetch(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
           headers: {
@@ -75,7 +77,7 @@ class WhatsAppService {
   static async sendReaction(to, messageId, emoji = '❤️') {
     try {
       const response = await fetch(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
           headers: {
@@ -117,7 +119,7 @@ class WhatsAppService {
   static async showTypingIndicator(to, messageId) {
     try {
       const response = await fetch(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
           headers: {
@@ -181,7 +183,7 @@ class WhatsAppService {
   static async getMediaInfo(mediaId) {
     try {
       const mediaUrlResponse = await axios.get(
-        `https://graph.facebook.com/v21.0/${mediaId}`,
+        `${GRAPH_API_BASE}/${mediaId}`,
         {
           headers: {
             'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
@@ -252,7 +254,7 @@ class WhatsAppService {
       formData.append('messaging_product', 'whatsapp');
 
       const uploadResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/media`,
         formData,
         {
           headers: {
@@ -266,7 +268,7 @@ class WhatsAppService {
 
       // Send document message
       const sendResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           messaging_product: 'whatsapp',
           to: to,
@@ -320,7 +322,7 @@ class WhatsAppService {
       formData.append('messaging_product', 'whatsapp');
 
       const uploadResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/media`,
         formData,
         {
           headers: {
@@ -334,7 +336,7 @@ class WhatsAppService {
 
       // Send audio message
       const sendResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           messaging_product: 'whatsapp',
           to: to,
@@ -468,7 +470,7 @@ class WhatsAppService {
       formData.append('messaging_product', 'whatsapp');
 
       const uploadResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/media`,
         formData,
         {
           headers: {
@@ -497,7 +499,7 @@ class WhatsAppService {
       }
 
       const sendResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         messagePayload,
         {
           headers: {
@@ -583,7 +585,7 @@ class WhatsAppService {
         formData.append('messaging_product', 'whatsapp');
 
         const uploadResponse = await axios.post(
-          `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+          `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/media`,
           formData,
           {
             headers: {
@@ -603,7 +605,7 @@ class WhatsAppService {
 
       // Send image message
       const sendResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           messaging_product: 'whatsapp',
           to: to,
@@ -660,7 +662,7 @@ class WhatsAppService {
         formData.append('messaging_product', 'whatsapp');
 
         const uploadResponse = await axios.post(
-          `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+          `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/media`,
           formData,
           {
             headers: {
@@ -680,7 +682,7 @@ class WhatsAppService {
 
       // Send sticker message
       const sendResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           messaging_product: 'whatsapp',
           recipient_type: 'individual',
@@ -737,7 +739,7 @@ class WhatsAppService {
       }));
 
       const response = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           messaging_product: 'whatsapp',
           recipient_type: 'individual',
@@ -833,7 +835,7 @@ class WhatsAppService {
         formData.append('messaging_product', 'whatsapp');
 
         const uploadResponse = await axios.post(
-          `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+          `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/media`,
           formData,
           {
             headers: {
@@ -877,7 +879,7 @@ class WhatsAppService {
       };
 
       const response = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         payload,
         {
           headers: {
@@ -967,7 +969,7 @@ class WhatsAppService {
       }
 
       const response = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         payload,
         {
           headers: {
@@ -1061,7 +1063,7 @@ class WhatsAppService {
       });
 
       const response = await axios.post(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         payload,
         {
           headers: {
@@ -1100,7 +1102,7 @@ class WhatsAppService {
       logToFile('Sending language selection list', { to, currentLanguage });
 
       const response = await fetch(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
           headers: {
@@ -1274,7 +1276,7 @@ class WhatsAppService {
       });
 
       const response = await fetch(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
           headers: {
@@ -1378,7 +1380,7 @@ class WhatsAppService {
       };
 
       const response = await fetch(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
           headers: {
@@ -1531,7 +1533,7 @@ class WhatsAppService {
       const payload = this.buildFeatureMenuCarouselPayload(to);
 
       const response = await fetch(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
           headers: {
@@ -1634,7 +1636,7 @@ class WhatsAppService {
       };
 
       const response = await fetch(
-        `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
           headers: {

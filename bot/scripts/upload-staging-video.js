@@ -16,6 +16,7 @@ const path = require('path');
 require('dotenv').config();
 const STAGING_PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const STAGING_WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 
 // Video path (pass as argument or set default)
 const VIDEO_PATH = process.argv[2] || './registrationvideo.mp4';
@@ -43,7 +44,7 @@ async function uploadVideo() {
     console.log('Uploading to WhatsApp Cloud API...\n');
 
     const response = await axios.post(
-      `https://graph.facebook.com/v21.0/${STAGING_PHONE_NUMBER_ID}/media`,
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${STAGING_PHONE_NUMBER_ID}/media`,
       formData,
       {
         headers: {

@@ -17,6 +17,7 @@ const execAsync = promisify(exec);
 
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 const INPUT_STICKER = path.join(__dirname, '../marketing/Blinking Rumi.webp');
 const OUTPUT_STICKER = path.join(__dirname, '../marketing/Blinking Rumi 512x512.webp');
 
@@ -61,7 +62,7 @@ async function resizeAndUpload() {
     formData.append('messaging_product', 'whatsapp');
 
     const uploadResponse = await axios.post(
-      `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${PHONE_NUMBER_ID}/media`,
       formData,
       {
         headers: {

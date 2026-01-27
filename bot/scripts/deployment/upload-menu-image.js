@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { WHATSAPP_TOKEN, PHONE_NUMBER_ID } = process.env;
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 
 const MENU_IMAGE_PATH = path.join(__dirname, '../marketing/Rumi Menu.png');
 
@@ -31,7 +32,7 @@ async function uploadMenuImage() {
 
     // Upload to WhatsApp Media API
     const response = await axios.post(
-      `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${PHONE_NUMBER_ID}/media`,
       form,
       {
         headers: {

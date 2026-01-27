@@ -368,7 +368,7 @@ class ExamCheckerOrchestrator {
       await ExamSessionService.updateStatus(session.id, SESSION_STATES.COMPLETED);
 
       const studentCount = session.confirmed_students?.length || 0;
-      const portalUrl = `${process.env.PORTAL_URL || 'https://portal.rumi.ai'}/portal/exams/${session.id}`;
+      const portalUrl = `${process.env.PORTAL_URL || 'https://your-portal-domain.com'}/portal/exams/${session.id}`;
 
       return {
         text: `✅ Done! Graded ${studentCount} exam${studentCount !== 1 ? 's' : ''}.\n\n📱 View details and edit grades:\n${portalUrl}`
