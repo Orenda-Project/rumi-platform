@@ -454,7 +454,7 @@ If this is a concurrent session (student number > 1), mention this is for "${stu
       await WhatsAppService.sendMessage(phoneNumber, generatingMessage);
 
       // Queue passage generation (will be handled by passage generation service)
-      // For now, we'll call it directly (TODO: move to SQS worker)
+      // For now, we'll call it directly (TODO: move to BullMQ worker)
       const PassageGenerationService = require('./reading/passage-generation.service');
       await PassageGenerationService.generateAndSendPassage(
         assessment.id,
@@ -636,7 +636,7 @@ If this is a concurrent session (student number > 1), mention this is for "${stu
 
       await WhatsAppService.sendMessage(phoneNumber, analyzingMessage);
 
-      // Queue analysis job (TODO: move to SQS worker)
+      // Queue analysis job (TODO: move to BullMQ worker)
       const AnalysisService = require('./reading/analysis.service');
       await AnalysisService.queueAnalysis(assessment.id, userId, phoneNumber, userLanguage);
 
