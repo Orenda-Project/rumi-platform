@@ -25,7 +25,10 @@ const PORT = process.env.DASHBOARD_PORT || 4000;
 
 // Admin credentials (hashed password)
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync('admin123', 10);
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '';
+if (!ADMIN_PASSWORD_HASH) {
+  console.warn('⚠️  ADMIN_PASSWORD_HASH not set. Dashboard login will be disabled until configured.');
+}
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));

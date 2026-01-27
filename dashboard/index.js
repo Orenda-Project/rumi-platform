@@ -148,7 +148,10 @@ app.set('trust proxy', 1);
 
 // Admin credentials (hashed password)
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync('admin123', 10);
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '';
+if (!ADMIN_PASSWORD_HASH) {
+  console.warn('⚠️  ADMIN_PASSWORD_HASH not set. Dashboard login will be disabled until configured.');
+}
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -3009,7 +3012,7 @@ app.get('/observability/broadcast/history', requireAdmin, async (req, res) => {
 });
 
 // Broadcast password (distinct from admin login password)
-const BROADCAST_PASSWORD = process.env.BROADCAST_PASSWORD || 'BombardUsersMercilessly_>--<';
+const BROADCAST_PASSWORD = process.env.BROADCAST_PASSWORD || '';
 
 /**
  * Validate the broadcast-specific password

@@ -1,3 +1,3 @@
 web: node whatsapp-bot.js
-worker: node workers/sqs-worker.js
+worker: node workers/bullmq-worker.js
 dashboard: node dashboard/index.js
