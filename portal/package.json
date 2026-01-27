@@ -1,7 +1,10 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "rumi-portal",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Rumi Teacher Portal - Web interface for teachers to view coaching and assessment data",
+  "author": "Taleemabad (Oraan Education Pvt. Ltd.)",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
