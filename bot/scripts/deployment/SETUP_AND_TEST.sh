@@ -12,7 +12,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Navigate to project directory
-cd "/Users/haroonyasin/Documents/Projects/Rumi/Main WhatsApp Bot"
+cd "$(dirname "$0")/../.."
 
 # Step 1: Install Dependencies
 echo "📦 Step 1: Installing dependencies..."

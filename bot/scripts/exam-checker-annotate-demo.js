@@ -186,7 +186,7 @@ async function main() {
   }
 
   // Use sample exam image (absolute path to avoid path issues)
-  const sampleImagePath = '/Users/haroonyasin/Documents/Projects/Rumi 23 Jan 2026/06_Logs & Misc/Reports/Active/Exam_Checker/eval/bbox_output/better_english_surya_p0.png';
+  const sampleImagePath = process.argv[2] || './sample-exam-image.png';
 
   if (!fs.existsSync(sampleImagePath)) {
     console.log('❌ Sample image not found:', sampleImagePath);

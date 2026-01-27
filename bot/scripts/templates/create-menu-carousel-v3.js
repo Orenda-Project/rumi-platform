@@ -29,8 +29,8 @@ const path = require('path');
 // Environment-specific config
 const isStaging = process.env.STAGING === 'true';
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-const STAGING_WABA_ID = '1568780677606684'; // Bug Buster WABA (staging)
-const PRODUCTION_WABA_ID = process.env.WABA_ID || '1383233296670749'; // Digital Coach WABA (production)
+const STAGING_WABA_ID = process.env.STAGING_WABA_ID || process.env.WABA_ID;
+const PRODUCTION_WABA_ID = process.env.WABA_ID;
 const WABA_ID = isStaging ? STAGING_WABA_ID : PRODUCTION_WABA_ID;
 const API_VERSION = 'v21.0';
 

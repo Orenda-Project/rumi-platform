@@ -15,7 +15,7 @@ echo ""
 echo "=========================================="
 echo ""
 
-cd "/Users/haroonyasin/Documents/Projects/Rumi/02_Main Rumi Bot"
+cd "$(dirname "$0")/../.."
 
 echo "Current status:"
 git status

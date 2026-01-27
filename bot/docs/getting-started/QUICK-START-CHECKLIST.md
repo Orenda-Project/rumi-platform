@@ -48,7 +48,7 @@ OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxx
 Open Terminal 1:
 
 ```bash
-☐ cd "/Users/haroonyasin/Documents/Cursor/Projects/AI-Projects/WhatsApp testing"
+☐ cd /path/to/rumi-platform/bot
 ☐ npm start
 ```
 

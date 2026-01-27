@@ -3,8 +3,7 @@
  * Run from: 02_Main Rumi Bot directory (needs .env)
  */
 
-const envPath = '/Users/haroonyasin/Documents/Projects/Rumi 12 Dec 2025/02_Main Rumi Bot/.env';
-require('dotenv').config({ path: envPath });
+require('dotenv').config();
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const fs = require('fs');
 const path = require('path');
@@ -19,7 +18,7 @@ const r2Client = new S3Client({
 });
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME;
-const SOURCE_DIR = '/Users/haroonyasin/Documents/Projects/Rumi 12 Dec 2025/06_Logs & Misc/Reports/Active/Reading Bugs';
+const SOURCE_DIR = process.argv[2] || './reading-backgrounds';
 
 const LEVELS = ['letters', 'words', 'sentences', 'paragraph', 'story'];
 

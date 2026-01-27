@@ -12,7 +12,7 @@ echo ""
 echo "=========================================="
 echo ""
 
-cd "/Users/haroonyasin/Documents/Projects/Rumi/02_Main Rumi Bot"
+cd "$(dirname "$0")/../.."
 
 # Check if we can push without auth (unlikely but worth trying)
 echo "Attempting automatic push..."

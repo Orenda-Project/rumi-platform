@@ -12,12 +12,13 @@ const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
 
-// Bug Buster (Staging) WABA credentials
-const STAGING_PHONE_NUMBER_ID = '886546974549144';
-const STAGING_WHATSAPP_TOKEN = 'EAAUmySBYQd4BQDsfnE07oZAZB1As7LmaW4Pyw2drLyuXS0RZAcXbpIouVSjGzlm4ZB9hrVYZByWHVZBW6Nl4dZCSaLdCbwanVE9psNSsWFLyCRvV4XZApmeXqj9vY5BoMMzt4kceDuQ9nMJVZBOy38R1jOhSKE8h8G0yrXM1esM1m7fP0m81j5QP2aF2ftDBZAFiJrNwZDZD';
+// WABA credentials from environment
+require('dotenv').config();
+const STAGING_PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const STAGING_WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 
-// Video path
-const VIDEO_PATH = '/Users/haroonyasin/Documents/Projects/Rumi 12 Dec 2025/06_Logs & Misc/Marketing/registrationvideo.mp4';
+// Video path (pass as argument or set default)
+const VIDEO_PATH = process.argv[2] || './registrationvideo.mp4';
 
 async function uploadVideo() {
   console.log('=== Uploading Registration Video to Bug Buster WABA ===\n');

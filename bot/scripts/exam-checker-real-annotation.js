@@ -19,7 +19,7 @@ if (fs.existsSync(fontPath)) {
 }
 
 // The actual exam PDF path
-const EXAM_PDF_PATH = '/Users/haroonyasin/Documents/Projects/Rumi 23 Jan 2026/06_Logs & Misc/Reports/Active/Exam_Checker/AI Evaluation of Exam Checker/Cohort samples/handwritten exam experiment/With_Questions_Paper.pdf';
+const EXAM_PDF_PATH = process.argv[2] || './sample-exam.pdf';
 
 // Colors for teacher-style annotations
 const COLORS = {

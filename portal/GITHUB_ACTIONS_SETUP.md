@@ -48,7 +48,7 @@ When you edit the portal in Lovable:
 I've already created the workflow file locally. Now we just need to push it:
 
 ```bash
-cd "/Users/haroonyasin/Documents/Cursor/Projects/Rumi 15 Nov 2025/03_Rumi Portal"
+cd /path/to/rumi-platform/portal
 ```
 
 ```bash

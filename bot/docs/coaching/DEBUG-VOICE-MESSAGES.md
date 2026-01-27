@@ -20,7 +20,7 @@ Your bot now has detailed logging enabled! Here's how to debug the voice message
 When the bot starts, you'll see:
 ```
 📝 LOGGING ENABLED
-   All webhook activity is logged to: /Users/haroonyasin/Documents/Cursor/Projects/AI-Projects/WhatsApp testing/logs
+   All webhook activity is logged to: ./logs
    Log file: bot-2025-10-31.log
 ```
 

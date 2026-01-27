@@ -77,7 +77,7 @@ USE_REDIS_CACHE=true
 ## Step 4: Install Dependencies (1 minute)
 
 ```bash
-cd "/Users/haroonyasin/Documents/Projects/Rumi/Main WhatsApp Bot"
+cd /path/to/rumi-platform/bot
 
 npm install ioredis
 ```
