@@ -7,9 +7,9 @@
  * Before: Users sorted by account creation date (created_at)
  * After: Users sorted by most recent conversation timestamp
  *
- * Example: User 923323343969
+ * Example: User 923001234567
  *   - Created: Nov 14, 2025
- *   - Last conversation: Nov 21, 2025 (TODAY)
+ *   - Last conversation: Nov 21, 2025
  *   - Was buried deep in list, now appears at top
  */
 

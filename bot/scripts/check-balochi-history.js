@@ -8,7 +8,7 @@ function queryAxiom(apl, startTime = 'now-7d', endTime = 'now') {
       path: '/v1/datasets/_apl?format=legacy',
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.AXIOM_API_TOKEN}`,
+        'Authorization': `Bearer ${process.env.AXIOM_TOKEN}`,
         'Content-Type': 'application/json',
         'Content-Length': data.length
       }
