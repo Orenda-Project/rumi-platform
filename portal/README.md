@@ -1,48 +1,40 @@
-# Teacher Portal (Phase 2 Add-On)
+# Teacher Portal (Phase 2)
 
-> **This is a Phase 2 add-on.** The core Rumi bot works without this portal.
-> Deploy this when you want teachers to access their data via a web interface.
+This is the Rumi Teacher Portal — a web application where teachers can view their coaching history, reading assessment results, and manage their classroom data.
 
-React SPA for teachers to access lesson plans, coaching sessions, and analytics.
+**This is a Phase 2 add-on.** The WhatsApp bot works fully without this portal. Deploy the bot first (Phase 1), then add the portal when ready.
 
-## Status
+## What It Does
 
-Phase 2 — not required for initial bot deployment. Teachers interact with the bot via WhatsApp; this portal provides an additional web-based view of their data.
-
-## Tech Stack
-
-- **Framework**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Backend**: APIs served by the Observability Dashboard
-- **Hosting**: Any static hosting (Vercel, Netlify, Railway, etc.)
-
-## Features
-
-- Teacher login (phone + password)
-- Dashboard with stats and recent content
-- Lesson plan browser
-- Coaching session review with audio playback
-- Analytics and score trends
+- Teachers view their coaching feedback history
+- Teachers see reading assessment results and student progress
+- Teachers manage classroom settings
+- School administrators view aggregate analytics
 
 ## Prerequisites
 
-- The **Observability Dashboard** (Phase 2) must be deployed first, as this portal consumes its APIs.
-- Same Supabase instance as the bot.
+- Phase 1 (bot) fully deployed and running
+- Same Supabase database as the bot
+- Separate static hosting (Vercel, Netlify, or Railway)
 
 ## Setup
 
-1. Install dependencies: `cd portal && npm install`
-2. Configure environment variables (API URL pointing to the dashboard)
-3. Build: `npm run build`
-4. Deploy the `dist/` folder to any static hosting
+```bash
+cd portal
+npm install
+npm run dev    # Development server
+npm run build  # Production build
+```
 
-## Routes
+Deploy the `dist/` folder to any static hosting service.
 
-| Route | Purpose |
-|-------|---------|
-| `/portal/login` | Phone + password auth |
-| `/portal/setup/:token` | Password setup from invitation |
-| `/portal/dashboard` | Stats + recent content |
-| `/portal/lesson-plans` | Lesson plan list |
-| `/portal/coaching` | Coaching sessions |
-| `/portal/coaching/analytics` | Score trends |
+## Tech Stack
+
+- React + TypeScript
+- Vite (build tool)
+- Supabase client SDK
+- TailwindCSS
+
+## License
+
+Apache License 2.0 — See [LICENSE](../LICENSE).

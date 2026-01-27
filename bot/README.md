@@ -1,56 +1,53 @@
-# Rumi WhatsApp Bot
+# Rumi WhatsApp Bot (Phase 1 - Core)
 
-**Parent**: [CLAUDE.md](../CLAUDE.md) | **Repo**: `https://github.com/your-org/whatsapp-ai-bot`
+This is the core WhatsApp bot — the primary component of the Rumi platform. It handles all WhatsApp messaging, AI chat, coaching analysis, reading assessments, and lesson plan generation.
 
-Production WhatsApp bot for teacher coaching and support.
-
----
-
-## Features
-
-| Feature | Command | Description |
-|---------|---------|-------------|
-| AI Coaching | Voice/text | Classroom coaching with OECD framework |
-| Lesson Plans | `/lesson plan` | Gamma AI presentations |
-| Reading Assessment | `/reading test` | EGRA/ASER fluency testing |
-| Video Generation | `/video` | Educational explainer videos |
-
----
-
-## Quick Commands
+## Quick Start
 
 ```bash
-# Development
-npm install && npm start
+cd bot
+npm install
 
-# Verify remote
-git remote -v  # Must be: whatsapp-ai-bot
+# Copy and fill environment variables
+cp ../.env.template ../.env
 
-# Deploy to staging
-git push origin staging
+# Start in development mode
+npm run dev
 
-# Deploy to production (after staging test)
-git checkout main && git merge staging && git push origin main
+# Or use the CLI simulator (no WhatsApp needed)
+cd .. && npm run simulate
 ```
-
----
 
 ## Architecture
 
 ```
-├── whatsapp-bot.js       # Main entry, webhook handler
+bot/
+├── whatsapp-bot.js          # Main Express server + webhook handler
+├── workers/
+│   └── bullmq-worker.js     # Background job processor
 ├── shared/
-│   ├── handlers/         # Message type handlers
-│   ├── services/         # Feature implementations
-│   └── utils/            # Logging, R2 storage
-├── workers/              # SQS background processors
-└── scripts/              # Deployment, testing utilities
+│   ├── config/               # Branding, feature tiers, capabilities
+│   ├── services/             # AI (LLM), queue, coaching, reading, etc.
+│   ├── handlers/             # Message routing, flow responses, media
+│   ├── database/             # Supabase data access layer
+│   ├── utils/                # Shared utilities
+│   └── middleware/           # Express middleware
+├── scripts/
+│   ├── simulate.js           # CLI simulator for local testing
+│   └── validate-env.js       # Environment variable validator
+└── docs/                     # Feature-specific documentation
 ```
 
----
+## Key Services
 
-## Related Docs
+| Service | File | Description |
+|---------|------|-------------|
+| LLM Client | `shared/services/llm-client.js` | OpenRouter/OpenAI integration |
+| Queue | `shared/services/queue/bullmq-queue.service.js` | BullMQ job queue |
+| Coaching | `shared/services/coaching.service.js` | OECD coaching analysis |
+| Reading | `shared/services/reading-assessment.service.js` | Fluency assessment |
+| WhatsApp | `shared/services/whatsapp.service.js` | Message send/receive |
 
-- **Technical details**: [02_Technical_Architecture.md](../01_Digital Coach Docs/02_Technical_Architecture.md)
-- **API integrations**: [03_API_Integrations.md](../01_Digital Coach Docs/03_API_Integrations.md)
-- **Deployment**: [05_Deployment_Operations.md](../01_Digital Coach Docs/05_Deployment_Operations.md)
+## License
+
+Apache License 2.0 — See [LICENSE](../LICENSE).
