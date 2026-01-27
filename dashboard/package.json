@@ -20,7 +20,7 @@
     "dashboard",
     "analytics"
   ],
-  "author": "Taleemabad",
+  "author": "Taleemabad (Oraan Education Pvt. Ltd.)",
   "license": "Apache-2.0",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
