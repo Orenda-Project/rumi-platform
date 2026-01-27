@@ -154,7 +154,7 @@ async function runTests() {
   // ============================================================
 
   // Test 10: API Health section exists in bugbuster.ejs
-  console.log('Test 10: API Health section exists in Attar dashboard');
+  console.log('Test 10: API Health section exists in QA dashboard');
   try {
     const viewPath = path.join(__dirname, '../views/bugbuster.ejs');
     const viewContent = fs.readFileSync(viewPath, 'utf8');

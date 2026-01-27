@@ -131,7 +131,7 @@ const wordCloudRoutes = require('./routes/wordcloud');
 // Teacher Portal Routes
 const portalRoutes = require('./routes/portal.routes');
 
-// Bugbuster QA Routes (P2: Attar Dashboard) - includes P5 API Health
+// QA Routes - includes API Health monitoring
 const bugbusterRoutes = require('./routes/bugbuster.routes');
 
 // BYOF Routes (Build Your Own Feature) - Conversational AI for bug/feature planning
@@ -2504,7 +2504,7 @@ app.use('/observability/settings', requireAuth, requireSuperAdmin, settingsRoute
 // RBAC: Partner admin or super admin with wordcloud feature
 app.use('/observability/api/wordcloud', requireAuth, requirePartnerAdmin, requireFeatureAccess('wordcloud'), wordCloudRoutes);
 
-// Bugbuster QA routes - Observability dashboard (P2: Attar, P5: API Health)
+// QA routes - Observability dashboard (API Health)
 // RBAC: All portal users
 app.use('/observability/bugbuster', requireAuth, requirePartnerAdmin, bugbusterRoutes);
 
