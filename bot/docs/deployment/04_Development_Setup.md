@@ -42,11 +42,11 @@ Complete guide to setting up the Rumi bot for local development.
 
 ```bash
 # HTTPS (recommended)
-git clone https://github.com/your-org/rumi-platform.git
+git clone https://github.com/taleemabad/rumi-platform.git
 cd rumi-platform
 
 # OR SSH (if you have SSH keys)
-git clone git@github.com:your-org/rumi-platform.git
+git clone git@github.com:taleemabad/rumi-platform.git
 cd rumi-platform
 ```
 

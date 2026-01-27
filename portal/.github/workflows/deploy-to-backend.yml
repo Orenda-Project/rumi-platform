@@ -39,7 +39,7 @@ jobs:
       - name: 📥 Checkout Backend Repo
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.BACKEND_REPO || 'your-org/rumi-platform' }}
+          repository: ${{ vars.BACKEND_REPO || 'taleemabad/rumi-platform' }}
           token: ${{ secrets.GH_PAT }}
           path: backend
 

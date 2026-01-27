@@ -5,7 +5,7 @@
 echo "📡 Linking Railway project: Rumi Dashboard"
 echo ""
 echo "When prompted, select:"
-echo "  1. Workspace: your-org's Projects"
+echo "  1. Workspace: your workspace"
 echo "  2. Project: your-rumi-dashboard"
 echo "  3. Environment: production"
 echo ""
