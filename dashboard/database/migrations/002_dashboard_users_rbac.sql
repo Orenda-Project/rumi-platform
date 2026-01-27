@@ -32,8 +32,9 @@ COMMENT ON COLUMN dashboard_users.role IS 'User role: admin or viewer';
 COMMENT ON COLUMN dashboard_users.invite_token IS 'Unique token for setting up new account';
 COMMENT ON COLUMN dashboard_users.password_reset_token IS 'Token for password reset functionality';
 
--- Insert default admin user (password: admin123)
--- Password hash for 'admin123': $2a$10$K5L9V7KhR2dGzD1hX8PtOuBx7LPzGe9kTYQxGZWVyB2vKtGwMXeWi
+-- Insert default admin user
+-- IMPORTANT: Replace the placeholder hash below with your own.
+-- Generate one with: node -e "console.log(require('bcryptjs').hashSync('YOUR_PASSWORD', 10))"
 INSERT INTO dashboard_users (
   email,
   username,
@@ -41,9 +42,9 @@ INSERT INTO dashboard_users (
   role,
   created_at
 ) VALUES (
-  'admin@rumi.ai',
+  'admin@your-domain.com',
   'admin',
-  '$2a$10$K5L9V7KhR2dGzD1hX8PtOuBx7LPzGe9kTYQxGZWVyB2vKtGwMXeWi',
+  '$2a$10$REPLACE_WITH_YOUR_OWN_BCRYPT_HASH_HERE_________________',
   'admin',
   NOW()
 ) ON CONFLICT (username) DO NOTHING;

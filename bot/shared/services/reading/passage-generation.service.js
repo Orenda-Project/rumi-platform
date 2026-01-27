@@ -176,7 +176,8 @@ class PassageGenerationService {
 
     const randomIndex = Math.floor(Math.random() * levelBackgrounds.length);
     const backgroundPath = levelBackgrounds[randomIndex];
-    return `${PASSAGE_BACKGROUNDS.r2BaseUrl}/${backgroundPath}`;
+    const baseUrl = process.env.R2_PUBLIC_URL || PASSAGE_BACKGROUNDS.r2BaseUrl;
+    return `${baseUrl}/${backgroundPath}`;
   }
 
   /**

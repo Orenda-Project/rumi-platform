@@ -865,7 +865,7 @@ async function processGitHubWebhook(payload) {
         const reporterPhone = planWithReporter.plan.session.user.phone_number;
         await sendNotification(
           reporterPhone,
-          `🧪 "${plan.summary}" is now live on STAGING!\n\nPlease test on +92 326 8338870 and confirm it works.`
+          `🧪 "${plan.summary}" is now live on STAGING!\n\nPlease test on ${process.env.STAGING_PHONE_NUMBER || 'the staging bot'} and confirm it works.`
         );
       }
 

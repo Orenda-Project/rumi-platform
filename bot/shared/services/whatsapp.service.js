@@ -1172,6 +1172,7 @@ class WhatsAppService {
    * @returns {Object} WhatsApp template message payload
    */
   static buildStyleCarouselPayload(to) {
+    const assetsBase = process.env.ASSETS_BASE_URL || '';
     // Issue #35: Style sample images stored in template (uploaded via Meta Business Suite)
     // The template uses pre-uploaded images, we just need to provide button payloads
     return {
@@ -1191,7 +1192,7 @@ class WhatsAppService {
                 components: [
                   {
                     type: 'HEADER',
-                    parameters: [{ type: 'image', image: { link: 'https://tempfile.aiquickdraw.com/g/e3389357163d7b73e9a562fcc1e8b7ef_1766623332.png' } }]
+                    parameters: [{ type: 'image', image: { link: `${assetsBase}/carousel/style_photorealistic.png` } }]
                   },
                   {
                     type: 'BUTTON',
@@ -1207,7 +1208,7 @@ class WhatsAppService {
                 components: [
                   {
                     type: 'HEADER',
-                    parameters: [{ type: 'image', image: { link: 'https://tempfile.aiquickdraw.com/g/c6b4f5bb20ce8ba23a28e7b504ff4bee_1766623320.png' } }]
+                    parameters: [{ type: 'image', image: { link: `${assetsBase}/carousel/style_infographic.png` } }]
                   },
                   {
                     type: 'BUTTON',
@@ -1223,7 +1224,7 @@ class WhatsAppService {
                 components: [
                   {
                     type: 'HEADER',
-                    parameters: [{ type: 'image', image: { link: 'https://tempfile.aiquickdraw.com/g/96a6d52ad336c0bde50e40c8b31f1cf4_1766623322.png' } }]
+                    parameters: [{ type: 'image', image: { link: `${assetsBase}/carousel/style_cartoon.png` } }]
                   },
                   {
                     type: 'BUTTON',
@@ -1239,7 +1240,7 @@ class WhatsAppService {
                 components: [
                   {
                     type: 'HEADER',
-                    parameters: [{ type: 'image', image: { link: 'https://tempfile.aiquickdraw.com/g/569d95bd14d328b7b5b14ceee23b9e75_1766623343.png' } }]
+                    parameters: [{ type: 'image', image: { link: `${assetsBase}/carousel/style_sketch.png` } }]
                   },
                   {
                     type: 'BUTTON',
