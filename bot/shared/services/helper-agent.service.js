@@ -24,7 +24,7 @@ const PLATFORM_KNOWLEDGE = `
 
 ## Available Services:
 
-### 1. Digital Coaching (Primary Service)
+### 1. Coaching (Primary Service)
 - Upload classroom audio/video for AI-powered teaching analysis
 - Receive detailed feedback on OECD Framework criteria
 - 3-question reflective conversation
@@ -350,7 +350,7 @@ Respond with just one word, nothing else.`;
   }
 
   /**
-   * Detect if user is asking about Digital Coach capabilities and provide guidance
+   * Detect if user is asking about Rumi capabilities and provide guidance
    * ⚠️ ADDING A NEW FEATURE? Update shared/config/capabilities.config.js
    * to ensure users can discover it through capability inquiries
    *
@@ -416,15 +416,15 @@ Respond with just one word, nothing else.`;
         .map((cap, index) => `${index + 1}. **${cap.name.en}**: ${cap.description.en}`)
         .join('\n');
 
-      const systemPrompt = `You are a capability detection assistant for the Digital Coach platform.
+      const systemPrompt = `You are a capability detection assistant for the Rumi platform.
 
-Digital Coach capabilities:
+Rumi capabilities:
 ${capabilitiesSummary}
 
 The user asked: "${userMessage}"
 
 Task:
-1. Determine if this is a question about Digital Coach's capabilities
+1. Determine if this is a question about Rumi's capabilities
 2. If YES, provide a helpful response in language code "${language}" that:
    - Directly answers their question
    - Mentions relevant features
@@ -578,7 +578,7 @@ IMPORTANT:
         description: cap.description.en
       }));
 
-      const prompt = `You are a helpful teaching assistant named Digital Coach. Generate a friendly message in language code "${language}" that lists all your capabilities.
+      const prompt = `You are a helpful teaching assistant named Rumi. Generate a friendly message in language code "${language}" that lists all your capabilities.
 
 Your capabilities:
 ${JSON.stringify(capabilitiesList, null, 2)}

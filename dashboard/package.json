@@ -1,7 +1,7 @@
 {
-  "name": "digital-coach-dashboard",
+  "name": "rumi-dashboard",
   "version": "2.1.0",
-  "description": "Admin Dashboard for Digital Coach WhatsApp Bot",
+  "description": "Admin Dashboard for Rumi WhatsApp Bot",
   "main": "index.js",
   "scripts": {
     "start": "node cluster.js",

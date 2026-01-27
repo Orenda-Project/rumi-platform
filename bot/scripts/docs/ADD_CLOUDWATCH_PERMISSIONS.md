@@ -1,7 +1,9 @@
 # Add CloudWatch Permissions to IAM User
 
+> **Note**: This is only needed if using AWS SQS for job queues. The default Rumi setup uses BullMQ (Redis-based) and does not require AWS.
+
 ## Issue
-The IAM user `your-org` can create CloudWatch alarms but can't view them. We need to add `DescribeAlarms` permission.
+The IAM user needs CloudWatch alarm viewing permissions. We need to add `DescribeAlarms` permission.
 
 ---
 

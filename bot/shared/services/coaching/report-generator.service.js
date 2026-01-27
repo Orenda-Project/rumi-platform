@@ -776,7 +776,7 @@ class ReportGeneratorService {
       observationDate,
       subject: session.lesson_plan_structured?.subject || enhancedAnalysis.subject || 'N/A',
       topic: session.lesson_plan_structured?.topic || enhancedAnalysis.topic || 'N/A',
-      observerName: 'Rumi Digital Coach',
+      observerName: 'Rumi',
       hasLessonPlan: hasLessonPlanData,
       totalScore,
       maxScore: maxPossibleMarks,

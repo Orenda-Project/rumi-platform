@@ -34,7 +34,7 @@ async function check() {
   // Search for any Arabic-script messages that might be Balochi
   console.log('1. All messages with language field containing bal...');
   const result = await queryAxiom(
-    '["digital-coach-logs"] | where confirmedLanguage contains "bal" or language contains "bal" | project _time, msg, confirmedLanguage, language, phone | order by _time desc'
+    '["rumi-logs"] | where confirmedLanguage contains "bal" or language contains "bal" | project _time, msg, confirmedLanguage, language, phone | order by _time desc'
   );
   console.log(`   Found: ${result.status?.rowsMatched || 0} rows`);
 
@@ -52,7 +52,7 @@ async function check() {
   // Check unique languages in the dataset
   console.log('\n2. Unique confirmedLanguage values in logs...');
   const langResult = await queryAxiom(
-    '["digital-coach-logs"] | where confirmedLanguage != "" | summarize count() by confirmedLanguage'
+    '["rumi-logs"] | where confirmedLanguage != "" | summarize count() by confirmedLanguage'
   );
 
   if (langResult.buckets && langResult.buckets.totals) {

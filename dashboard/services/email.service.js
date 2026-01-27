@@ -43,9 +43,9 @@ class EmailService {
       const setupUrl = `${portalBaseUrl}/portal/setup/${inviteToken}`;
 
       const mailOptions = {
-        from: `Digital Coach Dashboard <${this.fromEmail}>`,
+        from: `Rumi Dashboard <${this.fromEmail}>`,
         to: toEmail,
-        subject: 'Invitation to Digital Coach Dashboard',
+        subject: 'Invitation to Rumi Dashboard',
         html: `
           <!DOCTYPE html>
           <html>
@@ -64,14 +64,14 @@ class EmailService {
           <body>
             <div class="container">
               <div class="header">
-                <h1>Welcome to Digital Coach Dashboard</h1>
+                <h1>Welcome to Rumi Dashboard</h1>
               </div>
               <div class="content">
                 <p>Hello,</p>
 
-                <p>You've been invited by <strong>${invitedByName}</strong> to join the Digital Coach Dashboard as a <span class="role-badge">${role.toUpperCase()}</span>.</p>
+                <p>You've been invited by <strong>${invitedByName}</strong> to join the Rumi Dashboard as a <span class="role-badge">${role.toUpperCase()}</span>.</p>
 
-                <p>The Digital Coach Dashboard provides insights and analytics for the Digital Coach WhatsApp bot, including:</p>
+                <p>The Rumi Dashboard provides insights and analytics for the Rumi WhatsApp bot, including:</p>
                 <ul>
                   <li>User conversation analytics</li>
                   <li>Coaching session reports</li>
@@ -106,7 +106,7 @@ class EmailService {
                 <div class="footer">
                   <p><strong>Note:</strong> This invitation will expire in 7 days. If you need a new invitation, please contact ${invitedByName}.</p>
                   <p>If you didn't expect this invitation, you can safely ignore this email.</p>
-                  <p>&copy; 2025 Digital Coach - Rumi AI</p>
+                  <p>&copy; 2025 Rumi AI</p>
                 </div>
               </div>
             </div>
@@ -114,9 +114,9 @@ class EmailService {
           </html>
         `,
         text: `
-          Welcome to Digital Coach Dashboard
+          Welcome to Rumi Dashboard
 
-          You've been invited by ${invitedByName} to join the Digital Coach Dashboard as a ${role}.
+          You've been invited by ${invitedByName} to join the Rumi Dashboard as a ${role}.
 
           To set up your account, visit: ${setupUrl}
 
@@ -144,9 +144,9 @@ class EmailService {
       const resetUrl = `${this.dashboardUrl}/observability/reset-password?token=${resetToken}`;
 
       const mailOptions = {
-        from: `Digital Coach Dashboard <${this.fromEmail}>`,
+        from: `Rumi Dashboard <${this.fromEmail}>`,
         to: toEmail,
-        subject: 'Password Reset Request - Digital Coach Dashboard',
+        subject: 'Password Reset Request - Rumi Dashboard',
         html: `
           <!DOCTYPE html>
           <html>
@@ -169,7 +169,7 @@ class EmailService {
               <div class="content">
                 <p>Hello ${username},</p>
 
-                <p>We received a request to reset your password for the Digital Coach Dashboard.</p>
+                <p>We received a request to reset your password for the Rumi Dashboard.</p>
 
                 <p>Click the button below to reset your password:</p>
 
@@ -185,7 +185,7 @@ class EmailService {
                 <div class="footer">
                   <p><strong>Note:</strong> This link will expire in 1 hour for security reasons.</p>
                   <p>If you didn't request a password reset, please ignore this email and your password will remain unchanged.</p>
-                  <p>&copy; 2025 Digital Coach - Rumi AI</p>
+                  <p>&copy; 2025 Rumi AI</p>
                 </div>
               </div>
             </div>
@@ -197,7 +197,7 @@ class EmailService {
 
           Hello ${username},
 
-          We received a request to reset your password for the Digital Coach Dashboard.
+          We received a request to reset your password for the Rumi Dashboard.
 
           To reset your password, visit: ${resetUrl}
 

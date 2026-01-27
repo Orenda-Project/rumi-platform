@@ -1,5 +1,5 @@
 /**
- * Lightweight Span/Trace Support for Digital Coach
+ * Lightweight Span/Trace Support for Rumi
  *
  * Provides operation hierarchy tracking and duration measurement.
  * Compatible with OpenTelemetry concepts but simplified for our use case.
