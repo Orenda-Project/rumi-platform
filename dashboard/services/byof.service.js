@@ -780,7 +780,7 @@ async function getApproversForNotification() {
 }
 
 /**
- * Send notification via ATTAR WhatsApp
+ * Send notification via WhatsApp
  * @param {string} phoneNumber - Recipient phone number (E.164 format without +)
  * @param {string} message - Message to send
  * @returns {Promise<{success: boolean, error?: string}>}
@@ -816,7 +816,7 @@ async function sendNotification(phoneNumber, message) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('[BYOF] ATTAR notification failed:', errorData);
+      console.error('[BYOF] WhatsApp notification failed:', errorData);
       return { success: false, error: 'Failed to send notification' };
     }
 
