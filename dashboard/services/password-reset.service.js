@@ -23,9 +23,8 @@ const supabase = require('../config/supabase');
 const axios = require('axios');
 
 // Main Bot internal API configuration
-// Main Bot public URL: digital-coach-production.up.railway.app:8080
-const MAIN_BOT_URL = process.env.MAIN_BOT_URL || 'https://digital-coach-production.up.railway.app';
-const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || 'rumi-internal-2025';
+const MAIN_BOT_URL = process.env.MAIN_BOT_URL || '';
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || '';
 
 class PasswordResetService {
   /**

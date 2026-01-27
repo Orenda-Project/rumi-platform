@@ -140,7 +140,7 @@ Railway provides automatic deployments from GitHub with built-in HTTPS and envir
    ```bash
    railway open
    ```
-   Copy the Railway-provided domain (e.g., `https://whatsapp-bot-production.up.railway.app`)
+   Copy the Railway-provided domain (e.g., `https://your-app-production.up.railway.app`)
 
 7. **Update WhatsApp Webhook**:
    - Meta Business Platform → WhatsApp → Configuration
@@ -247,7 +247,7 @@ Both services:
 5. **Verify Worker is Running**:
    ```bash
    # Check health endpoint
-   curl https://coaching-worker-production.up.railway.app/health
+   curl https://your-worker-production.up.railway.app/health
 
    # Expected response:
    {

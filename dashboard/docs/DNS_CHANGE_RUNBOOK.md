@@ -114,15 +114,14 @@ If something goes wrong:
 
 ## Reference
 
-**Current Configuration** (as of Jan 18, 2026):
+**Current Configuration** (update for your deployment):
 - Domain: `portal.your-domain.com`
 - Type: CNAME
-- Target: `digital-coach-dashboard-production.up.railway.app`
+- Target: `your-railway-service-production.up.railway.app`
 - TTL: 3600
 
 **Nameservers**:
-- `ns43.domaincontrol.com`
-- `ns44.domaincontrol.com`
+- (your DNS provider's nameservers)
 
 ---
 
