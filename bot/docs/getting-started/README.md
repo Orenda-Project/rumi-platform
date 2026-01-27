@@ -268,7 +268,7 @@ This knowledge base follows these principles:
 - Open-source components used
 - Integration patterns (without credentials)
 
-When in doubt, check with Haroon (CEO) or technical lead.
+When in doubt, check with your project lead or open a GitHub issue.
 
 ---
 

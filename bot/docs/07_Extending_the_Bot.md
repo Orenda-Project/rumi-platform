@@ -229,8 +229,8 @@ REDIS_URL=redis://default:password@redis-host:6379
 
 ```javascript
 const ADMIN_USERS = [
-  '923001234567',  // Haroon's number
-  '923009876543'   // Other admin
+  '923001234567',  // Admin user 1
+  '923009876543'   // Admin user 2
 ];
 
 function isAdmin(userId) {

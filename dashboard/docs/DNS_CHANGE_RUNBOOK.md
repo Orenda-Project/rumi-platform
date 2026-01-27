@@ -82,7 +82,7 @@ diff <(curl -s https://portal.your-domain.com/health | jq -S .) \
 ## Post-Change Checklist
 
 - [ ] All verification tests pass
-- [ ] Update SETUP_GUIDE_FOR_HAROON.md with new CNAME target
+- [ ] Update setup guide with new CNAME target
 - [ ] Update CLAUDE.md if any documentation references changed
 - [ ] Set TTL back to 3600 (1 hour) for caching
 - [ ] Notify team that DNS change is complete

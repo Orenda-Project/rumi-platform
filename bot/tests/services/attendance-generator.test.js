@@ -278,8 +278,8 @@ describe('AttendanceGeneratorService', () => {
   describe('buildAttendanceMatrix', () => {
     it('should create matrix with students as rows and days as columns', () => {
       const students = [
-        { id: 'stu-1', roll_number: 1, student_name: 'Haroon', father_name: 'Yasin' },
-        { id: 'stu-2', roll_number: 2, student_name: 'Farhan', father_name: 'Yasin' }
+        { id: 'stu-1', roll_number: 1, student_name: 'Ali', father_name: 'Khan' },
+        { id: 'stu-2', roll_number: 2, student_name: 'Sara', father_name: 'Ahmed' }
       ];
 
       const sessions = [
@@ -309,14 +309,14 @@ describe('AttendanceGeneratorService', () => {
 
     it('should handle students with no attendance records', () => {
       const students = [
-        { id: 'stu-1', roll_number: 1, student_name: 'Haroon', father_name: 'Yasin' }
+        { id: 'stu-1', roll_number: 1, student_name: 'Ali', father_name: 'Khan' }
       ];
 
       const sessions = []; // No sessions
 
       const matrix = AttendanceGeneratorService.buildAttendanceMatrix(students, sessions);
 
-      expect(matrix['stu-1'].student.student_name).toBe('Haroon');
+      expect(matrix['stu-1'].student.student_name).toBe('Ali');
       expect(Object.keys(matrix['stu-1'].days).length).toBe(0); // No attendance data
     });
   });
@@ -358,8 +358,8 @@ describe('AttendanceGeneratorService', () => {
     it('should create valid Excel buffer with monthly format', async () => {
       // Mock data
       const students = [
-        { id: 'stu-1', roll_number: 1, student_name: 'Haroon', father_name: 'Yasin' },
-        { id: 'stu-2', roll_number: 2, student_name: 'Farhan', father_name: 'Yasin' }
+        { id: 'stu-1', roll_number: 1, student_name: 'Ali', father_name: 'Khan' },
+        { id: 'stu-2', roll_number: 2, student_name: 'Sara', father_name: 'Ahmed' }
       ];
 
       const sessions = [
