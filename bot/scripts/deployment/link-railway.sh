@@ -6,7 +6,7 @@ echo "📡 Linking Railway project: Main WhatsApp Bot"
 echo ""
 echo "When prompted, select:"
 echo "  1. Workspace: your-org's Projects"
-echo "  2. Project: digital coach"
+echo "  2. Project: your-rumi-project"
 echo "  3. Environment: production"
 echo ""
 

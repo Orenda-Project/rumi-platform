@@ -1,13 +1,10 @@
 #!/bin/bash
 
 echo "=========================================="
-echo "🚀 DEPLOYING REGISTRATION FIX TO RAILWAY"
+echo "🚀 DEPLOYING TO RAILWAY"
 echo "=========================================="
 echo ""
-echo "Commit ready to push:"
-echo "  df7efd9 - fix: allow registration retry for users stuck in flow_sent state"
-echo ""
-echo "This fix allows users in 'flow_sent' state to retry registration with /register"
+echo "This script pushes the current branch and triggers Railway auto-deploy."
 echo ""
 echo "=========================================="
 echo ""

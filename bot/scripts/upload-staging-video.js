@@ -64,7 +64,7 @@ async function uploadVideo() {
     console.log('\nNow set this in Railway staging environment:');
     console.log('\n  REGISTRATION_VIDEO_MEDIA_ID=' + mediaId);
     console.log('\nSteps:');
-    console.log('1. Go to Railway Dashboard → digital-coach-staging');
+    console.log('1. Go to Railway Dashboard → your staging service');
     console.log('2. Click "Variables" tab');
     console.log('3. Add or update REGISTRATION_VIDEO_MEDIA_ID');
     console.log('4. Railway will auto-redeploy\n');
