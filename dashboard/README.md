@@ -1,46 +1,41 @@
-# Observability Dashboard (Phase 2 Add-On)
+# Observability Dashboard (Phase 2)
 
-> **This is a Phase 2 add-on.** The core Rumi bot works without this dashboard.
-> Deploy this when you're ready to add admin monitoring and analytics.
+This is the Rumi Observability Dashboard — a web-based portal for monitoring bot usage, coaching sessions, reading assessments, and system health.
 
-Admin dashboard for monitoring users, coaching sessions, reading assessments, and system health.
+**This is a Phase 2 add-on.** The WhatsApp bot works fully without this dashboard. Deploy the bot first (Phase 1), then add the dashboard when ready.
 
-## Status
+## What It Does
 
-Phase 2 — not required for initial bot deployment. The bot operates fully without the dashboard.
+- View coaching session analytics and OECD-framework scores
+- Monitor reading assessment results and fluency trends
+- Track user registrations and engagement metrics
+- Manage WhatsApp broadcast messages
+- View system health and queue status
 
-## Tech Stack
+## Prerequisites
 
-- **Backend**: Express.js + EJS templates
-- **Auth**: Session-based with role-based access control
-- **Database**: Same Supabase instance as the bot
-- **Hosting**: Railway (separate service)
-
-## Features
-
-- User management and analytics
-- Coaching session monitoring
-- Reading assessment results
-- AMA (Ask Me Anything) conversation logs
-- Role-based access control (super admin, partner admin, partner viewer)
+- Phase 1 (bot) fully deployed and running
+- Same Supabase database as the bot
+- Dashboard-specific environment variables (see `.env.template` — the "Dashboard Database" and "Dashboard Auth" sections)
 
 ## Setup
 
-Once your bot is running (Phase 1), you can add the dashboard:
+```bash
+cd dashboard
+npm install
+node index.js
+```
 
-1. Install dependencies: `cd dashboard && npm install`
-2. Add a new Railway service pointing to `dashboard/`
-3. Set the required environment variables (same Supabase credentials as the bot)
-4. Deploy
+Or deploy as a separate Railway service pointing to the same Supabase database.
 
-See the main [SETUP.md](../SETUP.md) for details.
+## Tech Stack
 
-## Routes
+- Node.js + Express
+- EJS templates
+- Supabase (PostgreSQL) — shared with bot
+- bcryptjs for authentication
+- Chart.js for analytics
 
-| Route | Access |
-|-------|--------|
-| `/observability/dashboard` | All roles |
-| `/observability/users` | Scoped by role |
-| `/observability/coaching` | Scoped by role |
-| `/observability/ama` | All roles |
-| `/observability/admin/users` | Super admin only |
+## License
+
+Apache License 2.0 — See [LICENSE](../LICENSE).
