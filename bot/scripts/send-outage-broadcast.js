@@ -16,6 +16,7 @@ const supabase = createClient(
 // WhatsApp API configuration
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 
 // The message in Rumi's brand voice (first person, English only)
 const MESSAGE = `Hey there 👋
@@ -29,7 +30,7 @@ Thanks for your patience.
 — Rumi`;
 
 async function sendWhatsAppMessage(phoneNumber) {
-  const url = `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`;
+  const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${PHONE_NUMBER_ID}/messages`;
 
   const response = await fetch(url, {
     method: 'POST',

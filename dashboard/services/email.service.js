@@ -29,7 +29,7 @@ class EmailService {
       });
     }
 
-    this.fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@rumi.ai';
+    this.fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@example.com';
     this.dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:4000';
   }
 

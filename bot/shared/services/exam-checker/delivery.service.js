@@ -150,7 +150,7 @@ class DeliveryService {
    * Send portal link for detailed view
    */
   static async _sendPortalLink(phoneNumber, session) {
-    const portalUrl = process.env.PORTAL_URL || 'https://portal.rumi.ai';
+    const portalUrl = process.env.PORTAL_URL || 'https://your-portal-domain.com';
     const examUrl = `${portalUrl}/portal/exams/${session.id}`;
 
     const message = `🔗 *View & Edit Results*\n\n` +

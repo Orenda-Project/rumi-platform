@@ -10,6 +10,8 @@
 
 const supabase = require('../config/supabase');
 
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
+
 // Valid BYOF roles
 const VALID_BYOF_ROLES = ['reporter', 'approver'];
 
@@ -796,7 +798,7 @@ async function sendNotification(phoneNumber, message) {
 
     // Send WhatsApp message via ATTAR
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${attarPhoneId}/messages`,
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${attarPhoneId}/messages`,
       {
         method: 'POST',
         headers: {

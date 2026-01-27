@@ -10,12 +10,13 @@ const axios = require('axios');
 
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 
 async function configureMenuCommand() {
   try {
     console.log('📋 Configuring /menu command...\n');
 
-    const url = `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/conversational_automation`;
+    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${PHONE_NUMBER_ID}/conversational_automation`;
 
     const payload = {
       commands: [

@@ -4,6 +4,7 @@ const OpenAI = require('openai');
 
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -22,7 +23,7 @@ const conversationHistory = [
 async function sendWhatsAppMessage(to, message) {
   try {
     const response = await fetch(
-      `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${PHONE_NUMBER_ID}/messages`,
       {
         method: 'POST',
         headers: {

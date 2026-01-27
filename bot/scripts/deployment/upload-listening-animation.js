@@ -6,6 +6,7 @@ const path = require('path');
 
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 const STICKER_PATH = path.join(__dirname, '../marketing/Listening Animation.webp');
 
 async function uploadListeningAnimation() {
@@ -53,7 +54,7 @@ async function uploadListeningAnimation() {
 
     // Upload to WhatsApp
     const response = await axios.post(
-      `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/media`,
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${PHONE_NUMBER_ID}/media`,
       formData,
       {
         headers: {

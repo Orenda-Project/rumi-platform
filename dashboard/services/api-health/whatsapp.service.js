@@ -5,7 +5,8 @@
 
 const axios = require('axios');
 
-const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
+const WHATSAPP_API_URL = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 let cache = {
