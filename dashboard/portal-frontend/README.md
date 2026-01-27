@@ -21,11 +21,10 @@ portal-frontend/
 
 ## Instructions:
 
-1. Go to Lovable project: https://lovable.dev/projects/30da4f04-f806-4927-811f-a7a92cf51094
-2. Click "Share" → "Download Project" → Get the build files
-3. Extract the `dist` folder from the download
-4. Place the `dist` folder inside this `portal-frontend` folder
-5. The backend will automatically serve these files!
+1. Build your frontend project (e.g., using Vite/React)
+2. Generate the production `dist` folder
+3. Place the `dist` folder inside this `portal-frontend` folder
+4. The backend will automatically serve these files!
 
 ## Status:
 
