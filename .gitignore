@@ -28,6 +28,7 @@ service-account*.json
 temp/
 tmp/
 *.tmp
+*.zip
 
 # Build outputs
 dist/
