@@ -188,7 +188,7 @@ From your phone (or any WhatsApp account):
 
 1. Open WhatsApp
 2. Start a new chat
-3. Message your bot's number: **+92 329 5012345**
+3. Message your bot's number: **+[YOUR BOT PHONE NUMBER]**
 4. Send any message: "Hello!"
 
 **Expected behavior:**

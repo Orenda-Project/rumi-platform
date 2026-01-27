@@ -55,7 +55,7 @@ npx ngrok http 3000 --authtoken YOUR_TOKEN
 ### Step 2: Send a voice note
 
 1. Open WhatsApp on your phone
-2. Start a chat with your bot: **+92 329 5012345**
+2. Start a chat with your bot: **+[YOUR BOT PHONE NUMBER]**
 3. **Hold the microphone button** and record a message in **Urdu**
 4. Release to send
 

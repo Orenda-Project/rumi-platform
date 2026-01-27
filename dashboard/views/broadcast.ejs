@@ -799,7 +799,7 @@
       let score = 100;
       const capsRatio = (message.match(/[A-Z]/g) || []).length / message.length;
       if (capsRatio > 0.3) score -= 20;
-      if (/https?:\/\/(?!hellorumi\.ai)/i.test(message)) score -= 30;
+      if (/https?:\/\//i.test(message)) score -= 30;
       if (/act now|limited time|hurry|urgent|last chance/i.test(message)) score -= 25;
       const emojiCount = (message.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length;
       if (emojiCount > 5) score -= 10;
