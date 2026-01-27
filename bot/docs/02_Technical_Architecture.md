@@ -109,7 +109,7 @@ The Rumi is a hybrid architecture combining synchronous webhook handling with as
 ## File Structure
 
 ```
-whatsapp-ai-bot/
+rumi-platform/
 │
 ├── whatsapp-bot.js              # Main application (1,500 lines)
 ├── package.json                 # Dependencies and scripts

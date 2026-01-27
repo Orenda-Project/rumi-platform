@@ -3,7 +3,7 @@
 **Version**: 2.0 (November 2025)
 **Maintained By**: Rumi Contributors
 **Last Updated**: November 1, 2025
-**Repository**: https://github.com/your-org/whatsapp-ai-bot
+**Repository**: https://github.com/your-org/rumi-platform
 
 ---
 
@@ -93,7 +93,7 @@ An AI-powered WhatsApp chatbot that supports Pakistani teachers with:
 ### Current Status (November 2025)
 
 - ✅ **Production**: Deployed on Railway
-- ✅ **Repository**: https://github.com/your-org/whatsapp-ai-bot
+- ✅ **Repository**: https://github.com/your-org/rumi-platform
 - ✅ **Version**: 2.0
 - ⚠️ **Active Issues**: 6 (see [06_Known_Issues.md](06_Known_Issues.md))
 
@@ -242,8 +242,8 @@ This knowledge base follows these principles:
 ## Contact & Feedback
 
 **For Documentation Updates**:
-- Repository: https://github.com/your-org/whatsapp-ai-bot
-- Issues: https://github.com/your-org/whatsapp-ai-bot/issues
+- Repository: https://github.com/your-org/rumi-platform
+- Issues: https://github.com/your-org/rumi-platform/issues
 
 **For Issues**:
 - GitHub Issues: https://github.com/taleemabad/rumi-platform/issues

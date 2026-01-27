@@ -336,7 +336,7 @@ async function runTests() {
   console.log('Test 26: validatePrUrl accepts valid GitHub PR URLs');
   try {
     assert.strictEqual(
-      byofService.validatePrUrl('https://github.com/your-org/whatsapp-ai-bot/pull/123'),
+      byofService.validatePrUrl('https://github.com/your-org/rumi-bot/pull/123'),
       true,
       'Should accept valid PR URL'
     );

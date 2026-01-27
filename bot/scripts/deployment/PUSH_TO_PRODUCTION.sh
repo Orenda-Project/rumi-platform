@@ -42,7 +42,7 @@ else
     echo "You may need to authenticate with GitHub."
     echo ""
     echo "Option 1: Use GitHub Personal Access Token"
-    echo "  git push https://YOUR_TOKEN@github.com/your-org/whatsapp-ai-bot.git main"
+    echo "  git push https://YOUR_TOKEN@github.com/your-org/rumi-platform.git main"
     echo ""
     echo "Option 2: Configure SSH key"
     echo "  ssh-keygen -t ed25519 -C 'your_email@example.com'"

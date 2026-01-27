@@ -17,7 +17,7 @@ describe('GitHub API Service', () => {
       expect(result.content).toBeDefined();
       expect(result.encoding).toBe('base64');
       expect(result.decodedContent).toBeDefined();
-      expect(result.decodedContent).toContain('whatsapp-ai-bot');
+      expect(result.decodedContent).toContain('rumi-bot');
     });
 
     test('should handle 404 for non-existent files', async () => {
@@ -97,7 +97,7 @@ describe('GitHub API Service', () => {
 
       expect(repos['main-bot']).toEqual({
         owner: 'your-org',
-        repo: 'whatsapp-ai-bot',
+        repo: 'rumi-bot',
         branch: 'staging'
       });
 
