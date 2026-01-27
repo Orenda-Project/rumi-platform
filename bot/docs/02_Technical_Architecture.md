@@ -128,7 +128,6 @@ rumi-platform/
 │   └── README.md
 │
 ├── README.md                    # Basic project overview
-├── DIGITAL-COACH-DOCUMENTATION.md  # Monolithic doc (archived)
 ├── SETUP-GUIDE.md               # Detailed setup walkthrough
 ├── SIMPLE-SETUP.md              # Quick start guide
 ├── QUICK-START-CHECKLIST.md     # Setup verification
