@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <!-- Chart.js for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* AMA-specific styles - Claude-inspired minimalism */
+    :root {
+      /* Rumi Brand Colors */
+      --ama-primary: #1D2025;  /* Rumi dark blue */
+      --ama-primary-hover: #2a2f36;
+      --ama-accent: #E86B4A;  /* Rumi coral/orange */
+      --ama-accent-light: #f5ebe8;
+      --ama-bg: #ffffff;
+      --ama-bg-secondary: #f8f9fa;
+      --ama-bg-sidebar: #ffffff;  /* Clean white sidebar to match brand */
+      --ama-text: #1D2025;
+      --ama-text-muted: #6b7280;
+      --ama-border: #e5e7eb;
+      --ama-border-light: #f3f4f6;
+      --ama-success: #10b981;
+      --ama-warning: #f59e0b;
+      --ama-error: #ef4444;
+    }
+
+    .ama-container {
+      display: flex;
+      height: calc(100vh - 64px);
+      background: var(--ama-bg);
+    }
+
+    /* Sidebar */
+    .ama-sidebar {
+      width: 280px;
+      background: var(--ama-bg-sidebar);
+      border-right: 1px solid var(--ama-border);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: fixed;
+      left: 0;
+      top: 64px;
+      height: calc(100vh - 64px);
+      z-index: 40;
+    }
+
+    .ama-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .ama-sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--ama-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ama-new-chat-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--ama-primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .ama-new-chat-btn:hover {
+      background: var(--ama-primary-hover);
+    }
+
+    .ama-close-sidebar {
+      padding: 8px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--ama-text-muted);
+      border-radius: 6px;
+    }
+
+    .ama-close-sidebar:hover {
+      background: var(--ama-border);
+    }
+
+    .ama-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .ama-history-group {
+      margin-bottom: 16px;
+    }
+
+    .ama-history-group-title {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ama-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .ama-history-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--ama-text);
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .ama-history-item-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Admin view: allow two lines for username:title format */
+    .ama-history-item-title strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    .ama-history-item:hover {
+      background: var(--ama-border);
+    }
+
+    .ama-history-item.active {
+      background: var(--ama-border);
+    }
+
+    /* Main Chat Area */
+    .ama-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    .ama-chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Welcome Screen */
+    .ama-welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .ama-welcome-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 24px;
+      opacity: 0.8;
+    }
+
+    .ama-greeting {
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--ama-text);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .ama-greeting-accent {
+      color: var(--ama-accent);
+    }
+
+    .ama-subgreeting {
+      font-size: 16px;
+      color: var(--ama-text-muted);
+      margin-bottom: 32px;
+    }
+
+    .ama-suggestions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      max-width: 680px;
+      width: 100%;
+    }
+
+    .ama-suggestion {
+      padding: 16px;
+      background: var(--ama-bg-secondary);
+      border: 1px solid var(--ama-border);
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .ama-suggestion:hover {
+      border-color: var(--ama-primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .ama-suggestion-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ama-text);
+      margin-bottom: 4px;
+    }
+
+    .ama-suggestion-desc {
+      font-size: 13px;
+      color: var(--ama-text-muted);
+    }
+
+    /* Messages */
+    .ama-messages {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .ama-message {
+      margin-bottom: 24px;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .ama-message-user {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .ama-message-user .ama-message-content {
+      background: var(--ama-primary);
+      color: white;
+      border-radius: 20px 20px 4px 20px;
+      max-width: 70%;
+    }
+
+    .ama-message-assistant {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .ama-message-assistant .ama-message-content {
+      background: var(--ama-bg-secondary);
+      border: 1px solid var(--ama-border);
+      border-radius: 4px 20px 20px 20px;
+      max-width: 85%;
+    }
+
+    .ama-message-content {
+      padding: 12px 16px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* Thinking indicator */
+    .ama-thinking {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, hsl(38, 92%, 95%), hsl(15, 85%, 95%));
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--ama-text-muted);
+      margin-bottom: 8px;
+      max-width: 85%;
+    }
+
+    .ama-thinking-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .ama-thinking-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--ama-accent);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .ama-thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+    .ama-thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    /* SQL Code Block */
+    .ama-sql-block {
+      background: hsl(220, 13%, 18%);
+      border-radius: 8px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+
+    .ama-sql-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: hsl(220, 13%, 15%);
+      border-bottom: 1px solid hsl(220, 13%, 25%);
+    }
+
+    .ama-sql-label {
+      font-size: 12px;
+      color: hsl(220, 13%, 60%);
+      font-weight: 500;
+    }
+
+    .ama-sql-copy {
+      padding: 4px 8px;
+      background: transparent;
+      border: 1px solid hsl(220, 13%, 30%);
+      border-radius: 4px;
+      color: hsl(220, 13%, 70%);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .ama-sql-copy:hover {
+      background: hsl(220, 13%, 25%);
+    }
+
+    .ama-sql-code {
+      padding: 12px;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      font-size: 13px;
+      color: hsl(220, 13%, 85%);
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Chart Container - Beautiful styling like retention */
+    .ama-chart-container {
+      background: white;
+      border: 1px solid var(--ama-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 16px 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .ama-chart-container:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .ama-chart-wrapper {
+      position: relative;
+      height: 320px;
+      width: 100%;
+    }
+
+    .ama-chart-canvas {
+      max-height: 320px;
+    }
+
+    /* Data Table - Beautiful styling like retention heatmap */
+    .ama-table-container {
+      overflow-x: auto;
+      margin: 16px 0;
+      border: 1px solid var(--ama-border);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .ama-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+
+    .ama-table th {
+      background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid var(--ama-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .ama-table th:first-child {
+      border-top-left-radius: 11px;
+    }
+
+    .ama-table th:last-child {
+      border-top-right-radius: 11px;
+    }
+
+    .ama-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--ama-border-light);
+      color: var(--ama-text);
+      transition: background 0.15s;
+    }
+
+    .ama-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ama-table tr:last-child td:first-child {
+      border-bottom-left-radius: 11px;
+    }
+
+    .ama-table tr:last-child td:last-child {
+      border-bottom-right-radius: 11px;
+    }
+
+    .ama-table tr:hover td {
+      background: #f0f9ff;
+    }
+
+    /* Numeric values in tables - right aligned and monospace */
+    .ama-table td:not(:first-child) {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Input Area */
+    .ama-input-area {
+      padding: 16px 24px 24px;
+      background: var(--ama-bg);
+      border-top: 1px solid var(--ama-border-light);
+    }
+
+    .ama-input-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .ama-input-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      padding: 12px 16px;
+      background: white;
+      border: 1px solid var(--ama-border);
+      border-radius: 24px;
+      box-shadow: 0 4px 24px -4px rgba(29, 32, 37, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .ama-input-container:focus-within {
+      border-color: var(--ama-primary);
+      box-shadow: 0 4px 32px -4px rgba(29, 32, 37, 0.12);
+    }
+
+    .ama-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      line-height: 1.5;
+      resize: none;
+      max-height: 150px;
+      min-height: 24px;
+      color: var(--ama-text);
+      background: transparent;
+      padding: 6px 0;
+      margin: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .ama-input::placeholder {
+      color: var(--ama-text-muted);
+    }
+
+    .ama-send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--ama-primary);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .ama-send-btn:hover:not(:disabled) {
+      background: var(--ama-primary-hover);
+      transform: scale(1.05);
+    }
+
+    .ama-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .ama-send-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: white;
+    }
+
+    .ama-send-btn.stop-btn {
+      background: var(--ama-error);
+    }
+
+    .ama-send-btn.stop-btn:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    /* Delete button in chat history */
+    .ama-history-delete {
+      padding: 4px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.15s;
+      color: var(--ama-text-muted);
+      flex-shrink: 0;
+    }
+
+    .ama-history-item:hover .ama-history-delete {
+      opacity: 1;
+    }
+
+    .ama-history-delete:hover {
+      background: var(--ama-error);
+      color: white;
+    }
+
+    .ama-history-delete svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Toggle sidebar button */
+    .ama-toggle-sidebar {
+      position: fixed;
+      left: 16px;
+      top: 80px;
+      z-index: 30;
+      padding: 10px;
+      background: white;
+      border: 1px solid var(--ama-border);
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+    }
+
+    .ama-toggle-sidebar:hover {
+      background: var(--ama-bg-secondary);
+    }
+
+    .ama-toggle-sidebar svg {
+      width: 20px;
+      height: 20px;
+      color: var(--ama-text);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .ama-suggestions {
+        grid-template-columns: 1fr;
+      }
+
+      .ama-message-user .ama-message-content,
+      .ama-message-assistant .ama-message-content {
+        max-width: 90%;
+      }
+    }
+
+    /* Loading state */
+    .ama-loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      color: var(--ama-text-muted);
+    }
+
+    .ama-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--ama-border);
+      border-top-color: var(--ama-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-background">
+  <!-- Navigation -->
+  <%- include('partials/navigation', { currentPage: 'ama', username: username, userRole: userRole }) %>
+
+  <div class="ama-container">
+    <!-- Toggle Sidebar Button -->
+    <button class="ama-toggle-sidebar" id="toggleSidebar" title="Chat History">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="ama-sidebar" id="sidebar">
+      <div class="ama-sidebar-header">
+        <% if (!locals.isAdminView) { %>
+        <button class="ama-new-chat-btn" id="newChatBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          New Chat
+        </button>
+        <% } else { %>
+        <span style="font-weight: 600; color: var(--ama-text);">All User Chats</span>
+        <% } %>
+        <button class="ama-close-sidebar" id="closeSidebar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="ama-history" id="chatHistory">
+        <!-- Chat history will be populated dynamically -->
+        <div class="ama-history-group">
+          <div class="ama-history-group-title">Today</div>
+          <div class="ama-history-item" data-id="loading">Loading conversations...</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="ama-main">
+      <div class="ama-chat-container" id="chatContainer">
+        <!-- Welcome Screen (shown when no active conversation) -->
+        <div class="ama-welcome" id="welcomeScreen">
+          <img src="/images/rumi-logo.png" alt="Rumi" class="ama-welcome-icon">
+          <% if (locals.isAdminView) { %>
+          <h1 class="ama-greeting">
+            <span class="ama-greeting-accent">AMA Chats</span> Admin View
+          </h1>
+          <p class="ama-subgreeting">View all user conversations from the sidebar. This is a read-only view.</p>
+          <% } else { %>
+          <h1 class="ama-greeting">
+            <span class="ama-greeting-accent"><%= username %></span> <span id="greetingVariation">Returns!</span>
+          </h1>
+          <p class="ama-subgreeting">How can Rumi help you analyze your data today?</p>
+          <% } %>
+
+          <% if (!locals.isAdminView) { %>
+          <div class="ama-suggestions">
+            <div class="ama-suggestion" data-query="How many teachers registered this week?">
+              <div class="ama-suggestion-title">Registration Stats</div>
+              <div class="ama-suggestion-desc">See how many teachers joined recently</div>
+            </div>
+            <div class="ama-suggestion" data-query="Show me coaching session completion rates by status">
+              <div class="ama-suggestion-title">Coaching Overview</div>
+              <div class="ama-suggestion-desc">Analyze session outcomes and completion</div>
+            </div>
+            <div class="ama-suggestion" data-query="What are the average WCPM scores by grade level?">
+              <div class="ama-suggestion-title">Reading Performance</div>
+              <div class="ama-suggestion-desc">Check reading assessment metrics</div>
+            </div>
+            <div class="ama-suggestion" data-query="Show me the top 10 most active teachers">
+              <div class="ama-suggestion-title">Top Teachers</div>
+              <div class="ama-suggestion-desc">Find your most engaged users</div>
+            </div>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Messages Container (hidden initially) -->
+        <div class="ama-messages" id="messagesContainer" style="display: none;">
+          <!-- Messages will be rendered here -->
+        </div>
+      </div>
+
+      <!-- Input Area (hidden for admin view - read only) -->
+      <% if (!locals.isAdminView) { %>
+      <div class="ama-input-area">
+        <div class="ama-input-wrapper">
+          <div class="ama-input-container">
+            <textarea
+              class="ama-input"
+              id="messageInput"
+              placeholder="Ask anything about your data..."
+              rows="1"
+            ></textarea>
+            <button class="ama-send-btn" id="sendBtn" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <% } %>
+    </main>
+  </div>
+
+  <script>
+    // AMA Chat Application
+    (function() {
+      // Admin view flag (passed from server)
+      const isAdminView = <%= locals.isAdminView ? 'true' : 'false' %>;
+
+      // State
+      let currentConversationId = null;
+      let isProcessing = false;
+      let conversations = [];
+      let abortController = null;
+      const REQUEST_TIMEOUT = 120000; // 2 minute timeout
+
+      // DOM Elements
+      const sidebar = document.getElementById('sidebar');
+      const toggleSidebarBtn = document.getElementById('toggleSidebar');
+      const closeSidebarBtn = document.getElementById('closeSidebar');
+      const newChatBtn = document.getElementById('newChatBtn'); // null in admin view
+      const chatHistory = document.getElementById('chatHistory');
+      const welcomeScreen = document.getElementById('welcomeScreen');
+      const messagesContainer = document.getElementById('messagesContainer');
+      const chatContainer = document.getElementById('chatContainer');
+      const messageInput = document.getElementById('messageInput'); // null in admin view
+      const sendBtn = document.getElementById('sendBtn'); // null in admin view
+      const suggestions = document.querySelectorAll('.ama-suggestion'); // empty in admin view
+
+      // Randomize greeting on page load
+      const greetings = [
+        'Returns! 👋',
+        'is back! 🎉',
+        'Welcome back! ✨',
+        'Good to see you! 😊',
+        'Ready to explore? 🚀',
+        'Let\'s dive in! 📊',
+        'What shall we discover? 🔍',
+        'Analytics time! 📈'
+      ];
+      const greetingEl = document.getElementById('greetingVariation');
+      if (greetingEl) {
+        greetingEl.textContent = greetings[Math.floor(Math.random() * greetings.length)];
+      }
+
+      // Toggle sidebar
+      toggleSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+
+      closeSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+      });
+
+      // Auto-resize textarea (only if not admin view)
+      if (messageInput) {
+        messageInput.addEventListener('input', () => {
+          messageInput.style.height = 'auto';
+          messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
+          sendBtn.disabled = !messageInput.value.trim() || isProcessing;
+        });
+
+        // Handle Enter key (Shift+Enter for new line)
+        messageInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendBtn.disabled) {
+              sendMessage();
+            }
+          }
+        });
+      }
+
+      // Send button click - toggle between send and stop (only if not admin view)
+      if (sendBtn) {
+        sendBtn.addEventListener('click', () => {
+          if (isProcessing) {
+            stopRequest();
+          } else {
+            sendMessage();
+          }
+        });
+      }
+
+      // Stop ongoing request
+      function stopRequest() {
+        if (abortController) {
+          abortController.abort();
+          abortController = null;
+        }
+        isProcessing = false;
+        updateSendButton();
+      }
+
+      // Update send button state (send vs stop)
+      function updateSendButton() {
+        if (isProcessing) {
+          sendBtn.classList.add('stop-btn');
+          sendBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="1"/>
+            </svg>
+          `;
+          sendBtn.disabled = false;
+          sendBtn.title = 'Stop query';
+        } else {
+          sendBtn.classList.remove('stop-btn');
+          sendBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+          `;
+          sendBtn.disabled = !messageInput.value.trim();
+          sendBtn.title = 'Send message';
+        }
+      }
+
+      // Suggestion clicks
+      suggestions.forEach(suggestion => {
+        suggestion.addEventListener('click', () => {
+          messageInput.value = suggestion.dataset.query;
+          messageInput.dispatchEvent(new Event('input'));
+          sendMessage();
+        });
+      });
+
+      // New chat button (only if not admin view)
+      if (newChatBtn) {
+        newChatBtn.addEventListener('click', async () => {
+          await createNewConversation();
+          sidebar.classList.remove('open');
+        });
+      }
+
+      // Load conversations on page load
+      loadConversations();
+
+      // Send message
+      async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message || isProcessing) return;
+
+        isProcessing = true;
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+        updateSendButton();
+
+        // Hide welcome, show messages
+        welcomeScreen.style.display = 'none';
+        messagesContainer.style.display = 'block';
+
+        // Create conversation if needed (don't reset view - we're about to send a message)
+        if (!currentConversationId) {
+          await createNewConversation(false);
+        }
+
+        // Add user message
+        addMessage('user', message);
+
+        // Add thinking indicator
+        const thinkingEl = addThinkingIndicator();
+
+        // Create abort controller for this request
+        abortController = new AbortController();
+        const timeoutId = setTimeout(() => {
+          if (abortController) {
+            abortController.abort();
+            console.warn('Request timed out after', REQUEST_TIMEOUT / 1000, 'seconds');
+          }
+        }, REQUEST_TIMEOUT);
+
+        try {
+          // Send to backend with SSE
+          const response = await fetch('/observability/ama/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message,
+              conversationId: currentConversationId
+            }),
+            signal: abortController.signal
+          });
+
+          if (!response.ok) throw new Error('Failed to send message');
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let assistantMessage = '';
+          let sqlQuery = null;
+          let chartType = null;
+          let chartData = null;
+          let resultData = null;
+          let chartImageUrl = null;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+
+                  switch (data.type) {
+                    case 'thinking':
+                      updateThinkingIndicator(thinkingEl, data.content);
+                      break;
+
+                    case 'result':
+                      assistantMessage = data.content;
+                      sqlQuery = data.sql;
+                      chartType = data.chartType;
+                      resultData = data.data;
+                      chartImageUrl = data.chartImageUrl;
+                      break;
+
+                    case 'text':
+                      assistantMessage = data.content;
+                      break;
+
+                    case 'error':
+                      // Error received - show it immediately and stop
+                      thinkingEl.remove();
+                      addMessage('assistant', data.content || 'An error occurred while processing your query.');
+                      break;
+
+                    case 'done':
+                      // Remove thinking indicator
+                      thinkingEl.remove();
+                      // Add assistant message with data and chart image
+                      addAssistantMessage(assistantMessage, sqlQuery, chartType, resultData, chartImageUrl);
+                      break;
+                  }
+                } catch (e) {
+                  // Partial JSON, continue
+                }
+              }
+            }
+          }
+        } catch (error) {
+          thinkingEl.remove();
+          if (error.name === 'AbortError') {
+            addMessage('assistant', 'Query was stopped. Feel free to try another question.');
+          } else {
+            addMessage('assistant', 'Sorry, an error occurred. Please try again.');
+            console.error('Chat error:', error);
+          }
+        } finally {
+          clearTimeout(timeoutId);
+          abortController = null;
+          isProcessing = false;
+          updateSendButton();
+        }
+      }
+
+      // Add a message to the chat
+      function addMessage(role, content) {
+        const messageEl = document.createElement('div');
+        messageEl.className = `ama-message ama-message-${role}`;
+        messageEl.innerHTML = `<div class="ama-message-content">${escapeHtml(content)}</div>`;
+        messagesContainer.appendChild(messageEl);
+        scrollToBottom();
+      }
+
+      // Add assistant message with SQL and chart image
+      function addAssistantMessage(content, sql, chartType, data, chartImageUrl) {
+        const messageEl = document.createElement('div');
+        messageEl.className = 'ama-message ama-message-assistant';
+
+        // Use markdown renderer for conversational responses (emojis, bold, bullets, etc.)
+        let html = `<div class="ama-message-content">${renderMarkdown(content)}</div>`;
+
+        // Add SQL block if present
+        if (sql) {
+          html += `
+            <div class="ama-sql-block">
+              <div class="ama-sql-header">
+                <span class="ama-sql-label">SQL Query</span>
+                <button class="ama-sql-copy" onclick="copyToClipboard(this, '${escapeHtml(sql)}')">Copy</button>
+              </div>
+              <pre class="ama-sql-code">${escapeHtml(sql)}</pre>
+            </div>
+          `;
+        }
+
+        // Add chart image or table if data present
+        if (data && data.length > 0) {
+          if (chartImageUrl) {
+            // GPT-4o generated chart image
+            html += `
+              <div class="ama-chart-container">
+                <div class="ama-chart-wrapper" style="padding: 16px;">
+                  <img src="${chartImageUrl}" alt="Chart visualization" style="max-width: 100%; height: auto; border-radius: 8px;" />
+                </div>
+              </div>
+            `;
+            messageEl.innerHTML = html;
+            messagesContainer.appendChild(messageEl);
+          } else if (chartType && chartType !== 'table' && chartType !== 'none') {
+            // Fallback to Chart.js if no image generated
+            const chartId = 'chart-' + Date.now();
+            html += `
+              <div class="ama-chart-container">
+                <div class="ama-chart-wrapper">
+                  <canvas id="${chartId}" class="ama-chart-canvas"></canvas>
+                </div>
+              </div>
+            `;
+            messageEl.innerHTML = html;
+            messagesContainer.appendChild(messageEl);
+
+            // Render chart after DOM update
+            setTimeout(() => renderChart(chartId, chartType, data), 100);
+          } else {
+            // Render as table
+            html += renderTable(data);
+            messageEl.innerHTML = html;
+            messagesContainer.appendChild(messageEl);
+          }
+        } else {
+          messageEl.innerHTML = html;
+          messagesContainer.appendChild(messageEl);
+        }
+
+        scrollToBottom();
+      }
+
+      // Add thinking indicator
+      function addThinkingIndicator() {
+        const el = document.createElement('div');
+        el.className = 'ama-message ama-message-assistant';
+        el.innerHTML = `
+          <div class="ama-thinking">
+            <div class="ama-thinking-dots">
+              <div class="ama-thinking-dot"></div>
+              <div class="ama-thinking-dot"></div>
+              <div class="ama-thinking-dot"></div>
+            </div>
+            <span class="ama-thinking-text">Thinking...</span>
+          </div>
+        `;
+        messagesContainer.appendChild(el);
+        scrollToBottom();
+        return el;
+      }
+
+      // Update thinking indicator text
+      function updateThinkingIndicator(el, text) {
+        const textEl = el.querySelector('.ama-thinking-text');
+        if (textEl) {
+          textEl.textContent = text;
+        }
+      }
+
+      // Render chart using Chart.js - Beautiful styling like retention page
+      function renderChart(canvasId, type, data) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas || !data || data.length === 0) return;
+
+        const keys = Object.keys(data[0]);
+        const labelKey = keys[0];
+        const valueKey = keys[keys.length - 1];
+
+        const labels = data.map((row, i) => row[labelKey] || `Item ${i + 1}`);
+        const values = data.map(row => parseFloat(row[valueKey]) || 0);
+
+        // Beautiful color palette - vibrant and professional
+        const colorPalette = [
+          '#10B981', // Emerald green
+          '#3B82F6', // Blue
+          '#F59E0B', // Amber
+          '#EF4444', // Red
+          '#8B5CF6', // Purple
+          '#06B6D4', // Cyan
+          '#EC4899', // Pink
+          '#F97316', // Orange
+          '#6366F1', // Indigo
+          '#14B8A6', // Teal
+        ];
+
+        // Generate colors for data
+        const backgroundColors = labels.map((_, i) => colorPalette[i % colorPalette.length]);
+        const hoverColors = backgroundColors.map(c => c + 'dd'); // Slightly transparent on hover
+
+        const chartConfig = {
+          type: type === 'doughnut' ? 'doughnut' : type,
+          data: {
+            labels,
+            datasets: [{
+              label: valueKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+              data: values,
+              backgroundColor: type === 'line' ? colorPalette[0] + '20' : backgroundColors,
+              borderColor: type === 'line' ? colorPalette[0] : (type === 'bar' ? backgroundColors : 'white'),
+              borderWidth: type === 'line' ? 3 : (type === 'bar' ? 0 : 2),
+              hoverBackgroundColor: hoverColors,
+              fill: type === 'line',
+              tension: 0.4, // Smooth lines
+              pointRadius: type === 'line' ? 4 : 0,
+              pointHoverRadius: type === 'line' ? 6 : 0,
+              pointBackgroundColor: type === 'line' ? colorPalette[0] : undefined,
+              pointBorderColor: 'white',
+              pointBorderWidth: 2,
+              borderRadius: type === 'bar' ? 6 : 0, // Rounded bars
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            plugins: {
+              legend: {
+                display: type === 'pie' || type === 'doughnut',
+                position: 'bottom',
+                labels: {
+                  usePointStyle: true,
+                  padding: 20,
+                  font: {
+                    size: 12,
+                    family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                  }
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(29, 32, 37, 0.95)',
+                titleFont: { size: 13, weight: 'bold' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) label += ': ';
+                    const value = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
+                    // Format number with commas
+                    label += typeof value === 'number' ? value.toLocaleString() : value;
+                    return label;
+                  }
+                }
+              }
+            },
+            scales: type === 'pie' || type === 'doughnut' ? {} : {
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)',
+                  drawBorder: false,
+                },
+                ticks: {
+                  font: { size: 11 },
+                  color: '#6b7280',
+                  padding: 8,
+                  callback: function(value) {
+                    return value.toLocaleString();
+                  }
+                },
+                title: {
+                  display: true,
+                  text: valueKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                  font: { size: 12, weight: '600' },
+                  color: '#374151'
+                }
+              },
+              x: {
+                grid: {
+                  display: false,
+                },
+                ticks: {
+                  font: { size: 11 },
+                  color: '#6b7280',
+                  maxRotation: 45,
+                  minRotation: 0,
+                },
+                title: {
+                  display: true,
+                  text: labelKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                  font: { size: 12, weight: '600' },
+                  color: '#374151'
+                }
+              }
+            },
+            animation: {
+              duration: 750,
+              easing: 'easeOutQuart'
+            }
+          }
+        };
+
+        new Chart(canvas, chartConfig);
+      }
+
+      // Render data as table
+      function renderTable(data) {
+        if (!data || data.length === 0) return '';
+
+        const headers = Object.keys(data[0]);
+        let html = '<div class="ama-table-container"><table class="ama-table"><thead><tr>';
+
+        headers.forEach(h => {
+          html += `<th>${escapeHtml(h)}</th>`;
+        });
+
+        html += '</tr></thead><tbody>';
+
+        data.slice(0, 100).forEach(row => {
+          html += '<tr>';
+          headers.forEach(h => {
+            let value = row[h];
+            if (value === null || value === undefined) value = '-';
+            if (typeof value === 'object') value = JSON.stringify(value);
+            html += `<td>${escapeHtml(String(value))}</td>`;
+          });
+          html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+
+        if (data.length > 100) {
+          html += `<p style="color: var(--ama-text-muted); font-size: 12px; margin-top: 8px;">Showing first 100 of ${data.length} rows</p>`;
+        }
+
+        return html;
+      }
+
+      // Create new conversation
+      // resetView: true = show welcome screen (for "New Chat" button)
+      //            false = keep current view (for sending first message)
+      async function createNewConversation(resetView = true) {
+        try {
+          const response = await fetch('/observability/ama/conversations', {
+            method: 'POST'
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            currentConversationId = data.conversation.id;
+
+            if (resetView) {
+              // Called from "New Chat" button - show welcome screen
+              messagesContainer.innerHTML = '';
+              welcomeScreen.style.display = 'flex';
+              messagesContainer.style.display = 'none';
+            }
+            // Always refresh sidebar to show new conversation
+            await loadConversations();
+          }
+        } catch (error) {
+          console.error('Failed to create conversation:', error);
+        }
+      }
+
+      // Load conversations
+      async function loadConversations() {
+        try {
+          // Use different endpoint for admin view (all users' conversations)
+          const endpoint = isAdminView
+            ? '/observability/ama-chats/conversations'
+            : '/observability/ama/conversations';
+          const response = await fetch(endpoint);
+          const data = await response.json();
+
+          if (data.success) {
+            conversations = data.conversations || [];
+            renderChatHistory();
+          }
+        } catch (error) {
+          console.error('Failed to load conversations:', error);
+        }
+      }
+
+      // Render chat history sidebar
+      function renderChatHistory() {
+        const grouped = groupConversationsByDate(conversations);
+        let html = '';
+
+        for (const [group, convs] of Object.entries(grouped)) {
+          html += `
+            <div class="ama-history-group">
+              <div class="ama-history-group-title">${group}</div>
+              ${convs.map(c => {
+                // For admin view, show username with conversation title
+                const displayTitle = isAdminView && c.username
+                  ? `<strong style="color: var(--ama-accent);">${escapeHtml(c.username)}</strong>: ${escapeHtml(c.title || 'New Conversation')}`
+                  : escapeHtml(c.title || 'New Conversation');
+
+                // Hide delete button in admin view (read-only)
+                const deleteBtn = isAdminView ? '' : `
+                  <button class="ama-history-delete" onclick="event.stopPropagation(); deleteConversation('${c.id}')" title="Delete chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                `;
+
+                return `
+                <div class="ama-history-item ${c.id === currentConversationId ? 'active' : ''}"
+                     data-id="${c.id}">
+                  <span class="ama-history-item-title" onclick="loadConversation('${c.id}')">
+                    ${displayTitle}
+                  </span>
+                  ${deleteBtn}
+                </div>
+              `}).join('')}
+            </div>
+          `;
+        }
+
+        if (conversations.length === 0) {
+          html = `
+            <div class="ama-history-group">
+              <div class="ama-history-group-title">${isAdminView ? 'No user conversations yet' : 'No conversations yet'}</div>
+              <div class="ama-history-item" style="color: var(--ama-text-muted)">
+                ${isAdminView ? 'Users will appear here once they start chatting' : 'Start a new chat to begin'}
+              </div>
+            </div>
+          `;
+        }
+
+        chatHistory.innerHTML = html;
+      }
+
+      // Delete a conversation
+      window.deleteConversation = async function(conversationId) {
+        if (!confirm('Are you sure you want to delete this chat?')) return;
+
+        try {
+          const response = await fetch(`/observability/ama/conversations/${conversationId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            // If we deleted the current conversation, reset the view
+            if (conversationId === currentConversationId) {
+              currentConversationId = null;
+              messagesContainer.innerHTML = '';
+              welcomeScreen.style.display = 'flex';
+              messagesContainer.style.display = 'none';
+            }
+            // Reload conversations
+            await loadConversations();
+          } else {
+            alert('Failed to delete chat. Please try again.');
+          }
+        } catch (error) {
+          console.error('Failed to delete conversation:', error);
+          alert('Failed to delete chat. Please try again.');
+        }
+      };
+
+      // Group conversations by date
+      function groupConversationsByDate(convs) {
+        const groups = { Today: [], Yesterday: [], 'Last 7 Days': [], Older: [] };
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const lastWeek = new Date(today);
+        lastWeek.setDate(lastWeek.getDate() - 7);
+
+        convs.forEach(c => {
+          const date = new Date(c.updated_at);
+          date.setHours(0, 0, 0, 0);
+
+          if (date >= today) {
+            groups.Today.push(c);
+          } else if (date >= yesterday) {
+            groups.Yesterday.push(c);
+          } else if (date >= lastWeek) {
+            groups['Last 7 Days'].push(c);
+          } else {
+            groups.Older.push(c);
+          }
+        });
+
+        // Remove empty groups
+        return Object.fromEntries(
+          Object.entries(groups).filter(([_, v]) => v.length > 0)
+        );
+      }
+
+      // Load a specific conversation
+      window.loadConversation = async function(conversationId) {
+        try {
+          // Use different endpoint for admin view
+          const endpoint = isAdminView
+            ? `/observability/ama-chats/${conversationId}/messages`
+            : `/observability/ama/conversations/${conversationId}/messages`;
+          const response = await fetch(endpoint);
+          const data = await response.json();
+
+          if (data.success) {
+            currentConversationId = conversationId;
+            welcomeScreen.style.display = 'none';
+            messagesContainer.style.display = 'block';
+            messagesContainer.innerHTML = '';
+
+            data.messages.forEach(msg => {
+              if (msg.role === 'user') {
+                addMessage('user', msg.content);
+              } else {
+                addAssistantMessage(msg.content, msg.sql_query, msg.chart_type, msg.query_result, msg.chart_image_url);
+              }
+            });
+
+            renderChatHistory();
+            sidebar.classList.remove('open');
+          }
+        } catch (error) {
+          console.error('Failed to load conversation:', error);
+        }
+      };
+
+      // Helper functions
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Simple markdown renderer for assistant messages
+      function renderMarkdown(text) {
+        if (!text) return '';
+
+        // Escape HTML first for security
+        let html = escapeHtml(text);
+
+        // Bold: **text** or __text__
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+        // Italic: *text* or _text_
+        html = html.replace(/\*([^\*\n]+)\*/g, '<em>$1</em>');
+        html = html.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+
+        // Inline code: `code`
+        html = html.replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:13px;">$1</code>');
+
+        // Headers: ## Header
+        html = html.replace(/^### (.+)$/gm, '<h4 style="margin:12px 0 8px;font-size:15px;font-weight:600;">$1</h4>');
+        html = html.replace(/^## (.+)$/gm, '<h3 style="margin:14px 0 8px;font-size:16px;font-weight:600;">$1</h3>');
+        html = html.replace(/^# (.+)$/gm, '<h2 style="margin:16px 0 10px;font-size:18px;font-weight:600;">$1</h2>');
+
+        // Bullet points: - item or * item
+        html = html.replace(/^[\-\*] (.+)$/gm, '<li style="margin-left:20px;list-style:disc;">$1</li>');
+
+        // Numbered lists: 1. item
+        html = html.replace(/^\d+\. (.+)$/gm, '<li style="margin-left:20px;list-style:decimal;">$1</li>');
+
+        // Line breaks
+        html = html.replace(/\n/g, '<br>');
+
+        // Clean up multiple <br> tags
+        html = html.replace(/(<br>){3,}/g, '<br><br>');
+
+        return html;
+      }
+
+      function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      window.copyToClipboard = function(btn, text) {
+        navigator.clipboard.writeText(text).then(() => {
+          const originalText = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => btn.textContent = originalText, 2000);
+        });
+      };
+    })();
+  </script>
+</body>
+</html>

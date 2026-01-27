@@ -1,0 +1,207 @@
+{
+  "_comment": "WhatsApp Flow for Attendance Class Setup - Endpoint-based with Student Entry Loops",
+  "_instructions": [
+    "1. Copy this JSON to Meta Business Manager > WhatsApp Manager > Flows",
+    "2. Flow ID (staging): [TO BE ASSIGNED]",
+    "3. Flow ID (production): [TO BE ASSIGNED]",
+    "4. IMPORTANT: Update the flow in Meta Business Manager - this file is just reference",
+    "5. Screen 1 (CLASS_INFO): Collects grade, section, frequency (academic year auto-computed)",
+    "6. Screen 2 (ADD_STUDENT): First name + last name with loop via endpoint",
+    "7. Screen 3 (SUCCESS): Shows completion message"
+  ],
+  "_changelog": [
+    "v1.0 (Jan 24, 2026): Initial version for attendance feature (bd-054)",
+    "v1.1 (Jan 26, 2026): Renamed 'Class Name' to 'Grade' (bd-213), removed academic year dropdown - now auto-computed (bd-214)",
+    "v2.0 (Jan 26, 2026): Endpoint-based flow with student entry loops (bd-215)"
+  ],
+  "_bead": "bd-054, bd-213, bd-214, bd-215",
+
+  "version": "6.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "CLASS_INFO": ["ADD_STUDENT"],
+    "ADD_STUDENT": ["SUCCESS"],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "CLASS_INFO",
+      "title": "Class Setup",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "class_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Set up your class for attendance"
+              },
+              {
+                "type": "TextInput",
+                "name": "class_name",
+                "label": "Grade",
+                "required": true,
+                "input-type": "text",
+                "helper-text": "e.g., 4, 5, KG-II, Nursery"
+              },
+              {
+                "type": "TextInput",
+                "name": "section",
+                "label": "Section (optional)",
+                "required": false,
+                "input-type": "text",
+                "helper-text": "e.g., A, B, Blue, Morning"
+              },
+              {
+                "type": "TextCaption",
+                "text": "How often do you take attendance?"
+              },
+              {
+                "type": "Dropdown",
+                "name": "attendance_frequency",
+                "label": "Frequency",
+                "required": true,
+                "data-source": [
+                  { "id": "once", "title": "Once per day" },
+                  { "id": "twice", "title": "Twice (morning & afternoon)" }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Next: Add Students",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "class_name": "${form.class_name}",
+                    "section": "${form.section}",
+                    "attendance_frequency": "${form.attendance_frequency}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ADD_STUDENT",
+      "title": "Add Students",
+      "refresh_on_back": true,
+      "data": {
+        "list_id": { "type": "string", "__example__": "uuid-123" },
+        "class_display": { "type": "string", "__example__": "5 - A" },
+        "student_count": { "type": "number", "__example__": 2 },
+        "student_number": { "type": "number", "__example__": 3 },
+        "students_added": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "name": "1. Zara Abdul" },
+            { "name": "2. Ahmed Khan" }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "student_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Add Student"
+              },
+              {
+                "type": "TextBody",
+                "text": "Class: ${data.class_display} | Students: ${data.student_count}"
+              },
+              {
+                "type": "TextInput",
+                "name": "first_name",
+                "label": "First Name",
+                "required": false,
+                "input-type": "text",
+                "helper-text": "Student's first name (leave empty to finish)"
+              },
+              {
+                "type": "TextInput",
+                "name": "last_name",
+                "label": "Last Name / Father's Name",
+                "required": false,
+                "input-type": "text",
+                "helper-text": "Optional: Family or father's name"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "action",
+                "label": "What would you like to do?",
+                "required": true,
+                "data-source": [
+                  { "id": "add", "title": "Add this student & continue" },
+                  { "id": "done", "title": "Finish setup (no more students)" }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "first_name": "${form.first_name}",
+                    "last_name": "${form.last_name}",
+                    "_action": "${form.action}",
+                    "_list_id": "${data.list_id}",
+                    "_class_display": "${data.class_display}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Setup Complete",
+      "terminal": true,
+      "data": {
+        "class_display": { "type": "string", "__example__": "5 - A" },
+        "student_count": { "type": "number", "__example__": 25 }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "✅ Class Setup Complete!"
+          },
+          {
+            "type": "TextBody",
+            "text": "Your class ${data.class_display} has been created with ${data.student_count} students."
+          },
+          {
+            "type": "TextBody",
+            "text": "You can now start taking attendance by saying 'attendance' or 'حاضری'."
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "name": "digital-coach-dashboard",
+  "version": "2.1.0",
+  "description": "Admin Dashboard for Digital Coach WhatsApp Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node cluster.js",
+    "start:single": "CLUSTER_ENABLED=false node index.js",
+    "dev": "CLUSTER_ENABLED=false nodemon index.js",
+    "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/main.css --minify",
+    "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/main.css --watch",
+    "dev:all": "npm run watch:css & npm run dev",
+    "test": "./run-tests.sh",
+    "test:watch": "./run-tests.sh --watch",
+    "test:coverage": "./run-tests.sh --coverage"
+  },
+  "keywords": [
+    "whatsapp",
+    "admin",
+    "dashboard",
+    "analytics"
+  ],
+  "author": "Taleemabad",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@aws-sdk/client-s3": "^3.933.0",
+    "@aws-sdk/client-sqs": "^3.971.0",
+    "@aws-sdk/s3-request-presigner": "^3.958.0",
+    "@supabase/supabase-js": "^2.39.3",
+    "axios": "^1.13.2",
+    "bcryptjs": "^2.4.3",
+    "connect-redis": "^7.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-session": "^1.17.3",
+    "express-validator": "^7.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^7.0.10",
+    "openai": "^4.68.0",
+    "pdfkit": "^0.15.2",
+    "pg": "^8.16.3",
+    "resend": "^6.4.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "ioredis": "^5.9.1",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "postcss": "^8.4.32",
+    "redis": "^5.10.0",
+    "tailwindcss": "^3.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

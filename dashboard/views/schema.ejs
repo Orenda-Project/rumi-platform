@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Database Schema - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    .table-card {
+      transition: all 0.3s ease;
+    }
+    .table-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+    .mermaid {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .field-list {
+      display: none;
+    }
+    .field-list.active {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-background">
+
+  <!-- Navigation -->
+  <%- include('partials/navigation', { currentPage: 'schema', username: username, userRole: userRole }) %>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+
+      <!-- Header -->
+      <div class="mb-8">
+        <h2 class="text-2xl font-light text-foreground">Database Schema</h2>
+        <p class="text-muted-foreground mt-1">40 tables across 6 categories | 541 columns | 9 languages supported</p>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="card-primary px-4 py-4 text-center">
+          <dd class="text-3xl font-light text-foreground">40</dd>
+          <dt class="text-sm text-muted-foreground">Tables</dt>
+        </div>
+        <div class="card-primary px-4 py-4 text-center">
+          <dd class="text-3xl font-light text-primary">6</dd>
+          <dt class="text-sm text-muted-foreground">Categories</dt>
+        </div>
+        <div class="card-primary px-4 py-4 text-center">
+          <dd class="text-3xl font-light text-accent">541</dd>
+          <dt class="text-sm text-muted-foreground">Columns</dt>
+        </div>
+        <div class="card-primary px-4 py-4 text-center">
+          <dd class="text-3xl font-light" style="color: hsl(var(--success));">9</dd>
+          <dt class="text-sm text-muted-foreground">Languages</dt>
+        </div>
+      </div>
+
+      <!-- Category Navigation -->
+      <div class="flex flex-wrap gap-2 mb-8">
+        <a href="#core" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition">Core (5)</a>
+        <a href="#features" class="px-4 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition">Features (12)</a>
+        <a href="#analytics" class="px-4 py-2 rounded-lg text-sm font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition">Analytics (6)</a>
+        <a href="#funnel" class="px-4 py-2 rounded-lg text-sm font-medium bg-cyan-100 text-cyan-700 hover:bg-cyan-200 transition">Funnel (3)</a>
+        <a href="#qa" class="px-4 py-2 rounded-lg text-sm font-medium bg-rose-100 text-rose-700 hover:bg-rose-200 transition">QA (3)</a>
+        <a href="#system" class="px-4 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition">System (11)</a>
+      </div>
+
+      <!-- Entity Relationship Diagram -->
+      <div class="card-primary p-6 mb-8">
+        <h3 class="text-lg font-medium text-foreground mb-4">Entity Relationship Diagram</h3>
+        <div class="mermaid">
+erDiagram
+    USERS ||--o{ CONVERSATIONS : "sends messages"
+    USERS ||--o{ CHAT_SESSIONS : "has sessions"
+    USERS ||--o{ LESSON_PLANS : "generates"
+    USERS ||--o{ LESSON_PLAN_REQUESTS : "requests"
+    USERS ||--o{ COACHING_SESSIONS : "completes"
+    USERS ||--o{ COACHING_JOBS : "queues"
+    USERS ||--o{ READING_ASSESSMENTS : "conducts"
+    USERS ||--o{ VIDEO_REQUESTS : "requests"
+    USERS ||--o{ AMA_CONVERSATIONS : "asks questions"
+    USERS ||--o{ TEACHER_FACTS : "learns about"
+    USERS ||--o{ TEACHER_PROGRESS : "tracks"
+    USERS ||--o{ USER_FEATURE_FIRST_USE : "discovers features"
+
+    CONVERSATIONS }o--|| CHAT_SESSIONS : "belongs to"
+    AMA_CONVERSATIONS ||--o{ AMA_MESSAGES : "contains"
+    VIDEO_REQUESTS ||--o{ VIDEO_TASKS : "creates"
+
+    WEBSITE_VISITS ||--o{ CTA_CLICKS : "tracks"
+    CTA_CLICKS ||--o{ CHAT_STARTS : "leads to"
+    CHAT_STARTS }o--|| USERS : "becomes"
+
+    AB_TESTS ||--o{ AB_TEST_VARIANTS : "has"
+    AB_TESTS ||--o{ AB_TEST_EVENTS : "records"
+
+    USERS {
+        uuid id PK
+        string phone_number UK
+        string name
+        string school_name
+        string grades_taught
+        string subjects_taught
+        string language_preference
+        boolean registration_completed
+        timestamp created_at
+    }
+
+    CONVERSATIONS {
+        uuid id PK
+        uuid user_id FK
+        uuid session_id FK
+        text content
+        string role
+        string message_type
+        string language
+        timestamp created_at
+    }
+
+    LESSON_PLANS {
+        uuid id PK
+        uuid user_id FK
+        string topic
+        string grade
+        string subject
+        string gamma_url
+        string pdf_url
+        timestamp created_at
+    }
+
+    COACHING_SESSIONS {
+        uuid id PK
+        uuid user_id FK
+        string audio_url
+        text transcript_text
+        jsonb analysis_data
+        string report_pdf_url
+        string status
+        timestamp created_at
+    }
+
+    READING_ASSESSMENTS {
+        uuid id PK
+        uuid user_id FK
+        string student_name
+        integer grade_level
+        string language
+        integer wcpm
+        decimal accuracy
+        string benchmark_status
+        timestamp created_at
+    }
+
+    VIDEO_REQUESTS {
+        uuid id PK
+        uuid user_id FK
+        string topic
+        string status
+        string video_url
+        timestamp created_at
+    }
+        </div>
+      </div>
+
+      <!-- Core Tables -->
+      <section id="core" class="mb-10">
+        <h3 class="text-xl font-light text-foreground mb-4 flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+          Core Tables
+          <span class="text-sm font-normal text-muted-foreground ml-2">5 tables</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <!-- users -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-blue-500">
+            <div class="px-4 py-3 bg-blue-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">users</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">32 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Teacher profiles & registration</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">UK:</span> phone_number</p>
+              <button onclick="toggleFields('users')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <div id="users-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
+                id, phone_number, name, first_name, last_name, school_name, city, province, grades_taught, subjects_taught, teaching_experience_years, classroom_challenges, language_preference, registration_completed, registration_step, registration_pending_name, onboarding_completed, feature_discovery_shown, last_conversation_summary, last_conversation_timestamp, context_version, created_at, updated_at, portal_registered, welcome_video_sent, consent_timestamp, consent_type, consent_metadata, intro_video_coaching_sent, intro_video_lesson_plan_sent, intro_video_reading_sent, intro_video_video_gen_sent
+              </div>
+            </div>
+          </div>
+
+          <!-- conversations -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-blue-500">
+            <div class="px-4 py-3 bg-blue-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">conversations</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">12 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">All chat messages (user & bot)</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id, session_id</p>
+              <button onclick="toggleFields('conversations')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <div id="conversations-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
+                id, user_id, session_id, content, role, message_type, language, is_summarized, summarized_at, summary_group_id, created_at, updated_at
+              </div>
+            </div>
+          </div>
+
+          <!-- chat_sessions -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-blue-500">
+            <div class="px-4 py-3 bg-blue-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">chat_sessions</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">11 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Session tracking & analytics</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
+              <button onclick="toggleFields('chat_sessions')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <div id="chat_sessions-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
+                id, user_id, started_at, ended_at, message_count, is_active, session_type, device_info, entry_point, created_at, updated_at
+              </div>
+            </div>
+          </div>
+
+          <!-- dashboard_users -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-blue-500">
+            <div class="px-4 py-3 bg-blue-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">dashboard_users</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">12 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Observability portal users</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Roles:</span> admin, viewer</p>
+              <button onclick="toggleFields('dashboard_users')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <div id="dashboard_users-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
+                id, username, email, password_hash, role, is_active, last_login, password_reset_token, password_reset_expires, created_at, updated_at, created_by
+              </div>
+            </div>
+          </div>
+
+          <!-- teacher_facts -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-blue-500">
+            <div class="px-4 py-3 bg-blue-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">teacher_facts</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">7 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Learned facts about teachers</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
+              <button onclick="toggleFields('teacher_facts')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <div id="teacher_facts-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
+                id, user_id, fact_type, fact_value, confidence, created_at, updated_at
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feature Tables -->
+      <section id="features" class="mb-10">
+        <h3 class="text-xl font-light text-foreground mb-4 flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-green-500"></span>
+          Feature Tables
+          <span class="text-sm font-normal text-muted-foreground ml-2">12 tables</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <!-- lesson_plans -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">lesson_plans</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">10 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Generated lesson plans (Gamma)</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Output:</span> gamma_url, pdf_url</p>
+            </div>
+          </div>
+
+          <!-- lesson_plan_requests -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">lesson_plan_requests</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">14 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Lesson plan generation queue</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Status:</span> pending, processing, completed, failed</p>
+            </div>
+          </div>
+
+          <!-- coaching_sessions -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">coaching_sessions</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">42 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Teaching feedback analysis</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Pipeline:</span> audio > transcript > analysis > report</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Output:</span> PDF, voice debrief</p>
+            </div>
+          </div>
+
+          <!-- coaching_jobs -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">coaching_jobs</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">12 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">SQS job queue for coaching</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id, session_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Status:</span> pending, processing, completed, failed</p>
+            </div>
+          </div>
+
+          <!-- reading_assessments -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">reading_assessments</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">27 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Student reading assessments (EGRA/ASER)</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Metrics:</span> WCPM, accuracy, benchmark</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Languages:</span> All 9 supported</p>
+            </div>
+          </div>
+
+          <!-- video_requests -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">video_requests</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">21 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">AI video generation requests</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Status:</span> pending, generating, completed, failed</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Output:</span> video_url (R2)</p>
+            </div>
+          </div>
+
+          <!-- video_tasks -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">video_tasks</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">14 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Video generation task queue</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> video_request_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Provider:</span> Pictory API</p>
+            </div>
+          </div>
+
+          <!-- ama_conversations -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">ama_conversations</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Ask Me Anything threads</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Links:</span> ama_messages</p>
+            </div>
+          </div>
+
+          <!-- ama_messages -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">ama_messages</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Individual AMA messages</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> conversation_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Role:</span> user, assistant</p>
+            </div>
+          </div>
+
+          <!-- user_feature_first_use -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">user_feature_first_use</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">5 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Feature discovery tracking</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> First use of each feature</p>
+            </div>
+          </div>
+
+          <!-- feature_suggestions -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">feature_suggestions</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">6 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Feature suggestion history</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> Suggestions shown to users</p>
+            </div>
+          </div>
+
+          <!-- teacher_progress -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-green-500">
+            <div class="px-4 py-3 bg-green-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">teacher_progress</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Teacher growth tracking</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> Skill development over time</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Analytics Tables -->
+      <section id="analytics" class="mb-10">
+        <h3 class="text-xl font-light text-foreground mb-4 flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+          Analytics Tables
+          <span class="text-sm font-normal text-muted-foreground ml-2">6 tables</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <!-- ab_tests -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-amber-500">
+            <div class="px-4 py-3 bg-amber-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">ab_tests</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">A/B test configurations</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Status:</span> active, paused, completed</p>
+            </div>
+          </div>
+
+          <!-- ab_test_variants -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-amber-500">
+            <div class="px-4 py-3 bg-amber-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">ab_test_variants</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">7 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Test variant definitions</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> test_id</p>
+            </div>
+          </div>
+
+          <!-- ab_test_events -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-amber-500">
+            <div class="px-4 py-3 bg-amber-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">ab_test_events</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">7 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">User events in tests</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> test_id, user_id</p>
+            </div>
+          </div>
+
+          <!-- wcpm_percentiles -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-amber-500">
+            <div class="px-4 py-3 bg-amber-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">wcpm_percentiles</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">6 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">WCPM benchmark data</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">By:</span> grade, language, percentile</p>
+            </div>
+          </div>
+
+          <!-- lcpm_benchmarks -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-amber-500">
+            <div class="px-4 py-3 bg-amber-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">lcpm_benchmarks</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">6 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">LCPM benchmark data</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">By:</span> grade, language, percentile</p>
+            </div>
+          </div>
+
+          <!-- api_usage_log -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-amber-500">
+            <div class="px-4 py-3 bg-amber-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">api_usage_log</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">10 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">External API call tracking</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> OpenAI, Soniox, Gamma, etc.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Funnel Tables -->
+      <section id="funnel" class="mb-10">
+        <h3 class="text-xl font-light text-foreground mb-4 flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-cyan-500"></span>
+          Funnel Tables
+          <span class="text-sm font-normal text-muted-foreground ml-2">3 tables</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <!-- website_visits -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-cyan-500">
+            <div class="px-4 py-3 bg-cyan-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">website_visits</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-cyan-100 text-cyan-700">10 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Website visit sessions</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> page, referrer, device, location</p>
+            </div>
+          </div>
+
+          <!-- cta_clicks -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-cyan-500">
+            <div class="px-4 py-3 bg-cyan-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">cta_clicks</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-cyan-100 text-cyan-700">6 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">CTA button clicks</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> session_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> Which CTAs convert</p>
+            </div>
+          </div>
+
+          <!-- chat_starts -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-cyan-500">
+            <div class="px-4 py-3 bg-cyan-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">chat_starts</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-cyan-100 text-cyan-700">7 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">WhatsApp chat starts from website</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> session_id, user_id</p>
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Links:</span> Website visitors to users</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- QA Tables -->
+      <section id="qa" class="mb-10">
+        <h3 class="text-xl font-light text-foreground mb-4 flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+          QA Tables
+          <span class="text-sm font-normal text-muted-foreground ml-2">3 tables</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <!-- qa_test_runs -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-rose-500">
+            <div class="px-4 py-3 bg-rose-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">qa_test_runs</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-rose-100 text-rose-700">12 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Bugbuster test executions</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Status:</span> running, passed, failed</p>
+            </div>
+          </div>
+
+          <!-- qa_bug_patterns -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-rose-500">
+            <div class="px-4 py-3 bg-rose-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">qa_bug_patterns</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-rose-100 text-rose-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Known bug patterns</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Used by:</span> Bugbuster QA agent</p>
+            </div>
+          </div>
+
+          <!-- qa_analyst_proposals -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-rose-500">
+            <div class="px-4 py-3 bg-rose-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">qa_analyst_proposals</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-rose-100 text-rose-700">10 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">QA fix proposals</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Status:</span> proposed, approved, rejected</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- System Tables -->
+      <section id="system" class="mb-10">
+        <h3 class="text-xl font-light text-foreground mb-4 flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+          System Tables
+          <span class="text-sm font-normal text-muted-foreground ml-2">11 tables</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <!-- release_notes -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">release_notes</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">12 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">User-facing release notes</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Env:</span> staging, production</p>
+            </div>
+          </div>
+
+          <!-- dashboard_audit_log -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">dashboard_audit_log</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Admin actions audit trail</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> All admin portal actions</p>
+            </div>
+          </div>
+
+          <!-- ama_query_audit -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">ama_query_audit</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">6 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">AMA question audit log</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> Questions asked to Rumi</p>
+            </div>
+          </div>
+
+          <!-- failed_operations -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">failed_operations</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Failed operation logs</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">For:</span> Debugging & retries</p>
+            </div>
+          </div>
+
+          <!-- coaching_processing_queue -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">coaching_processing_queue</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">10 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Coaching job queue</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Status:</span> pending, processing, done</p>
+            </div>
+          </div>
+
+          <!-- coaching_quality_metrics -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">coaching_quality_metrics</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Coaching session quality</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Metrics:</span> Scores, feedback quality</p>
+            </div>
+          </div>
+
+          <!-- audio_sessions -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">audio_sessions</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">10 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Audio processing sessions</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">For:</span> Soniox, MMS-ASR</p>
+            </div>
+          </div>
+
+          <!-- videos -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">videos</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">12 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Generated video storage</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Storage:</span> Cloudflare R2</p>
+            </div>
+          </div>
+
+          <!-- student_videos -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">student_videos</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">8 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Student reading videos</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">For:</span> Reading assessment recordings</p>
+            </div>
+          </div>
+
+          <!-- schema_versions -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">schema_versions</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">5 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Database migration tracking</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">Tracks:</span> Applied migrations</p>
+            </div>
+          </div>
+
+          <!-- migration_test -->
+          <div class="table-card card-primary overflow-hidden border-l-4 border-l-purple-500">
+            <div class="px-4 py-3 bg-purple-50">
+              <div class="flex justify-between items-center">
+                <h4 class="font-medium text-foreground">migration_test</h4>
+                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">3 cols</span>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">Migration test records</p>
+            </div>
+            <div class="px-4 py-3 text-sm">
+              <p class="text-muted-foreground"><span class="font-medium text-foreground">For:</span> Testing migrations</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Languages Supported -->
+      <section class="mb-10">
+        <h3 class="text-xl font-light text-foreground mb-4">Languages Supported</h3>
+        <div class="card-primary p-6">
+          <div class="flex flex-wrap gap-3">
+            <span class="px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-sm font-medium">English (en)</span>
+            <span class="px-3 py-2 rounded-lg bg-green-50 text-green-700 text-sm font-medium">Urdu (ur)</span>
+            <span class="px-3 py-2 rounded-lg bg-amber-50 text-amber-700 text-sm font-medium">Arabic (ar)</span>
+            <span class="px-3 py-2 rounded-lg bg-rose-50 text-rose-700 text-sm font-medium">Spanish (es)</span>
+            <span class="px-3 py-2 rounded-lg bg-purple-50 text-purple-700 text-sm font-medium">Balochi (bal-PK)</span>
+            <span class="px-3 py-2 rounded-lg bg-cyan-50 text-cyan-700 text-sm font-medium">Sindhi (sd-PK)</span>
+            <span class="px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 text-sm font-medium">Pashto (ps-PK)</span>
+            <span class="px-3 py-2 rounded-lg bg-pink-50 text-pink-700 text-sm font-medium">Punjabi (pa-PK)</span>
+            <span class="px-3 py-2 rounded-lg bg-orange-50 text-orange-700 text-sm font-medium">Tamil (ta-LK)</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-8 pb-8 text-center text-sm text-muted-foreground">
+    Rumi v<%= typeof version !== 'undefined' ? version : '2.9.22' %> | Last Updated: Dec 25, 2025
+  </footer>
+
+  <script>
+    // Initialize Mermaid
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+
+    // Toggle field details
+    function toggleFields(tableId) {
+      const fieldList = document.getElementById(tableId + '-fields');
+      if (fieldList) {
+        fieldList.classList.toggle('active');
+        const button = fieldList.previousElementSibling;
+        if (fieldList.classList.contains('active')) {
+          button.textContent = '- Hide fields';
+        } else {
+          button.textContent = '+ Show fields';
+        }
+      }
+    }
+  </script>
+</body>
+</html>

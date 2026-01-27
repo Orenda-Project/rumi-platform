@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <%- include("partials/navigation", { currentPage: "byof", username: user?.username || 'Guest', userRole: user?.role || 'viewer' }) %>
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-start">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/>
+          </svg>
+          The Forge - Admin Dashboard
+        </h1>
+        <p class="text-gray-600 mt-2">Manage users, view statistics, and monitor activity</p>
+      </div>
+      <a href="/observability/byof" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Sessions
+      </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <!-- Total Sessions -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Total Sessions</p>
+            <p class="text-2xl font-bold text-gray-900"><%= stats.sessions?.total || 0 %></p>
+          </div>
+          <div class="bg-blue-100 rounded-full p-3">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 flex gap-2 text-xs">
+          <span class="text-red-600"><%= stats.sessions?.byType?.bug || 0 %> bugs</span>
+          <span class="text-green-600"><%= stats.sessions?.byType?.feature || 0 %> features</span>
+        </div>
+      </div>
+
+      <!-- Active Sessions -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Active Sessions</p>
+            <p class="text-2xl font-bold text-blue-600"><%= stats.sessions?.byStatus?.active || 0 %></p>
+          </div>
+          <div class="bg-blue-100 rounded-full p-3">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Approvals -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Pending Approvals</p>
+            <p class="text-2xl font-bold text-yellow-600"><%= stats.sessions?.byStatus?.plan_ready || 0 %></p>
+          </div>
+          <div class="bg-yellow-100 rounded-full p-3">
+            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completed -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">In Production</p>
+            <p class="text-2xl font-bold text-green-600"><%= stats.plans?.byStatus?.production_live || 0 %></p>
+          </div>
+          <div class="bg-green-100 rounded-full p-3">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Pending Approvals List -->
+      <div class="lg:col-span-2 bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 class="text-lg font-semibold text-gray-900">Pending Approvals</h2>
+          <span class="text-sm text-gray-500"><%= pending.length %> items</span>
+        </div>
+        <div class="divide-y divide-gray-200">
+          <% if (pending.length === 0) { %>
+            <div class="px-6 py-8 text-center text-gray-500">
+              No pending approvals
+            </div>
+          <% } else { %>
+            <% pending.forEach(plan => { %>
+              <div class="px-6 py-4 hover:bg-gray-50">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <a href="/observability/byof/session/<%= plan.session?.id %>" class="text-indigo-600 hover:text-indigo-800 font-medium">
+                      <%= plan.summary || 'Untitled Plan' %>
+                    </a>
+                    <p class="text-sm text-gray-500 mt-1">
+                      <span class="<%= plan.session?.type === 'bug' ? 'text-red-600' : 'text-green-600' %>">
+                        <%= plan.session?.type === 'bug' ? 'Bug' : 'Feature' %>
+                      </span>
+                      by <%= plan.session?.user?.username || 'Unknown' %>
+                    </p>
+                  </div>
+                  <span class="text-xs text-gray-400"><%= new Date(plan.created_at).toLocaleDateString() %></span>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+        </div>
+        <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+          <% if (activity.length === 0) { %>
+            <div class="px-6 py-8 text-center text-gray-500">
+              No recent activity
+            </div>
+          <% } else { %>
+            <% activity.forEach(item => { %>
+              <div class="px-6 py-3">
+                <% if (item.activityType === 'session') { %>
+                  <p class="text-sm">
+                    <span class="font-medium"><%= item.user?.username || 'Someone' %></span>
+                    <%= item.status === 'active' ? 'created' : 'updated' %> a
+                    <span class="<%= item.type === 'bug' ? 'text-red-600' : 'text-green-600' %>"><%= item.type %></span>
+                    session
+                  </p>
+                  <p class="text-xs text-gray-400 mt-1"><%= new Date(item.updated_at || item.created_at).toLocaleString() %></p>
+                <% } else { %>
+                  <p class="text-sm">
+                    <span class="font-medium"><%= item.user?.username || 'Someone' %></span>
+                    <span class="<%= item.action === 'approved' ? 'text-green-600' : 'text-red-600' %>"><%= item.action %></span>
+                    a plan
+                  </p>
+                  <p class="text-xs text-gray-400 mt-1"><%= new Date(item.created_at).toLocaleString() %></p>
+                <% } %>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Management -->
+    <div class="mt-6 bg-white rounded-lg shadow">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900">User Management</h2>
+        <p class="text-sm text-gray-500">Manage BYOF roles for portal users</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Portal Role</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Forge Role</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% users.forEach(u => { %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <span class="text-indigo-600 font-medium text-sm"><%= u.username?.charAt(0).toUpperCase() || '?' %></span>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm font-medium text-gray-900"><%= u.username %></p>
+                      <p class="text-xs text-gray-500"><%= u.email || 'No email' %></p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <%= u.role || 'viewer' %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    <%= u.byof_role === 'approver' ? 'bg-purple-100 text-purple-800' :
+                        u.byof_role === 'reporter' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-500' %>">
+                    <%= u.byof_role || 'No Access' %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    <%= u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                    <%= u.is_active ? 'Active' : 'Inactive' %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <select onchange="updateByofRole('<%= u.id %>', this.value, this)"
+                    class="text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="" <%= !u.byof_role ? 'selected' : '' %>>No Access</option>
+                    <option value="reporter" <%= u.byof_role === 'reporter' ? 'selected' : '' %>>Reporter</option>
+                    <option value="approver" <%= u.byof_role === 'approver' ? 'selected' : '' %>>Approver</option>
+                  </select>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Plan Status Overview -->
+    <div class="mt-6 bg-white rounded-lg shadow">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900">Plan Pipeline</h2>
+        <p class="text-sm text-gray-500">Track plans through the development pipeline</p>
+      </div>
+      <div class="p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex-1 text-center">
+            <div class="text-2xl font-bold text-gray-400"><%= stats.plans?.byStatus?.draft || 0 %></div>
+            <div class="text-xs text-gray-500 mt-1">Draft</div>
+          </div>
+          <div class="w-8 text-center text-gray-300">&#8594;</div>
+          <div class="flex-1 text-center">
+            <div class="text-2xl font-bold text-purple-600"><%= stats.plans?.byStatus?.approved || 0 %></div>
+            <div class="text-xs text-gray-500 mt-1">Approved</div>
+          </div>
+          <div class="w-8 text-center text-gray-300">&#8594;</div>
+          <div class="flex-1 text-center">
+            <div class="text-2xl font-bold text-blue-600"><%= stats.plans?.byStatus?.in_progress || 0 %></div>
+            <div class="text-xs text-gray-500 mt-1">In Progress</div>
+          </div>
+          <div class="w-8 text-center text-gray-300">&#8594;</div>
+          <div class="flex-1 text-center">
+            <div class="text-2xl font-bold text-yellow-600"><%= stats.plans?.byStatus?.staging_live || 0 %></div>
+            <div class="text-xs text-gray-500 mt-1">Staging</div>
+          </div>
+          <div class="w-8 text-center text-gray-300">&#8594;</div>
+          <div class="flex-1 text-center">
+            <div class="text-2xl font-bold text-green-600"><%= stats.plans?.byStatus?.production_live || 0 %></div>
+            <div class="text-xs text-gray-500 mt-1">Production</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function updateByofRole(userId, newRole, selectElement) {
+      try {
+        const response = await fetch(`/observability/byof/api/users/${userId}/byof-role`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ byofRole: newRole || null })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          // Show brief success feedback
+          selectElement.style.backgroundColor = '#d1fae5';
+          setTimeout(() => {
+            selectElement.style.backgroundColor = '';
+          }, 1000);
+        } else {
+          alert('Error: ' + (data.error || 'Failed to update role'));
+        }
+      } catch (error) {
+        console.error('Error updating role:', error);
+        alert('Failed to update role. Please try again.');
+      }
+    }
+  </script>
+</body>
+</html>

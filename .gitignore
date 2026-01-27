@@ -1,0 +1,80 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+
+# Secrets and credentials
+keys/
+*.pem
+*.key
+*.cert
+*.p12
+credentials*
+service-account*.json
+
+# Setup state (generated during /setup)
+.setup-state.json
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Debug and logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+bot/logs/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Script output files
+bot/scripts/output/
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Claude Code local files
+.claude/ralph-loop.local.md
+claude-progress.txt
+
+# Redis dump
+dump.rdb
+
+# Docker
+.docker/
+
+# Supabase local
+.supabase/
+supabase/.temp/

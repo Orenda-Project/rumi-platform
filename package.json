@@ -1,0 +1,48 @@
+{
+  "name": "rumi-platform",
+  "version": "1.0.0",
+  "description": "Rumi - AI Teaching Assistant for WhatsApp. Open-source platform for deploying AI-powered educational chatbots.",
+  "private": true,
+  "scripts": {
+    "test": "NODE_OPTIONS='--localstorage-file=/tmp/jest-ls' jest --config tests/jest.config.js",
+    "test:security": "NODE_OPTIONS='--localstorage-file=/tmp/jest-ls' jest --config tests/jest.config.js --testPathPattern=sprint-0",
+    "test:sprint1": "NODE_OPTIONS='--localstorage-file=/tmp/jest-ls' jest --config tests/jest.config.js --testPathPattern=sprint-1",
+    "test:schema": "NODE_OPTIONS='--localstorage-file=/tmp/jest-ls' jest --config tests/jest.config.js --testPathPattern=sprint-2",
+    "test:setup": "NODE_OPTIONS='--localstorage-file=/tmp/jest-ls' jest --config tests/jest.config.js --testPathPattern=sprint-3",
+    "test:docs": "NODE_OPTIONS='--localstorage-file=/tmp/jest-ls' jest --config tests/jest.config.js --testPathPattern=sprint-4",
+    "test:e2e": "NODE_OPTIONS='--localstorage-file=/tmp/jest-ls' jest --config tests/jest.config.js --testPathPattern=integration",
+    "validate:env": "node bot/scripts/validate-env.js",
+    "validate:connections": "node infrastructure/scripts/test-connections.js",
+    "simulate": "node bot/scripts/simulate.js",
+    "setup": "echo 'Use /setup in Claude Code or follow SETUP.md for manual instructions'"
+  },
+  "keywords": [
+    "whatsapp",
+    "chatbot",
+    "education",
+    "ai",
+    "teaching-assistant",
+    "edtech",
+    "openrouter"
+  ],
+  "author": "Taleemabad (Oraan Education Pvt. Ltd.)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/taleemabad/rumi-platform.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0"
+  },
+  "dependencies": {
+    "bullmq": "^5.67.1",
+    "express": "^5.2.1",
+    "ioredis": "^5.9.2",
+    "openai": "^6.16.0"
+  }
+}

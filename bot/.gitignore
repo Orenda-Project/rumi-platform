@@ -1,0 +1,47 @@
+# Environment variables
+.env
+.env.local
+.env.production
+.railway-token
+
+# Encryption keys (private keys must not be committed)
+keys/
+
+# Node modules
+node_modules/
+
+# Logs
+logs/
+_logs/
+*.log
+npm-debug.log*
+
+# Temporary files
+temp/
+_scratch/
+backup_temp/
+*.tmp
+*.wav
+*.mp3
+*.ogg
+*.pdf
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# Assets (large files)
+assets/*.jpg
+assets/*.png
+assets/*.jpeg
+!assets/.gitkeep
+
+# Test files
+test-*.js
+!tests/

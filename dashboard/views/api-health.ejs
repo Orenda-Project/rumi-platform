@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .status-healthy { background-color: #10b981; }
+    .status-warning { background-color: #f59e0b; }
+    .status-critical { background-color: #ef4444; }
+    .status-error { background-color: #6b7280; }
+    .progress-bar {
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .progress-healthy { background: #10b981; }
+    .progress-warning { background: #f59e0b; }
+    .progress-critical { background: #ef4444; }
+    .loading {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .5; }
+    }
+  </style>
+</head>
+<body class="bg-background">
+  <!-- Navigation -->
+  <!-- Navigation -->
+  <%- include("partials/navigation", { currentPage: "api-health", username: username, userRole: userRole }) %>
+
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-foreground">API Health & Usage Monitoring</h2>
+          <p class="text-sm text-muted-foreground mt-1">Monitor usage, costs, and limits across all services</p>
+        </div>
+        <button id="refreshBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Refresh
+        </button>
+      </div>
+
+      <!-- Summary -->
+      <div id="summary" class="card-primary p-6 mb-6">
+        <div class="loading text-center py-4">
+          <p class="text-muted-foreground">Loading API health data...</p>
+        </div>
+      </div>
+
+      <!-- Services Grid -->
+      <div id="servicesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Services will be loaded here -->
+      </div>
+
+      <!-- Warnings -->
+      <div id="warningsSection" class="mt-6 hidden">
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-yellow-800">Warnings</h3>
+              <div id="warningsList" class="mt-2 text-sm text-yellow-700">
+                <!-- Warnings will be loaded here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-8 pb-8 text-center text-sm text-muted-foreground">
+    Digital Coach (Rumi) v<%= typeof version !== 'undefined' ? version : '2.1.0' %> | Last Updated: Nov 6, 2025
+  </footer>
+
+  <script>
+    let lastUpdated = null;
+
+    // Load API health data
+    async function loadAPIHealth() {
+      try {
+        const response = await fetch('/observability/api/api-health');
+        const data = await response.json();
+
+        // Update summary
+        updateSummary(data);
+
+        // Update services grid
+        updateServicesGrid(data.services);
+
+        // Update warnings
+        updateWarnings(data.warnings);
+
+        lastUpdated = new Date(data.lastUpdated);
+      } catch (error) {
+        console.error('Failed to load API health:', error);
+        document.getElementById('summary').innerHTML = `
+          <div class="text-center py-4 text-red-600">
+            <p>Failed to load API health data. Please try again.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Update summary section
+    function updateSummary(data) {
+      const summaryHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <p class="text-sm text-muted-foreground">Total Monthly Cost</p>
+            <p class="text-2xl font-bold text-foreground">$${data.totalCost}</p>
+          </div>
+          <div>
+            <p class="text-sm text-muted-foreground">Projected Cost</p>
+            <p class="text-2xl font-bold text-foreground">$${data.projectedCost}</p>
+          </div>
+          <div>
+            <p class="text-sm text-muted-foreground">Services Status</p>
+            <div class="flex items-center space-x-2 mt-1">
+              <span class="text-green-600 font-semibold">${data.statusCounts.healthy} healthy</span>
+              ${data.statusCounts.warning > 0 ? `<span class="text-yellow-600 font-semibold">${data.statusCounts.warning} warning</span>` : ''}
+              ${data.statusCounts.critical > 0 ? `<span class="text-red-600 font-semibold">${data.statusCounts.critical} critical</span>` : ''}
+              ${data.statusCounts.error > 0 ? `<span class="text-muted-foreground font-semibold">${data.statusCounts.error} error</span>` : ''}
+            </div>
+          </div>
+          <div>
+            <p class="text-sm text-muted-foreground">Last Updated</p>
+            <p class="text-sm font-medium text-foreground mt-1">${getTimeAgo(lastUpdated)}</p>
+          </div>
+        </div>
+      `;
+      document.getElementById('summary').innerHTML = summaryHTML;
+    }
+
+    // Update services grid
+    function updateServicesGrid(services) {
+      const gridHTML = services.map(service => {
+        const statusClass = `status-${service.status}`;
+
+        // Null-safe percentage handling
+        const percentage = service.usage?.percentage ?? 0;
+        const progressClass = percentage >= 90 ? 'progress-critical' :
+                              percentage >= 75 ? 'progress-warning' : 'progress-healthy';
+
+        // Null-safe value extraction
+        const current = service.usage?.current ?? 0;
+        const limit = service.usage?.limit ?? 'unknown';
+        const unit = service.usage?.unit ?? '';
+        const costCurrent = service.cost?.current ?? 0;
+        const costProjected = service.cost?.projected ?? 0;
+
+        return `
+          <div class="card-primary p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center">
+                <span class="status-indicator ${statusClass}"></span>
+                <h3 class="text-lg font-semibold text-foreground">${service.service}</h3>
+              </div>
+              ${service.isEstimated ? '<span class="text-xs text-muted-foreground italic">Estimated</span>' : ''}
+            </div>
+
+            <div class="mb-4">
+              <div class="flex justify-between text-sm text-muted-foreground mb-1">
+                <span>Usage</span>
+                <span>${current} / ${limit === 'unlimited' ? '∞' : limit} ${unit}</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill ${progressClass}" style="width: ${percentage}%"></div>
+              </div>
+              <p class="text-xs text-muted-foreground mt-1">${percentage.toFixed(1)}% used</p>
+            </div>
+
+            ${costCurrent > 0 ? `
+              <div class="mb-4">
+                <p class="text-sm text-muted-foreground">Cost This Month</p>
+                <p class="text-xl font-bold text-foreground">$${costCurrent}</p>
+                <p class="text-xs text-muted-foreground">Projected: $${costProjected}</p>
+              </div>
+            ` : ''}
+
+            <div class="text-xs text-muted-foreground space-y-1">
+              ${Object.entries(service.details).slice(0, 3).map(([key, value]) => {
+                if (typeof value === 'object') return '';
+                return `<p><span class="font-medium">${formatKey(key)}:</span> ${value}</p>`;
+              }).join('')}
+            </div>
+
+            ${service.externalLink ? `
+              <a href="${service.externalLink}" target="_blank" class="text-xs text-indigo-600 hover:text-indigo-800 mt-2 inline-block">
+                View Dashboard →
+              </a>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('servicesGrid').innerHTML = gridHTML;
+    }
+
+    // Update warnings section
+    function updateWarnings(warnings) {
+      if (warnings.length === 0) {
+        document.getElementById('warningsSection').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('warningsSection').classList.remove('hidden');
+      const warningsHTML = warnings.map(warning => `<p class="mt-1">${warning}</p>`).join('');
+      document.getElementById('warningsList').innerHTML = warningsHTML;
+    }
+
+    // Helper: Format key names
+    function formatKey(key) {
+      return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    }
+
+    // Helper: Get time ago
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      if (seconds < 60) return 'Just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes} min ago`;
+      const hours = Math.floor(minutes / 60);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    }
+
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      loadAPIHealth();
+    });
+
+    // Auto-refresh every 5 minutes
+    setInterval(loadAPIHealth, 5 * 60 * 1000);
+
+    // Initial load
+    loadAPIHealth();
+  </script>
+</body>
+</html>

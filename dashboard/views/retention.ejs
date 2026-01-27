@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Digital Coach Dashboard</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Retention heatmap cell colors */
+    .retention-cell-excellent {
+      background-color: #10B981;
+      color: white;
+    }
+    .retention-cell-good {
+      background-color: #34D399;
+      color: white;
+    }
+    .retention-cell-moderate {
+      background-color: #FBBF24;
+      color: #111827;
+    }
+    .retention-cell-fair {
+      background-color: #FB923C;
+      color: white;
+    }
+    .retention-cell-poor {
+      background-color: #EF4444;
+      color: white;
+    }
+    .retention-cell-critical {
+      background-color: #DC2626;
+      color: white;
+    }
+    .retention-cell-na {
+      background-color: #D1D5DB;
+      color: #6B7280;
+    }
+
+    /* Hover effect for heatmap cells */
+    .retention-cell {
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .retention-cell:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Responsive table */
+    .retention-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 8px;
+    }
+
+    .retention-table th {
+      background-color: #F3F4F6;
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+      color: #374151;
+      border-radius: 6px;
+    }
+
+    .retention-table td {
+      padding: 4px;
+    }
+
+    /* Chart container */
+    #retentionChartContainer {
+      position: relative;
+      height: 400px;
+      width: 100%;
+    }
+
+    /* Summary cards */
+    .summary-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary-value {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: #1F2937;
+      margin: 8px 0;
+    }
+
+    .summary-trend-up {
+      color: #10B981;
+    }
+
+    .summary-trend-down {
+      color: #EF4444;
+    }
+
+    .summary-trend-neutral {
+      color: #6B7280;
+    }
+  </style>
+</head>
+<body class="bg-background">
+  <%- include('partials/navigation', { currentPage: 'retention', username: username || 'User', userRole: userRole || 'user' }) %>
+
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-foreground">Retention Analysis</h1>
+      <p class="text-muted-foreground mt-2">Weekly cohort retention rates across all Digital Coach features</p>
+    </div>
+
+    <!-- Summary Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Day 0 Retention Card -->
+      <div class="summary-card">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm font-medium text-muted-foreground">Day 0 Retention</p>
+          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+        </div>
+        <div class="summary-value">100%</div>
+        <p class="text-xs text-muted-foreground">(by definition - cohort formation)</p>
+      </div>
+
+      <!-- Week 1 Retention Card -->
+      <div class="summary-card">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm font-medium text-muted-foreground">Week 1 Retention</p>
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+        </div>
+        <div class="summary-value"><%= summary.avgWeek1Retention %>%</div>
+        <% if (summary.week1Trend !== 0) { %>
+          <p class="text-xs <%= summary.week1Trend > 0 ? 'summary-trend-up' : 'summary-trend-down' %>">
+            <%= summary.week1Trend > 0 ? '↑' : '↓' %> <%= Math.abs(summary.week1Trend) %>pp vs prev month
+          </p>
+        <% } else { %>
+          <p class="text-xs summary-trend-neutral">→ No change vs prev month</p>
+        <% } %>
+      </div>
+
+      <!-- Week 4 Retention Card -->
+      <div class="summary-card">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm font-medium text-muted-foreground">Week 4 Retention</p>
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+        </div>
+        <div class="summary-value"><%= summary.avgWeek4Retention %>%</div>
+        <p class="text-xs text-muted-foreground">mature cohorts only</p>
+      </div>
+
+      <!-- Day 0 Activation Card -->
+      <div class="summary-card">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm font-medium text-muted-foreground">Day 0 Activation</p>
+          <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <div class="summary-value"><%= summary.avgDay0Activation %>%</div>
+        <% if (summary.activationTrend !== 0) { %>
+          <p class="text-xs <%= summary.activationTrend > 0 ? 'summary-trend-up' : 'summary-trend-down' %>">
+            <%= summary.activationTrend > 0 ? '↑' : '↓' %> <%= Math.abs(summary.activationTrend) %>pp vs prev month
+          </p>
+        <% } else { %>
+          <p class="text-xs summary-trend-neutral">→ No change vs prev month</p>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="bg-white p-6 rounded-lg shadow mb-8">
+      <h2 class="text-lg font-semibold text-foreground mb-4">Filters</h2>
+      <form method="GET" action="/observability/retention" class="flex flex-wrap items-end gap-4">
+        <!-- Feature Type Dropdown -->
+        <div class="flex-1 min-w-[200px]">
+          <label for="feature" class="block text-sm font-medium text-foreground mb-2">Feature Type</label>
+          <select id="feature" name="feature" class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <option value="overall" <%= featureType === 'overall' ? 'selected' : '' %>>Overall Activity</option>
+            <option value="coaching" <%= featureType === 'coaching' ? 'selected' : '' %>>Coaching Sessions</option>
+            <option value="lesson_plans" <%= featureType === 'lesson_plans' ? 'selected' : '' %>>Lesson Plans</option>
+            <option value="reading" <%= featureType === 'reading' ? 'selected' : '' %>>Reading Assessments</option>
+          </select>
+        </div>
+
+        <!-- Weeks Back Selector -->
+        <div class="flex-1 min-w-[150px]">
+          <label for="weeks" class="block text-sm font-medium text-foreground mb-2">Weeks Back</label>
+          <select id="weeks" name="weeks" class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <option value="4" <%= weeksBack === 4 ? 'selected' : '' %>>4 Weeks</option>
+            <option value="8" <%= weeksBack === 8 ? 'selected' : '' %>>8 Weeks</option>
+            <option value="12" <%= weeksBack === 12 ? 'selected' : '' %>>12 Weeks (default)</option>
+            <option value="24" <%= weeksBack === 24 ? 'selected' : '' %>>24 Weeks</option>
+            <option value="52" <%= weeksBack === 52 ? 'selected' : '' %>>1 Year</option>
+          </select>
+        </div>
+
+        <!-- Date Range Filters -->
+        <div class="flex-1 min-w-[200px]">
+          <label for="dateFrom" class="block text-sm font-medium text-foreground mb-2">From Date (Optional)</label>
+          <input type="date" id="dateFrom" name="dateFrom" value="<%= startDate || '' %>" class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+        </div>
+
+        <div class="flex-1 min-w-[200px]">
+          <label for="dateTo" class="block text-sm font-medium text-foreground mb-2">To Date (Optional)</label>
+          <input type="date" id="dateTo" name="dateTo" value="<%= endDate || '' %>" class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+        </div>
+
+        <!-- Apply and Clear Buttons -->
+        <div class="flex gap-2">
+          <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+            Apply Filters
+          </button>
+          <% if (startDate || endDate || featureType !== 'overall' || weeksBack !== 12) { %>
+            <a href="/observability/retention" class="px-6 py-2 bg-gray-200 text-foreground font-medium rounded-lg hover:bg-gray-300 transition">
+              Clear
+            </a>
+          <% } %>
+        </div>
+      </form>
+    </div>
+
+    <!-- Retention Curve Graph -->
+    <div class="bg-white p-6 rounded-lg shadow mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-2xl font-bold text-foreground">Retention Curve</h2>
+          <p class="text-sm text-muted-foreground mt-1">Weekly cohort retention over time (all curves start at 100% on Day 0)</p>
+        </div>
+        <div class="text-sm text-muted-foreground">
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Showing <%= cohorts.length %> cohort<%= cohorts.length !== 1 ? 's' : '' %>
+          </span>
+        </div>
+      </div>
+      <div id="retentionChartContainer">
+        <canvas id="retentionChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Retention Heatmap Table -->
+    <div class="bg-white p-6 rounded-lg shadow mb-8">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-foreground">Retention Heatmap</h2>
+        <p class="text-sm text-muted-foreground mt-1">Cohort retention percentages (color-coded: green = high, red = low, gray = N/A)</p>
+      </div>
+
+      <% if (cohorts && cohorts.length > 0) { %>
+        <div class="overflow-x-auto">
+          <table class="retention-table">
+            <thead>
+              <tr>
+                <th style="text-align: left;">Cohort Week</th>
+                <th>Size</th>
+                <th>Day 0</th>
+                <th>Week 1</th>
+                <th>Week 2</th>
+                <th>Week 3</th>
+                <th>Week 4</th>
+                <th>Week 5-8</th>
+                <th>Week 9-12</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% cohorts.forEach(cohort => { %>
+                <tr>
+                  <td class="font-medium text-foreground px-3">
+                    <%= formatCohortWeek(cohort.cohortWeek) %>
+                  </td>
+                  <td class="text-center text-foreground font-semibold">
+                    <%= cohort.cohortSize %>
+                  </td>
+
+                  <!-- Day 0: Always 100% (dark green) -->
+                  <td>
+                    <div class="retention-cell retention-cell-excellent" title="<%= cohort.cohortSize %> / <%= cohort.cohortSize %> users">
+                      100%
+                    </div>
+                  </td>
+
+                  <!-- Week 1 -->
+                  <td>
+                    <div class="retention-cell <%= getRetentionColorClass(cohort.week1Pct) %>" title="<%= cohort.week1Users %> / <%= cohort.cohortSize %> users">
+                      <%= cohort.week1Pct.toFixed(1) %>%
+                    </div>
+                  </td>
+
+                  <!-- Week 2 -->
+                  <td>
+                    <% if (cohort.hasWeek2Data) { %>
+                      <div class="retention-cell <%= getRetentionColorClass(cohort.week2Pct) %>" title="<%= cohort.week2Users %> / <%= cohort.cohortSize %> users">
+                        <%= cohort.week2Pct.toFixed(1) %>%
+                      </div>
+                    <% } else { %>
+                      <div class="retention-cell retention-cell-na" title="Cohort too recent for Week 2 data">
+                        N/A
+                      </div>
+                    <% } %>
+                  </td>
+
+                  <!-- Week 3 -->
+                  <td>
+                    <% if (cohort.hasWeek3Data) { %>
+                      <div class="retention-cell <%= getRetentionColorClass(cohort.week3Pct) %>" title="<%= cohort.week3Users %> / <%= cohort.cohortSize %> users">
+                        <%= cohort.week3Pct.toFixed(1) %>%
+                      </div>
+                    <% } else { %>
+                      <div class="retention-cell retention-cell-na" title="Cohort too recent for Week 3 data">
+                        N/A
+                      </div>
+                    <% } %>
+                  </td>
+
+                  <!-- Week 4 -->
+                  <td>
+                    <% if (cohort.hasWeek4Data) { %>
+                      <div class="retention-cell <%= getRetentionColorClass(cohort.week4Pct) %>" title="<%= cohort.week4Users %> / <%= cohort.cohortSize %> users">
+                        <%= cohort.week4Pct.toFixed(1) %>%
+                      </div>
+                    <% } else { %>
+                      <div class="retention-cell retention-cell-na" title="Cohort too recent for Week 4 data">
+                        N/A
+                      </div>
+                    <% } %>
+                  </td>
+
+                  <!-- Week 5-8 -->
+                  <td>
+                    <% if (cohort.hasWeek5_8Data) { %>
+                      <div class="retention-cell <%= getRetentionColorClass(cohort.week5_8Pct) %>" title="<%= cohort.cohortSize %> users (Week 5-8)">
+                        <%= cohort.week5_8Pct.toFixed(1) %>%
+                      </div>
+                    <% } else { %>
+                      <div class="retention-cell retention-cell-na" title="Cohort too recent for Week 5-8 data">
+                        N/A
+                      </div>
+                    <% } %>
+                  </td>
+
+                  <!-- Week 9-12 -->
+                  <td>
+                    <% if (cohort.hasWeek9_12Data) { %>
+                      <div class="retention-cell <%= getRetentionColorClass(cohort.week9_12Pct) %>" title="<%= cohort.cohortSize %> users (Week 9-12)">
+                        <%= cohort.week9_12Pct.toFixed(1) %>%
+                      </div>
+                    <% } else { %>
+                      <div class="retention-cell retention-cell-na" title="Cohort too recent for Week 9-12 data">
+                        N/A
+                      </div>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Legend -->
+        <div class="mt-6 flex flex-wrap gap-4 items-center justify-center text-sm">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded retention-cell-excellent"></div>
+            <span class="text-foreground">50%+ (Excellent)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded retention-cell-good"></div>
+            <span class="text-foreground">40-50% (Good)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded retention-cell-moderate"></div>
+            <span class="text-foreground">30-40% (Moderate)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded retention-cell-fair"></div>
+            <span class="text-foreground">20-30% (Fair)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded retention-cell-poor"></div>
+            <span class="text-foreground">10-20% (Poor)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded retention-cell-critical"></div>
+            <span class="text-foreground">&lt;10% (Critical)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded retention-cell-na"></div>
+            <span class="text-foreground">N/A (Too recent)</span>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="text-center py-12 text-muted-foreground">
+          <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          <p class="text-lg font-medium">No retention data available</p>
+          <p class="text-sm mt-2">Adjust your filters or check back when more cohorts have formed</p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Info Box -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+      <div class="flex items-start gap-3">
+        <svg class="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+          <h3 class="font-semibold text-blue-900 mb-2">Understanding Retention Metrics</h3>
+          <ul class="text-sm text-blue-800 space-y-2">
+            <li><strong>Retention:</strong> Did user return to platform? (Day 0 = 100%, Week 1 = % who came back)</li>
+            <li><strong>Activation:</strong> Did user use features on Day 0? (Separate metric - shown in summary card)</li>
+            <li><strong>Cohorts:</strong> Users grouped by registration week (Sunday-Saturday)</li>
+            <li><strong>N/A:</strong> Cohort too recent for that time bucket (e.g., Week 2 data unavailable for 10-day-old cohort)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Chart.js Retention Curve
+    const ctx = document.getElementById('retentionChart').getContext('2d');
+    const curveData = <%- curveData %>;
+
+    const retentionChart = new Chart(ctx, {
+      type: 'line',
+      data: curveData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              padding: 15,
+              font: {
+                size: 12
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y.toFixed(1) + '%';
+                } else {
+                  label += 'N/A';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              },
+              stepSize: 10
+            },
+            title: {
+              display: true,
+              text: 'Retention Rate (%)',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Time Since Registration',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

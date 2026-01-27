@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .kanban-container {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      padding-bottom: 1rem;
+      min-height: 500px;
+    }
+    .kanban-column {
+      flex: 1;
+      min-width: 220px;
+      max-width: 280px;
+      background: #f3f4f6;
+      border-radius: 0.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .kanban-header {
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      border-bottom: 2px solid;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 0.5rem 0.5rem 0 0;
+    }
+    .kanban-cards {
+      padding: 0.5rem;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .kanban-card {
+      background: white;
+      border-radius: 0.375rem;
+      padding: 0.75rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      border: 1px solid #e5e7eb;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .kanban-card:hover {
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transform: translateY(-1px);
+      border-color: #d1d5db;
+    }
+    .kanban-empty {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #9ca3af;
+      font-size: 0.875rem;
+    }
+    .count-badge {
+      background: white;
+      color: inherit;
+      font-size: 0.75rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+    /* Column colors */
+    .col-not-started .kanban-header { background: #dbeafe; border-color: #3b82f6; color: #1e40af; }
+    .col-submitted .kanban-header { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+    .col-approved .kanban-header { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .col-staging .kanban-header { background: #e0e7ff; border-color: #6366f1; color: #3730a3; }
+    .col-production .kanban-header { background: #dcfce7; border-color: #22c55e; color: #166534; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <%- include("partials/navigation", { currentPage: "byof", username: user?.username || 'Guest', userRole: user?.role || 'viewer' }) %>
+
+  <div class="max-w-full mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-start">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/>
+          </svg>
+          The Forge
+        </h1>
+        <p class="text-gray-600 mt-2">Craft bug fixes and features through AI-powered conversations</p>
+        <% if (byofRole) { %>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 <%= byofRole === 'approver' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' %>">
+            <%= byofRole.charAt(0).toUpperCase() + byofRole.slice(1) %>
+          </span>
+        <% } %>
+      </div>
+      <div class="flex items-center gap-3">
+        <% if (byofRole === 'approver') { %>
+          <a href="/observability/byof/admin" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Admin
+          </a>
+        <% } %>
+        <a href="/observability/byof/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          New Report
+        </a>
+      </div>
+    </div>
+
+    <% if (error) { %>
+      <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <!-- Kanban Board -->
+    <% if (sessions && sessions.length > 0) { %>
+      <div class="kanban-container">
+        <!-- Not Started Column -->
+        <div class="kanban-column col-not-started">
+          <div class="kanban-header">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Not Started
+            </span>
+            <span class="count-badge"><%= kanban.not_started.length %></span>
+          </div>
+          <div class="kanban-cards">
+            <% if (kanban.not_started.length === 0) { %>
+              <div class="kanban-empty">No active conversations</div>
+            <% } else { %>
+              <% kanban.not_started.forEach(session => { %>
+                <a href="/observability/byof/session/<%= session.id %>" class="kanban-card">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium <%= session.type === 'bug' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' %>">
+                      <%= session.type === 'bug' ? 'Bug' : 'Feature' %>
+                    </span>
+                  </div>
+                  <h4 class="text-sm font-medium text-gray-900 line-clamp-2"><%= session.title || 'Untitled' %></h4>
+                  <% if (byofRole === 'approver' && session.user) { %>
+                    <p class="text-xs text-gray-500 mt-1">by <%= session.user.username %></p>
+                  <% } %>
+                  <p class="text-xs text-gray-400 mt-1"><%= new Date(session.updated_at || session.created_at).toLocaleDateString() %></p>
+                </a>
+              <% }) %>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Submitted Column -->
+        <div class="kanban-column col-submitted">
+          <div class="kanban-header">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Submitted
+            </span>
+            <span class="count-badge"><%= kanban.submitted.length %></span>
+          </div>
+          <div class="kanban-cards">
+            <% if (kanban.submitted.length === 0) { %>
+              <div class="kanban-empty">No plans awaiting review</div>
+            <% } else { %>
+              <% kanban.submitted.forEach(session => { %>
+                <a href="/observability/byof/session/<%= session.id %>" class="kanban-card">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium <%= session.type === 'bug' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' %>">
+                      <%= session.type === 'bug' ? 'Bug' : 'Feature' %>
+                    </span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">
+                      Needs Review
+                    </span>
+                  </div>
+                  <h4 class="text-sm font-medium text-gray-900 line-clamp-2"><%= session.title || 'Untitled' %></h4>
+                  <% if (byofRole === 'approver' && session.user) { %>
+                    <p class="text-xs text-gray-500 mt-1">by <%= session.user.username %></p>
+                  <% } %>
+                  <p class="text-xs text-gray-400 mt-1"><%= new Date(session.updated_at || session.created_at).toLocaleDateString() %></p>
+                </a>
+              <% }) %>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Approved Column -->
+        <div class="kanban-column col-approved">
+          <div class="kanban-header">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Approved
+            </span>
+            <span class="count-badge"><%= kanban.approved.length %></span>
+          </div>
+          <div class="kanban-cards">
+            <% if (kanban.approved.length === 0) { %>
+              <div class="kanban-empty">No approved plans</div>
+            <% } else { %>
+              <% kanban.approved.forEach(session => { %>
+                <a href="/observability/byof/session/<%= session.id %>" class="kanban-card">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium <%= session.type === 'bug' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' %>">
+                      <%= session.type === 'bug' ? 'Bug' : 'Feature' %>
+                    </span>
+                    <% if (session.plan?.pr_url) { %>
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                        PR Linked
+                      </span>
+                    <% } %>
+                  </div>
+                  <h4 class="text-sm font-medium text-gray-900 line-clamp-2"><%= session.title || 'Untitled' %></h4>
+                  <% if (byofRole === 'approver' && session.user) { %>
+                    <p class="text-xs text-gray-500 mt-1">by <%= session.user.username %></p>
+                  <% } %>
+                  <p class="text-xs text-gray-400 mt-1"><%= new Date(session.updated_at || session.created_at).toLocaleDateString() %></p>
+                </a>
+              <% }) %>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Staging Column -->
+        <div class="kanban-column col-staging">
+          <div class="kanban-header">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+              </svg>
+              Staging
+            </span>
+            <span class="count-badge"><%= kanban.staging.length %></span>
+          </div>
+          <div class="kanban-cards">
+            <% if (kanban.staging.length === 0) { %>
+              <div class="kanban-empty">No items in staging</div>
+            <% } else { %>
+              <% kanban.staging.forEach(session => { %>
+                <a href="/observability/byof/session/<%= session.id %>" class="kanban-card">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium <%= session.type === 'bug' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' %>">
+                      <%= session.type === 'bug' ? 'Bug' : 'Feature' %>
+                    </span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                      Testing
+                    </span>
+                  </div>
+                  <h4 class="text-sm font-medium text-gray-900 line-clamp-2"><%= session.title || 'Untitled' %></h4>
+                  <% if (byofRole === 'approver' && session.user) { %>
+                    <p class="text-xs text-gray-500 mt-1">by <%= session.user.username %></p>
+                  <% } %>
+                  <p class="text-xs text-gray-400 mt-1"><%= new Date(session.updated_at || session.created_at).toLocaleDateString() %></p>
+                </a>
+              <% }) %>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Production Column -->
+        <div class="kanban-column col-production">
+          <div class="kanban-header">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+              </svg>
+              Production
+            </span>
+            <span class="count-badge"><%= kanban.production.length %></span>
+          </div>
+          <div class="kanban-cards">
+            <% if (kanban.production.length === 0) { %>
+              <div class="kanban-empty">No completed items</div>
+            <% } else { %>
+              <% kanban.production.forEach(session => { %>
+                <a href="/observability/byof/session/<%= session.id %>" class="kanban-card">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium <%= session.type === 'bug' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' %>">
+                      <%= session.type === 'bug' ? 'Bug' : 'Feature' %>
+                    </span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                      Live
+                    </span>
+                  </div>
+                  <h4 class="text-sm font-medium text-gray-900 line-clamp-2"><%= session.title || 'Untitled' %></h4>
+                  <% if (byofRole === 'approver' && session.user) { %>
+                    <p class="text-xs text-gray-500 mt-1">by <%= session.user.username %></p>
+                  <% } %>
+                  <p class="text-xs text-gray-400 mt-1"><%= new Date(session.plan?.completed_at || session.updated_at).toLocaleDateString() %></p>
+                </a>
+              <% }) %>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    <% } else { %>
+      <!-- Empty State -->
+      <div class="bg-white rounded-lg shadow px-6 py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">The forge is cold</h3>
+        <p class="mt-1 text-sm text-gray-500">Light it up by creating your first bug report or feature request.</p>
+        <div class="mt-6">
+          <a href="/observability/byof/new" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            New Report
+          </a>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Info Box -->
+    <div class="mt-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-orange-800">How The Forge Works</h3>
+          <div class="mt-2 text-sm text-orange-700">
+            <ol class="list-decimal list-inside space-y-1">
+              <li><strong>Not Started</strong> - Report a bug or feature, chat with AI</li>
+              <li><strong>Submitted</strong> - AI crafts a plan, awaiting review</li>
+              <li><strong>Approved</strong> - Plan approved, developer working on it</li>
+              <li><strong>Staging</strong> - Deployed to staging for testing</li>
+              <li><strong>Production</strong> - Live for all users!</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

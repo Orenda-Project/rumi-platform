@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Digital Coach Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Navigation -->
+  <nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex">
+          <div class="flex-shrink-0 flex items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Digital Coach</h1>
+          </div>
+          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <a href="/dashboard" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Dashboard
+            </a>
+            <a href="/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Users & Chats
+            </a>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <span class="text-gray-700 mr-4">👤 <%= username %></span>
+          <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- Stats Grid -->
+    <div class="px-4 py-6 sm:px-0">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Overview</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Total Users -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-gray-500 truncate">Total Chats Started</dt>
+            <dd class="mt-1 text-3xl font-semibold text-gray-900"><%= stats.totalUsers %></dd>
+          </div>
+        </div>
+
+        <!-- Voice Notes Received -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-gray-500 truncate">Voice Notes Received</dt>
+            <dd class="mt-1 text-3xl font-semibold text-blue-600"><%= stats.voiceNotesReceived %></dd>
+          </div>
+        </div>
+
+        <!-- Voice Notes Sent -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-gray-500 truncate">Voice Notes Sent</dt>
+            <dd class="mt-1 text-3xl font-semibold text-green-600"><%= stats.voiceNotesSent %></dd>
+          </div>
+        </div>
+
+        <!-- Total Messages -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-gray-500 truncate">Total Messages</dt>
+            <dd class="mt-1 text-3xl font-semibold text-purple-600"><%= stats.totalMessages %></dd>
+          </div>
+        </div>
+
+        <!-- Daily Active Users -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-gray-500 truncate">Daily Active Users (DAU)</dt>
+            <dd class="mt-1 text-3xl font-semibold text-orange-600"><%= stats.dailyActiveUsers %></dd>
+            <p class="text-xs text-gray-400 mt-1">Last 24 hours</p>
+          </div>
+        </div>
+
+        <!-- Weekly Active Users -->
+        <div class="bg-white overflow-hidden shadow-lg rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-gray-500 truncate">Weekly Active Users (WAU)</dt>
+            <dd class="mt-1 text-3xl font-semibold text-indigo-600"><%= stats.weeklyActiveUsers %></dd>
+            <p class="text-xs text-gray-400 mt-1">Last 7 days</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <% if (recentActivity && recentActivity.length > 0) { %>
+            <div class="space-y-4">
+              <% recentActivity.forEach(activity => { %>
+                <div class="flex items-start border-l-4 <%= activity.role === 'user' ? 'border-blue-500' : 'border-green-500' %> pl-4 py-2">
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-gray-900">
+                        <%= activity.users?.name || activity.users?.phone_number || 'Unknown' %>
+                        <span class="ml-2 text-xs text-gray-500">(<%= activity.role %>)</span>
+                      </p>
+                      <span class="text-xs text-gray-500"><%= new Date(activity.created_at).toLocaleString() %></span>
+                    </div>
+                    <p class="mt-1 text-sm text-gray-600 truncate"><%= activity.content.substring(0, 100) %><%= activity.content.length > 100 ? '...' : '' %></p>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mt-1">
+                      <%= activity.message_type %>
+                    </span>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <p class="text-gray-500 text-center py-4">No recent activity</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <style>
+    /* Dual-Thumb Range Slider - Airbnb-style */
+    .timeline-container {
+      position: relative;
+      padding: 16px 20px 12px;
+      background: hsl(var(--card));
+      border-radius: 16px;
+      border: 1px solid hsl(var(--border));
+      margin-bottom: 24px;
+    }
+
+    .timeline-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .timeline-label {
+      font-size: 13px;
+      color: hsl(var(--muted-foreground));
+      white-space: nowrap;
+    }
+
+    .timeline-period-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: hsl(var(--foreground));
+    }
+
+    .timeline-loading {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid hsl(var(--muted));
+      border-top-color: hsl(var(--primary));
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .timeline-slider-wrap {
+      position: relative;
+      height: 48px;
+      padding: 0 10px;
+    }
+
+    .timeline-track {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 4px;
+      background: hsl(var(--muted));
+      border-radius: 2px;
+    }
+
+    .timeline-track-fill {
+      position: absolute;
+      height: 4px;
+      background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)));
+      border-radius: 2px;
+      top: 50%;
+      transform: translateY(-50%);
+      transition: left 0.1s ease, right 0.1s ease;
+    }
+
+    .timeline-input {
+      position: absolute;
+      width: calc(100% - 20px);
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 20px;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .timeline-input.active {
+      pointer-events: auto;
+    }
+
+    .timeline-thumb {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: hsl(var(--primary));
+      border: 3px solid hsl(var(--background));
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      top: 50%;
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      z-index: 5;
+    }
+
+    .timeline-thumb:hover, .timeline-thumb.dragging {
+      transform: translate(-50%, -50%) scale(1.15);
+      box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+    }
+
+    .timeline-thumb.dragging {
+      cursor: grabbing;
+    }
+
+    .timeline-thumb-label {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: hsl(var(--foreground));
+      color: hsl(var(--background));
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+      margin-bottom: 8px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      pointer-events: none;
+    }
+
+    .timeline-thumb:hover .timeline-thumb-label,
+    .timeline-thumb.dragging .timeline-thumb-label {
+      opacity: 1;
+    }
+
+    .timeline-date-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding: 0 10px;
+    }
+
+    .timeline-date-label {
+      font-size: 10px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .timeline-presets {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .timeline-preset {
+      padding: 4px 10px;
+      font-size: 11px;
+      background: hsl(var(--muted));
+      color: hsl(var(--muted-foreground));
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .timeline-preset:hover {
+      background: hsl(var(--primary) / 0.2);
+      color: hsl(var(--primary));
+    }
+
+    .timeline-preset.active {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+    }
+
+    /* Percentage change indicators */
+    .stat-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-left: 8px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      vertical-align: middle;
+    }
+
+    .stat-change.positive {
+      color: hsl(142, 71%, 45%);
+      background: hsla(142, 71%, 45%, 0.1);
+    }
+
+    .stat-change.negative {
+      color: hsl(0, 84%, 60%);
+      background: hsla(0, 84%, 60%, 0.1);
+    }
+
+    .stat-change.neutral {
+      color: hsl(var(--muted-foreground));
+      background: hsl(var(--muted));
+    }
+
+    .stat-change svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    /* Stat value with change */
+    .stat-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    /* Smooth transitions for stat updates */
+    .stat-value {
+      transition: opacity 0.2s ease;
+    }
+
+    .stat-value.updating {
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body class="bg-background">
+  <!-- Navigation -->
+  <%- include('partials/navigation', { currentPage: 'dashboard', username: username, userRole: userRole }) %>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- Stats Grid -->
+    <div class="px-4 py-6 sm:px-0">
+      <!-- Header with Timeline Slider -->
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-light text-foreground">Overview</h2>
+      </div>
+
+      <!-- Dual-Thumb Date Range Slider -->
+      <div class="timeline-container" id="timelineContainer">
+        <div class="timeline-header">
+          <span class="timeline-label">Select Date Range</span>
+          <div class="timeline-period-display">
+            <span id="periodLabel">All Time</span>
+            <span class="timeline-loading" id="loadingSpinner" style="display: none;"></span>
+          </div>
+        </div>
+
+        <div class="timeline-slider-wrap" id="sliderWrap">
+          <div class="timeline-track"></div>
+          <div class="timeline-track-fill" id="trackFill"></div>
+
+          <!-- Left thumb (start date) -->
+          <div class="timeline-thumb" id="thumbStart" data-thumb="start">
+            <div class="timeline-thumb-label" id="labelStart">Start</div>
+          </div>
+
+          <!-- Right thumb (end date) -->
+          <div class="timeline-thumb" id="thumbEnd" data-thumb="end">
+            <div class="timeline-thumb-label" id="labelEnd">Today</div>
+          </div>
+        </div>
+
+        <div class="timeline-date-labels">
+          <span class="timeline-date-label" id="minDateLabel">1 year ago</span>
+          <span class="timeline-date-label" id="maxDateLabel">Today</span>
+        </div>
+
+        <!-- Quick preset buttons -->
+        <div class="timeline-presets">
+          <button class="timeline-preset active" data-days="0">All Time</button>
+          <button class="timeline-preset" data-days="7">7 Days</button>
+          <button class="timeline-preset" data-days="30">30 Days</button>
+          <button class="timeline-preset" data-days="90">90 Days</button>
+          <button class="timeline-preset" data-days="365">1 Year</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="statsGrid">
+        <!-- Row 1: Total Chats, Voice Notes, Total Messages -->
+        <!-- Total Users -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Total Chats Started</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light text-foreground stat-value" data-stat="totalUsers"><%= stats.totalUsers %></span>
+              <span class="stat-change" data-change="totalUsers" style="display: none;"></span>
+            </dd>
+          </div>
+        </div>
+
+        <!-- Voice Notes Received -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Voice Notes Received</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light text-primary stat-value" data-stat="voiceNotesReceived"><%= stats.voiceNotesReceived %></span>
+              <span class="stat-change" data-change="voiceNotesReceived" style="display: none;"></span>
+            </dd>
+          </div>
+        </div>
+
+        <!-- Total Messages -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Total Messages</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light text-accent stat-value" data-stat="totalMessages"><%= stats.totalMessages %></span>
+              <span class="stat-change" data-change="totalMessages" style="display: none;"></span>
+            </dd>
+          </div>
+        </div>
+
+        <!-- Row 2: DAU, WAU, Total Sessions -->
+        <!-- Daily Active Users -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Daily Active Users (DAU)</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light stat-value" style="color: hsl(var(--warning));" data-stat="dailyActiveUsers"><%= stats.dailyActiveUsers %></span>
+              <span class="stat-change" data-change="activeUsers" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1">Last 24 hours</p>
+          </div>
+        </div>
+
+        <!-- Weekly Active Users -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Weekly Active Users (WAU)</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light text-primary stat-value" data-stat="weeklyActiveUsers"><%= stats.weeklyActiveUsers %></span>
+              <span class="stat-change" data-change="activeUsers" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1">Last 7 days</p>
+          </div>
+        </div>
+
+        <!-- Total Sessions -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Total Sessions</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light stat-value" style="color: hsl(var(--success));" data-stat="totalSessions"><%= stats.totalSessions || 0 %></span>
+              <span class="stat-change" data-change="totalSessions" style="display: none;"></span>
+            </dd>
+            <a href="/observability/sessions" class="text-xs text-primary hover:text-primary/80 mt-1 inline-block transition-smooth">View Analytics →</a>
+          </div>
+        </div>
+
+        <!-- Row 3: Sessions Today, Avg Session Length -->
+        <!-- Sessions Today -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Sessions Today</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light text-accent stat-value" data-stat="sessionsToday"><%= stats.sessionsToday || 0 %></span>
+              <span class="stat-change" data-change="sessionsToday" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1">Last 24 hours</p>
+          </div>
+        </div>
+
+        <!-- Average Session Length -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Avg Session Length</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light stat-value" style="color: hsl(var(--warning));" data-stat="avgSessionLength"><%= stats.avgSessionLength || 0 %> min</span>
+              <span class="stat-change" data-change="avgSessionLength" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1">Per session</p>
+          </div>
+        </div>
+
+        <!-- Registration Rate -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Registration Rate</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light stat-value" style="color: hsl(var(--success));" data-stat="registrationRate"><%= stats.registrationRate || 0 %>%</span>
+              <span class="stat-change" data-change="registrationRate" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1">Completed registration</p>
+          </div>
+        </div>
+
+        <!-- Row 4 (second-to-last): AI Videos Generated, Reading Assessments, Feature Discovery -->
+        <!-- AI Videos Generated -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">AI Videos Generated</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light stat-value" style="color: hsl(var(--success));" data-stat="totalVideosGenerated"><%= stats.totalVideosGenerated || 0 %></span>
+              <span class="stat-change" data-change="totalVideosGenerated" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1" data-period-label="videosLabel">All time</p>
+          </div>
+        </div>
+
+        <!-- Reading Assessments Completed -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Reading Assessments</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light stat-value" style="color: hsl(var(--primary));" data-stat="totalReadingAssessments"><%= stats.totalReadingAssessments || 0 %></span>
+              <span class="stat-change" data-change="totalReadingAssessments" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1" data-period-label="readingLabel">Completed</p>
+          </div>
+        </div>
+
+        <!-- Feature Discovery Rate -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Feature Discovery</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light stat-value" style="color: hsl(var(--warning));" data-stat="featureDiscoveryRate"><%= stats.featureDiscoveryRate || 0 %>%</span>
+              <span class="stat-change" data-change="featureDiscoveryRate" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1">Avg features tried</p>
+          </div>
+        </div>
+
+        <!-- Row 5 (last): Lesson Plans, Presentations, Coaching Sessions -->
+        <!-- Total Lesson Plans -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Total Lesson Plans</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light text-primary stat-value" data-stat="totalLessonPlans"><%= stats.totalLessonPlans || 0 %></span>
+              <span class="stat-change" data-change="totalLessonPlans" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1" data-period-label="lessonLabel">All time</p>
+          </div>
+        </div>
+
+        <!-- Total Presentations -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Total Presentations</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light stat-value" style="color: hsl(var(--success));" data-stat="totalPresentations"><%= stats.totalPresentations || 0 %></span>
+              <span class="stat-change" data-change="totalPresentations" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1" data-period-label="presentationLabel">All time</p>
+          </div>
+        </div>
+
+        <!-- Completed Coaching Sessions -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Coaching Sessions</dt>
+            <dd class="mt-1 stat-value-row">
+              <span class="text-3xl font-light text-accent stat-value" data-stat="totalCompletedCoachingSessions"><%= stats.totalCompletedCoachingSessions || 0 %></span>
+              <span class="stat-change" data-change="totalCompletedCoachingSessions" style="display: none;"></span>
+            </dd>
+            <p class="text-xs text-muted-foreground mt-1" data-period-label="coachingLabel">Completed successfully</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card-primary overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 border-b border-border">
+          <h3 class="text-lg font-medium text-foreground">Recent Activity</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <% if (recentActivity && recentActivity.length > 0) { %>
+            <div class="space-y-4">
+              <% recentActivity.forEach(activity => { %>
+                <div class="flex items-start border-l-4 <%= activity.role === 'user' ? 'border-primary' : 'border-accent' %> pl-4 py-2 transition-smooth">
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-foreground">
+                        <%= activity.users?.name || activity.users?.phone_number || 'Unknown' %>
+                        <span class="ml-2 text-xs text-muted-foreground">(<%= activity.role %>)</span>
+                      </p>
+                      <span class="text-xs text-muted-foreground"><%= new Date(activity.created_at).toLocaleString() %></span>
+                    </div>
+                    <p class="mt-1 text-sm text-muted-foreground truncate"><%= activity.content.substring(0, 100) %><%= activity.content.length > 100 ? '...' : '' %></p>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground mt-1">
+                      <%= activity.message_type %>
+                    </span>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <p class="text-muted-foreground text-center py-4">No recent activity</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer with version -->
+  <footer class="mt-8 pb-8 text-center text-sm text-muted-foreground">
+    Rumi v<%= typeof version !== 'undefined' ? version : '2.1.0' %> | Last Updated: Nov 20, 2025
+  </footer>
+
+  <!-- Dual-Thumb Timeline Slider JavaScript -->
+  <script>
+    (function() {
+      // DOM Elements
+      const sliderWrap = document.getElementById('sliderWrap');
+      const trackFill = document.getElementById('trackFill');
+      const thumbStart = document.getElementById('thumbStart');
+      const thumbEnd = document.getElementById('thumbEnd');
+      const labelStart = document.getElementById('labelStart');
+      const labelEnd = document.getElementById('labelEnd');
+      const periodLabel = document.getElementById('periodLabel');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const minDateLabel = document.getElementById('minDateLabel');
+      const maxDateLabel = document.getElementById('maxDateLabel');
+      const presetButtons = document.querySelectorAll('.timeline-preset');
+
+      // Configuration
+      const MAX_DAYS_BACK = 365; // 1 year timeline
+      const MIN_RANGE_DAYS = 1; // Minimum selection range
+
+      // State
+      let startPercent = 0; // 0% = oldest date
+      let endPercent = 100; // 100% = today
+      let isDragging = null; // 'start', 'end', or null
+      let fetchTimeout = null;
+      let statsCache = {};
+
+      // Calculate dates from slider percentages
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      const oldestDate = new Date(today);
+      oldestDate.setDate(oldestDate.getDate() - MAX_DAYS_BACK);
+      oldestDate.setHours(0, 0, 0, 0);
+
+      // Set date labels
+      minDateLabel.textContent = formatDate(oldestDate);
+      maxDateLabel.textContent = 'Today';
+
+      function formatDate(date) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+      }
+
+      function formatShortDate(date) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[date.getMonth()]} ${date.getDate()}`;
+      }
+
+      function percentToDate(percent) {
+        const totalMs = today.getTime() - oldestDate.getTime();
+        const targetMs = oldestDate.getTime() + (totalMs * percent / 100);
+        return new Date(targetMs);
+      }
+
+      function dateToPercent(date) {
+        const totalMs = today.getTime() - oldestDate.getTime();
+        const dateMs = date.getTime() - oldestDate.getTime();
+        return Math.max(0, Math.min(100, (dateMs / totalMs) * 100));
+      }
+
+      // Update slider visuals
+      function updateSliderVisuals() {
+        const wrapRect = sliderWrap.getBoundingClientRect();
+        const trackPadding = 10; // px padding on each side
+        const trackWidth = wrapRect.width - (trackPadding * 2);
+
+        // Position thumbs
+        const startLeft = trackPadding + (trackWidth * startPercent / 100);
+        const endLeft = trackPadding + (trackWidth * endPercent / 100);
+
+        thumbStart.style.left = `${startLeft}px`;
+        thumbEnd.style.left = `${endLeft}px`;
+
+        // Update track fill
+        trackFill.style.left = `${startLeft}px`;
+        trackFill.style.width = `${endLeft - startLeft}px`;
+
+        // Update thumb labels
+        const startDate = percentToDate(startPercent);
+        const endDate = percentToDate(endPercent);
+        labelStart.textContent = formatShortDate(startDate);
+        labelEnd.textContent = endPercent >= 99 ? 'Today' : formatShortDate(endDate);
+      }
+
+      // Get mouse/touch position as percentage
+      function getPositionPercent(e) {
+        const wrapRect = sliderWrap.getBoundingClientRect();
+        const trackPadding = 10;
+        const trackWidth = wrapRect.width - (trackPadding * 2);
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const relativeX = clientX - wrapRect.left - trackPadding;
+        return Math.max(0, Math.min(100, (relativeX / trackWidth) * 100));
+      }
+
+      // Handle drag start
+      function handleDragStart(e, thumb) {
+        e.preventDefault();
+        isDragging = thumb;
+        document.body.style.cursor = 'grabbing';
+        (thumb === 'start' ? thumbStart : thumbEnd).classList.add('dragging');
+
+        // Clear active preset
+        presetButtons.forEach(btn => btn.classList.remove('active'));
+      }
+
+      // Handle drag move
+      function handleDragMove(e) {
+        if (!isDragging) return;
+
+        const percent = getPositionPercent(e);
+        const minGap = (MIN_RANGE_DAYS / MAX_DAYS_BACK) * 100;
+
+        if (isDragging === 'start') {
+          // Prevent start from going past end
+          startPercent = Math.min(percent, endPercent - minGap);
+        } else {
+          // Prevent end from going past start
+          endPercent = Math.max(percent, startPercent + minGap);
+        }
+
+        updateSliderVisuals();
+        updatePeriodLabel();
+      }
+
+      // Handle drag end
+      function handleDragEnd() {
+        if (!isDragging) return;
+
+        (isDragging === 'start' ? thumbStart : thumbEnd).classList.remove('dragging');
+        isDragging = null;
+        document.body.style.cursor = '';
+
+        // Fetch stats with debounce
+        debouncedFetchStats();
+      }
+
+      // Update period label
+      function updatePeriodLabel() {
+        const startDate = percentToDate(startPercent);
+        const endDate = percentToDate(endPercent);
+
+        if (startPercent === 0 && endPercent >= 99) {
+          periodLabel.textContent = 'All Time';
+        } else {
+          const endText = endPercent >= 99 ? 'Today' : formatShortDate(endDate);
+          periodLabel.textContent = `${formatShortDate(startDate)} - ${endText}`;
+        }
+      }
+
+      // Debounced stats fetch
+      function debouncedFetchStats() {
+        clearTimeout(fetchTimeout);
+        fetchTimeout = setTimeout(async () => {
+          const startDate = percentToDate(startPercent);
+          const endDate = percentToDate(endPercent);
+
+          // For all-time, use days=0
+          if (startPercent === 0 && endPercent >= 99) {
+            const data = await fetchStats({ days: 0 });
+            if (data) updateStatValues(data);
+          } else {
+            // Custom range
+            const data = await fetchStats({
+              startDate: startDate.toISOString().split('T')[0],
+              endDate: endDate.toISOString().split('T')[0]
+            });
+            if (data) updateStatValues(data);
+          }
+        }, 200);
+      }
+
+      // Fetch stats from API
+      async function fetchStats(params) {
+        const cacheKey = JSON.stringify(params);
+
+        // Check cache (60 second TTL)
+        if (statsCache[cacheKey] && Date.now() - statsCache[cacheKey].timestamp < 60000) {
+          return statsCache[cacheKey].data;
+        }
+
+        loadingSpinner.style.display = 'inline-block';
+        document.querySelectorAll('.stat-value').forEach(el => el.classList.add('updating'));
+
+        try {
+          let url = '/observability/api/dashboard/stats?';
+          if (params.days !== undefined) {
+            url += `days=${params.days}`;
+          } else {
+            url += `startDate=${params.startDate}&endDate=${params.endDate}`;
+          }
+
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (data.success) {
+            statsCache[cacheKey] = { data, timestamp: Date.now() };
+            return data;
+          } else {
+            console.error('API error:', data.error);
+            return null;
+          }
+        } catch (error) {
+          console.error('Fetch error:', error);
+          return null;
+        } finally {
+          loadingSpinner.style.display = 'none';
+          document.querySelectorAll('.stat-value').forEach(el => el.classList.remove('updating'));
+        }
+      }
+
+      // Update stat values in DOM
+      function updateStatValues(data) {
+        if (!data || !data.stats) return;
+
+        const stats = data.stats;
+        const changes = data.changes;
+
+        const statMappings = {
+          'totalUsers': stats.totalUsers,
+          'voiceNotesReceived': stats.voiceNotesReceived,
+          'totalMessages': stats.totalMessages,
+          'totalSessions': stats.totalSessions,
+          'sessionsToday': stats.sessionsToday,
+          'avgSessionLength': stats.avgSessionLength,
+          'registrationRate': stats.registrationRate,
+          'featureDiscoveryRate': stats.featureDiscoveryRate,
+          'totalLessonPlans': stats.totalLessonPlans,
+          'totalPresentations': stats.totalPresentations,
+          'totalCompletedCoachingSessions': stats.totalCompletedCoachingSessions,
+          'totalVideosGenerated': stats.totalVideosGenerated,
+          'totalReadingAssessments': stats.totalReadingAssessments
+        };
+
+        // Update active users if available
+        if (stats.activeUsers !== undefined) {
+          const dauEl = document.querySelector('[data-stat="dailyActiveUsers"]');
+          const wauEl = document.querySelector('[data-stat="weeklyActiveUsers"]');
+          if (dauEl) dauEl.textContent = stats.activeUsers;
+          if (wauEl) wauEl.textContent = stats.activeUsers;
+        }
+
+        Object.entries(statMappings).forEach(([key, value]) => {
+          const el = document.querySelector(`[data-stat="${key}"]`);
+          if (el && value !== undefined) {
+            const currentText = el.textContent;
+            const suffix = currentText.match(/(\s*(min|%))$/)?.[0] || '';
+            el.textContent = value + suffix;
+          }
+        });
+
+        // Update percentage change indicators
+        if (changes) {
+          updateChangeIndicators(changes);
+        } else {
+          document.querySelectorAll('.stat-change').forEach(el => {
+            el.style.display = 'none';
+          });
+        }
+
+        // Update period label from response
+        if (data.periodLabel) {
+          periodLabel.textContent = data.periodLabel;
+        }
+      }
+
+      // Update percentage change indicators
+      function updateChangeIndicators(changes) {
+        Object.entries(changes).forEach(([key, value]) => {
+          const el = document.querySelector(`[data-change="${key}"]`);
+          if (!el) return;
+
+          const isPositive = value > 0;
+          const isNeutral = value === 0;
+
+          el.classList.remove('positive', 'negative', 'neutral');
+
+          if (isNeutral) {
+            el.classList.add('neutral');
+            el.innerHTML = '<span>0%</span>';
+          } else if (isPositive) {
+            el.classList.add('positive');
+            el.innerHTML = `
+              <svg viewBox="0 0 12 12" fill="currentColor">
+                <path d="M6 2l4 5H2l4-5z"/>
+              </svg>
+              <span>${value}%</span>
+            `;
+          } else {
+            el.classList.add('negative');
+            el.innerHTML = `
+              <svg viewBox="0 0 12 12" fill="currentColor">
+                <path d="M6 10l-4-5h8l-4 5z"/>
+              </svg>
+              <span>${Math.abs(value)}%</span>
+            `;
+          }
+
+          el.style.display = 'inline-flex';
+        });
+      }
+
+      // Preset button handler
+      function handlePreset(days) {
+        presetButtons.forEach(btn => {
+          btn.classList.toggle('active', parseInt(btn.dataset.days) === days);
+        });
+
+        if (days === 0) {
+          // All time
+          startPercent = 0;
+          endPercent = 100;
+        } else {
+          // Calculate start position for N days ago
+          endPercent = 100;
+          startPercent = 100 - ((days / MAX_DAYS_BACK) * 100);
+          startPercent = Math.max(0, startPercent);
+        }
+
+        updateSliderVisuals();
+        updatePeriodLabel();
+        debouncedFetchStats();
+      }
+
+      // Event Listeners - Thumb dragging
+      thumbStart.addEventListener('mousedown', (e) => handleDragStart(e, 'start'));
+      thumbEnd.addEventListener('mousedown', (e) => handleDragStart(e, 'end'));
+      thumbStart.addEventListener('touchstart', (e) => handleDragStart(e, 'start'), { passive: false });
+      thumbEnd.addEventListener('touchstart', (e) => handleDragStart(e, 'end'), { passive: false });
+
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('touchmove', handleDragMove, { passive: false });
+      document.addEventListener('mouseup', handleDragEnd);
+      document.addEventListener('touchend', handleDragEnd);
+
+      // Event Listeners - Preset buttons
+      presetButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const days = parseInt(btn.dataset.days);
+          handlePreset(days);
+        });
+      });
+
+      // Initialize
+      updateSliderVisuals();
+      updatePeriodLabel();
+    })();
+  </script>
+</body>
+</html>

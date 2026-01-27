@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 13% 13%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 13%;
+
+    --primary: 225 73% 20%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 10% 96%;
+    --secondary-foreground: 220 13% 13%;
+
+    --muted: 220 10% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 15 85% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 225 73% 20%;
+
+    --radius: 1rem;
+    
+    /* Custom tokens for premium design */
+    --gradient-hero: linear-gradient(135deg, hsl(225 73% 20%) 0%, hsl(230 60% 35%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 20% 98%) 100%);
+    --shadow-soft: 0 4px 24px -4px hsl(220 13% 13% / 0.06);
+    --shadow-medium: 0 12px 48px -8px hsl(220 13% 13% / 0.10);
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Score indicator colors for portal */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --error: 0 72% 51%;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 13% 13%;
+    --foreground: 0 0% 98%;
+
+    --card: 220 13% 13%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 220 13% 13%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 225 73% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 220 13% 18%;
+    --muted-foreground: 220 9% 65%;
+
+    --accent: 15 85% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 225 73% 60%;
+    
+    --gradient-hero: linear-gradient(135deg, hsl(225 73% 25%) 0%, hsl(230 60% 40%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(220 13% 13%) 0%, hsl(220 13% 16%) 100%);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "kern" 1, "liga" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
+  }
+
+  /* Language-specific font overrides */
+  html[lang="ar"] * {
+    font-family: "Noto Sans Arabic", sans-serif !important;
+  }
+
+  html[lang="ur"] * {
+    font-family: "Noto Nastaliq Urdu", serif !important;
+  }
+
+  /* Typography adjustments for Urdu Nastaleeq */
+  html[lang="ur"] body,
+  html[lang="ur"] p,
+  html[lang="ur"] span,
+  html[lang="ur"] div,
+  html[lang="ur"] h1,
+  html[lang="ur"] h2,
+  html[lang="ur"] h3,
+  html[lang="ur"] h4,
+  html[lang="ur"] h5,
+  html[lang="ur"] h6,
+  html[lang="ur"] button,
+  html[lang="ur"] a {
+    letter-spacing: 0 !important;
+    word-spacing: 0.15em;
+  }
+
+  html[lang="ur"] h1,
+  html[lang="ur"] h2,
+  html[lang="ur"] h3 {
+    line-height: 1.6 !important;
+  }
+
+  html[lang="ur"] p {
+    line-height: 2 !important;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-feature-settings: 'kern' 1;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.022em;
+    font-weight: 400;
+  }
+
+  /* Adjust letter-spacing for Arabic scripts */
+  html[lang="ar"] h1,
+  html[lang="ar"] h2,
+  html[lang="ar"] h3,
+  html[lang="ar"] h4,
+  html[lang="ar"] h5,
+  html[lang="ar"] h6 {
+    letter-spacing: normal;
+  }
+
+  html[lang="ar"] body,
+  html[lang="ar"] p {
+    letter-spacing: 0.01em;
+  }
+
+  /* 3D Transform utilities for card flip */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: 1.05;
+    font-weight: 300;
+  }
+
+  h2 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    line-height: 1.1;
+    font-weight: 300;
+  }
+
+  p {
+    line-height: 1.7;
+    font-size: 1.125rem;
+  }
+
+  /* RTL Support */
+  [dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+  }
+
+  [dir="rtl"] .grid {
+    direction: ltr;
+  }
+
+  [dir="rtl"] .grid > * {
+    direction: rtl;
+  }
+}

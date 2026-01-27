@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classroom Observation Report - {{teacherName}}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      background: #ffffff;
+      color: #1c1c1e;
+      line-height: 1.6;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .report-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px;
+    }
+
+    /* Header */
+    .header {
+      border-bottom: 2px solid hsl(225, 73%, 20%);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .header-left {
+      flex: 1;
+    }
+
+    .logo-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: hsl(225, 73%, 20%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 300;
+      color: hsl(225, 73%, 20%);
+      letter-spacing: -0.5px;
+    }
+
+    .header-subtitle {
+      font-size: 14px;
+      color: hsl(220, 9%, 46%);
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .overall-score {
+      font-size: 48px;
+      font-weight: 300;
+      color: hsl(225, 73%, 20%);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .performance-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Teacher Info Grid */
+    .teacher-info {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      padding: 24px;
+      background: hsl(220, 20%, 98%);
+      border-radius: 8px;
+      margin-bottom: 32px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: hsl(220, 9%, 46%);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-value {
+      font-size: 15px;
+      font-weight: 400;
+      color: hsl(220, 13%, 13%);
+    }
+
+    .info-item.full-width {
+      grid-column: span 2;
+    }
+
+    /* Section Titles */
+    .section-title {
+      font-size: 24px;
+      font-weight: 300;
+      color: hsl(225, 73%, 20%);
+      margin-bottom: 24px;
+      letter-spacing: -0.3px;
+    }
+
+    /* Prior Feedback Box */
+    .prior-feedback-box {
+      padding: 16px;
+      background: hsl(220, 20%, 98%);
+      border-radius: 6px;
+      margin-bottom: 32px;
+    }
+
+    .criterion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .criterion-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: hsl(220, 13%, 13%);
+    }
+
+    .score-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .score-bars {
+      display: flex;
+      gap: 2px;
+    }
+
+    .score-bar {
+      width: 6px;
+      height: 24px;
+      border-radius: 2px;
+    }
+
+    .score-bar.filled {
+      background: hsl(225, 73%, 20%);
+    }
+
+    .score-bar.empty {
+      background: hsl(220, 13%, 91%);
+    }
+
+    .evidence-section {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid hsl(220, 13%, 91%);
+    }
+
+    .evidence-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .evidence-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: hsl(220, 9%, 46%);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .timestamp {
+      font-size: 11px;
+      padding: 2px 8px;
+      background: hsl(225, 73%, 20%);
+      color: white;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    .evidence-text {
+      font-size: 12px;
+      line-height: 1.6;
+      color: hsl(220, 13%, 13%);
+    }
+
+    /* Goals Section */
+    .goal-section {
+      margin-bottom: 24px;
+    }
+
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .goal-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: hsl(220, 13%, 13%);
+    }
+
+    .goal-score {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .goal-score-text {
+      font-size: 14px;
+      color: hsl(220, 9%, 46%);
+    }
+
+    .goal-percentage {
+      font-size: 14px;
+      font-weight: 500;
+      color: hsl(225, 73%, 20%);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: hsl(220, 13%, 91%);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-fill.excellent { background: hsl(142, 76%, 36%); }
+    .progress-fill.proficient { background: hsl(221, 83%, 53%); }
+    .progress-fill.developing { background: hsl(38, 92%, 50%); }
+    .progress-fill.emerging { background: hsl(15, 85%, 60%); }
+
+    /* Criteria */
+    .criteria-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .criterion-box {
+      padding: 16px;
+      background: hsl(220, 20%, 98%);
+      border-radius: 6px;
+    }
+
+    /* Feedback Box */
+    .feedback-box {
+      padding: 24px;
+      background: hsl(220, 20%, 98%);
+      border-radius: 8px;
+      margin-bottom: 32px;
+    }
+
+    .feedback-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: hsl(225, 73%, 20%);
+      margin-bottom: 12px;
+    }
+
+    .feedback-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: hsl(220, 13%, 13%);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid hsl(220, 13%, 91%);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 11px;
+      color: hsl(220, 9%, 46%);
+    }
+
+    /* Performance colors */
+    .excellent { color: hsl(142, 76%, 36%); }
+    .proficient { color: hsl(221, 83%, 53%); }
+    .developing { color: hsl(38, 92%, 50%); }
+    .emerging { color: hsl(15, 85%, 60%); }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-title">
+          <div class="logo">R</div>
+          <h1>Classroom Observation</h1>
+        </div>
+        <p class="header-subtitle">Teacher Performance Evaluation</p>
+      </div>
+      <div class="header-right">
+        <div class="overall-score">{{percentage}}%</div>
+        <div class="performance-label {{performanceClass}}">{{performanceLabel}}</div>
+      </div>
+    </div>
+
+    <!-- Teacher Info -->
+    <div class="teacher-info">
+      <div class="info-item">
+        <div class="info-label">Teacher</div>
+        <div class="info-value">{{teacherName}}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Date</div>
+        <div class="info-value">{{observationDate}}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Subject</div>
+        <div class="info-value">{{subject}}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Grade</div>
+        <div class="info-value">{{grade}}</div>
+      </div>
+      <div class="info-item full-width">
+        <div class="info-label">Lesson</div>
+        <div class="info-value">{{lessonTitle}}</div>
+      </div>
+      <div class="info-item full-width">
+        <div class="info-label">Observer</div>
+        <div class="info-value">{{observerName}}</div>
+      </div>
+    </div>
+
+    <!-- Prior Feedback -->
+    {{#if priorFeedback}}
+    <h2 class="section-title">Incorporation of Prior Feedback</h2>
+    <div class="prior-feedback-box">
+      <div class="criterion-header">
+        <span class="criterion-name">Incorporation of Prior Feedback</span>
+        <div class="score-display">
+          <span class="score-text">{{priorFeedback.score}}/{{priorFeedback.maxScore}}</span>
+          <div class="score-bars">
+            {{#each priorFeedback.bars}}
+              <div class="score-bar {{this}}"></div>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+      {{#if priorFeedback.evidence}}
+      <div class="evidence-section">
+        <div class="evidence-header">
+          <div class="evidence-label">Evidence</div>
+          {{#if priorFeedback.timestamp}}
+          <span class="timestamp">{{priorFeedback.timestamp}}</span>
+          {{/if}}
+        </div>
+        <p class="evidence-text">{{priorFeedback.evidence}}</p>
+      </div>
+      {{/if}}
+    </div>
+    {{/if}}
+
+    <!-- Performance Overview -->
+    <h2 class="section-title">Performance Overview</h2>
+
+    {{#each goals}}
+    <div class="goal-section">
+      <div class="goal-header">
+        <h3 class="goal-title">{{this.title}}</h3>
+        <div class="goal-score">
+          <span class="goal-score-text">{{this.score}}/{{this.maxScore}}</span>
+          <span class="goal-percentage">{{this.percentage}}%</span>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill {{this.performanceClass}}" style="width: {{this.percentage}}%"></div>
+      </div>
+
+      <!-- Criteria -->
+      <div class="criteria-list">
+        {{#each this.criteria}}
+        <div class="criterion-box">
+          <div class="criterion-header">
+            <span class="criterion-name">{{this.name}}</span>
+            <div class="score-display">
+              <span class="score-text">{{this.score}}/{{this.max}}</span>
+              <div class="score-bars">
+                {{#each this.bars}}
+                  <div class="score-bar {{this}}"></div>
+                {{/each}}
+              </div>
+            </div>
+          </div>
+          {{#if this.evidence}}
+          <div class="evidence-section">
+            <div class="evidence-header">
+              <div class="evidence-label">Evidence</div>
+              {{#if this.timestamp}}
+              <span class="timestamp">{{this.timestamp}}</span>
+              {{/if}}
+            </div>
+            <p class="evidence-text">{{this.evidence}}</p>
+          </div>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/each}}
+
+    <!-- Overall Feedback -->
+    <div class="feedback-box">
+      <h4 class="feedback-title">Overall Feedback</h4>
+      <p class="feedback-text">{{feedback}}</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p class="footer-text">Generated by Rumi • Supporting teachers everywhere • {{currentDate}}</p>
+    </div>
+  </div>
+</body>
+</html>

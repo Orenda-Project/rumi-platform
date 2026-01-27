@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="bg-background">
+  <!-- Navigation -->
+  <%- include("partials/navigation", { currentPage: "admin-users", username: username, userRole: userRole }) %>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-foreground">User Management</h2>
+          <p class="text-sm text-muted-foreground mt-1">Manage dashboard users and access scopes</p>
+        </div>
+        <a href="/observability/admin/invitations" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          <svg class="mr-2 -ml-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+          </svg>
+          Invite New User
+        </a>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <!-- Total Users -->
+        <div class="card-primary border border-gray-200">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Total Users</dt>
+            <dd class="mt-1 text-3xl font-semibold text-foreground"><%= users.length %></dd>
+            <p class="mt-2 text-xs text-muted-foreground">Dashboard accounts</p>
+          </div>
+        </div>
+
+        <!-- Super Admins -->
+        <div class="card-primary border border-gray-200">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Super Admins</dt>
+            <dd class="mt-1 text-3xl font-semibold text-foreground"><%= users.filter(u => u.role === 'super_admin').length %></dd>
+            <p class="mt-2 text-xs text-muted-foreground">Full access</p>
+          </div>
+        </div>
+
+        <!-- Partner Admins -->
+        <div class="card-primary border border-gray-200">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Partner Admins</dt>
+            <dd class="mt-1 text-3xl font-semibold text-foreground"><%= users.filter(u => u.role === 'partner_admin').length %></dd>
+            <p class="mt-2 text-xs text-muted-foreground">Scoped access</p>
+          </div>
+        </div>
+
+        <!-- Active Scopes -->
+        <div class="card-primary border border-gray-200">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Active Scopes</dt>
+            <dd class="mt-1 text-3xl font-semibold text-foreground"><%= users.filter(u => u.accessScope).length %></dd>
+            <p class="mt-2 text-xs text-muted-foreground">Configured</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters and Bulk Actions -->
+      <div class="card-primary mb-6 p-4">
+        <div class="flex flex-wrap gap-4 items-center justify-between">
+          <!-- Filters -->
+          <div class="flex flex-wrap gap-3">
+            <select id="roleFilter" class="input-secondary text-sm">
+              <option value="">All Roles</option>
+              <option value="super_admin">Super Admin</option>
+              <option value="partner_admin">Partner Admin</option>
+              <option value="partner_viewer">Partner Viewer</option>
+            </select>
+
+            <select id="statusFilter" class="input-secondary text-sm">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            <select id="scopeFilter" class="input-secondary text-sm">
+              <option value="">All Scopes</option>
+              <option value="no-scope">No Scope</option>
+              <option value="country">Country Scope</option>
+              <option value="school">School Scope</option>
+              <option value="phone_list">Phone List</option>
+              <option value="combined">Combined</option>
+              <option value="all">All Users</option>
+            </select>
+          </div>
+
+          <!-- Bulk Actions (Super Admin Only) -->
+          <% if (userRole === 'super_admin') { %>
+          <div class="flex gap-3 items-center">
+            <span id="selectedCount" class="text-sm text-muted-foreground hidden">0 selected</span>
+            <button id="bulkDeactivate" class="btn-secondary text-sm hidden">
+              <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+              </svg>
+              Deactivate Selected
+            </button>
+            <button id="selectAll" class="btn-secondary text-sm">
+              <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Select All
+            </button>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- User Cards Grid -->
+      <div id="userCards" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <% users.forEach((user) => { %>
+        <div class="user-card card-primary overflow-hidden"
+             data-role="<%= user.role %>"
+             data-status="<%= user.is_active ? 'active' : 'inactive' %>"
+             data-scope="<%= user.accessScope ? user.accessScope.scope_type : 'no-scope' %>"
+             data-user-id="<%= user.id %>">
+
+          <!-- Card Header -->
+          <div class="px-6 py-4 border-b border-border flex justify-between items-start">
+            <div class="flex items-start gap-3 flex-1">
+              <!-- Checkbox for bulk selection (Super Admin Only) -->
+              <% if (userRole === 'super_admin') { %>
+              <input type="checkbox" class="user-checkbox mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" data-user-id="<%= user.id %>">
+              <% } %>
+
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-lg font-medium text-foreground"><%= user.username %></h3>
+                  <% if (user.role === 'super_admin') { %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                      Super Admin
+                    </span>
+                  <% } else if (user.role === 'partner_admin') { %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      Partner Admin
+                    </span>
+                  <% } else { %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                      <%= user.role %>
+                    </span>
+                  <% } %>
+
+                  <% if (user.is_active) { %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                      Active
+                    </span>
+                  <% } else { %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                      Inactive
+                    </span>
+                  <% } %>
+                </div>
+
+                <p class="text-sm text-muted-foreground mt-1"><%= user.email %></p>
+
+                <% if (user.last_login) { %>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    Last login: <%= new Date(user.last_login).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+                  </p>
+                <% } else { %>
+                  <p class="text-xs text-muted-foreground mt-1">Never logged in</p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Body - Access Scope -->
+          <div class="px-6 py-4">
+            <% if (user.role === 'super_admin') { %>
+              <div class="flex items-center gap-2 text-sm">
+                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                </svg>
+                <span class="text-muted-foreground">All access - no scope required</span>
+              </div>
+            <% } else if (user.role === 'partner_admin') { %>
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm font-medium text-foreground">Access Scope</label>
+                  <button class="edit-scope-btn text-sm text-indigo-600 hover:text-indigo-800" data-user-id="<%= user.id %>">
+                    <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Edit
+                  </button>
+                </div>
+
+                <% if (user.accessScope) { %>
+                  <div class="scope-display bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="flex items-center gap-2 mb-2">
+                      <svg class="h-4 w-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                      </svg>
+                      <span class="text-sm font-medium text-foreground capitalize"><%= user.accessScope.scope_type.replace('_', ' ') %> Scope</span>
+                    </div>
+
+                    <div class="text-xs text-muted-foreground space-y-1">
+                      <% if (user.accessScope.scope_type === 'country') { %>
+                        <p><strong>Countries:</strong> <%= user.accessScope.scope_value.country_codes.join(', ') %></p>
+                      <% } else if (user.accessScope.scope_type === 'school') { %>
+                        <p><strong>Schools:</strong> <%= user.accessScope.scope_value.school_names.join(', ') %></p>
+                      <% } else if (user.accessScope.scope_type === 'phone_list') { %>
+                        <p><strong>Phone Numbers:</strong> <%= user.accessScope.scope_value.phone_numbers.length %> numbers</p>
+                        <details class="mt-2">
+                          <summary class="cursor-pointer text-indigo-600 hover:text-indigo-800">View all numbers</summary>
+                          <div class="mt-2 max-h-32 overflow-y-auto bg-white rounded p-2 text-xs">
+                            <%= user.accessScope.scope_value.phone_numbers.join(', ') %>
+                          </div>
+                        </details>
+                      <% } else if (user.accessScope.scope_type === 'combined') { %>
+                        <% if (user.accessScope.scope_value.country_codes) { %>
+                          <p><strong>Countries:</strong> <%= user.accessScope.scope_value.country_codes.join(', ') %></p>
+                        <% } %>
+                        <% if (user.accessScope.scope_value.school_names) { %>
+                          <p><strong>Schools:</strong> <%= user.accessScope.scope_value.school_names.join(', ') %></p>
+                        <% } %>
+                        <% if (user.accessScope.scope_value.phone_numbers) { %>
+                          <p><strong>Phone Numbers:</strong> <%= user.accessScope.scope_value.phone_numbers.length %> numbers</p>
+                        <% } %>
+                      <% } else if (user.accessScope.scope_type === 'all') { %>
+                        <p>Access to all users in the system</p>
+                      <% } %>
+
+                      <p class="mt-2 pt-2 border-t border-gray-200">
+                        <strong>Created:</strong> <%= new Date(user.accessScope.created_at).toLocaleDateString() %>
+                        <% if (user.accessScope.updated_at) { %>
+                          | <strong>Updated:</strong> <%= new Date(user.accessScope.updated_at).toLocaleDateString() %>
+                        <% } %>
+                      </p>
+                    </div>
+                  </div>
+                <% } else { %>
+                  <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-start gap-2">
+                      <svg class="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                      </svg>
+                      <div>
+                        <p class="text-sm font-medium text-foreground">No scope configured</p>
+                        <p class="text-xs text-muted-foreground mt-1">This user cannot access any data until a scope is assigned</p>
+                      </div>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+            <% } else { %>
+              <div class="text-sm text-muted-foreground">
+                <p>Viewer role - Read-only access within assigned scope</p>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Card Footer - Actions -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-border flex gap-2">
+            <% if (user.role === 'partner_admin') { %>
+              <button class="edit-scope-btn btn-secondary text-sm" data-user-id="<%= user.id %>">
+                <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Manage Scope
+              </button>
+            <% } %>
+
+            <!-- Destructive Actions (Super Admin Only) -->
+            <% if (userRole === 'super_admin') { %>
+              <% if (user.is_active) { %>
+                <button class="deactivate-btn btn-secondary text-sm text-red-600 hover:text-red-800 hover:bg-red-50" data-user-id="<%= user.id %>">
+                  <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                  </svg>
+                  Deactivate
+                </button>
+              <% } else { %>
+                <button class="reactivate-btn btn-secondary text-sm text-green-600 hover:text-green-800 hover:bg-green-50" data-user-id="<%= user.id %>">
+                  <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Reactivate
+                </button>
+              <% } %>
+
+              <button class="delete-btn btn-secondary text-sm text-red-700 hover:text-white hover:bg-red-600 border-red-300" data-user-id="<%= user.id %>" data-user-email="<%= user.email %>">
+                <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Delete
+              </button>
+            <% } %>
+
+            <button class="view-audit-btn btn-secondary text-sm ml-auto" data-user-id="<%= user.id %>">
+              <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Audit Log
+            </button>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No users found</h3>
+        <p class="mt-1 text-sm text-gray-500">Try adjusting your filters</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scope Edit Modal -->
+  <div id="scopeEditModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-6 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white mb-10">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-medium text-foreground">Edit Access Scope</h3>
+        <button id="closeScopeModal" class="text-gray-400 hover:text-gray-600">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="scopeEditorContent">
+        <p class="text-sm text-muted-foreground mb-4">Loading scope data...</p>
+      </div>
+
+      <div id="scopeEditorForm" class="hidden">
+        <!-- Scope Type Selector -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-foreground mb-3">Access Scope Type</label>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="modal-scope-type-btn px-4 py-2 border rounded-md text-sm font-medium transition-colors" data-scope-type="all">
+              All Users
+            </button>
+            <button type="button" class="modal-scope-type-btn px-4 py-2 border rounded-md text-sm font-medium transition-colors" data-scope-type="country">
+              Country
+            </button>
+            <button type="button" class="modal-scope-type-btn px-4 py-2 border rounded-md text-sm font-medium transition-colors" data-scope-type="school">
+              School
+            </button>
+            <button type="button" class="modal-scope-type-btn px-4 py-2 border rounded-md text-sm font-medium transition-colors" data-scope-type="phone_list">
+              Phone List
+            </button>
+            <button type="button" class="modal-scope-type-btn px-4 py-2 border rounded-md text-sm font-medium transition-colors" data-scope-type="combined">
+              Combined
+            </button>
+          </div>
+        </div>
+
+        <!-- Scope Configuration Panels -->
+        <div class="mb-6">
+          <!-- All Users (no config needed) -->
+          <div id="modal-scope-all" class="modal-scope-panel hidden">
+            <p class="text-sm text-muted-foreground">This user will have access to all users in the system.</p>
+          </div>
+
+          <!-- Country Code Scope -->
+          <div id="modal-scope-country" class="modal-scope-panel hidden">
+            <label class="block text-sm font-medium text-foreground mb-2">Country Codes</label>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="modalCountryCodeInput" placeholder="+92"
+                     class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+              <button type="button" id="modalAddCountryCode" class="btn-secondary">Add</button>
+            </div>
+            <div id="modalCountryCodeList" class="flex flex-wrap gap-2"></div>
+            <p class="text-xs text-muted-foreground mt-2">Add country codes (e.g., +92, +1, +44)</p>
+          </div>
+
+          <!-- School Name Scope -->
+          <div id="modal-scope-school" class="modal-scope-panel hidden">
+            <label class="block text-sm font-medium text-foreground mb-2">School Names</label>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="modalSchoolNameInput" placeholder="Start typing school name..."
+                     class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+              <button type="button" id="modalAddSchoolName" class="btn-secondary">Add</button>
+            </div>
+            <div id="modalSchoolSuggestions" class="hidden absolute z-10 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto"></div>
+            <div id="modalSchoolNameList" class="flex flex-wrap gap-2 mt-2"></div>
+          </div>
+
+          <!-- Phone List Scope -->
+          <div id="modal-scope-phone_list" class="modal-scope-panel hidden">
+            <label class="block text-sm font-medium text-foreground mb-2">Phone Numbers</label>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="modalPhoneNumberInput" placeholder="923001234567"
+                     class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+              <button type="button" id="modalAddPhoneNumber" class="btn-secondary">Add</button>
+            </div>
+            <div id="modalPhoneNumberList" class="flex flex-wrap gap-2"></div>
+            <p class="text-xs text-muted-foreground mt-2">Enter phone numbers in E.164 format (e.g., 923001234567)</p>
+          </div>
+
+          <!-- Combined Scope -->
+          <div id="modal-scope-combined" class="modal-scope-panel hidden">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">Country Codes (Optional)</label>
+                <div class="flex gap-2 mb-2">
+                  <input type="text" id="modalCombinedCountryInput" placeholder="+92"
+                         class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                  <button type="button" id="modalAddCombinedCountry" class="btn-secondary">Add</button>
+                </div>
+                <div id="modalCombinedCountryList" class="flex flex-wrap gap-2"></div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-foreground mb-2">School Names (Optional)</label>
+                <div class="flex gap-2 mb-2">
+                  <input type="text" id="modalCombinedSchoolInput" placeholder="School name"
+                         class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                  <button type="button" id="modalAddCombinedSchool" class="btn-secondary">Add</button>
+                </div>
+                <div id="modalCombinedSchoolList" class="flex flex-wrap gap-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-2">
+          <button id="cancelScopeEdit" class="btn-secondary">Cancel</button>
+          <button id="saveScopeEdit" class="btn-primary">Save Scope</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Filter functionality
+    const roleFilter = document.getElementById('roleFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const scopeFilter = document.getElementById('scopeFilter');
+    const userCards = document.querySelectorAll('.user-card');
+    const emptyState = document.getElementById('emptyState');
+
+    function applyFilters() {
+      const role = roleFilter.value;
+      const status = statusFilter.value;
+      const scope = scopeFilter.value;
+
+      let visibleCount = 0;
+
+      userCards.forEach(card => {
+        const cardRole = card.dataset.role;
+        const cardStatus = card.dataset.status;
+        const cardScope = card.dataset.scope;
+
+        const roleMatch = !role || cardRole === role;
+        const statusMatch = !status || cardStatus === status;
+        const scopeMatch = !scope || cardScope === scope;
+
+        if (roleMatch && statusMatch && scopeMatch) {
+          card.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      // Show/hide empty state
+      if (visibleCount === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+    }
+
+    roleFilter.addEventListener('change', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    scopeFilter.addEventListener('change', applyFilters);
+
+    // Bulk selection functionality (super_admin only - elements may not exist for other roles)
+    const selectAllBtn = document.getElementById('selectAll');
+    const bulkDeactivateBtn = document.getElementById('bulkDeactivate');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+
+    // Only set up bulk actions if the elements exist (super_admin only)
+    if (selectAllBtn && bulkDeactivateBtn && selectedCountSpan) {
+      function updateBulkActions() {
+        const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+        const count = selectedCheckboxes.length;
+
+        if (count > 0) {
+          selectedCountSpan.textContent = `${count} selected`;
+          selectedCountSpan.classList.remove('hidden');
+          bulkDeactivateBtn.classList.remove('hidden');
+          selectAllBtn.textContent = 'Deselect All';
+        } else {
+          selectedCountSpan.classList.add('hidden');
+          bulkDeactivateBtn.classList.add('hidden');
+          selectAllBtn.innerHTML = '<svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Select All';
+        }
+      }
+
+      selectAllBtn.addEventListener('click', () => {
+        const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+        checkboxes.forEach(cb => {
+          // Only check visible checkboxes
+          const card = cb.closest('.user-card');
+          if (!card.classList.contains('hidden')) {
+            cb.checked = !anyChecked;
+          }
+        });
+        updateBulkActions();
+      });
+
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkActions);
+      });
+    }
+
+    // Scope edit modal
+    const scopeEditBtns = document.querySelectorAll('.edit-scope-btn');
+    const scopeModal = document.getElementById('scopeEditModal');
+    const closeModalBtn = document.getElementById('closeScopeModal');
+    const cancelScopeBtn = document.getElementById('cancelScopeEdit');
+    const saveScopeBtn = document.getElementById('saveScopeEdit');
+    const scopeEditorContent = document.getElementById('scopeEditorContent');
+    const scopeEditorForm = document.getElementById('scopeEditorForm');
+
+    let currentEditUserId = null;
+    let modalScopeType = 'school';
+    let modalCountryCodes = [];
+    let modalSchoolNames = [];
+    let modalPhoneNumbers = [];
+    let modalCombinedCountries = [];
+    let modalCombinedSchools = [];
+
+    // Helper function to render chip list
+    function renderChipList(containerId, items, removeCallback) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = items.map(item => `
+        <span class="inline-flex items-center px-3 py-1.5 rounded-md text-sm bg-gray-100 text-gray-700 border border-gray-200">
+          ${item}
+          <button type="button" class="ml-2 text-gray-500 hover:text-gray-700" onclick="(${removeCallback.toString()})('${item}')">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </span>
+      `).join('');
+    }
+
+    // Open modal and load scope data
+    scopeEditBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const userId = btn.dataset.userId;
+        console.log('[Scope Modal] Click handler fired for user:', userId);
+        currentEditUserId = userId;
+
+        // Reset state
+        modalCountryCodes = [];
+        modalSchoolNames = [];
+        modalPhoneNumbers = [];
+        modalCombinedCountries = [];
+        modalCombinedSchools = [];
+
+        // Show modal with loading state
+        scopeModal.classList.remove('hidden');
+        scopeEditorContent.classList.remove('hidden');
+        scopeEditorContent.innerHTML = '<p class="text-sm text-muted-foreground">Loading scope data...</p>';
+        scopeEditorForm.classList.add('hidden');
+        console.log('[Scope Modal] Modal opened, fetching scope data...');
+
+        try {
+          // Fetch current scope data
+          const response = await fetch(`/observability/api/admin/users/${userId}/scope`);
+          console.log('[Scope Modal] API response status:', response.status);
+
+          // Check for HTTP errors (403, 500, etc.)
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('[Scope Modal] API error:', response.status, errorData);
+
+            // Show user-friendly error message
+            let errorMessage = 'Failed to load scope data.';
+            if (response.status === 403) {
+              errorMessage = 'You do not have permission to manage scopes. Please contact an administrator.';
+            } else if (response.status === 401) {
+              errorMessage = 'Your session has expired. Please refresh the page and log in again.';
+            } else if (errorData.message) {
+              errorMessage = errorData.message;
+            }
+
+            scopeEditorContent.innerHTML = `
+              <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                <div class="flex">
+                  <svg class="h-5 w-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <p class="text-sm text-red-700">${errorMessage}</p>
+                </div>
+              </div>`;
+            return;
+          }
+
+          const data = await response.json();
+          console.log('[Scope Modal] Scope data received:', data);
+
+          if (data.success && data.scope) {
+            modalScopeType = data.scope.scope_type;
+
+            // Load scope values
+            if (modalScopeType === 'country') {
+              modalCountryCodes = data.scope.scope_value.country_codes || [];
+            } else if (modalScopeType === 'school') {
+              modalSchoolNames = data.scope.scope_value.school_names || [];
+            } else if (modalScopeType === 'phone_list') {
+              modalPhoneNumbers = data.scope.scope_value.phone_numbers || [];
+            } else if (modalScopeType === 'combined') {
+              modalCombinedCountries = data.scope.scope_value.country_codes || [];
+              modalCombinedSchools = data.scope.scope_value.school_names || [];
+            }
+          } else if (data.success && !data.scope) {
+            // No scope configured yet, default to school
+            console.log('[Scope Modal] No existing scope, defaulting to school');
+            modalScopeType = 'school';
+          } else {
+            // API returned success: false
+            throw new Error(data.error || 'Unknown error loading scope');
+          }
+
+          // Show editor form
+          scopeEditorContent.classList.add('hidden');
+          scopeEditorForm.classList.remove('hidden');
+
+          // Initialize UI
+          updateModalScopeUI();
+          console.log('[Scope Modal] Form displayed successfully');
+
+        } catch (error) {
+          console.error('[Scope Modal] Error loading scope:', error);
+          scopeEditorContent.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-md p-4">
+              <div class="flex">
+                <svg class="h-5 w-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-red-700">Failed to load scope data</p>
+                  <p class="text-xs text-red-600 mt-1">${error.message || 'Please try again or contact support.'}</p>
+                </div>
+              </div>
+            </div>`;
+        }
+      });
+    });
+
+    // Update modal UI based on scope type
+    function updateModalScopeUI() {
+      // Update active button
+      document.querySelectorAll('.modal-scope-type-btn').forEach(btn => {
+        if (btn.dataset.scopeType === modalScopeType) {
+          btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+          btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+        } else {
+          btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+          btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+        }
+      });
+
+      // Show/hide panels
+      document.querySelectorAll('.modal-scope-panel').forEach(panel => panel.classList.add('hidden'));
+      document.getElementById(`modal-scope-${modalScopeType}`).classList.remove('hidden');
+
+      // Render current values
+      if (modalScopeType === 'country') {
+        renderChipList('modalCountryCodeList', modalCountryCodes, removeModalCountryCode);
+      } else if (modalScopeType === 'school') {
+        renderChipList('modalSchoolNameList', modalSchoolNames, removeModalSchoolName);
+      } else if (modalScopeType === 'phone_list') {
+        renderChipList('modalPhoneNumberList', modalPhoneNumbers, removeModalPhoneNumber);
+      } else if (modalScopeType === 'combined') {
+        renderChipList('modalCombinedCountryList', modalCombinedCountries, removeModalCombinedCountry);
+        renderChipList('modalCombinedSchoolList', modalCombinedSchools, removeModalCombinedSchool);
+      }
+    }
+
+    // Scope type buttons
+    document.querySelectorAll('.modal-scope-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modalScopeType = btn.dataset.scopeType;
+        updateModalScopeUI();
+      });
+    });
+
+    // Country code management
+    document.getElementById('modalAddCountryCode').addEventListener('click', () => {
+      const input = document.getElementById('modalCountryCodeInput');
+      const code = input.value.trim();
+      if (code && !modalCountryCodes.includes(code)) {
+        modalCountryCodes.push(code);
+        renderChipList('modalCountryCodeList', modalCountryCodes, removeModalCountryCode);
+        input.value = '';
+      }
+    });
+
+    function removeModalCountryCode(code) {
+      modalCountryCodes = modalCountryCodes.filter(c => c !== code);
+      renderChipList('modalCountryCodeList', modalCountryCodes, removeModalCountryCode);
+    }
+
+    // School name management
+    document.getElementById('modalAddSchoolName').addEventListener('click', () => {
+      const input = document.getElementById('modalSchoolNameInput');
+      const name = input.value.trim();
+      if (name && !modalSchoolNames.includes(name)) {
+        modalSchoolNames.push(name);
+        renderChipList('modalSchoolNameList', modalSchoolNames, removeModalSchoolName);
+        input.value = '';
+      }
+    });
+
+    function removeModalSchoolName(name) {
+      modalSchoolNames = modalSchoolNames.filter(n => n !== name);
+      renderChipList('modalSchoolNameList', modalSchoolNames, removeModalSchoolName);
+    }
+
+    // Phone number management
+    document.getElementById('modalAddPhoneNumber').addEventListener('click', () => {
+      const input = document.getElementById('modalPhoneNumberInput');
+      const number = input.value.trim();
+      if (number && !modalPhoneNumbers.includes(number)) {
+        modalPhoneNumbers.push(number);
+        renderChipList('modalPhoneNumberList', modalPhoneNumbers, removeModalPhoneNumber);
+        input.value = '';
+      }
+    });
+
+    function removeModalPhoneNumber(number) {
+      modalPhoneNumbers = modalPhoneNumbers.filter(n => n !== number);
+      renderChipList('modalPhoneNumberList', modalPhoneNumbers, removeModalPhoneNumber);
+    }
+
+    // Combined scope management
+    document.getElementById('modalAddCombinedCountry').addEventListener('click', () => {
+      const input = document.getElementById('modalCombinedCountryInput');
+      const code = input.value.trim();
+      if (code && !modalCombinedCountries.includes(code)) {
+        modalCombinedCountries.push(code);
+        renderChipList('modalCombinedCountryList', modalCombinedCountries, removeModalCombinedCountry);
+        input.value = '';
+      }
+    });
+
+    function removeModalCombinedCountry(code) {
+      modalCombinedCountries = modalCombinedCountries.filter(c => c !== code);
+      renderChipList('modalCombinedCountryList', modalCombinedCountries, removeModalCombinedCountry);
+    }
+
+    document.getElementById('modalAddCombinedSchool').addEventListener('click', () => {
+      const input = document.getElementById('modalCombinedSchoolInput');
+      const name = input.value.trim();
+      if (name && !modalCombinedSchools.includes(name)) {
+        modalCombinedSchools.push(name);
+        renderChipList('modalCombinedSchoolList', modalCombinedSchools, removeModalCombinedSchool);
+        input.value = '';
+      }
+    });
+
+    function removeModalCombinedSchool(name) {
+      modalCombinedSchools = modalCombinedSchools.filter(n => n !== name);
+      renderChipList('modalCombinedSchoolList', modalCombinedSchools, removeModalCombinedSchool);
+    }
+
+    // Save scope
+    saveScopeBtn.addEventListener('click', async () => {
+      if (!currentEditUserId) return;
+
+      // Build scope config
+      let scopeConfig;
+      if (modalScopeType === 'all') {
+        scopeConfig = { scope_type: 'all', scope_value: {} };
+      } else if (modalScopeType === 'country') {
+        scopeConfig = { scope_type: 'country', scope_value: { country_codes: modalCountryCodes } };
+      } else if (modalScopeType === 'school') {
+        scopeConfig = { scope_type: 'school', scope_value: { school_names: modalSchoolNames } };
+      } else if (modalScopeType === 'phone_list') {
+        scopeConfig = { scope_type: 'phone_list', scope_value: { phone_numbers: modalPhoneNumbers } };
+      } else if (modalScopeType === 'combined') {
+        scopeConfig = {
+          scope_type: 'combined',
+          scope_value: {
+            country_codes: modalCombinedCountries,
+            school_names: modalCombinedSchools
+          }
+        };
+      }
+
+      try {
+        const response = await fetch(`/observability/api/admin/users/${currentEditUserId}/scope`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(scopeConfig)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert('Scope updated successfully');
+          scopeModal.classList.add('hidden');
+          window.location.reload();
+        } else {
+          alert('Error: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error saving scope:', error);
+        alert('Failed to save scope');
+      }
+    });
+
+    // Close modal handlers
+    closeModalBtn.addEventListener('click', () => {
+      scopeModal.classList.add('hidden');
+    });
+
+    cancelScopeBtn.addEventListener('click', () => {
+      scopeModal.classList.add('hidden');
+    });
+
+    // Close modal when clicking outside
+    scopeModal.addEventListener('click', (e) => {
+      if (e.target === scopeModal) {
+        scopeModal.classList.add('hidden');
+      }
+    });
+
+    // Action buttons - API calls
+    document.querySelectorAll('.deactivate-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const userId = btn.dataset.userId;
+        if (confirm('Are you sure you want to deactivate this user?')) {
+          try {
+            const response = await fetch(`/observability/api/admin/users/${userId}/deactivate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert('User deactivated successfully');
+              window.location.reload();
+            } else {
+              alert('Error: ' + result.error);
+            }
+          } catch (error) {
+            console.error('Error deactivating user:', error);
+            alert('Failed to deactivate user');
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll('.reactivate-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const userId = btn.dataset.userId;
+        if (confirm('Are you sure you want to reactivate this user?')) {
+          try {
+            const response = await fetch(`/observability/api/admin/users/${userId}/reactivate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert('User reactivated successfully');
+              window.location.reload();
+            } else {
+              alert('Error: ' + result.error);
+            }
+          } catch (error) {
+            console.error('Error reactivating user:', error);
+            alert('Failed to reactivate user');
+          }
+        }
+      });
+    });
+
+    // Delete user permanently
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const userId = btn.dataset.userId;
+        const userEmail = btn.dataset.userEmail;
+        if (confirm(`⚠️ PERMANENT DELETE\n\nAre you sure you want to permanently delete this user?\n\nEmail: ${userEmail}\n\nThis action cannot be undone!`)) {
+          try {
+            const response = await fetch(`/observability/api/admin/users/${userId}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert('User deleted successfully');
+              window.location.reload();
+            } else {
+              alert('Error: ' + result.error);
+            }
+          } catch (error) {
+            console.error('Error deleting user:', error);
+            alert('Failed to delete user');
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll('.view-audit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const userId = btn.dataset.userId;
+        // TODO: Navigate to audit log page (will implement in next phase)
+        alert('Audit log viewer coming soon...');
+      });
+    });
+
+    bulkDeactivateBtn.addEventListener('click', async () => {
+      const selectedIds = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.dataset.userId);
+
+      if (confirm(`Are you sure you want to deactivate ${selectedIds.length} users?`)) {
+        try {
+          const response = await fetch('/observability/api/admin/users/bulk-deactivate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userIds: selectedIds })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert(`Successfully deactivated ${result.successCount} out of ${result.totalRequested} users`);
+            window.location.reload();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          console.error('Error bulk deactivating users:', error);
+          alert('Failed to bulk deactivate users');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

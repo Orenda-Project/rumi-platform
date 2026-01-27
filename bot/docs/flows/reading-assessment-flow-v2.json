@@ -1,0 +1,135 @@
+{
+  "_comment": "WhatsApp Flow for Reading Assessment v3.0 - Multi-Screen with Data Passing",
+  "_instructions": [
+    "1. Copy this JSON to Meta Business Manager > WhatsApp Manager > Flows",
+    "2. Flow ID (staging): 870222682369657",
+    "3. IMPORTANT: Update the flow in Meta Business Manager - this file is just reference",
+    "4. Screen 1 (BASIC_INFO): Collects name, language, assessment mode",
+    "5. Screen 2 (OPTIONS): Shows level/scope options, completes flow"
+  ],
+  "_changelog": [
+    "v3.0 (Dec 25, 2025): Multi-screen flow with navigate action for data passing",
+    "v2.1 (Dec 25, 2025): Fixed empty payload bug - form data now included",
+    "v2.0 (Dec 25, 2025): Initial version with Auto-Level Mode"
+  ],
+
+  "version": "6.2",
+  "screens": [
+    {
+      "id": "BASIC_INFO",
+      "title": "Reading Assessment",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "basic_form",
+            "children": [
+              {
+                "type": "TextInput",
+                "name": "Student_Full_Name",
+                "label": "Student Name",
+                "required": true,
+                "input-type": "text"
+              },
+              {
+                "type": "Dropdown",
+                "name": "Language",
+                "label": "Assessment Language",
+                "required": true,
+                "data-source": [
+                  { "id": "0_English", "title": "English" },
+                  { "id": "1_Urdu", "title": "Urdu / اردو" }
+                ]
+              },
+              {
+                "type": "Dropdown",
+                "name": "Assessment_Mode",
+                "label": "Assessment Type",
+                "required": true,
+                "data-source": [
+                  { "id": "0_Auto", "title": "Auto-Level (finds level)" },
+                  { "id": "1_Manual", "title": "Manual (select level)" }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Next",
+                "on-click-action": {
+                  "name": "navigate",
+                  "next": {
+                    "type": "screen",
+                    "name": "OPTIONS"
+                  },
+                  "payload": {
+                    "Student_Full_Name": "${form.Student_Full_Name}",
+                    "Language": "${form.Language}",
+                    "Assessment_Mode": "${form.Assessment_Mode}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "OPTIONS",
+      "title": "Assessment Options",
+      "terminal": true,
+      "data": {
+        "Student_Full_Name": { "type": "string", "__example__": "Test" },
+        "Language": { "type": "string", "__example__": "0_English" },
+        "Assessment_Mode": { "type": "string", "__example__": "1_Manual" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "options_form",
+            "children": [
+              {
+                "type": "Dropdown",
+                "name": "Select_the_reading_level",
+                "label": "Reading Level",
+                "required": false,
+                "data-source": [
+                  { "id": "0_Letters_(KG)", "title": "Letters (KG)" },
+                  { "id": "1_Words_(Grade_1)", "title": "Words (Grade 1)" },
+                  { "id": "2_Sentences_(Grade_1-2)", "title": "Sentences (1-2)" },
+                  { "id": "3_Paragraph_(Grade_3-5)", "title": "Paragraph (3-5)" }
+                ]
+              },
+              {
+                "type": "Dropdown",
+                "name": "Scope_of_Assessment_",
+                "label": "Assessment Scope",
+                "required": false,
+                "data-source": [
+                  { "id": "0_Fluency_Only", "title": "Fluency Only" },
+                  { "id": "1_Fluency_+_Comprehension", "title": "Fluency + Comprehension" }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Start Assessment",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "Student_Full_Name": "${data.Student_Full_Name}",
+                    "Language": "${data.Language}",
+                    "Assessment_Mode": "${data.Assessment_Mode}",
+                    "Select_the_reading_level": "${form.Select_the_reading_level}",
+                    "Scope_of_Assessment_": "${form.Scope_of_Assessment_}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

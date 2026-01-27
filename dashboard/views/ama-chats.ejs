@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <!-- Chart.js for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* AMA-specific styles from ama.ejs */
+    :root {
+      --ama-primary: #1D2025;
+      --ama-primary-hover: #2a2f36;
+      --ama-accent: #E86B4A;
+      --ama-accent-light: #f5ebe8;
+      --ama-bg: #ffffff;
+      --ama-bg-secondary: #f8f9fa;
+      --ama-text: #1D2025;
+      --ama-text-muted: #6b7280;
+      --ama-border: #e5e7eb;
+      --ama-border-light: #f3f4f6;
+      --ama-success: #10b981;
+      --ama-warning: #f59e0b;
+      --ama-error: #ef4444;
+    }
+
+    .conversation-card {
+      transition: all 0.2s ease;
+    }
+    .conversation-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Message bubbles */
+    .ama-message {
+      margin-bottom: 24px;
+    }
+
+    .ama-message-user {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .ama-message-user .ama-message-content {
+      background: var(--ama-primary);
+      color: white;
+      border-radius: 20px 20px 4px 20px;
+      max-width: 70%;
+    }
+
+    .ama-message-assistant {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .ama-message-assistant .ama-message-content {
+      background: var(--ama-bg-secondary);
+      border: 1px solid var(--ama-border);
+      border-radius: 4px 20px 20px 20px;
+      max-width: 85%;
+    }
+
+    .ama-message-content {
+      padding: 12px 16px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* SQL Code Block */
+    .ama-sql-block {
+      background: hsl(220, 13%, 18%);
+      border-radius: 8px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+
+    .ama-sql-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: hsl(220, 13%, 15%);
+      border-bottom: 1px solid hsl(220, 13%, 25%);
+    }
+
+    .ama-sql-label {
+      font-size: 12px;
+      color: hsl(220, 13%, 60%);
+      font-weight: 500;
+    }
+
+    .ama-sql-copy {
+      padding: 4px 8px;
+      background: transparent;
+      border: 1px solid hsl(220, 13%, 30%);
+      border-radius: 4px;
+      color: hsl(220, 13%, 70%);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .ama-sql-copy:hover {
+      background: hsl(220, 13%, 25%);
+    }
+
+    .ama-sql-code {
+      padding: 12px;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      font-size: 13px;
+      color: hsl(220, 13%, 85%);
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Chart Container */
+    .ama-chart-container {
+      background: white;
+      border: 1px solid var(--ama-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 16px 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .ama-chart-wrapper {
+      position: relative;
+      height: 320px;
+      width: 100%;
+    }
+
+    .ama-chart-canvas {
+      max-height: 320px;
+    }
+
+    /* Data Table */
+    .ama-table-container {
+      overflow-x: auto;
+      margin: 16px 0;
+      border: 1px solid var(--ama-border);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .ama-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+
+    .ama-table th {
+      background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid var(--ama-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .ama-table th:first-child {
+      border-top-left-radius: 11px;
+    }
+
+    .ama-table th:last-child {
+      border-top-right-radius: 11px;
+    }
+
+    .ama-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--ama-border-light);
+      color: var(--ama-text);
+    }
+
+    .ama-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ama-table tr:last-child td:first-child {
+      border-bottom-left-radius: 11px;
+    }
+
+    .ama-table tr:last-child td:last-child {
+      border-bottom-right-radius: 11px;
+    }
+
+    .ama-table tr:hover td {
+      background: #f0f9ff;
+    }
+
+    .modal-backdrop {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <%- include("partials/navigation", { currentPage: "ama-chats", username: username, userRole: userRole }) %>
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+        <svg class="h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        AMA Chats (Admin View)
+      </h1>
+      <p class="text-gray-500 mt-2">View all AMA conversations across all users. Total: <%= pagination.total %> conversations</p>
+    </div>
+
+    <!-- Conversations List -->
+    <div class="space-y-4">
+      <% if (conversations.length === 0) { %>
+        <div class="bg-white p-12 rounded-lg shadow text-center text-gray-500">
+          <svg class="h-16 w-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          </svg>
+          <p class="text-lg font-medium">No AMA conversations found</p>
+          <p class="text-sm mt-2">Conversations will appear here once users start using the AMA feature.</p>
+        </div>
+      <% } else { %>
+        <% conversations.forEach(function(conv) { %>
+          <div class="conversation-card bg-white rounded-lg shadow p-5 cursor-pointer"
+               data-conversation-id="<%= conv.id %>"
+               data-username="<%= conv.dashboard_users ? conv.dashboard_users.username : 'Unknown' %>"
+               onclick="openConversation(this)">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-4">
+                <!-- User Avatar -->
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                  <%= conv.dashboard_users ? conv.dashboard_users.username.charAt(0).toUpperCase() : '?' %>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">
+                    <%= conv.title || 'New Conversation' %>
+                  </h3>
+                  <div class="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                    <span class="flex items-center gap-1">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                      </svg>
+                      <%= conv.dashboard_users ? conv.dashboard_users.username : 'Unknown User' %>
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                      </svg>
+                      <%= conv.message_count %> messages
+                    </span>
+                    <% if (conv.dashboard_users && conv.dashboard_users.role === 'admin') { %>
+                      <span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">Admin</span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-gray-500">
+                  <%= new Date(conv.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+                </p>
+                <p class="text-xs text-gray-400 mt-1">
+                  <%= new Date(conv.updated_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
+                </p>
+                <% if (conv.is_archived) { %>
+                  <span class="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded mt-2 inline-block">Archived</span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.totalPages > 1) { %>
+      <div class="mt-8 flex items-center justify-center gap-2">
+        <% if (pagination.currentPage > 1) { %>
+          <a href="/observability/ama-chats?page=<%= pagination.currentPage - 1 %>"
+             class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition">
+            Previous
+          </a>
+        <% } %>
+
+        <span class="px-4 py-2 text-gray-600">
+          Page <%= pagination.currentPage %> of <%= pagination.totalPages %>
+        </span>
+
+        <% if (pagination.currentPage < pagination.totalPages) { %>
+          <a href="/observability/ama-chats?page=<%= pagination.currentPage + 1 %>"
+             class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition">
+            Next
+          </a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Messages Modal -->
+  <div id="messagesModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeModal()"></div>
+    <div class="absolute inset-4 md:inset-10 lg:inset-20 bg-white rounded-xl shadow-2xl flex flex-col z-10">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-4 border-b">
+        <h2 id="modalTitle" class="text-xl font-semibold text-gray-900">Conversation</h2>
+        <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-lg transition">
+          <svg class="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Content - Messages -->
+      <div id="messagesContainer" class="flex-1 overflow-y-auto p-6" style="max-width: 900px; margin: 0 auto; width: 100%;">
+        <div class="text-center text-gray-500 py-8">
+          <svg class="animate-spin h-8 w-8 mx-auto text-indigo-600" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="mt-3">Loading messages...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Chart instances to destroy on modal close
+    let chartInstances = [];
+
+    async function openConversation(element) {
+      const conversationId = element.dataset.conversationId;
+      const username = element.dataset.username;
+
+      const modal = document.getElementById('messagesModal');
+      const container = document.getElementById('messagesContainer');
+      const title = document.getElementById('modalTitle');
+
+      modal.classList.remove('hidden');
+      title.textContent = `Conversation with ${username}`;
+
+      // Show loading
+      container.innerHTML = `
+        <div class="text-center text-gray-500 py-8">
+          <svg class="animate-spin h-8 w-8 mx-auto text-indigo-600" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="mt-3">Loading messages...</p>
+        </div>
+      `;
+
+      try {
+        const response = await fetch(`/observability/ama-chats/${conversationId}/messages`);
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to load messages');
+        }
+
+        if (data.messages.length === 0) {
+          container.innerHTML = `
+            <div class="text-center text-gray-500 py-8">
+              <p>No messages in this conversation yet.</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Clear previous chart instances
+        chartInstances.forEach(chart => chart.destroy());
+        chartInstances = [];
+
+        // Render messages
+        container.innerHTML = '';
+        data.messages.forEach((msg, index) => {
+          const messageEl = renderMessage(msg, index);
+          container.appendChild(messageEl);
+        });
+
+        // Scroll to top
+        container.scrollTop = 0;
+
+      } catch (error) {
+        container.innerHTML = `
+          <div class="text-center text-red-500 py-8">
+            <svg class="h-12 w-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="font-medium">Error loading messages</p>
+            <p class="text-sm mt-1">${escapeHtml(error.message)}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderMessage(msg, index) {
+      const isUser = msg.role === 'user';
+      const time = new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      const messageEl = document.createElement('div');
+      messageEl.className = `ama-message ama-message-${isUser ? 'user' : 'assistant'}`;
+
+      if (isUser) {
+        // User message - simple bubble
+        messageEl.innerHTML = `
+          <div class="ama-message-content">
+            <div class="whitespace-pre-wrap">${escapeHtml(msg.content)}</div>
+            <div class="text-xs mt-2 text-indigo-200">${time}</div>
+          </div>
+        `;
+      } else {
+        // Assistant message with potential SQL, chart, table
+        let html = `<div class="ama-message-content"><div class="whitespace-pre-wrap">${renderMarkdown(msg.content)}</div><div class="text-xs mt-2 text-gray-400">${time}</div></div>`;
+
+        // Add SQL block if present
+        if (msg.sql_query) {
+          const escapedSql = escapeHtml(msg.sql_query).replace(/'/g, "\\'");
+          html += `
+            <div class="ama-sql-block" style="max-width: 85%;">
+              <div class="ama-sql-header">
+                <span class="ama-sql-label">SQL Query</span>
+                <button class="ama-sql-copy" onclick="copyToClipboard(this, '${escapedSql}')">Copy</button>
+              </div>
+              <pre class="ama-sql-code">${escapeHtml(msg.sql_query)}</pre>
+            </div>
+          `;
+        }
+
+        // Add chart or table if data present
+        const queryResult = msg.query_result;
+        if (queryResult && queryResult.length > 0) {
+          if (msg.chart_image_url) {
+            // GPT-4o generated chart image
+            html += `
+              <div class="ama-chart-container" style="max-width: 85%;">
+                <div class="ama-chart-wrapper" style="padding: 16px; height: auto;">
+                  <img src="${msg.chart_image_url}" alt="Chart visualization" style="max-width: 100%; height: auto; border-radius: 8px;" />
+                </div>
+              </div>
+            `;
+          } else if (msg.chart_type && msg.chart_type !== 'table' && msg.chart_type !== 'none') {
+            // Chart.js chart
+            const chartId = 'chart-' + index + '-' + Date.now();
+            html += `
+              <div class="ama-chart-container" style="max-width: 85%;">
+                <div class="ama-chart-wrapper">
+                  <canvas id="${chartId}" class="ama-chart-canvas"></canvas>
+                </div>
+              </div>
+            `;
+            messageEl.innerHTML = html;
+
+            // Render chart after DOM update
+            setTimeout(() => renderChart(chartId, msg.chart_type, queryResult), 100);
+            return messageEl;
+          } else {
+            // Render as table
+            html += renderTable(queryResult);
+          }
+        }
+
+        messageEl.innerHTML = html;
+      }
+
+      return messageEl;
+    }
+
+    // Render chart using Chart.js
+    function renderChart(canvasId, type, data) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas || !data || data.length === 0) return;
+
+      const keys = Object.keys(data[0]);
+      const labelKey = keys[0];
+      const valueKey = keys[keys.length - 1];
+
+      const labels = data.map((row, i) => row[labelKey] || `Item ${i + 1}`);
+      const values = data.map(row => parseFloat(row[valueKey]) || 0);
+
+      const colorPalette = [
+        '#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6',
+        '#06B6D4', '#EC4899', '#F97316', '#6366F1', '#14B8A6'
+      ];
+
+      const backgroundColors = labels.map((_, i) => colorPalette[i % colorPalette.length]);
+      const hoverColors = backgroundColors.map(c => c + 'dd');
+
+      const chartConfig = {
+        type: type === 'doughnut' ? 'doughnut' : type,
+        data: {
+          labels,
+          datasets: [{
+            label: valueKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            data: values,
+            backgroundColor: type === 'line' ? colorPalette[0] + '20' : backgroundColors,
+            borderColor: type === 'line' ? colorPalette[0] : (type === 'bar' ? backgroundColors : 'white'),
+            borderWidth: type === 'line' ? 3 : (type === 'bar' ? 0 : 2),
+            hoverBackgroundColor: hoverColors,
+            fill: type === 'line',
+            tension: 0.4,
+            pointRadius: type === 'line' ? 4 : 0,
+            pointHoverRadius: type === 'line' ? 6 : 0,
+            pointBackgroundColor: type === 'line' ? colorPalette[0] : undefined,
+            pointBorderColor: 'white',
+            pointBorderWidth: 2,
+            borderRadius: type === 'bar' ? 6 : 0,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              display: type === 'pie' || type === 'doughnut',
+              position: 'bottom',
+              labels: { usePointStyle: true, padding: 20, font: { size: 12 } }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(29, 32, 37, 0.95)',
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
+              padding: 12,
+              cornerRadius: 8,
+              displayColors: true
+            }
+          },
+          scales: type === 'pie' || type === 'doughnut' ? {} : {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
+              ticks: { font: { size: 11 }, color: '#6b7280', padding: 8 }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11 }, color: '#6b7280', maxRotation: 45 }
+            }
+          },
+          animation: { duration: 750, easing: 'easeOutQuart' }
+        }
+      };
+
+      const chart = new Chart(canvas, chartConfig);
+      chartInstances.push(chart);
+    }
+
+    // Render data as table
+    function renderTable(data) {
+      if (!data || data.length === 0) return '';
+
+      const headers = Object.keys(data[0]);
+      let html = '<div class="ama-table-container" style="max-width: 85%;"><table class="ama-table"><thead><tr>';
+
+      headers.forEach(h => {
+        html += `<th>${escapeHtml(h)}</th>`;
+      });
+
+      html += '</tr></thead><tbody>';
+
+      data.slice(0, 100).forEach(row => {
+        html += '<tr>';
+        headers.forEach(h => {
+          let value = row[h];
+          if (value === null || value === undefined) value = '-';
+          if (typeof value === 'object') value = JSON.stringify(value);
+          html += `<td>${escapeHtml(String(value))}</td>`;
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody></table></div>';
+
+      if (data.length > 100) {
+        html += `<p style="color: var(--ama-text-muted); font-size: 12px; margin-top: 8px;">Showing first 100 of ${data.length} rows</p>`;
+      }
+
+      return html;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Simple markdown renderer for assistant messages
+    function renderMarkdown(text) {
+      if (!text) return '';
+
+      let html = escapeHtml(text);
+
+      // Bold: **text** or __text__
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+      // Italic: *text* or _text_
+      html = html.replace(/\*([^\*\n]+)\*/g, '<em>$1</em>');
+      html = html.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+
+      // Inline code: `code`
+      html = html.replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:13px;">$1</code>');
+
+      // Headers
+      html = html.replace(/^### (.+)$/gm, '<h4 style="margin:12px 0 8px;font-size:15px;font-weight:600;">$1</h4>');
+      html = html.replace(/^## (.+)$/gm, '<h3 style="margin:14px 0 8px;font-size:16px;font-weight:600;">$1</h3>');
+      html = html.replace(/^# (.+)$/gm, '<h2 style="margin:16px 0 10px;font-size:18px;font-weight:600;">$1</h2>');
+
+      // Bullet points
+      html = html.replace(/^[\-\*] (.+)$/gm, '<li style="margin-left:20px;list-style:disc;">$1</li>');
+
+      // Numbered lists
+      html = html.replace(/^\d+\. (.+)$/gm, '<li style="margin-left:20px;list-style:decimal;">$1</li>');
+
+      // Line breaks
+      html = html.replace(/\n/g, '<br>');
+      html = html.replace(/(<br>){3,}/g, '<br><br>');
+
+      return html;
+    }
+
+    function closeModal() {
+      document.getElementById('messagesModal').classList.add('hidden');
+      // Destroy chart instances on close
+      chartInstances.forEach(chart => chart.destroy());
+      chartInstances = [];
+    }
+
+    function copyToClipboard(btn, text) {
+      // Unescape the text
+      const unescapedText = text.replace(/\\'/g, "'");
+      navigator.clipboard.writeText(unescapedText).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = originalText, 2000);
+      });
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Digital Coach Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Navigation -->
+  <nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex">
+          <div class="flex-shrink-0 flex items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Digital Coach</h1>
+          </div>
+          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <a href="/observability/dashboard" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Dashboard
+            </a>
+            <a href="/observability/sessions" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Sessions
+            </a>
+            <a href="/observability/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Users & Chats
+            </a>
+            <a href="/observability/funnel" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Funnel
+            </a>
+            <a href="/observability/api-health" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              API Health
+            </a>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <span class="text-gray-700 mr-4">👤 <%= username %></span>
+          <a href="/observability/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <!-- Back Button -->
+      <div class="mb-6">
+        <a href="/observability/users" class="text-indigo-600 hover:text-indigo-800 flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Back to Users
+        </a>
+      </div>
+
+      <!-- User Info Card -->
+      <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800"><%= user.name || 'Unknown User' %></h2>
+            <p class="text-gray-600 mt-1"><%= user.phone_number %></p>
+            <div class="mt-2 flex items-center space-x-4">
+              <% if (user.grade) { %>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  <%= user.grade %>
+                </span>
+              <% } %>
+              <% if (user.subject) { %>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <%= user.subject %>
+                </span>
+              <% } %>
+              <% if (user.registration_completed) { %>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                  Registered
+                </span>
+              <% } %>
+            </div>
+          </div>
+          <div class="text-right text-sm text-gray-500">
+            <p>Joined: <%= new Date(user.created_at).toLocaleDateString() %></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversations -->
+      <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h3 class="text-lg font-medium text-gray-900">Conversation History</h3>
+          <p class="text-sm text-gray-500 mt-1">Showing <%= conversations.length %> messages</p>
+        </div>
+
+        <div class="p-6 space-y-4 max-h-[600px] overflow-y-auto">
+          <% if (conversations && conversations.length > 0) { %>
+            <% conversations.forEach(msg => { %>
+              <div class="flex <%= msg.role === 'user' ? 'justify-end' : 'justify-start' %>">
+                <div class="max-w-[70%]">
+                  <!-- Message Bubble -->
+                  <div class="<%= msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800' %> rounded-lg px-4 py-3 shadow">
+                    <div class="flex items-center mb-1">
+                      <span class="text-xs font-semibold <%= msg.role === 'user' ? 'text-blue-100' : 'text-gray-600' %>">
+                        <%= msg.role === 'user' ? 'User' : 'Bot' %>
+                      </span>
+                      <% if (msg.message_type && msg.message_type !== 'text') { %>
+                        <span class="ml-2 px-2 py-0.5 text-xs rounded <%= msg.role === 'user' ? 'bg-blue-600' : 'bg-gray-300' %>">
+                          <%= msg.message_type %>
+                        </span>
+                      <% } %>
+                    </div>
+                    <p class="text-sm whitespace-pre-wrap"><%= msg.content %></p>
+                  </div>
+
+                  <!-- Timestamp -->
+                  <p class="text-xs <%= msg.role === 'user' ? 'text-right' : 'text-left' %> text-gray-500 mt-1 px-1">
+                    <%= new Date(msg.created_at).toLocaleString() %>
+                  </p>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="text-center py-12">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+              </svg>
+              <p class="mt-4 text-gray-500">No conversation history yet</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

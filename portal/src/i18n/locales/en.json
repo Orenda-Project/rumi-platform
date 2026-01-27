@@ -1,0 +1,161 @@
+{
+  "nav": {
+    "features": "Features",
+    "meetRumi": "Meet Rumi"
+  },
+  "hero": {
+    "title": "You're not",
+    "titleContinued": "teaching alone",
+    "subtitle": "Your 24/7 teaching companion. Ask questions, share struggles, get support—anytime, through WhatsApp.",
+    "meetRumi": "Meet Rumi",
+    "seeHowItWorks": "See How It Works"
+  },
+  "lonelyTruth": {
+    "title": "Teaching is one of the most important jobs in the world.",
+    "titleContinued": "And one of the loneliest.",
+    "description": "You plan lessons at midnight. Handle classroom challenges alone. Make split-second decisions with no backup. You pour everything into your students—but who's there for you?",
+    "conclusion": "That's why we built Rumi. Not as another tool. As someone who shows up."
+  },
+  "alwaysThere": {
+    "title": "Your companion, wherever teaching takes you",
+    "moments": [
+      {
+        "title": "In the moment",
+        "description": "Student asking a question you're unsure about? Text Rumi right there in class. Get guidance in seconds, not days."
+      },
+      {
+        "title": "Late at night",
+        "description": "Planning tomorrow's lesson at 11pm? Voice message Rumi. Think out loud, get immediate feedback. Like talking to a mentor who never sleeps."
+      },
+      {
+        "title": "When you're stuck",
+        "description": "Classroom management going sideways? Feeling overwhelmed? Share it. No judgment. Just understanding and practical help."
+      }
+    ]
+  },
+  "realSupport": {
+    "title": "More than answers. Real support.",
+    "features": [
+      {
+        "title": "Chat Anytime, In Any Format",
+        "subtitle": "Text or voice - Your choice, always",
+        "description": "Quick text questions during class or voice messages while driving. Get responses in the format you sent.",
+        "bullets": [
+          "Text for quick questions",
+          "Voice when hands are busy",
+          "Same format replies"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "Voice note", "type": "voice", "duration": "0:10" },
+          { "from": "rumi", "message": "Voice reply", "type": "voice", "duration": "0:13" },
+          { "from": "teacher", "message": "Thanks!" }
+        ]
+      },
+      {
+        "title": "Speak in Your Language",
+        "subtitle": "English, Urdu, Arabic, or Spanish",
+        "description": "Rumi detects your language and replies naturally. Switch anytime. True understanding, not translation.",
+        "bullets": [
+          "Auto language detection",
+          "Switch languages anytime",
+          "True educational understanding"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "Can you help me with a lesson plan?" },
+          { "from": "rumi", "message": "Absolutely! What subject and grade?" },
+          { "from": "teacher", "message": "Actually, speak in Spanish please" },
+          { "from": "rumi", "message": "¡Por supuesto! ¿Qué materia y grado?" }
+        ]
+      },
+      {
+        "title": "Get Support for Your Classroom",
+        "subtitle": "Real-time teaching help",
+        "description": "Behavior strategies, differentiation tips, activity ideas, and encouragement when you need it most.",
+        "bullets": [
+          "Classroom management help",
+          "Differentiation strategies",
+          "On-demand activity ideas",
+          "Encouragement always"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "My advanced students finish early and get bored" },
+          { "from": "rumi", "message": "Try extension tasks: mini-research, peer teaching, or challenge problems. Want specific ideas for your subject?" },
+          { "from": "teacher", "message": "Yes please, I teach 5th grade math" },
+          { "from": "rumi", "message": "Perfect! Here are 3 strategies..." }
+        ]
+      },
+      {
+        "title": "Plan Better Lessons, Faster",
+        "subtitle": "AI-generated lesson plans & presentations",
+        "description": "Full lesson plans with objectives, activities, and materials in 60-90 seconds. Not minutes, seconds.",
+        "bullets": [
+          "Complete plans in minutes",
+          "Objectives and materials included",
+          "Ready-to-use or customize",
+          "Save hours of planning"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "Generate lesson plan: fractions for grade 3" },
+          { "from": "rumi", "message": "Creating your lesson plan now... 📄" },
+          { "from": "rumi", "message": "", "type": "file", "fileName": "lesson_plan_grade_3_fractions.pdf", "fileSize": "1.4 MB", "fileType": "pdf" }
+        ]
+      },
+      {
+        "title": "Reflect on Your Teaching",
+        "subtitle": "Coaching sessions for deeper growth",
+        "description": "Record classroom audio. Get personalized analysis with voice debrief. Track your progress over time.",
+        "bullets": [
+          "Audio classroom analysis",
+          "Personalized feedback",
+          "Voice debrief to listen",
+          "Track growth over time"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "I recorded today's lesson, can you analyze it?" },
+          { "from": "rumi", "message": "I'll listen and give you feedback. This takes about 5 minutes..." },
+          { "from": "rumi", "message": "Analysis ready! 🎙️ Your questioning technique was strong. Let's work on wait time. Here's a 3-minute voice debrief:" },
+          { "from": "rumi", "message": "Voice debrief", "type": "voice", "duration": "3:00" }
+        ]
+      },
+      {
+        "title": "Rumi Remembers Your Conversations",
+        "subtitle": "Context across sessions",
+        "description": "Pick up where you left off. References past discussions. Learns your style. No re-explaining.",
+        "bullets": [
+          "Remembers your context",
+          "References past chats",
+          "Learns your teaching style",
+          "Seamless continuity"
+        ],
+        "chat": [
+          { "from": "rumi", "message": "The proximity + redirection we discussed last week? How's it going with that student?" },
+          { "from": "teacher", "message": "Much better! Can we build on it?" },
+          { "from": "rumi", "message": "Great! Let's add positive reinforcement..." }
+        ]
+      }
+    ]
+  },
+  "theDifference": {
+    "title": "What makes Rumi different?",
+    "para1": "Other tools give you templates and resources. Rumi gives you company.",
+    "para2": "It remembers your conversation. Understands your context. Responds to what you're actually struggling with—not what a database thinks you need.",
+    "para3": "Think of it as the colleague you wish worked next door. The mentor you wish you had. The friend who teaches and gets it.",
+    "conclusion": "Available 24/7. Never tired. Never judging. Always helping."
+  },
+  "globalTeachers": {
+    "title": "Built for teachers, by people who care about teaching",
+    "para1": "Whether you're teaching in Pakistan, Peru, or Portland. In a one-room school or a 2,000-student campus. With cutting-edge tech or just chalk and heart.",
+    "para2": "Rumi speaks your language. Understands your context. Adapts to your reality.",
+    "conclusion": "Because every teacher deserves support. No exceptions."
+  },
+  "finalCta": {
+    "title": "Ready to stop teaching alone?",
+    "subtitle": "Thousands of teachers already have Rumi by their side.",
+    "subtitleContinued": "Meet yours today.",
+    "cta": "Meet Rumi",
+    "note": "No credit card. No setup. Just you and your teaching companion."
+  },
+  "footer": {
+    "copyright": "© 2025 Rumi. Supporting teachers everywhere."
+  }
+}

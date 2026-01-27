@@ -1,0 +1,21 @@
+{
+  "id": "gen-test-123",
+  "model": "openai/gpt-4o",
+  "object": "chat.completion",
+  "created": 1706400000,
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Welcome! I'm your AI teaching assistant. I'm here to help you with any teaching-related questions. What would you like to discuss today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 150,
+    "completion_tokens": 35,
+    "total_tokens": 185
+  }
+}

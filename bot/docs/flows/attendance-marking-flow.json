@@ -1,0 +1,115 @@
+{
+  "_comment": "WhatsApp Flow for Attendance Marking - Tap to Mark Absent Students",
+  "_instructions": [
+    "1. Copy this JSON to Meta Business Manager > WhatsApp Manager > Flows",
+    "2. Flow ID (staging): [TO BE ASSIGNED]",
+    "3. Flow ID (production): [TO BE ASSIGNED]",
+    "4. IMPORTANT: Update the flow in Meta Business Manager - this file is just reference",
+    "5. Screen 1 (MARK_ABSENT): CheckboxGroup to select absent students",
+    "6. The student list is populated dynamically by the data_api_version endpoint"
+  ],
+  "_changelog": [
+    "v1.0 (Jan 24, 2026): Initial version for attendance feature (bd-055)",
+    "v1.1 (Jan 25, 2026): Fixed session_type display - removed concatenation (bd-194)"
+  ],
+  "_bead": "bd-055",
+  "_notes": [
+    "WhatsApp CheckboxGroup can display 40+ items",
+    "Students marked as absent - unmarked students are present",
+    "Uses init_data for dynamic student list from bot"
+  ],
+
+  "version": "6.2",
+  "data_api_version": "3.0",
+  "routing_model": {},
+  "screens": [
+    {
+      "id": "MARK_ABSENT",
+      "title": "Mark Attendance",
+      "terminal": true,
+      "refresh_on_back": true,
+      "data": {
+        "class_name": {
+          "type": "string",
+          "__example__": "Grade 4 - B"
+        },
+        "date_display": {
+          "type": "string",
+          "__example__": "Friday, 24 January 2026"
+        },
+        "session_type": {
+          "type": "string",
+          "__example__": "Session: Morning"
+        },
+        "students": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "uuid-1", "title": "1. Zara Abdul Ghaffar" },
+            { "id": "uuid-2", "title": "2. Ahmed Hassan" },
+            { "id": "uuid-3", "title": "3. Fatima Ali" }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "marking_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "${data.class_name}"
+              },
+              {
+                "type": "TextBody",
+                "text": "${data.date_display}"
+              },
+              {
+                "type": "TextBody",
+                "text": "${data.session_type}"
+              },
+              {
+                "type": "TextSubheading",
+                "text": "Select ABSENT students:"
+              },
+              {
+                "type": "TextBody",
+                "text": "Students not selected will be marked PRESENT"
+              },
+              {
+                "type": "CheckboxGroup",
+                "name": "absent_students",
+                "label": "Absent Students",
+                "required": false,
+                "data-source": "${data.students}",
+                "min-selected-items": 0,
+                "max-selected-items": 50
+              },
+              {
+                "type": "Footer",
+                "label": "Submit Attendance",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "absent_students": "${form.absent_students}",
+                    "class_name": "${data.class_name}",
+                    "date_display": "${data.date_display}",
+                    "session_type": "${data.session_type}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
