@@ -23,7 +23,7 @@ const TIERS = {
     name: 'Minimal',
     required: [
       'SUPABASE_URL',
-      'SUPABASE_SERVICE_KEY',
+      'SUPABASE_SERVICE_ROLE_KEY',
       'REDIS_URL',
       'WHATSAPP_TOKEN',
       'PHONE_NUMBER_ID',

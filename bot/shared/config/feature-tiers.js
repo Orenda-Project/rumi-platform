@@ -16,7 +16,7 @@ const TIER_NAMES = ['minimal', 'recommended', 'full'];
 const BASE_REQUIRED_ENV = [
   'OPENROUTER_API_KEY',
   'SUPABASE_URL',
-  'SUPABASE_SERVICE_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
   'REDIS_URL',
   'WHATSAPP_TOKEN',
   'PHONE_NUMBER_ID',

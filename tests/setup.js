@@ -10,7 +10,7 @@ process.env.NODE_ENV = 'test';
 
 // Default test environment variables (safe dummy values)
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://test-project.supabase.co';
-process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'test-service-key';
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-key';
 process.env.OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || 'sk-or-test-key';
 process.env.REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 process.env.PORT = process.env.PORT || '3000';
