@@ -19,6 +19,7 @@ keys/
 *.p12
 credentials*
 service-account*.json
+.railway-token
 
 # Setup state (generated during /setup)
 .setup-state.json
