@@ -26,11 +26,12 @@
     "whatsapp",
     "chatbot",
     "ai",
-    "openai",
-    "gpt"
+    "education",
+    "teaching-assistant",
+    "rumi"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "Taleemabad (Oraan Education Pvt. Ltd.)",
+  "license": "Apache-2.0",
   "type": "commonjs",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.922.0",
