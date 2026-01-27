@@ -8,10 +8,12 @@
  * 3. When keywords are detected in chat (explicit consent via buttons)
  */
 
+const R2_BASE = process.env.R2_PUBLIC_URL || '';
+
 const FEATURE_VIDEO_URLS = {
-  lesson_plan: 'https://58a6fb2a86d61397895d6b97b73a3ebe.r2.cloudflarestorage.com/digital-coach-audio/feature_videos/lesson_plan_intro.mp4',
-  coaching: 'https://58a6fb2a86d61397895d6b97b73a3ebe.r2.cloudflarestorage.com/digital-coach-audio/feature_videos/coaching_intro.mp4',
-  reading: 'https://58a6fb2a86d61397895d6b97b73a3ebe.r2.cloudflarestorage.com/digital-coach-audio/feature_videos/reading_intro.mp4',
+  lesson_plan: `${R2_BASE}/feature_videos/lesson_plan_intro.mp4`,
+  coaching: `${R2_BASE}/feature_videos/coaching_intro.mp4`,
+  reading: `${R2_BASE}/feature_videos/reading_intro.mp4`,
 };
 
 /**
