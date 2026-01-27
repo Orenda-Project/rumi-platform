@@ -32,7 +32,7 @@ When you edit the portal in Lovable:
 
 ### Step 2: Add Token as Repository Secret
 
-1. Go to: **https://github.com/your-org/rumi-portal_v1.2**
+1. Go to: **https://github.com/taleemabad/rumi-portal_v1.2**
 2. Click **"Settings"** tab (top of page)
 3. In left sidebar, click **"Secrets and variables"** → **"Actions"**
 4. Click **"New repository secret"** (green button)
@@ -74,7 +74,7 @@ The workflow is now active. Here's what happens next:
 1. Make a small change in Lovable (e.g., change a button color)
 2. Lovable auto-commits to `rumi-portal_v1.2`
 3. Watch GitHub Actions run:
-   - Go to: **https://github.com/your-org/rumi-portal_v1.2/actions**
+   - Go to: **https://github.com/taleemabad/rumi-portal_v1.2/actions**
    - You'll see a workflow running called "Deploy Portal Frontend to Backend"
    - Click on it to watch progress (takes ~2-3 minutes)
 4. Wait ~2 more minutes for Railway to deploy
@@ -86,7 +86,7 @@ The workflow is now active. Here's what happens next:
 
 ### View Workflow Runs
 
-**GitHub Actions**: https://github.com/your-org/rumi-portal_v1.2/actions
+**GitHub Actions**: https://github.com/taleemabad/rumi-portal_v1.2/actions
 
 You'll see:
 - ✅ Green checkmark = successful deployment
@@ -162,7 +162,7 @@ Here's what happens under the hood:
 
 **Solution**:
 - Your `GH_PAT` secret name is wrong or missing
-- Go to: https://github.com/your-org/rumi-portal_v1.2/settings/secrets/actions
+- Go to: https://github.com/taleemabad/rumi-portal_v1.2/settings/secrets/actions
 - Verify secret name is exactly `GH_PAT` (case-sensitive)
 
 ### Problem: Workflow runs but changes don't appear on portal

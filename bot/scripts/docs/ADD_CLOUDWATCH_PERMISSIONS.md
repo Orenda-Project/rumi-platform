@@ -11,11 +11,11 @@ The IAM user needs CloudWatch alarm viewing permissions. We need to add `Describ
 
 ### Step 1: Go to IAM Console
 
-Open: https://console.aws.amazon.com/iam/home?region=us-east-1#/users/your-org
+Open: https://console.aws.amazon.com/iam/home?region=us-east-1#/users/your-iam-user
 
 ### Step 2: Click "Add Permissions"
 
-1. You should be on the user details page for `your-org`
+1. You should be on the user details page for `your-iam-user`
 2. Click the **"Permissions"** tab
 3. Click **"Add permissions"** button
 4. Select **"Attach policies directly"**
