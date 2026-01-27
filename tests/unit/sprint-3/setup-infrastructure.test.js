@@ -123,7 +123,7 @@ describe('Setup Infrastructure', () => {
     test('contains all core required variables', () => {
       const required = [
         'SUPABASE_URL',
-        'SUPABASE_SERVICE_KEY',
+        'SUPABASE_SERVICE_ROLE_KEY',
         'REDIS_URL',
         'OPENROUTER_API_KEY',
         'WHATSAPP_TOKEN',
