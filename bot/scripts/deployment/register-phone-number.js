@@ -14,7 +14,7 @@ async function registerPhoneNumber() {
   try {
     console.log('📱 Registering WhatsApp Business Phone Number...\n');
     console.log(`   Phone Number ID: ${PHONE_NUMBER_ID}`);
-    console.log(`   Display Name: Classi by Taleemabad\n`);
+    console.log(`   Display Name: ${process.env.BOT_NAME || 'Rumi'}\n`);
 
     if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
       console.error('❌ Missing required environment variables!');
@@ -46,7 +46,7 @@ async function registerPhoneNumber() {
     console.log('✅ Registration successful!\n');
     console.log('Response:', JSON.stringify(response.data, null, 2));
     console.log('\n📝 Important Notes:');
-    console.log('   1. Your phone number is now registered with "Classi by Taleemabad"');
+    console.log('   1. Your phone number is now registered');
     console.log('   2. Two-step verification is enabled with PIN:', TWO_STEP_PIN);
     console.log('   3. Keep this PIN safe - you\'ll need it for future registrations');
     console.log('   4. You can now send messages using this number\n');

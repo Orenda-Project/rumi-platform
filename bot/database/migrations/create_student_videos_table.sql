@@ -67,7 +67,7 @@ CREATE TRIGGER trigger_update_student_videos_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Add comments for documentation
-COMMENT ON TABLE student_videos IS 'Educational videos for students from Taleemabad library';
+COMMENT ON TABLE student_videos IS 'Educational videos for students from platform library';
 COMMENT ON COLUMN student_videos.grade IS 'Grade level (e.g., NURSERY, Grade 1, Grade 2, etc.)';
 COMMENT ON COLUMN student_videos.subject IS 'Subject area (e.g., English, Maths, Science)';
 COMMENT ON COLUMN student_videos.topic IS 'Main topic of the video';

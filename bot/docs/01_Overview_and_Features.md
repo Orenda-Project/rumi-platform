@@ -88,7 +88,7 @@ Bot: [Voice message of same response]
   context: {
     domain: 'Education',
     topic: 'Teaching, lesson planning, classroom activities',
-    organization: 'Taleemabad',
+    organization: 'Your Organization',
     text: 'Teachers in Pakistan discussing teaching methods...',
     terms: ['multigrade', 'ustaad', 'taleem', 'lesson plan', ...]
   }

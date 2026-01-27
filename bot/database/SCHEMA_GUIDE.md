@@ -248,7 +248,7 @@ This is the **video library** for the Media Agent to search through.
 | `grade` | Grade level | `Grade 4` | Filter by grade |
 | `subject` | Subject area | `Math` | Filter by subject |
 | `topic` | Specific topic | `Fractions` | Search by topic |
-| `source` | Where video came from | `Taleemabad`, `Khan Academy` | Credit source |
+| `source` | Where video came from | `Platform`, `Khan Academy` | Credit source |
 | `created_at` | When added to library | `2025-10-15 00:00:00` | Track library growth |
 
 **Why This Matters:**
