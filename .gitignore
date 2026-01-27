@@ -78,3 +78,5 @@ dump.rdb
 # Supabase local
 .supabase/
 supabase/.temp/
+**/supabase/.temp/
+dashboard/supabase/.temp/

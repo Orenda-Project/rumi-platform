@@ -52,7 +52,7 @@ That's it! The bot will:
    4. Paste URL: https://abc123.ngrok-free.app/webhook
    5. Verify Token: my_webhook_verify_token_12345
    6. Subscribe to: messages
-   7. Send a message to: +92 329 5012345
+   7. Send a message to: +[YOUR BOT PHONE NUMBER]
 ```
 
 ---
@@ -74,7 +74,7 @@ That's it! The bot will:
 
 ## Test Your Bot!
 
-Send a WhatsApp message to: **+92 329 5012345**
+Send a WhatsApp message to: **+[YOUR BOT PHONE NUMBER]**
 
 You'll get an AI-powered response!
 

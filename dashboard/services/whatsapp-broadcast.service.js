@@ -17,6 +17,9 @@ const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const WABA_ID = process.env.WABA_ID;
 const API_VERSION = 'v21.0';
 
+// Bot domain for URL validation (escaped for regex)
+const BOT_DOMAIN = (process.env.BOT_DOMAIN || 'example.com').replace(/\./g, '\\.');
+
 // Rate limiting
 const MESSAGE_DELAY_MS = 50; // 20 messages per second
 const TEMPLATE_POLL_INTERVAL_MS = 30 * 1000; // 30 seconds
@@ -48,7 +51,7 @@ function validateBroadcastContent(message) {
     warnings.push('Excessive capitalization may slow approval');
   }
 
-  if (/https?:\/\/(?!hellorumi\.ai)/i.test(message)) {
+  if (new RegExp(`https?:\\/\\/(?!${BOT_DOMAIN})`, 'i').test(message)) {
     warnings.push('External URLs may require longer review');
   }
 
@@ -78,7 +81,7 @@ function getApprovalLikelihood(message) {
     warnings.push('Excessive capitalization may slow approval');
   }
 
-  if (/https?:\/\/(?!hellorumi\.ai)/i.test(message)) {
+  if (new RegExp(`https?:\\/\\/(?!${BOT_DOMAIN})`, 'i').test(message)) {
     score -= 30;
     warnings.push('External URLs may require longer review');
   }

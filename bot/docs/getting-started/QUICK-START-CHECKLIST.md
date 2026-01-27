@@ -124,7 +124,7 @@ my_webhook_verify_token_12345
 ### Test 1: Send from Your Phone
 
 1. ☐ Open WhatsApp on your phone
-2. ☐ Start new chat with: **+92 329 5012345**
+2. ☐ Start new chat with: **+[YOUR BOT PHONE NUMBER]**
 3. ☐ Send message: "Hello bot!"
 4. ☐ Wait 2-3 seconds
 5. ☐ You should receive an AI-generated response!
