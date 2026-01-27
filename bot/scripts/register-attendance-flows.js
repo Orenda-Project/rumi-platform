@@ -37,9 +37,9 @@ const ACCESS_TOKEN = isProduction ? process.env.WHATSAPP_TOKEN : STAGING_TOKEN;
 
 // Base URL for flow endpoints (bd-215)
 // Railway domains follow pattern: {service-name}-production.up.railway.app
-const ENDPOINT_BASE_URL = isProduction
-  ? 'https://whatsapp-bot-production.up.railway.app'
-  : 'https://digital-coach-staging-production.up.railway.app';
+const ENDPOINT_BASE_URL = process.env.APP_URL || (isProduction
+  ? 'https://your-app-production.up.railway.app'
+  : 'https://your-app-staging.up.railway.app');
 
 if (!WABA_ID || !ACCESS_TOKEN) {
   console.error('ERROR: Missing WABA_ID or WHATSAPP_TOKEN in environment variables');

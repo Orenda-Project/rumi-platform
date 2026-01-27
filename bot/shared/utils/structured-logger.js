@@ -274,7 +274,7 @@ if (isDev) {
       level: (label) => ({ level: label }),
     },
     base: {
-      service: process.env.RAILWAY_SERVICE_NAME || process.env.SERVICE_NAME || 'digital-coach',
+      service: process.env.RAILWAY_SERVICE_NAME || process.env.SERVICE_NAME || 'rumi-bot',
       env: process.env.NODE_ENV || 'development',
     },
     timestamp: pino.stdTimeFunctions.isoTime,
@@ -287,7 +287,7 @@ if (isDev) {
       level: (label) => ({ level: label }),
     },
     base: {
-      service: process.env.RAILWAY_SERVICE_NAME || process.env.SERVICE_NAME || 'digital-coach',
+      service: process.env.RAILWAY_SERVICE_NAME || process.env.SERVICE_NAME || 'rumi-bot',
       env: process.env.NODE_ENV || 'development',
     },
     timestamp: pino.stdTimeFunctions.isoTime,
