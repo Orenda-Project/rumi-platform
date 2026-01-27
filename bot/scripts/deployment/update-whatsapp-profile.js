@@ -10,7 +10,7 @@ const WABA_ID = process.env.WABA_ID; // WhatsApp Business Account ID
 const API_VERSION = 'v21.0';
 
 // Profile picture path
-const PROFILE_PICTURE_PATH = '/Users/haroonyasin/Documents/Cursor/Projects/AI-Projects/WhatsApp testing/Lucid_Origin_Quentin_Blake_style_black_and_white_illustration__1.jpg';
+const PROFILE_PICTURE_PATH = process.argv[2] || './profile-picture.jpg';
 
 async function updateWhatsAppProfile() {
   try {

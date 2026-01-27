@@ -11,7 +11,7 @@ const https = require('https');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-const WHATSAPP_WABA_ID = process.env.WHATSAPP_WABA_ID || '1383233296670749';
+const WHATSAPP_WABA_ID = process.env.WHATSAPP_WABA_ID || process.env.WABA_ID;
 
 // Warning thresholds
 const THRESHOLDS = {

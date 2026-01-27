@@ -27,11 +27,9 @@ const BASE_URL = `https://graph.facebook.com/${API_VERSION}`;
 // Determine environment
 const isProduction = process.argv.includes('--production');
 
-// WABA Credentials per environment (from .env.staging.example reference)
-// Production: Digital Coach WABA (1383233296670749)
-// Staging: Bug Buster WABA (1568780677606684) - SEPARATE WABA
-const STAGING_WABA_ID = '1568780677606684';
-const STAGING_TOKEN = '***REMOVED-SECRET***';
+// WABA Credentials from environment
+const STAGING_WABA_ID = process.env.WABA_ID;
+const STAGING_TOKEN = process.env.WHATSAPP_TOKEN;
 
 // Get credentials based on environment
 const WABA_ID = isProduction ? process.env.WABA_ID : STAGING_WABA_ID;

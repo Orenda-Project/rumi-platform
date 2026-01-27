@@ -93,7 +93,7 @@ Expected output:
 ## Step 3: Run Setup Script (3 minutes)
 
 ```bash
-cd "/Users/haroonyasin/Documents/Projects/Rumi/Main WhatsApp Bot"
+cd /path/to/rumi-platform/bot
 
 # Make script executable
 chmod +x scripts/setup-aws-sqs.sh

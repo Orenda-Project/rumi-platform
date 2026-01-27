@@ -5,8 +5,8 @@
 require('dotenv').config();
 const https = require('https');
 
-// Staging credentials
-const STAGING_TOKEN = '***REMOVED-SECRET***';
+// Credentials from environment
+const STAGING_TOKEN = process.env.WHATSAPP_TOKEN;
 const FLOW_ID = process.argv[2] || '870222682369657';
 
 const options = {

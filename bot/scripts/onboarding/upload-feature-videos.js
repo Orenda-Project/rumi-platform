@@ -16,10 +16,11 @@ const fs = require('fs');
 const { uploadFeatureVideo, buildR2PublicUrl } = require('../../shared/storage/r2');
 
 // Video paths - all 3 feature introduction videos
+// Video paths - update these to point to your local video files
 const FEATURE_VIDEOS = {
-  lesson_plan: '/Users/haroonyasin/Documents/Projects/Rumi 12 Dec 2025/06_Logs & Misc/Reports/Active/Onboarding Flow 18 Dec 2025/Feature_Videos/01_Lesson_Plan_Feature/v6/lesson_plan_feature_v6_2.5x.mp4',
-  coaching: '/Users/haroonyasin/Documents/Projects/Rumi 12 Dec 2025/06_Logs & Misc/Reports/Active/Onboarding Flow 18 Dec 2025/Feature_Videos/02_Coaching_Feature/v3/coaching_feature_video.mp4',
-  reading: '/Users/haroonyasin/Documents/Projects/Rumi 12 Dec 2025/06_Logs & Misc/Reports/Active/Onboarding Flow 18 Dec 2025/Feature_Videos/03_Reading_Feature/v1/videos/reading_feature_video_2.5x.mp4'
+  lesson_plan: process.env.LESSON_PLAN_VIDEO_PATH || './videos/lesson_plan_feature.mp4',
+  coaching: process.env.COACHING_VIDEO_PATH || './videos/coaching_feature.mp4',
+  reading: process.env.READING_VIDEO_PATH || './videos/reading_feature.mp4'
 };
 
 async function main() {
