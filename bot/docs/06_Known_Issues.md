@@ -364,7 +364,7 @@ When reporting a new issue, include:
 6. **User Impact**: How many users affected?
 
 **Where to Report**:
-- GitHub Issues: https://github.com/your-org/whatsapp-ai-bot/issues
+- GitHub Issues: https://github.com/your-org/rumi-platform/issues
 - Internal Slack: #rumi-bugs
 
 ---
