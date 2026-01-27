@@ -48,6 +48,7 @@
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
     "bottleneck": "^2.19.5",
+    "bullmq": "^5.67.1",
     "canvas": "^3.2.0",
     "chartjs-node-canvas": "^4.1.6",
     "connect-flash": "^0.1.1",
