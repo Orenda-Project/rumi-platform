@@ -55,7 +55,7 @@ if (modelVersion === 'stt-async-v3') {
     general: [
       { key: 'domain', value: 'Education' },
       { key: 'topic', value: 'Teaching, lesson planning...' },
-      { key: 'organization', value: 'Taleemabad' }
+      { key: 'organization', value: 'Your Organization' }
     ],
     text: 'Teachers in Pakistan discussing...',
     terms: ['multigrade', 'ustaad', 'taleem', 'lesson plan', ...]

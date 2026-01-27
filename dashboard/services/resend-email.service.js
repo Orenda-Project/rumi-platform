@@ -114,7 +114,7 @@ class ResendEmailService {
                   <div class="footer">
                     <p><strong>Note:</strong> This invitation will expire in 7 days. If you need a new invitation, please contact ${invitedByName}.</p>
                     <p>If you didn't expect this invitation, you can safely ignore this email.</p>
-                    <p style="margin-top: 15px;">Rumi by Taleemabad</p>
+                    <p style="margin-top: 15px;">Rumi - AI Teaching Assistant</p>
                   </div>
                 </div>
               </div>
@@ -133,7 +133,7 @@ class ResendEmailService {
 
           If you didn't expect this invitation, you can safely ignore this email.
 
-          Rumi by Taleemabad
+          Rumi - AI Teaching Assistant
         `
       });
 
@@ -207,7 +207,7 @@ class ResendEmailService {
                   <div class="footer">
                     <p><strong>Note:</strong> This link will expire in 1 hour for security reasons.</p>
                     <p>If you didn't request a password reset, please ignore this email and your password will remain unchanged.</p>
-                    <p style="margin-top: 15px;">Rumi by Taleemabad</p>
+                    <p style="margin-top: 15px;">Rumi - AI Teaching Assistant</p>
                   </div>
                 </div>
               </div>
@@ -228,7 +228,7 @@ class ResendEmailService {
 
           If you didn't request a password reset, please ignore this email.
 
-          Rumi by Taleemabad
+          Rumi - AI Teaching Assistant
         `
       });
 

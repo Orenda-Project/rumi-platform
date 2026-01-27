@@ -13,7 +13,7 @@ const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const API_VERSION = 'v21.0';
 
 // New display name (already approved by Meta)
-const NEW_DISPLAY_NAME = 'Rumi - Teaching Assistant by Taleemabad';
+const NEW_DISPLAY_NAME = process.env.WHATSAPP_DISPLAY_NAME || 'Rumi - AI Teaching Assistant';
 
 async function updateDisplayName() {
   try {

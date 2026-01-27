@@ -1,7 +1,7 @@
 # Digital Coach - Knowledge Base
 
 **Version**: 2.0 (November 2025)
-**Maintained By**: Taleemabad Product Team
+**Maintained By**: Rumi Contributors
 **Last Updated**: November 1, 2025
 **Repository**: https://github.com/your-org/whatsapp-ai-bot
 
@@ -253,9 +253,9 @@ This knowledge base follows these principles:
 ## License & Confidentiality
 
 **Internal Use Only** - This knowledge base contains technical details intended for:
-- Taleemabad team members
-- Authorized developers and contractors
-- Claude agents acting on behalf of Taleemabad
+- Project team members
+- Authorized developers and contributors
+- Claude agents working on the project
 
 **Do Not Share Publicly**:
 - API keys or credentials
