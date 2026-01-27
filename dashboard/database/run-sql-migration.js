@@ -14,21 +14,29 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
+// Supabase pooler region (varies by project location)
+const SUPABASE_POOLER_HOST = process.env.SUPABASE_POOLER_HOST || 'aws-0-us-east-1.pooler.supabase.com';
+
 // Connection configurations to try (in order)
-// Note: Based on CLI error, the actual pooler is aws-1-ap-southeast-1, not aws-0-us-west-1
 const CONNECTION_CONFIGS = [
+  // If DATABASE_URL is set, try it first
+  ...(process.env.DATABASE_URL ? [{
+    name: 'DATABASE_URL',
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  }] : []),
   {
-    name: 'Session Pooler (ap-southeast-1, Port 5432)',
-    connectionString: `postgresql://postgres.${extractProjectRef()}:${process.env.SUPABASE_DB_PASSWORD}@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres`,
+    name: `Session Pooler (Port 5432)`,
+    connectionString: `postgresql://postgres.${extractProjectRef()}:${process.env.SUPABASE_DB_PASSWORD}@${SUPABASE_POOLER_HOST}:5432/postgres`,
     ssl: { rejectUnauthorized: false }
   },
   {
-    name: 'Transaction Pooler (ap-southeast-1, Port 6543)',
-    connectionString: `postgresql://postgres.${extractProjectRef()}:${process.env.SUPABASE_DB_PASSWORD}@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres`,
+    name: `Transaction Pooler (Port 6543)`,
+    connectionString: `postgresql://postgres.${extractProjectRef()}:${process.env.SUPABASE_DB_PASSWORD}@${SUPABASE_POOLER_HOST}:6543/postgres`,
     ssl: { rejectUnauthorized: false }
   },
   {
-    name: 'Direct Connection (IPv6)',
+    name: 'Direct Connection',
     connectionString: `postgresql://postgres:${process.env.SUPABASE_DB_PASSWORD}@db.${extractProjectRef()}.supabase.co:5432/postgres`,
     ssl: { rejectUnauthorized: false }
   }
