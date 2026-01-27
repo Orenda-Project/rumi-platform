@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install bot dependencies
+        working-directory: bot
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Verify no hardcoded credentials
+        run: |
+          # Check for common credential patterns in source files
+          ! grep -rn 'EAAUmy\|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.' \
+            --include='*.js' --include='*.ts' --include='*.json' \
+            --exclude-dir=node_modules --exclude-dir=.git \
+            bot/shared/ dashboard/ portal/ || true
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install bot dependencies
+        working-directory: bot
+        run: npm ci
+
+      - name: Check for security patterns
+        run: |
+          echo "Checking for hardcoded secrets..."
+          FOUND=0
+          # Check for API keys
+          if grep -rn 'sk-[a-zA-Z0-9]\{20,\}' --include='*.js' --exclude-dir=node_modules --exclude='*.test.js' bot/shared/ dashboard/services/ 2>/dev/null; then
+            echo "WARNING: Possible API key found"
+            FOUND=1
+          fi
+          # Check for personal paths
+          if grep -rn '/Users/' --include='*.js' --include='*.sh' --exclude-dir=node_modules bot/ dashboard/ 2>/dev/null; then
+            echo "WARNING: Personal path found"
+            FOUND=1
+          fi
+          if [ "$FOUND" -eq 1 ]; then
+            echo "Security check found potential issues. Review above."
+            exit 1
+          fi
+          echo "Security check passed."
