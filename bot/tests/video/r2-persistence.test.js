@@ -259,7 +259,7 @@ describe('R2 URL validation', () => {
 
   test('should generate valid R2 public URL', () => {
     const endpoint = 'https://example.r2.cloudflarestorage.com';
-    const bucket = 'digital-coach-audio';
+    const bucket = 'rumi-assets';
     const key = 'videos/test-uuid/audio/slide_1.mp3';
 
     const publicUrl = `${endpoint}/${bucket}/${key}`;
