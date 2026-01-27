@@ -313,9 +313,8 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       }
 
       // Send WhatsApp Flow for reading assessment setup
-      // Production: 1432151735009021, Staging: 870222682369657
       const flowSent = await WhatsAppService.sendFlow(from, {
-        flowId: process.env.READING_ASSESSMENT_FLOW_ID || '1432151735009021',
+        flowId: process.env.READING_ASSESSMENT_FLOW_ID,
         header: '📚 Reading Assessment',
         body: 'Let\'s set up a reading assessment for your student. This will help measure their reading fluency and comprehension.',
         footer: 'Takes about 5-10 minutes',

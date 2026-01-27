@@ -11,7 +11,7 @@ const fs = require('fs');
 // Credentials from environment
 require('dotenv').config();
 const STAGING_TOKEN = process.env.WHATSAPP_TOKEN;
-const FLOW_ID = process.argv[2] || '870222682369657';
+const FLOW_ID = process.argv[2] || process.env.READING_ASSESSMENT_FLOW_ID;
 
 // Read and clean the flow JSON (remove _comment and _instructions)
 const flowJson = JSON.parse(fs.readFileSync('docs/flows/reading-assessment-flow-v2.json', 'utf8'));

@@ -7,7 +7,7 @@ const https = require('https');
 
 // Credentials from environment
 const STAGING_TOKEN = process.env.WHATSAPP_TOKEN;
-const FLOW_ID = process.argv[2] || '870222682369657';
+const FLOW_ID = process.argv[2] || process.env.READING_ASSESSMENT_FLOW_ID;
 
 const options = {
   hostname: 'graph.facebook.com',

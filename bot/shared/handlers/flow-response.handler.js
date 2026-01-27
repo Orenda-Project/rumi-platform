@@ -30,9 +30,8 @@ const AttendanceFlowHandler = require('./attendance-flow.handler');
 const AttendanceDeliveryService = require('../services/attendance-delivery.service');
 const { logToFile } = require('../utils/logger');
 
-// Flow IDs - configurable via env for staging vs production
-// Production: 1432151735009021, Staging: 870222682369657
-const READING_ASSESSMENT_FLOW_ID = process.env.READING_ASSESSMENT_FLOW_ID || '1432151735009021';
+// Flow IDs - configure via environment variables
+const READING_ASSESSMENT_FLOW_ID = process.env.READING_ASSESSMENT_FLOW_ID || '';
 
 // Attendance Flow IDs (bd-058)
 const ATTENDANCE_SETUP_FLOW_ID = process.env.ATTENDANCE_SETUP_FLOW_ID || '';
@@ -108,7 +107,7 @@ async function handleReadingAssessmentFlow(message, phoneNumber, userId) {
     // - screen_0_Select_the_reading_level_2: "2_Sentences_(Grade_1-2)"
     // - screen_0_Scope_of_Assessment__3: "1_Fluency_+_Comprehension"
     //
-    // v2 field names (Flow v2 Dec 2025, ID: 870222682369657):
+    // v2 field names (Flow v2):
     // - Student_Full_Name: "Test Student"
     // - Language: "0_English"
     // - Assessment_Mode: "0_Auto" or "1_Manual"
