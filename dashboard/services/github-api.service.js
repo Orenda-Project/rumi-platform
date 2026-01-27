@@ -38,7 +38,7 @@ const GITHUB_REPOS = {
 function getHeaders() {
   const headers = {
     'Accept': 'application/vnd.github.v3+json',
-    'User-Agent': 'Digital-Coach-Dashboard'
+    'User-Agent': 'Rumi-Dashboard'
   };
 
   if (process.env.GITHUB_TOKEN) {
