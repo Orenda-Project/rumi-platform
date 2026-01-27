@@ -1,6 +1,6 @@
 # Railway Redis Setup Instructions
 
-This guide will help you set up Railway Redis for rate limiting and caching in the Rumi Digital Coach Bot.
+This guide will help you set up Railway Redis for rate limiting and caching in the Rumi Bot.
 
 ## Why Railway Redis?
 

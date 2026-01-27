@@ -1,6 +1,6 @@
 # Development Setup
 
-Complete guide to setting up the Digital Coach bot for local development.
+Complete guide to setting up the Rumi bot for local development.
 
 ---
 
@@ -129,7 +129,7 @@ PORT=3000
 
 1. Go to https://platform.openai.com/api-keys
 2. Click "Create new secret key"
-3. Name it "Digital Coach Bot"
+3. Name it "Rumi Bot"
 4. Copy immediately (only shown once)
 5. Add to `.env` as `OPENAI_API_KEY`
 
@@ -239,7 +239,7 @@ npm run chat
 **Expected output**:
 ```
 ==================================================
-🤖 Digital Coach - Local Chat Test
+🤖 Rumi - Local Chat Test
 ==================================================
 Type your messages and press Enter.
 Type 'quit' or 'exit' to stop.

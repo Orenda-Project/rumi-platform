@@ -1,6 +1,6 @@
 # API Health Monitoring
 
-Comprehensive API health and usage monitoring for all Digital Coach services.
+Comprehensive API health and usage monitoring for all Rumi services.
 
 ## Overview
 

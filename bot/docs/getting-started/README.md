@@ -1,4 +1,4 @@
-# Digital Coach - Knowledge Base
+# Rumi - Knowledge Base
 
 **Version**: 2.0 (November 2025)
 **Maintained By**: Rumi Contributors
@@ -9,9 +9,9 @@
 
 ## Overview
 
-This knowledge base contains comprehensive technical documentation for the Digital Coach WhatsApp bot. It follows a progressive disclosure structure—start with high-level routing in [Skill.md](Skill.md), then drill down into specific reference files as needed.
+This knowledge base contains comprehensive technical documentation for the Rumi WhatsApp bot. It follows a progressive disclosure structure—start with high-level routing in [Skill.md](Skill.md), then drill down into specific reference files as needed.
 
-**Purpose**: Enable developers to understand, deploy, maintain, and extend the Digital Coach bot with complete context.
+**Purpose**: Enable developers to understand, deploy, maintain, and extend the Rumi bot with complete context.
 
 ---
 
@@ -82,7 +82,7 @@ docs/
 
 ## Key Information at a Glance
 
-### What Is Digital Coach?
+### What Is Rumi?
 
 An AI-powered WhatsApp chatbot that supports Pakistani teachers with:
 - Real-time teaching advice (OpenAI GPT-4)

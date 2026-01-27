@@ -2,7 +2,7 @@
 
 ## System Overview
 
-The Digital Coach is a hybrid architecture combining synchronous webhook handling with asynchronous background job processing for long-running operations.
+The Rumi is a hybrid architecture combining synchronous webhook handling with asynchronous background job processing for long-running operations.
 
 ```
 ┌──────────────────────────────────────────────────────────┐

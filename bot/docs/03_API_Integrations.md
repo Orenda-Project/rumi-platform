@@ -1,6 +1,6 @@
 # API Integrations
 
-This document provides detailed reference for all external API integrations used by the Digital Coach.
+This document provides detailed reference for all external API integrations used by the Rumi.
 
 ---
 

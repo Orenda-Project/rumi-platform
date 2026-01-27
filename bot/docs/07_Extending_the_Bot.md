@@ -1,6 +1,6 @@
 # Extending the Bot
 
-Guide to adding new features and integrations to the Digital Coach.
+Guide to adding new features and integrations to the Rumi.
 
 ---
 

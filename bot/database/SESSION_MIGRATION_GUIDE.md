@@ -60,7 +60,7 @@ Store message with session_id
 ### Step 1: Run Database Migration
 
 1. Go to your **Supabase Dashboard**: https://supabase.com/dashboard
-2. Click on your project: **Digital Coach**
+2. Click on your project: **your Rumi project**
 3. Go to **SQL Editor**
 4. Click **New Query**
 5. Copy the entire contents of `/shared/database/migrations/001_add_chat_sessions.sql`

@@ -1,7 +1,7 @@
-# Media Features for Digital Coach Dashboard
+# Media Features for Rumi Dashboard
 
 ## Overview
-This update adds media playback and document viewing capabilities to the Digital Coach Dashboard, allowing administrators to:
+This update adds media playback and document viewing capabilities to the Rumi Dashboard, allowing administrators to:
 1. **Play voice notes** directly in the conversation viewer
 2. **View PDF documents** (lesson plans, coaching reports) in an embedded viewer
 3. **Access coaching session audio** and observation reports
@@ -162,4 +162,4 @@ The dashboard will be available at `http://localhost:3000`
 - Media file search/filtering
 
 ## Support
-For issues or questions, please refer to the main Digital Coach documentation or create an issue in the repository.
+For issues or questions, please refer to the main Rumi documentation or create an issue in the repository.

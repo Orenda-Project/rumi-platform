@@ -1,8 +1,8 @@
 # Overview and Features
 
-## What Is Digital Coach?
+## What Is Rumi?
 
-The Digital Coach is an AI-powered WhatsApp chatbot designed to support teachers in Pakistan with real-time professional development. It provides 24/7 accessible coaching, lesson planning, and pedagogical guidance—especially critical for teachers in underserved, multigrade, and rural contexts where traditional coaching is limited or unavailable.
+The Rumi is an AI-powered WhatsApp chatbot designed to support teachers in Pakistan with real-time professional development. It provides 24/7 accessible coaching, lesson planning, and pedagogical guidance—especially critical for teachers in underserved, multigrade, and rural contexts where traditional coaching is limited or unavailable.
 
 ## Core Features
 
