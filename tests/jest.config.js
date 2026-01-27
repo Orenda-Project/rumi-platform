@@ -10,6 +10,9 @@ module.exports = {
     '/dist/',
     '/build/',
   ],
+  // Note: Tests must run BEFORE `cd bot && npm ci`. When bot/node_modules
+  // exists, Node resolves bullmq/ioredis from bot/node_modules instead of
+  // using Jest's mocks. CI workflow handles this ordering correctly.
   setupFiles: ['<rootDir>/tests/setup.js'],
   testEnvironment: 'node',
   testEnvironmentOptions: {

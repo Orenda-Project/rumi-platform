@@ -5,11 +5,17 @@
  * This script sets that flag automatically when needed.
  */
 const { execSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 const major = parseInt(process.versions.node.split('.')[0], 10);
 
 const nodeOpts = major >= 22 ? '--localstorage-file=/tmp/jest-ls' : '';
 const args = process.argv.slice(2).join(' ');
-const cmd = `jest --config tests/jest.config.js ${args}`;
+
+// Resolve jest binary from node_modules
+const jestBin = path.resolve(__dirname, '..', 'node_modules', '.bin', 'jest');
+const jestCmd = fs.existsSync(jestBin) ? jestBin : 'jest';
+const cmd = `"${jestCmd}" --config tests/jest.config.js ${args}`;
 
 try {
   execSync(cmd, {
