@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-background">
+  <!-- Navigation -->
+  <%- include("partials/navigation", { currentPage: "ab-testing", username: username, userRole: userRole }) %>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-foreground">A/B Testing Dashboard</h2>
+        <p class="text-sm text-muted-foreground">Thompson Sampling Multi-Armed Bandit</p>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Active Tests -->
+        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg rounded-lg overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-indigo-100 truncate">Active Tests</dt>
+            <dd class="mt-1 text-3xl font-semibold text-white"><%= tests.filter(t => t.status === 'active').length %></dd>
+            <p class="mt-2 text-xs text-indigo-100">Currently running</p>
+          </div>
+        </div>
+
+        <!-- Total Impressions -->
+        <div class="bg-gradient-to-br from-green-500 to-green-600 shadow-lg rounded-lg overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-green-100 truncate">Total Impressions</dt>
+            <dd class="mt-1 text-3xl font-semibold text-white"><%= tests.reduce((sum, t) => sum + (t.totalImpressions || 0), 0) %></dd>
+            <p class="mt-2 text-xs text-green-100">Across all tests</p>
+          </div>
+        </div>
+
+        <!-- Total Conversions -->
+        <div class="bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg rounded-lg overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-amber-100 truncate">Total Conversions</dt>
+            <dd class="mt-1 text-3xl font-semibold text-white"><%= tests.reduce((sum, t) => sum + (t.totalConversions || 0), 0) %></dd>
+            <p class="mt-2 text-xs text-amber-100">Users who engaged</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tests List -->
+      <% tests.forEach((test, testIndex) => { %>
+      <div class="card-primary overflow-hidden mb-8">
+        <div class="px-4 py-5 sm:px-6 border-b border-border flex justify-between items-center">
+          <div>
+            <h3 class="text-lg font-medium text-foreground"><%= test.test_name %></h3>
+            <p class="text-sm text-muted-foreground"><%= test.description || 'No description' %></p>
+          </div>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium <%= test.status === 'active' ? 'bg-green-100 text-green-800' : test.status === 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' %>">
+            <%= test.status %>
+          </span>
+        </div>
+
+        <div class="px-4 py-5 sm:p-6">
+          <!-- Variant Performance Table -->
+          <div class="overflow-x-auto mb-6">
+            <table class="min-w-full divide-y divide-border">
+              <thead class="bg-background">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Variant</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Impressions</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Conversions</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Conv. Rate</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Wilson Score (95% CI)</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Thompson Prob.</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-border">
+                <% if (test.variants && test.variants.length > 0) { %>
+                  <% test.variants.forEach((variant, idx) => {
+                    const convRate = variant.impressions > 0 ? (variant.conversions / variant.impressions * 100).toFixed(1) : '0.0';
+                    const isLeader = test.variants.length > 1 && variant.wilsonLower === Math.max(...test.variants.map(v => v.wilsonLower));
+                  %>
+                  <tr class="<%= isLeader ? 'bg-green-50' : '' %>">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="inline-flex items-center">
+                        <% if (isLeader) { %>
+                          <span class="mr-2 text-green-600">*</span>
+                        <% } %>
+                        <span class="font-medium text-foreground"><%= variant.variant_name %></span>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= variant.impressions %></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= variant.conversions %></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= parseFloat(convRate) >= 50 ? 'bg-green-100 text-green-800' : parseFloat(convRate) >= 25 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800' %>">
+                        <%= convRate %>%
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                      <%= (variant.wilsonLower * 100).toFixed(1) %>% - <%= (variant.wilsonUpper * 100).toFixed(1) %>%
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                          <div class="bg-indigo-600 h-2 rounded-full" style="width: <%= (variant.thompsonProb * 100).toFixed(0) %>%"></div>
+                        </div>
+                        <span class="text-sm text-foreground"><%= (variant.thompsonProb * 100).toFixed(1) %>%</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-muted-foreground">No variants configured</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Conversion Rate Chart -->
+          <% if (test.variants && test.variants.length > 0) { %>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <h4 class="text-sm font-medium text-foreground mb-3">Conversion Rates by Variant</h4>
+              <canvas id="conversionChart<%= testIndex %>" height="200"></canvas>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <h4 class="text-sm font-medium text-foreground mb-3">Thompson Sampling Distribution</h4>
+              <canvas id="thompsonChart<%= testIndex %>" height="200"></canvas>
+            </div>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Test Metadata -->
+        <div class="px-4 py-3 bg-gray-50 border-t border-border text-xs text-muted-foreground">
+          <span>Created: <%= new Date(test.created_at).toLocaleDateString() %></span>
+          <% if (test.winner_variant) { %>
+            <span class="ml-4">Winner: <span class="font-medium text-green-700"><%= test.winner_variant %></span></span>
+          <% } %>
+        </div>
+      </div>
+      <% }); %>
+
+      <% if (tests.length === 0) { %>
+      <div class="card-primary overflow-hidden">
+        <div class="px-4 py-12 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-foreground">No A/B tests</h3>
+          <p class="mt-1 text-sm text-muted-foreground">No A/B tests have been configured yet.</p>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- Explanation Card -->
+      <div class="card-primary overflow-hidden mt-8">
+        <div class="px-4 py-5 sm:px-6 border-b border-border">
+          <h3 class="text-lg font-medium text-foreground">How Thompson Sampling Works</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6 text-sm text-muted-foreground space-y-3">
+          <p><strong>Thompson Sampling</strong> is a Bayesian approach to multi-armed bandit problems. It balances exploration (trying different variants) with exploitation (favoring the best performing variant).</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li><strong>Wilson Score:</strong> A confidence interval for conversion rate that accounts for sample size</li>
+            <li><strong>Thompson Probability:</strong> The probability this variant is the best, based on Monte Carlo sampling from Beta distributions</li>
+            <li><strong>Leader (*):</strong> The variant with the highest Wilson lower bound (statistically likely to be best)</li>
+          </ul>
+          <p>As data accumulates, the algorithm naturally shifts traffic toward better-performing variants while still exploring alternatives.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts JavaScript -->
+  <script>
+    <% tests.forEach((test, testIndex) => { %>
+      <% if (test.variants && test.variants.length > 0) { %>
+        // Conversion Rate Bar Chart
+        const convCtx<%= testIndex %> = document.getElementById('conversionChart<%= testIndex %>').getContext('2d');
+        new Chart(convCtx<%= testIndex %>, {
+          type: 'bar',
+          data: {
+            labels: <%- JSON.stringify(test.variants.map(v => v.variant_name)) %>,
+            datasets: [{
+              label: 'Conversion Rate (%)',
+              data: <%- JSON.stringify(test.variants.map(v => v.impressions > 0 ? (v.conversions / v.impressions * 100).toFixed(1) : 0)) %>,
+              backgroundColor: [
+                'rgba(99, 102, 241, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)'
+              ],
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                  callback: function(value) { return value + '%'; }
+                }
+              }
+            }
+          }
+        });
+
+        // Thompson Probability Doughnut Chart
+        const thompCtx<%= testIndex %> = document.getElementById('thompsonChart<%= testIndex %>').getContext('2d');
+        new Chart(thompCtx<%= testIndex %>, {
+          type: 'doughnut',
+          data: {
+            labels: <%- JSON.stringify(test.variants.map(v => v.variant_name)) %>,
+            datasets: [{
+              data: <%- JSON.stringify(test.variants.map(v => (v.thompsonProb * 100).toFixed(1))) %>,
+              backgroundColor: [
+                'rgb(99, 102, 241)',
+                'rgb(16, 185, 129)',
+                'rgb(245, 158, 11)',
+                'rgb(239, 68, 68)'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return context.label + ': ' + context.parsed + '% probability of being best';
+                  }
+                }
+              }
+            }
+          }
+        });
+      <% } %>
+    <% }); %>
+  </script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="bg-coaching-gradient min-h-screen">
+  <%- include("partials/navigation", { currentPage: "coaching", username: username, userRole: userRole }) %>
+
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-foreground">Coaching Sessions</h1>
+      <p class="text-muted-foreground mt-2"><%= totalCount %> total sessions</p>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+      <form method="GET" action="/observability/coaching" class="flex flex-wrap items-end gap-4">
+        <div class="flex-1 min-w-[200px]">
+          <label for="dateFrom" class="block text-sm font-medium text-foreground mb-2">From Date</label>
+          <input
+            type="date"
+            id="dateFrom"
+            name="dateFrom"
+            value="<%= dateFrom || '' %>"
+            class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+        </div>
+        <div class="flex-1 min-w-[200px]">
+          <label for="dateTo" class="block text-sm font-medium text-foreground mb-2">To Date</label>
+          <input
+            type="date"
+            id="dateTo"
+            name="dateTo"
+            value="<%= dateTo || '' %>"
+            class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+        </div>
+        <input type="hidden" name="status" value="<%= statusFilter %>">
+        <div class="flex gap-2">
+          <button
+            type="submit"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            </svg>
+            Filter
+          </button>
+          <% if (dateFrom || dateTo) { %>
+            <a
+              href="/observability/coaching?status=<%= statusFilter %>"
+              class="bg-gray-200 hover:bg-gray-300 text-foreground px-6 py-2 rounded-lg font-medium transition flex items-center gap-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Clear
+            </a>
+          <% } %>
+        </div>
+      </form>
+    </div>
+
+    <!-- Status Filters -->
+    <div class="flex flex-wrap gap-3 mb-6">
+      <%
+        const dateParams = (dateFrom || dateTo) ? `&dateFrom=${dateFrom || ''}&dateTo=${dateTo || ''}` : '';
+      %>
+      <a href="/observability/coaching?status=all<%= dateParams %>"
+         class="<%= statusFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-foreground' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        All (<%= stats.all %>)
+      </a>
+      <a href="/observability/coaching?status=completed<%= dateParams %>"
+         class="<%= statusFilter === 'completed' ? 'bg-green-600 text-white' : 'bg-white text-foreground' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        Completed (<%= stats.completed %>)
+      </a>
+      <a href="/observability/coaching?status=in_progress<%= dateParams %>"
+         class="<%= statusFilter === 'in_progress' ? 'bg-yellow-600 text-white' : 'bg-white text-foreground' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        In Progress (<%= stats.inProgress %>)
+      </a>
+      <a href="/observability/coaching?status=failed<%= dateParams %>"
+         class="<%= statusFilter === 'failed' ? 'bg-red-600 text-white' : 'bg-white text-foreground' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        Failed (<%= stats.failed %>)
+      </a>
+      <a href="/observability/coaching?status=cancelled<%= dateParams %>"
+         class="<%= statusFilter === 'cancelled' ? 'bg-gray-600 text-white' : 'bg-white text-foreground' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        Cancelled (<%= stats.cancelled %>)
+      </a>
+    </div>
+
+    <!-- Sessions List -->
+    <div class="space-y-4">
+      <% if (sessions.length === 0) { %>
+        <div class="bg-white p-12 rounded-lg shadow text-center text-muted-foreground">
+          <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p class="text-lg">No sessions found for this filter.</p>
+        </div>
+      <% } else { %>
+        <% sessions.forEach(session => { %>
+          <%
+            // Determine status display
+            let statusBadge = '';
+            let statusLabel = '';
+            let statusClass = '';
+            let currentStep = '';
+
+            if (session.status === 'completed') {
+              statusBadge = '🟢';
+              statusLabel = 'Completed';
+              statusClass = 'bg-green-100 text-green-800';
+            } else if (session.status === 'failed') {
+              statusBadge = '🔴';
+              statusLabel = 'Failed';
+              statusClass = 'bg-red-100 text-red-800';
+            } else if (session.status === 'cancelled') {
+              statusBadge = '🚫';
+              statusLabel = 'Cancelled';
+              statusClass = 'bg-background text-foreground';
+            } else {
+              statusBadge = '🟡';
+              statusLabel = 'In Progress';
+              statusClass = 'bg-yellow-100 text-yellow-800';
+              currentStep = session.status.replace(/_/g, ' ');
+            }
+
+            // Format date
+            const createdDate = new Date(session.created_at);
+            const formattedDate = createdDate.toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+            });
+
+            // Format duration
+            let durationStr = '';
+            if (session.audio_duration_seconds) {
+              const minutes = Math.floor(session.audio_duration_seconds / 60);
+              const seconds = session.audio_duration_seconds % 60;
+              durationStr = minutes + ':' + String(seconds).padStart(2, '0');
+            }
+
+            // Format voice debrief duration
+            let voiceDuration = '';
+            if (session.voice_debrief_duration_seconds) {
+              const minutes = Math.floor(session.voice_debrief_duration_seconds / 60);
+              const seconds = session.voice_debrief_duration_seconds % 60;
+              voiceDuration = minutes + ':' + String(seconds).padStart(2, '0');
+            }
+          %>
+
+          <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-6">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <!-- Status Badge -->
+                <span class="inline-block <%= statusClass %> px-3 py-1 rounded-full text-sm font-medium mb-3">
+                  <%= statusBadge %> <%= statusLabel %>
+                  <% if (currentStep) { %>
+                    (<%= currentStep %>)
+                  <% } %>
+                </span>
+
+                <!-- Teacher Info -->
+                <h3 class="text-xl font-semibold text-foreground">
+                  <%= session.users.first_name %> <%= session.users.last_name %>
+                </h3>
+                <p class="text-muted-foreground text-sm">
+                  📱 <%= session.users.phone_number %>
+                  <% if (session.users.school_name) { %>
+                    • 🏫 <%= session.users.school_name %>
+                  <% } %>
+                </p>
+
+                <!-- Session Details -->
+                <p class="text-muted-foreground text-sm mt-2">
+                  📅 <%= formattedDate %>
+                  <% if (durationStr) { %>
+                    • ⏱️ <%= durationStr %> min
+                  <% } %>
+                </p>
+
+                <!-- Actions for Completed Sessions -->
+                <% if (session.status === 'completed') { %>
+                  <div class="mt-4 space-y-3">
+                    <!-- Classroom Recording Audio -->
+                    <% if (session.audio_url) { %>
+                      <div>
+                        <p class="text-xs text-muted-foreground mb-1">
+                          🎙️ Classroom Recording<% if (durationStr) { %> (<%= durationStr %>)<% } %>
+                        </p>
+                        <div class="flex items-center gap-2">
+                          <audio controls class="flex-1" style="height: 36px;">
+                            <source src="/observability/proxy/classroom-audio/<%= session.id %>" type="audio/ogg">
+                            Your browser does not support audio playback.
+                          </audio>
+                          <a href="/observability/proxy/classroom-audio/<%= session.id %>?download=true"
+                             class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition flex-shrink-0"
+                             title="Download classroom recording">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                          </a>
+                        </div>
+                      </div>
+                    <% } %>
+
+                    <!-- Voice Feedback Audio -->
+                    <% if (session.voice_debrief_url) { %>
+                      <div>
+                        <p class="text-xs text-muted-foreground mb-1">
+                          🔊 Voice Feedback<% if (voiceDuration) { %> (<%= voiceDuration %>)<% } %>
+                        </p>
+                        <div class="flex items-center gap-2">
+                          <audio controls class="flex-1" style="height: 36px;">
+                            <source src="/observability/proxy/audio/<%= session.id %>" type="audio/mpeg">
+                            Your browser does not support audio playback.
+                          </audio>
+                          <a href="/observability/proxy/audio/<%= session.id %>?download=true"
+                             class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition flex-shrink-0"
+                             title="Download voice feedback">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                          </a>
+                        </div>
+                      </div>
+                    <% } %>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-2 pt-1">
+                      <% if (session.report_pdf_url) { %>
+                        <a href="/observability/proxy/report/<%= session.id %>"
+                           target="_blank"
+                           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 whitespace-nowrap">
+                          📄 View Report
+                        </a>
+                      <% } %>
+                      <a href="/observability/proxy/transcript/<%= session.id %>"
+                         target="_blank"
+                         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 whitespace-nowrap">
+                        📝 View Transcript
+                      </a>
+                    </div>
+                  </div>
+                <% } %>
+
+                <!-- In Progress Info -->
+                <% if (session.status !== 'completed' && session.status !== 'cancelled' && session.status !== 'failed') { %>
+                  <div class="mt-4 bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                    <p class="text-sm text-yellow-800">
+                      ⏳ Processing...
+                      <% if (session.last_successful_step) { %>
+                        <br><span class="text-xs">Last completed: <%= session.last_successful_step.replace(/_/g, ' ') %></span>
+                      <% } %>
+                    </p>
+                  </div>
+                <% } %>
+
+                <!-- Failed Info -->
+                <% if (session.status === 'failed') { %>
+                  <div class="mt-4 bg-red-50 border border-red-200 p-3 rounded-lg">
+                    <p class="text-sm text-red-800 font-medium">
+                      ❌ Error: <%= session.error_message || 'Unknown error' %>
+                    </p>
+                    <% if (session.failed_step) { %>
+                      <p class="text-xs text-red-600 mt-1">
+                        Failed at: <%= session.failed_step.replace(/_/g, ' ') %>
+                      </p>
+                    <% } %>
+                    <% if (session.can_resume) { %>
+                      <p class="text-xs text-green-600 mt-2">
+                        🔄 This session can be resumed
+                      </p>
+                    <% } %>
+                  </div>
+                <% } %>
+
+                <!-- Debug Info (Session ID) -->
+                <p class="text-xs text-gray-400 mt-3 font-mono">
+                  Session ID: <%= session.id %>
+                </p>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+      <div class="mt-8 flex justify-center items-center gap-4">
+        <% if (currentPage > 1) { %>
+          <a href="/observability/coaching?status=<%= statusFilter %><%= dateParams %>&page=<%= currentPage - 1 %>"
+             class="bg-white px-4 py-2 rounded-lg border hover:bg-background transition shadow">
+            « Previous
+          </a>
+        <% } else { %>
+          <span class="bg-background text-gray-400 px-4 py-2 rounded-lg border cursor-not-allowed">
+            « Previous
+          </span>
+        <% } %>
+
+        <span class="text-foreground font-medium">
+          Page <%= currentPage %> of <%= totalPages %>
+        </span>
+
+        <% if (hasMore) { %>
+          <a href="/observability/coaching?status=<%= statusFilter %><%= dateParams %>&page=<%= currentPage + 1 %>"
+             class="bg-white px-4 py-2 rounded-lg border hover:bg-background transition shadow">
+            Next »
+          </a>
+        <% } else { %>
+          <span class="bg-background text-gray-400 px-4 py-2 rounded-lg border cursor-not-allowed">
+            Next »
+          </span>
+        <% } %>
+      </div>
+    <% } %>
+
+  </div>
+</body>
+</html>

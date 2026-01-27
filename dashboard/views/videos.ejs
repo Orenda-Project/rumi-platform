@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    /* Video-specific gradient background */
+    .bg-video-gradient {
+      background: linear-gradient(135deg, #667eea11 0%, #764ba211 100%);
+    }
+
+    /* Video card grid */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Video card */
+    .video-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+
+    .video-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+
+    /* Thumbnail container */
+    .video-thumbnail {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 aspect ratio */
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .video-thumbnail img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-thumbnail-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 3rem;
+    }
+
+    /* Status overlay on thumbnail */
+    .video-status-overlay {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+    }
+
+    /* Duration overlay */
+    .video-duration-overlay {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* Language badges */
+    .lang-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .lang-en { background: #dbeafe; color: #1e40af; }
+    .lang-ur { background: #dcfce7; color: #166534; }
+    .lang-ar { background: #fef3c7; color: #92400e; }
+    .lang-es { background: #fce7f3; color: #9d174d; }
+    .lang-other { background: #f3e8ff; color: #6b21a8; }
+
+    /* Line clamp for topic titles */
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-video-gradient min-h-screen">
+  <%- include("partials/navigation", { currentPage: "videos", username: username, userRole: userRole }) %>
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-foreground flex items-center gap-3">
+        AI Video Gallery
+      </h1>
+      <p class="text-muted-foreground mt-2"><%= totalCount %> videos generated</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="text-sm font-medium text-gray-500">Total Videos</div>
+        <div class="text-2xl font-bold text-gray-900"><%= stats.all %></div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="text-sm font-medium text-green-600">Completed</div>
+        <div class="text-2xl font-bold text-green-700"><%= stats.completed %></div>
+        <div class="text-xs text-gray-500">Success rate: <%= stats.successRate %>%</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="text-sm font-medium text-blue-600">In Progress</div>
+        <div class="text-2xl font-bold text-blue-700"><%= stats.processing %></div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="text-sm font-medium text-red-600">Failed</div>
+        <div class="text-2xl font-bold text-red-700"><%= stats.failed %></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+      <form method="GET" action="/observability/videos" class="flex flex-wrap items-end gap-4">
+        <!-- Date Range -->
+        <div class="flex-1 min-w-[150px]">
+          <label for="dateFrom" class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+          <input type="date" id="dateFrom" name="dateFrom" value="<%= dateFrom || '' %>"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="flex-1 min-w-[150px]">
+          <label for="dateTo" class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+          <input type="date" id="dateTo" name="dateTo" value="<%= dateTo || '' %>"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- User Filter -->
+        <div class="flex-1 min-w-[200px]">
+          <label for="userId" class="block text-sm font-medium text-gray-700 mb-1">User</label>
+          <select id="userId" name="userId"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <option value="">All Users</option>
+            <% usersWithVideos.forEach(user => { %>
+              <option value="<%= user.id %>" <%= userId === user.id ? 'selected' : '' %>>
+                <%= user.name %> (<%= user.count %>)
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <!-- Language Filter -->
+        <div class="flex-1 min-w-[120px]">
+          <label for="language" class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+          <select id="language" name="language"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <option value="">All Languages</option>
+            <option value="en" <%= languageFilter === 'en' ? 'selected' : '' %>>English</option>
+            <option value="ur" <%= languageFilter === 'ur' ? 'selected' : '' %>>Urdu</option>
+            <option value="ar" <%= languageFilter === 'ar' ? 'selected' : '' %>>Arabic</option>
+            <option value="es" <%= languageFilter === 'es' ? 'selected' : '' %>>Spanish</option>
+          </select>
+        </div>
+
+        <!-- Topic Search -->
+        <div class="flex-1 min-w-[200px]">
+          <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+          <input type="text" id="topic" name="topic" value="<%= topicSearch || '' %>"
+            placeholder="Search topic..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- Hidden status -->
+        <input type="hidden" name="status" value="<%= statusFilter %>">
+
+        <!-- Buttons -->
+        <div class="flex gap-2">
+          <button type="submit"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition">
+            Filter
+          </button>
+          <% if (dateFrom || dateTo || userId || languageFilter || topicSearch) { %>
+            <a href="/observability/videos?status=<%= statusFilter %>"
+              class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition">
+              Clear
+            </a>
+          <% } %>
+        </div>
+      </form>
+    </div>
+
+    <!-- Status Tabs -->
+    <div class="flex flex-wrap gap-3 mb-6">
+      <%
+        const filterParams = [];
+        if (dateFrom) filterParams.push(`dateFrom=${dateFrom}`);
+        if (dateTo) filterParams.push(`dateTo=${dateTo}`);
+        if (userId) filterParams.push(`userId=${userId}`);
+        if (languageFilter) filterParams.push(`language=${languageFilter}`);
+        if (topicSearch) filterParams.push(`topic=${encodeURIComponent(topicSearch)}`);
+        const extraParams = filterParams.length > 0 ? '&' + filterParams.join('&') : '';
+      %>
+      <a href="/observability/videos?status=all<%= extraParams %>"
+         class="<%= statusFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        All (<%= stats.all %>)
+      </a>
+      <a href="/observability/videos?status=completed<%= extraParams %>"
+         class="<%= statusFilter === 'completed' ? 'bg-green-600 text-white' : 'bg-white text-gray-700' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        Completed (<%= stats.completed %>)
+      </a>
+      <a href="/observability/videos?status=processing<%= extraParams %>"
+         class="<%= statusFilter === 'processing' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        In Progress (<%= stats.processing %>)
+      </a>
+      <a href="/observability/videos?status=failed<%= extraParams %>"
+         class="<%= statusFilter === 'failed' ? 'bg-red-600 text-white' : 'bg-white text-gray-700' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        Failed (<%= stats.failed %>)
+      </a>
+      <a href="/observability/videos?status=cancelled<%= extraParams %>"
+         class="<%= statusFilter === 'cancelled' ? 'bg-gray-600 text-white' : 'bg-white text-gray-700' %> px-4 py-2 rounded-lg border hover:shadow-md transition">
+        Cancelled (<%= stats.cancelled %>)
+      </a>
+    </div>
+
+    <!-- Video Grid -->
+    <% if (videos.length === 0) { %>
+      <div class="bg-white p-12 rounded-lg shadow text-center text-gray-500">
+        <div class="text-5xl mb-4">No videos found</div>
+        <p class="text-lg">No videos found for this filter.</p>
+      </div>
+    <% } else { %>
+      <div class="video-grid">
+        <% videos.forEach(video => { %>
+          <%
+            // Status styling
+            let statusClass = '';
+            let statusLabel = '';
+            if (video.status === 'completed') {
+              statusClass = 'bg-green-500 text-white';
+              statusLabel = 'Completed';
+            } else if (video.status === 'processing' || video.status === 'queued') {
+              statusClass = 'bg-blue-500 text-white';
+              statusLabel = 'Processing';
+            } else if (video.status === 'failed') {
+              statusClass = 'bg-red-500 text-white';
+              statusLabel = 'Failed';
+            } else if (video.status === 'cancelled') {
+              statusClass = 'bg-gray-500 text-white';
+              statusLabel = 'Cancelled';
+            } else {
+              statusClass = 'bg-gray-500 text-white';
+              statusLabel = video.status;
+            }
+
+            // Language styling
+            let langClass = 'lang-other';
+            if (video.language === 'en') langClass = 'lang-en';
+            else if (video.language === 'ur') langClass = 'lang-ur';
+            else if (video.language === 'ar') langClass = 'lang-ar';
+            else if (video.language === 'es') langClass = 'lang-es';
+
+            // Format date
+            const createdDate = new Date(video.created_at);
+            const formattedDate = createdDate.toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+            });
+
+            // User display name
+            const userName = video.users.first_name
+              ? `${video.users.first_name} ${video.users.last_name || ''}`.trim()
+              : video.users.phone_number;
+          %>
+
+          <div class="video-card">
+            <!-- Thumbnail (clickable) -->
+            <a href="/observability/videos/<%= video.id %>" class="block">
+              <div class="video-thumbnail">
+                <% if (video.thumbnailUrl) { %>
+                  <img src="<%= video.thumbnailUrl %>" alt="<%= video.topic %>" loading="lazy">
+                <% } else { %>
+                  <div class="video-thumbnail-placeholder">Video</div>
+                <% } %>
+
+                <!-- Status Badge -->
+                <div class="video-status-overlay">
+                  <span class="<%= statusClass %> px-2 py-1 rounded text-xs font-medium">
+                    <%= statusLabel %>
+                  </span>
+                </div>
+
+                <!-- Duration (if completed) -->
+                <% if (video.generation_time_seconds) { %>
+                  <div class="video-duration-overlay">
+                    Gen: <%= Math.floor(video.generation_time_seconds / 60) %>:<%= String(video.generation_time_seconds % 60).padStart(2, '0') %>
+                  </div>
+                <% } %>
+              </div>
+            </a>
+
+            <!-- Content -->
+            <div class="p-4">
+              <!-- Topic (clickable) -->
+              <a href="/observability/videos/<%= video.id %>" class="block">
+                <h3 class="font-semibold text-gray-900 line-clamp-2 mb-2 hover:text-indigo-600 transition" title="<%= video.topic %>">
+                  <%= video.topic %>
+                </h3>
+              </a>
+
+              <!-- User -->
+              <a href="/observability/users?userId=<%= video.user_id %>"
+                class="text-sm text-indigo-600 hover:text-indigo-800 block mb-2">
+                <%= userName %>
+              </a>
+
+              <!-- Meta Row -->
+              <div class="flex items-center justify-between text-xs text-gray-500">
+                <span class="lang-badge <%= langClass %>">
+                  <%= video.language.toUpperCase() %>
+                </span>
+                <span><%= formattedDate %></span>
+              </div>
+
+              <!-- Actions (for completed videos) -->
+              <% if (video.status === 'completed' && video.video_url) { %>
+                <div class="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                  <a href="<%= video.video_url %>" target="_blank"
+                    class="flex-1 text-center bg-indigo-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-indigo-700 transition">
+                    Watch
+                  </a>
+                  <% if (video.pdf_url) { %>
+                    <a href="<%= video.pdf_url %>" target="_blank"
+                      class="flex-1 text-center bg-gray-100 text-gray-700 px-3 py-1.5 rounded text-sm font-medium hover:bg-gray-200 transition">
+                      PDF
+                    </a>
+                  <% } %>
+                </div>
+              <% } %>
+
+              <!-- Error message (for failed videos) -->
+              <% if (video.status === 'failed' && video.error_message) { %>
+                <div class="mt-3 p-2 bg-red-50 rounded text-xs text-red-700 line-clamp-2" title="<%= video.error_message %>">
+                  <%= video.error_message %>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+
+      <!-- Pagination -->
+      <% if (totalPages > 1) { %>
+        <div class="mt-8 flex justify-center gap-2">
+          <% if (currentPage > 1) { %>
+            <a href="/observability/videos?page=<%= currentPage - 1 %>&status=<%= statusFilter %><%= extraParams %>"
+              class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition">
+              Previous
+            </a>
+          <% } %>
+
+          <span class="px-4 py-2 bg-indigo-600 text-white rounded-lg">
+            Page <%= currentPage %> of <%= totalPages %>
+          </span>
+
+          <% if (hasMore) { %>
+            <a href="/observability/videos?page=<%= currentPage + 1 %>&status=<%= statusFilter %><%= extraParams %>"
+              class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition">
+              Next
+            </a>
+          <% } %>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+</body>
+</html>

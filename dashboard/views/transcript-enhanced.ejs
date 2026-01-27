@@ -1,0 +1,2724 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transcript - <%= teacherName %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+
+  <!-- Google Fonts for Urdu/Arabic support -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===========================================
+       RUMI BRAND COLORS (Official Brand Guidelines)
+       Navy Blue #001F3F - Primary brand color
+       Black #000000 - Primary text
+       White #FFFFFF - Backgrounds
+       Light Gray #F9FAFB - Subtle backgrounds
+       =========================================== */
+    :root {
+      --rumi-navy: #001F3F;
+      --rumi-navy-light: #003366;
+      --rumi-black: #000000;
+      --rumi-white: #FFFFFF;
+      --rumi-gray-light: #F9FAFB;
+
+      /* Semantic colors */
+      --teacher-color: #001F3F;
+      --student-color: #374151;
+      --chorus-color: #6B7280;
+      --timestamp-color: #6b7280;
+      --border-color: #e5e7eb;
+      --bg-light: #F9FAFB;
+      --section-bg: #f0f4f8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', 'Inter', sans-serif;
+      direction: rtl;
+      text-align: right;
+      background: var(--bg-light);
+      color: var(--rumi-black);
+      line-height: 2;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* Header Section - Matching Coaching Report PDF */
+    .header {
+      background: var(--rumi-white);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .rumi-logo {
+      width: 60px;
+      height: auto;
+    }
+
+    .header-titles {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--rumi-navy);
+      margin-bottom: 4px;
+      font-family: 'Inter', 'Noto Nastaliq Urdu', sans-serif;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      color: #64748b;
+      font-family: 'Inter', sans-serif;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .header-divider {
+      height: 1px;
+      background: linear-gradient(to right, var(--rumi-navy), transparent);
+      margin-bottom: 16px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #4b5563;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .meta-item strong {
+      color: var(--rumi-black);
+      font-weight: 600;
+    }
+
+    .meta-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--rumi-navy);
+    }
+
+    /* Summary Card - Navy gradient */
+    .summary-card {
+      background: linear-gradient(135deg, var(--rumi-navy) 0%, var(--rumi-navy-light) 100%);
+      color: var(--rumi-white);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px rgba(0, 31, 63, 0.25);
+    }
+
+    .summary-card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      opacity: 0.9;
+      direction: ltr;
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .summary-text {
+      font-size: 16px;
+      line-height: 1.8;
+      direction: ltr;
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Actions Bar */
+    .actions-bar {
+      background: var(--rumi-white);
+      border-radius: 12px;
+      padding: 16px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      direction: ltr;
+    }
+
+    .actions-bar .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--rumi-navy);
+      color: var(--rumi-white);
+    }
+
+    .btn-primary:hover {
+      background: var(--rumi-navy-light);
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    /* Section Cards */
+    .section-card {
+      background: var(--rumi-white);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .section-header {
+      background: var(--section-bg);
+      padding: 16px 24px;
+      border-bottom: 2px solid var(--border-color);
+      direction: ltr;
+      text-align: left;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      margin-bottom: 4px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .section-time {
+      font-size: 13px;
+      color: var(--timestamp-color);
+      font-family: 'Inter', monospace;
+    }
+
+    .section-content {
+      padding: 24px;
+    }
+
+    /* Transcript Lines */
+    .transcript-line {
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      background: var(--bg-light);
+      transition: all 0.2s ease;
+      border-right: 3px solid transparent;
+    }
+
+    .transcript-line:hover {
+      background: #f3f4f6;
+      border-right-color: var(--rumi-navy);
+      transform: translateX(-2px);
+    }
+
+    .transcript-line.teacher-line:hover {
+      border-right-color: var(--rumi-navy);
+    }
+
+    .transcript-line.student-line:hover {
+      border-right-color: var(--student-color);
+    }
+
+    .transcript-line.chorus-line:hover {
+      border-right-color: var(--chorus-color);
+    }
+
+    .line-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+      direction: ltr;
+    }
+
+    .timestamp {
+      font-family: 'Inter', monospace;
+      font-size: 12px;
+      color: var(--timestamp-color);
+      background: var(--rumi-white);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Speaker badges with icons */
+    .speaker {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .speaker-icon {
+      font-size: 14px;
+    }
+
+    .speaker-teacher {
+      color: var(--teacher-color);
+      background: rgba(0, 31, 63, 0.1);
+    }
+
+    .speaker-student {
+      color: var(--student-color);
+      background: rgba(55, 65, 81, 0.1);
+    }
+
+    .speaker-chorus {
+      color: var(--chorus-color);
+      background: rgba(107, 114, 128, 0.15);
+      font-style: italic;
+    }
+
+    .line-text {
+      font-size: 20px;
+      line-height: 2.4;
+      color: var(--rumi-black);
+      direction: rtl;
+      text-align: right;
+      unicode-bidi: embed;
+      letter-spacing: 0;
+    }
+
+    /* English words within Urdu text */
+    .line-text .en {
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: var(--rumi-navy);
+      background: rgba(0, 31, 63, 0.08);
+      padding: 0 4px;
+      border-radius: 3px;
+      direction: ltr;
+      display: inline;
+      unicode-bidi: embed;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      color: #9ca3af;
+      font-size: 12px;
+      direction: ltr;
+    }
+
+    /* Fallback Banner */
+    .fallback-banner {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      direction: ltr;
+      text-align: left;
+    }
+
+    /* ===========================================
+       PHASE 4: Enhanced Transcript Viewer
+       Audio Player, Timeline, Silence Markers
+       =========================================== */
+
+    /* Audio Player Card */
+    .audio-player-card {
+      background: var(--rumi-white);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      direction: ltr;
+    }
+
+    .audio-player-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .audio-player-header svg {
+      width: 24px;
+      height: 24px;
+      color: var(--rumi-navy);
+    }
+
+    .audio-player-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .play-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--rumi-navy);
+      color: var(--rumi-white);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .play-btn:hover {
+      background: var(--rumi-navy-light);
+      transform: scale(1.05);
+    }
+
+    .play-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* etv-aud01: Loading spinner for audio player */
+    .play-btn.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--rumi-white);
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Audio error state */
+    .audio-error {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #dc2626;
+      display: none;
+    }
+
+    .audio-error.visible {
+      display: block;
+    }
+
+    .audio-progress-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .audio-progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .audio-progress-fill {
+      height: 100%;
+      background: var(--rumi-navy);
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .audio-time {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--timestamp-color);
+      font-family: 'Inter', monospace;
+    }
+
+    /* Speaker Timeline Bar */
+    .timeline-bar {
+      background: var(--rumi-white);
+      border-radius: 12px;
+      padding: 16px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      direction: ltr;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .timeline-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .timeline-legend {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    .legend-dot.teacher { background: var(--rumi-navy); }
+    .legend-dot.student { background: #4BAD7A; }
+    .legend-dot.silence { background: #F0F0FA; border: 1px dashed #6B6BB0; }
+
+    .timeline-track {
+      height: 24px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .timeline-segment {
+      position: absolute;
+      height: 100%;
+      border-radius: 2px;
+      transition: opacity 0.2s;
+    }
+
+    .timeline-segment.teacher { background: var(--rumi-navy); }
+    .timeline-segment.student { background: #4BAD7A; }
+    .timeline-segment.silence { background: #F0F0FA; border: 1px dashed #6B6BB0; }
+
+    .timeline-segment:hover {
+      opacity: 0.8;
+    }
+
+    .timeline-playhead {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: #ef4444;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Silence Marker */
+    .silence-marker {
+      background: #F0F0FA;
+      border: 1px dashed #6B6BB0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .silence-marker-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .silence-marker-icon {
+      font-size: 16px;
+    }
+
+    .silence-marker-activity {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6B6BB0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .silence-marker-duration {
+      font-size: 12px;
+      color: var(--timestamp-color);
+      font-family: 'Inter', monospace;
+    }
+
+    .silence-marker-confidence {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+
+    .confidence-high { background: #dcfce7; color: #166534; }
+    .confidence-medium { background: #fef3c7; color: #92400e; }
+    .confidence-low { background: #f3f4f6; color: #6b7280; }
+
+    /* ===========================================
+       Board Content Blocks - "Chalkboard" Style
+       Dark background #2C3E50, monospace font
+       Shows inferred board writing activity
+       =========================================== */
+    .board-content-block {
+      background: #2C3E50;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 12px 0;
+      direction: ltr;
+      text-align: left;
+      position: relative;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .board-content-block::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .board-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .board-icon {
+      font-size: 20px;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+    }
+
+    .board-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #E8E8E8;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .board-duration {
+      font-size: 11px;
+      color: #8B9DC3;
+      font-family: 'Inter', monospace;
+      margin-left: auto;
+    }
+
+    .board-confidence {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+
+    .board-confidence.high { background: rgba(74, 222, 128, 0.2); color: #4ADE80; }
+    .board-confidence.medium { background: rgba(251, 191, 36, 0.2); color: #FBBF24; }
+    .board-confidence.low { background: rgba(156, 163, 175, 0.2); color: #9CA3AF; }
+
+    .board-content {
+      font-family: 'Courier New', 'Monaco', monospace;
+      font-size: 16px;
+      color: #FFFFFF;
+      line-height: 1.8;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .board-context {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+
+    .board-context-label {
+      font-size: 10px;
+      color: #8B9DC3;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .board-context-text {
+      font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif;
+      font-size: 14px;
+      color: #B8C5D9;
+      direction: rtl;
+      text-align: right;
+      line-height: 1.8;
+    }
+
+    /* Active Line Highlight */
+    .transcript-line.active {
+      background: rgba(0, 31, 63, 0.08);
+      border-right-color: var(--rumi-navy) !important;
+    }
+
+    /* Clickable Lines */
+    .transcript-line[data-start-ms] {
+      cursor: pointer;
+    }
+
+    .transcript-line[data-start-ms]:hover {
+      background: rgba(0, 31, 63, 0.05);
+    }
+
+    /* ===========================================
+       PHASE 5: SLO Mastery Detection
+       Shows learning objectives and student evidence
+       =========================================== */
+    .slo-mastery-card {
+      background: var(--rumi-white);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      direction: ltr;
+    }
+
+    .slo-mastery-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .slo-mastery-header svg {
+      width: 24px;
+      height: 24px;
+      color: var(--rumi-navy);
+    }
+
+    .slo-mastery-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .slo-mastery-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #fef3c7;
+      color: #92400e;
+      font-weight: 500;
+      margin-left: auto;
+    }
+
+    .slo-topic {
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .slo-topic-label {
+      font-weight: 600;
+      color: var(--rumi-navy);
+      margin-right: 8px;
+    }
+
+    .slo-objective {
+      background: var(--bg-light);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--rumi-navy);
+    }
+
+    .slo-objective-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .slo-objective-text {
+      font-size: 14px;
+      color: var(--rumi-black);
+      font-weight: 500;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .bloom-badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .bloom-remember { background: #dbeafe; color: #1d4ed8; }
+    .bloom-understand { background: #dcfce7; color: #166534; }
+    .bloom-apply { background: #fef3c7; color: #92400e; }
+    .bloom-analyze { background: #fce7f3; color: #be185d; }
+    .bloom-evaluate { background: #e9d5ff; color: #7c3aed; }
+    .bloom-create { background: #fef08a; color: #854d0e; }
+
+    .assessed-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .assessed-yes { background: #dcfce7; color: #166534; }
+    .assessed-no { background: #f3f4f6; color: #6b7280; }
+
+    .confidence-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .confidence-high { background: #dcfce7; color: #166534; }
+    .confidence-medium { background: #fef3c7; color: #92400e; }
+    .confidence-low { background: #f3f4f6; color: #6b7280; }
+
+    .slo-evidence {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .slo-evidence-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .slo-evidence-quote {
+      background: var(--rumi-white);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #374151;
+      border-right: 3px solid #4BAD7A;
+      direction: rtl;
+      text-align: right;
+    }
+
+    .talk-moves-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .talk-moves-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      margin-bottom: 12px;
+    }
+
+    .talk-moves-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .talk-move-item {
+      background: #f3f4f6;
+      border-radius: 6px;
+      padding: 10px 14px;
+      text-align: center;
+    }
+
+    .talk-move-count {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--rumi-navy);
+    }
+
+    .talk-move-label {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    /* ===========================================
+       PHASE 7: SLO/Climate UX Redesign (etv-ux01)
+       Traffic light indicators, expandables, suggestions
+       =========================================== */
+
+    /* Mastery Status Indicators */
+    .mastery-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .mastery-achieved {
+      background: #dcfce7;
+      color: #166534;
+      border-left: 4px solid #22c55e;
+    }
+
+    .mastery-needs-evidence {
+      background: #fef3c7;
+      color: #92400e;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .mastery-not-assessed {
+      background: #fee2e2;
+      color: #dc2626;
+      border-left: 4px solid #ef4444;
+    }
+
+    .mastery-not-addressed {
+      background: #f3f4f6;
+      color: #6b7280;
+      border-left: 4px solid #9ca3af;
+    }
+
+    .status-icon {
+      font-size: 18px;
+    }
+
+    .status-label {
+      flex: 1;
+    }
+
+    /* Suggestion Box */
+    .suggestion-box {
+      background: #eff6ff;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #1e40af;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .suggestion-box .icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Student Evidence Box */
+    .evidence-section {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--rumi-white);
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .evidence-header {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .evidence-quote-box {
+      background: #f9fafb;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      border-right: 3px solid #4BAD7A;
+      direction: rtl;
+      text-align: right;
+    }
+
+    .evidence-quote-text {
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.8;
+    }
+
+    .evidence-speaker {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+      direction: ltr;
+      text-align: left;
+    }
+
+    /* Expandable Section */
+    .expandable-section {
+      margin-top: 12px;
+    }
+
+    .expandable-toggle {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #6b7280;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .expandable-toggle:hover {
+      background: var(--bg-light);
+      color: var(--rumi-navy);
+    }
+
+    .expandable-toggle .arrow {
+      transition: transform 0.2s;
+    }
+
+    .expandable-toggle.expanded .arrow {
+      transform: rotate(180deg);
+    }
+
+    .expandable-content {
+      display: none;
+      margin-top: 8px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #4b5563;
+      line-height: 1.6;
+    }
+
+    .expandable-content.show {
+      display: block;
+    }
+
+    /* SLO Summary Box */
+    .slo-summary {
+      background: var(--rumi-navy);
+      color: var(--rumi-white);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .slo-summary-title {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .slo-progress-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #4ade80;
+      border-radius: 4px;
+    }
+
+    .progress-text {
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    /* Climate Status Card */
+    .climate-status-card {
+      background: var(--bg-light);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .climate-status-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .climate-status-icon {
+      font-size: 20px;
+    }
+
+    .climate-status-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      flex: 1;
+    }
+
+    .climate-status-badge {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .climate-positive { background: #dcfce7; color: #166534; }
+    .climate-good { background: #fef3c7; color: #92400e; }
+    .climate-concerning { background: #fee2e2; color: #dc2626; }
+    .climate-needs-improvement { background: #f3f4f6; color: #6b7280; }
+    .climate-no-data { background: #f3f4f6; color: #9ca3af; }
+
+    .climate-highlights {
+      margin-bottom: 8px;
+    }
+
+    .climate-highlight-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    .climate-highlight-item .check {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .climate-concerns {
+      margin-top: 8px;
+    }
+
+    .climate-concern-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: #92400e;
+      margin-bottom: 4px;
+    }
+
+    .climate-note {
+      font-size: 11px;
+      color: #9ca3af;
+      font-style: italic;
+      margin-top: 8px;
+    }
+
+    /* ===========================================
+       PHASE 7 v3.11: Minimalist Side-by-Side Tiles
+       Circular gauges, collapsed by default, experimental badge
+       =========================================== */
+
+    .insights-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .insights-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .insights-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .insight-tile {
+      background: var(--rumi-white);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-color);
+      direction: ltr;
+      text-align: left;
+    }
+
+    .insight-tile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .insight-tile-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .experimental-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #fef3c7;
+      color: #92400e;
+      font-weight: 500;
+    }
+
+    .insight-gauge-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    /* Circular Gauge */
+    .gauge-container {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: #e5e7eb;
+      stroke-width: 6;
+    }
+
+    .gauge-fill {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dasharray 0.5s ease;
+    }
+
+    .gauge-fill.success { stroke: #22c55e; }
+    .gauge-fill.warning { stroke: #f59e0b; }
+    .gauge-fill.danger { stroke: #ef4444; }
+    .gauge-fill.muted { stroke: #9ca3af; }
+
+    .gauge-value {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .gauge-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .gauge-label-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      max-width: 64px;
+      line-height: 1.2;
+      word-wrap: break-word;
+      text-align: center;
+    }
+
+    .insight-summary {
+      flex: 1;
+    }
+
+    .insight-summary-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      margin-bottom: 2px;
+    }
+
+    .insight-summary-subtitle {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    /* Expand/Collapse Button */
+    .insight-toggle-btn {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--rumi-navy);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .insight-toggle-btn:hover {
+      background: var(--bg-light);
+      border-color: var(--rumi-navy);
+    }
+
+    .insight-toggle-btn .toggle-arrow {
+      transition: transform 0.2s;
+    }
+
+    .insight-toggle-btn.expanded .toggle-arrow {
+      transform: rotate(90deg);
+    }
+
+    /* Expanded Details */
+    .insight-details {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .insight-details.show {
+      display: block;
+    }
+
+    .insight-objective {
+      padding: 12px;
+      background: var(--bg-light);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .insight-objective:last-child {
+      margin-bottom: 0;
+    }
+
+    .objective-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .objective-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .objective-text {
+      flex: 1;
+      font-size: 14px;
+      color: var(--rumi-navy);
+      line-height: 1.5;
+    }
+
+    .objective-meta {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+      padding-left: 26px;
+    }
+
+    /* Clickable Evidence Expansion */
+    .insight-objective.has-evidence {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .insight-objective.has-evidence:hover {
+      background: #e5e7eb;
+    }
+
+    .objective-row .evidence-toggle {
+      color: #6b7280;
+      font-size: 10px;
+      transition: transform 0.2s;
+      margin-left: auto;
+    }
+
+    .insight-objective.expanded .evidence-toggle {
+      transform: rotate(90deg);
+    }
+
+    .objective-evidence {
+      display: none;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #d1d5db;
+      padding-left: 26px;
+    }
+
+    .insight-objective.expanded .objective-evidence {
+      display: block;
+    }
+
+    .evidence-quote {
+      background: white;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--rumi-teal);
+    }
+
+    .evidence-quote:last-child {
+      margin-bottom: 0;
+    }
+
+    .evidence-quote-text {
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.5;
+      direction: rtl;
+    }
+
+    .evidence-quote-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 6px;
+      direction: ltr;
+    }
+
+    .no-evidence {
+      font-size: 12px;
+      color: #9ca3af;
+      font-style: italic;
+    }
+
+    /* Climate Highlights/Concerns */
+    .climate-highlights {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #d1d5db;
+    }
+
+    .climate-highlight-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .climate-highlight-item.positive {
+      color: #166534;
+    }
+
+    .climate-highlight-item.concern {
+      color: #b45309;
+    }
+
+    .climate-highlight-icon {
+      flex-shrink: 0;
+    }
+
+    /* Climate Domain Cards in Details */
+    .climate-domain {
+      padding: 12px;
+      background: var(--bg-light);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .climate-domain:last-child {
+      margin-bottom: 0;
+    }
+
+    .climate-domain-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .climate-domain-icon {
+      font-size: 16px;
+    }
+
+    .climate-domain-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      flex: 1;
+    }
+
+    .climate-domain-status {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+
+    .climate-domain-status.positive { background: #dcfce7; color: #166534; }
+    .climate-domain-status.warning { background: #fef3c7; color: #92400e; }
+    .climate-domain-status.danger { background: #fee2e2; color: #dc2626; }
+
+    .climate-domain-list {
+      margin: 0;
+      padding: 0 0 0 24px;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    .climate-domain-list li {
+      margin-bottom: 4px;
+    }
+
+    /* Experimental Footer */
+    .insight-experimental {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #9ca3af;
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* ===========================================
+       PHASE 6: Classroom Climate (CLASS Framework)
+       Shows emotional/instructional support metrics
+       =========================================== */
+    .climate-card {
+      background: var(--rumi-white);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      direction: ltr;
+    }
+
+    .climate-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .climate-header svg {
+      width: 24px;
+      height: 24px;
+      color: var(--rumi-navy);
+    }
+
+    .climate-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .climate-domain {
+      background: var(--bg-light);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .climate-domain-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .climate-domain-icon {
+      font-size: 20px;
+    }
+
+    .climate-domain-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+    }
+
+    .climate-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .climate-metric {
+      background: var(--rumi-white);
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .climate-metric-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--rumi-navy);
+    }
+
+    .climate-metric-label {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    .climate-metric.positive .climate-metric-value { color: #166534; }
+    .climate-metric.negative .climate-metric-value { color: #dc2626; }
+
+    .experimental-disclaimer {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #92400e;
+      margin-top: 12px;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: white;
+      }
+
+      .container {
+        max-width: 100%;
+        padding: 20px;
+      }
+
+      .actions-bar,
+      .audio-player-card,
+      .timeline-bar,
+      .silence-marker,
+      .board-content-block {
+        display: none;
+      }
+
+      .header, .summary-card, .section-card {
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+      }
+
+      .summary-card {
+        background: var(--rumi-navy);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .transcript-line {
+        break-inside: avoid;
+      }
+
+      .transcript-line:hover {
+        background: var(--bg-light);
+        transform: none;
+        border-right-color: transparent;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .container {
+        padding: 16px;
+      }
+
+      .header, .summary-card {
+        padding: 20px;
+      }
+
+      .section-content {
+        padding: 16px;
+      }
+
+      .line-text {
+        font-size: 18px;
+      }
+
+      .actions-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .actions-bar .btn {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header - Matching Coaching Report PDF Style -->
+    <div class="header">
+      <div class="header-top">
+        <div class="header-brand">
+          <img src="/images/rumi-logo.png" alt="Rumi" class="rumi-logo" onerror="this.style.display='none'">
+          <div class="header-titles">
+            <h1>Coaching Session Transcript</h1>
+            <p class="header-subtitle">Classroom observation transcript powered by Rumi</p>
+          </div>
+        </div>
+      </div>
+      <div class="header-divider"></div>
+      <div class="meta-grid">
+        <div class="meta-item">
+          <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          <span><strong>Teacher:</strong> <%= teacherName %></span>
+        </div>
+        <div class="meta-item">
+          <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+          <span><strong>School:</strong> <%= schoolName %></span>
+        </div>
+        <div class="meta-item">
+          <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <span><strong>Date:</strong> <%= sessionDate %></span>
+        </div>
+        <div class="meta-item">
+          <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span><strong>Duration:</strong> <%= duration %></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Card -->
+    <% if (processedData && processedData.summary) { %>
+      <div class="summary-card">
+        <h2>Lesson Summary</h2>
+        <p class="summary-text"><%= processedData.summary %></p>
+      </div>
+    <% } %>
+
+    <!-- Fallback Banner (if GPT processing failed) -->
+    <% if (isFallback) { %>
+      <div class="fallback-banner">
+        Enhanced formatting unavailable. Showing raw transcript.
+      </div>
+    <% } %>
+
+    <!-- Phase 7 v3.10 (OLD) SLO Mastery Section - MOVED TO BOTTOM -->
+
+    <!-- Audio Player (Phase 4) -->
+    <% if (audioUrl) { %>
+      <div class="audio-player-card" id="audioPlayerCard">
+        <div class="audio-player-header">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+          </svg>
+          <h3>Classroom Recording</h3>
+        </div>
+        <div class="audio-controls">
+          <button class="play-btn" id="playBtn" onclick="togglePlay()">
+            <svg id="playIcon" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="pauseIcon" fill="currentColor" viewBox="0 0 24 24" style="display: none;">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          </button>
+          <div class="audio-progress-container">
+            <div class="audio-progress-bar" id="progressBar" onclick="seekAudio(event)">
+              <div class="audio-progress-fill" id="progressFill"></div>
+            </div>
+            <div class="audio-time">
+              <span id="currentTime">0:00</span>
+              <span id="totalTime"><%= duration %></span>
+            </div>
+          </div>
+        </div>
+        <audio id="audioElement" preload="metadata" crossorigin="anonymous">
+          <source src="<%= audioUrl %>" type="audio/ogg">
+          <source src="<%= audioUrl %>" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+        <div class="audio-error" id="audioError">
+          Unable to load audio. The recording may still be processing or temporarily unavailable.
+          <a href="<%= audioUrl %>" target="_blank" style="color: #1d4ed8; margin-left: 8px;">Try direct download</a>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Speaker Timeline Bar (Phase 4) -->
+    <% if (diarizationData && diarizationData.segments && diarizationData.segments.length > 0) { %>
+      <div class="timeline-bar" id="timelineBar">
+        <div class="timeline-header">
+          <span class="timeline-title">Speaker Timeline</span>
+          <div class="timeline-legend">
+            <div class="legend-item">
+              <span class="legend-dot teacher"></span>
+              <span>Teacher</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot student"></span>
+              <span>Student</span>
+            </div>
+            <% if (silenceMarkers && silenceMarkers.length > 0) { %>
+              <div class="legend-item">
+                <span class="legend-dot silence"></span>
+                <span>Silence</span>
+              </div>
+            <% } %>
+          </div>
+        </div>
+        <div class="timeline-track" id="timelineTrack" onclick="seekFromTimeline(event)">
+          <div class="timeline-playhead" id="playhead" style="left: 0%;"></div>
+          <!-- Segments will be rendered by JavaScript -->
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Actions Bar -->
+    <div class="actions-bar">
+      <a href="/observability/coaching" class="btn btn-secondary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to Sessions
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+        </svg>
+        Print / Save as PDF
+      </button>
+    </div>
+
+    <!-- Transcript Sections -->
+    <% if (processedData && processedData.sections && processedData.sections.length > 0) { %>
+      <% processedData.sections.forEach((section, sectionIndex) => { %>
+        <div class="section-card">
+          <div class="section-header">
+            <h3 class="section-title"><%= sectionIndex + 1 %>. <%= section.title %></h3>
+            <span class="section-time"><%= section.timeRange %></span>
+          </div>
+          <div class="section-content">
+            <% if (section.lines && section.lines.length > 0) { %>
+              <% section.lines.forEach(line => { %>
+                <%
+                  // Determine speaker class and icon
+                  let speakerClass = 'speaker-student';
+                  let lineClass = 'student-line';
+                  let speakerIcon = '👤';
+
+                  if (line.speakerType === 'teacher') {
+                    speakerClass = 'speaker-teacher';
+                    lineClass = 'teacher-line';
+                    speakerIcon = '👩‍🏫';
+                  } else if (line.speakerType === 'chorus') {
+                    speakerClass = 'speaker-chorus';
+                    lineClass = 'chorus-line';
+                    speakerIcon = '👥';
+                  }
+
+                  // Parse timestamp to milliseconds for audio sync
+                  let startMs = line.start_ms || 0;
+                  let endMs = line.end_ms || 0;
+                  if (!startMs && line.timestamp) {
+                    // Parse timestamp like "00:05" or "1:23:45"
+                    const parts = line.timestamp.replace(/[\[\]]/g, '').split(':').map(Number);
+                    if (parts.length === 2) {
+                      startMs = (parts[0] * 60 + parts[1]) * 1000;
+                    } else if (parts.length === 3) {
+                      startMs = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
+                    }
+                  }
+                %>
+                <div class="transcript-line <%= lineClass %>" data-start-ms="<%= startMs %>" data-end-ms="<%= endMs %>">
+                  <div class="line-header">
+                    <span class="timestamp">[<%= line.timestamp %>]</span>
+                    <span class="speaker <%= speakerClass %>">
+                      <span class="speaker-icon"><%= speakerIcon %></span>
+                      <%= line.speaker %>
+                    </span>
+                  </div>
+                  <div class="line-text" data-raw-text="<%- line.text %>"></div>
+                </div>
+              <% }) %>
+            <% } else { %>
+              <p style="color: #6b7280; text-align: center; padding: 20px;">No lines in this section.</p>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="section-card">
+        <div class="section-content">
+          <p style="color: #6b7280; text-align: center; padding: 40px;">No transcript available for this session.</p>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Phase 7 v3.11: Insights Section (Side-by-Side Tiles at Bottom) -->
+    <% if ((typeof sloMastery !== 'undefined' && sloMastery && sloMastery.objectives && sloMastery.objectives.length > 0) || (typeof classroomClimate !== 'undefined' && classroomClimate)) { %>
+      <%
+        // Compute SLO metrics
+        const sloCoverage = typeof uxHelpers !== 'undefined' && sloMastery && sloMastery.objectives
+          ? uxHelpers.getSLOCoverageSummary(sloMastery.objectives)
+          : { total: 0, addressed: 0, achieved: 0, percentage: 0 };
+
+        // Compute Climate metrics
+        const durationParts = (typeof duration === 'string' ? duration : '30:00').split(':');
+        const durationMinutes = parseInt(durationParts[0]) || 30;
+
+        const emotionalStatus = typeof uxHelpers !== 'undefined' && classroomClimate && classroomClimate.emotional_support
+          ? uxHelpers.getEmotionalSupportStatus(classroomClimate.emotional_support, durationMinutes)
+          : { status: 'NO_DATA', icon: '⬜', cssClass: '', highlights: [], concerns: [] };
+
+        const instructionalStatus = typeof uxHelpers !== 'undefined' && classroomClimate && classroomClimate.instructional_support
+          ? uxHelpers.getInstructionalSupportStatus(classroomClimate.instructional_support, durationMinutes)
+          : { status: 'NO_DATA', icon: '⬜', cssClass: '', highlights: [], concerns: [] };
+
+        const organizationStatus = typeof uxHelpers !== 'undefined' && classroomClimate && classroomClimate.classroom_organization
+          ? uxHelpers.getClassroomOrganizationStatus(classroomClimate.classroom_organization)
+          : { status: 'NO_DATA', icon: '⬜', cssClass: '', highlights: [], concerns: [], note: '' };
+
+        // Calculate overall climate score
+        function getClimateOverall() {
+          if (!classroomClimate) return { label: 'No Data', percent: 0, color: 'muted' };
+          const emotional = classroomClimate.emotional_support;
+          if (!emotional) return { label: 'No Data', percent: 0, color: 'muted' };
+          const score = (emotional.praise_count || 0) - (emotional.negative_language_count || 0) * 2;
+          if (score >= 8) return { label: 'Positive', percent: 90, color: 'success' };
+          if (score >= 4) return { label: 'Good', percent: 70, color: 'success' };
+          if (score >= 0) return { label: 'Neutral', percent: 50, color: 'warning' };
+          return { label: 'Needs Attention', percent: 30, color: 'danger' };
+        }
+        const climateOverall = getClimateOverall();
+      %>
+
+      <div class="insights-section">
+        <div class="insights-grid">
+
+          <!-- Learning Mastery Tile -->
+          <% if (sloMastery && sloMastery.objectives && sloMastery.objectives.length > 0) { %>
+            <div class="insight-tile" id="slo-tile">
+              <div class="insight-tile-header">
+                <span class="insight-tile-title">🎯 Learning Mastery</span>
+                <span class="experimental-badge">Experimental</span>
+              </div>
+
+              <div class="insight-gauge-row">
+                <div class="gauge-container">
+                  <svg class="gauge-svg" viewBox="0 0 36 36">
+                    <circle class="gauge-bg" cx="18" cy="18" r="15.5"></circle>
+                    <circle class="gauge-fill <%= sloCoverage.percentage >= 67 ? 'success' : sloCoverage.percentage >= 33 ? 'warning' : 'danger' %>"
+                            cx="18" cy="18" r="15.5"
+                            stroke-dasharray="<%= Math.round(sloCoverage.percentage * 0.97) %>, 100"></circle>
+                  </svg>
+                  <span class="gauge-value"><%= sloCoverage.percentage %>%</span>
+                </div>
+                <div class="insight-summary">
+                  <div class="insight-summary-title"><%= sloCoverage.addressed %> of <%= sloCoverage.total %> objectives</div>
+                  <div class="insight-summary-subtitle">addressed this session</div>
+                </div>
+              </div>
+
+              <button class="insight-toggle-btn" onclick="toggleInsightDetails('slo')" id="slo-toggle">
+                <span class="toggle-arrow">▶</span> View Details
+              </button>
+
+              <div class="insight-details" id="slo-details">
+                <% sloMastery.objectives.forEach((objective, index) => { %>
+                  <%
+                    const evidenceCount = objective.student_evidence ? objective.student_evidence.length : 0;
+                    const addressed = objective.addressed !== false;
+                    const masteryStatus = typeof uxHelpers !== 'undefined'
+                      ? uxHelpers.getMasteryStatus(objective.mastery_confidence, evidenceCount, addressed)
+                      : { status: 'NOT_ASSESSED', icon: '⬜', cssClass: 'mastery-not-assessed' };
+                    const formattedEvidence = typeof uxHelpers !== 'undefined' && objective.student_evidence
+                      ? uxHelpers.formatStudentEvidence(objective.student_evidence)
+                      : [];
+                  %>
+                  <div class="insight-objective <%= evidenceCount > 0 ? 'has-evidence' : '' %>" onclick="<%= evidenceCount > 0 ? 'toggleObjectiveEvidence(this)' : '' %>">
+                    <div class="objective-row">
+                      <span class="objective-icon"><%= masteryStatus.icon %></span>
+                      <span class="objective-text"><%= objective.objective_text %></span>
+                      <% if (evidenceCount > 0) { %><span class="evidence-toggle">▶</span><% } %>
+                    </div>
+                    <div class="objective-meta">
+                      <%= evidenceCount %> student response<%= evidenceCount !== 1 ? 's' : '' %>
+                      <% if (objective.mastery_confidence) { %> • <%= objective.mastery_confidence %> confidence<% } %>
+                      <% if (evidenceCount > 0) { %> • click to see evidence<% } %>
+                    </div>
+                    <% if (evidenceCount > 0) { %>
+                      <div class="objective-evidence">
+                        <% formattedEvidence.forEach((evidence) => { %>
+                          <div class="evidence-quote">
+                            <div class="evidence-quote-text"><%= evidence.quote %></div>
+                            <% if (evidence.speaker || evidence.timestamp) { %>
+                              <div class="evidence-quote-meta">
+                                <% if (evidence.speaker) { %>👤 <%= evidence.speaker %><% } %>
+                                <% if (evidence.timestamp) { %> @ <%= evidence.timestamp %><% } %>
+                              </div>
+                            <% } %>
+                          </div>
+                        <% }) %>
+                      </div>
+                    <% } %>
+                  </div>
+                <% }) %>
+              </div>
+
+              <div class="insight-experimental">
+                AI-generated insights from transcript analysis
+              </div>
+            </div>
+          <% } %>
+
+          <!-- Classroom Climate Tile -->
+          <% if (classroomClimate) { %>
+            <div class="insight-tile" id="climate-tile">
+              <div class="insight-tile-header">
+                <span class="insight-tile-title">🌡️ Classroom Climate</span>
+                <span class="experimental-badge">Experimental</span>
+              </div>
+
+              <div class="insight-gauge-row">
+                <div class="gauge-container">
+                  <svg class="gauge-svg" viewBox="0 0 36 36">
+                    <circle class="gauge-bg" cx="18" cy="18" r="15.5"></circle>
+                    <circle class="gauge-fill <%= climateOverall.color %>"
+                            cx="18" cy="18" r="15.5"
+                            stroke-dasharray="<%= Math.round(climateOverall.percent * 0.97) %>, 100"></circle>
+                  </svg>
+                  <div class="gauge-label">
+                    <span class="gauge-label-text"><%= climateOverall.label %></span>
+                  </div>
+                </div>
+                <div class="insight-summary">
+                  <div class="insight-summary-title">Positive environment</div>
+                  <div class="insight-summary-subtitle">based on CLASS Framework</div>
+                </div>
+              </div>
+
+              <button class="insight-toggle-btn" onclick="toggleInsightDetails('climate')" id="climate-toggle">
+                <span class="toggle-arrow">▶</span> View Details
+              </button>
+
+              <div class="insight-details" id="climate-details">
+                <% if (classroomClimate.emotional_support) { %>
+                  <div class="climate-domain">
+                    <div class="climate-domain-header">
+                      <span class="climate-domain-icon"><%= emotionalStatus.icon %></span>
+                      <span class="climate-domain-title">Emotional Support</span>
+                      <span class="climate-domain-status <%= emotionalStatus.status === 'POSITIVE' || emotionalStatus.status === 'GOOD' ? 'positive' : emotionalStatus.status === 'CONCERNING' ? 'danger' : 'warning' %>">
+                        <%= uxHelpers ? uxHelpers.getStatusLabel(emotionalStatus.status) : emotionalStatus.status %>
+                      </span>
+                    </div>
+                    <% if (emotionalStatus.highlights && emotionalStatus.highlights.length > 0) { %>
+                      <div class="climate-highlights">
+                        <% emotionalStatus.highlights.forEach(highlight => { %>
+                          <div class="climate-highlight-item positive">
+                            <span class="climate-highlight-icon">✓</span>
+                            <span><%= highlight %></span>
+                          </div>
+                        <% }) %>
+                        <% if (emotionalStatus.concerns && emotionalStatus.concerns.length > 0) { %>
+                          <% emotionalStatus.concerns.forEach(concern => { %>
+                            <div class="climate-highlight-item concern">
+                              <span class="climate-highlight-icon">⚠</span>
+                              <span><%= concern %></span>
+                            </div>
+                          <% }) %>
+                        <% } %>
+                      </div>
+                    <% } else { %>
+                      <ul class="climate-domain-list">
+                        <li><%= classroomClimate.emotional_support.praise_count || 0 %> praise instances</li>
+                        <li><%= classroomClimate.emotional_support.named_praise_count || 0 %> students praised by name</li>
+                        <li><%= classroomClimate.emotional_support.negative_language_count || 0 %> negative language</li>
+                      </ul>
+                    <% } %>
+                  </div>
+                <% } %>
+
+                <% if (classroomClimate.instructional_support) { %>
+                  <div class="climate-domain">
+                    <div class="climate-domain-header">
+                      <span class="climate-domain-icon"><%= instructionalStatus.icon %></span>
+                      <span class="climate-domain-title">Instructional Support</span>
+                      <span class="climate-domain-status <%= instructionalStatus.status === 'POSITIVE' || instructionalStatus.status === 'GOOD' ? 'positive' : instructionalStatus.status === 'CONCERNING' ? 'danger' : 'warning' %>">
+                        <%= uxHelpers ? uxHelpers.getStatusLabel(instructionalStatus.status) : instructionalStatus.status %>
+                      </span>
+                    </div>
+                    <% if (instructionalStatus.highlights && instructionalStatus.highlights.length > 0) { %>
+                      <div class="climate-highlights">
+                        <% instructionalStatus.highlights.forEach(highlight => { %>
+                          <div class="climate-highlight-item positive">
+                            <span class="climate-highlight-icon">✓</span>
+                            <span><%= highlight %></span>
+                          </div>
+                        <% }) %>
+                        <% if (instructionalStatus.concerns && instructionalStatus.concerns.length > 0) { %>
+                          <% instructionalStatus.concerns.forEach(concern => { %>
+                            <div class="climate-highlight-item concern">
+                              <span class="climate-highlight-icon">⚠</span>
+                              <span><%= concern %></span>
+                            </div>
+                          <% }) %>
+                        <% } %>
+                      </div>
+                    <% } else { %>
+                      <ul class="climate-domain-list">
+                        <li><%= classroomClimate.instructional_support.press_for_reasoning || 0 %> "why" questions</li>
+                        <li><%= classroomClimate.instructional_support.higher_order_questions || 0 %> higher-order questions</li>
+                        <li><%= classroomClimate.instructional_support.scaffolding_instances || 0 %> scaffolding moments</li>
+                      </ul>
+                    <% } %>
+                  </div>
+                <% } %>
+
+                <% if (classroomClimate.classroom_organization) { %>
+                  <div class="climate-domain">
+                    <div class="climate-domain-header">
+                      <span class="climate-domain-icon"><%= organizationStatus.icon %></span>
+                      <span class="climate-domain-title">Organization</span>
+                      <span class="climate-domain-status <%= organizationStatus.status === 'POSITIVE' || organizationStatus.status === 'GOOD' ? 'positive' : organizationStatus.status === 'CONCERNING' ? 'danger' : 'warning' %>">
+                        <%= uxHelpers ? uxHelpers.getStatusLabel(organizationStatus.status) : organizationStatus.status %>
+                      </span>
+                    </div>
+                    <% if (organizationStatus.highlights && organizationStatus.highlights.length > 0) { %>
+                      <div class="climate-highlights">
+                        <% organizationStatus.highlights.forEach(highlight => { %>
+                          <div class="climate-highlight-item positive">
+                            <span class="climate-highlight-icon">✓</span>
+                            <span><%= highlight %></span>
+                          </div>
+                        <% }) %>
+                        <% if (organizationStatus.concerns && organizationStatus.concerns.length > 0) { %>
+                          <% organizationStatus.concerns.forEach(concern => { %>
+                            <div class="climate-highlight-item concern">
+                              <span class="climate-highlight-icon">⚠</span>
+                              <span><%= concern %></span>
+                            </div>
+                          <% }) %>
+                        <% } %>
+                      </div>
+                    <% } else { %>
+                      <ul class="climate-domain-list">
+                        <li><%= classroomClimate.classroom_organization.transition_cues || 0 %> transitions</li>
+                        <li><%= classroomClimate.classroom_organization.redirection_count || 0 %> redirections</li>
+                      </ul>
+                    <% } %>
+                    <% if (organizationStatus.note) { %>
+                      <div class="climate-note" style="font-size: 11px; color: #9ca3af; font-style: italic; margin-top: 8px;">
+                        <%= organizationStatus.note %>
+                      </div>
+                    <% } %>
+                  </div>
+                <% } %>
+              </div>
+
+              <div class="insight-experimental">
+                AI-generated insights from transcript analysis
+              </div>
+            </div>
+          <% } %>
+
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Footer -->
+    <div class="footer">
+      Generated by Rumi Observability Portal | AI-Enhanced Transcript Formatting
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Process English word markers in transcript text
+     * Converts {{en:word}} to <span class="en">word</span>
+     */
+    function processEnglishMarkers(text) {
+      if (!text) return '';
+      // Match {{en:word}} or {{en:multiple words}} pattern
+      return text.replace(/\{\{en:([^}]+)\}\}/g, '<span class="en">$1</span>');
+    }
+
+    /**
+     * Initialize transcript text rendering
+     * Processes all line-text elements to convert English markers
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+      const lineTexts = document.querySelectorAll('.line-text');
+
+      lineTexts.forEach(function(element) {
+        const rawText = element.getAttribute('data-raw-text');
+        if (rawText) {
+          // Process English markers and set as HTML
+          element.innerHTML = processEnglishMarkers(rawText);
+        }
+      });
+
+      // Initialize Phase 4 features
+      initAudioPlayer();
+      initTimeline();
+      initClickToSeek();
+      initBoardBlocks();
+    });
+
+    /* ===========================================
+       PHASE 4: Audio Player Controls
+       =========================================== */
+    let audioElement = null;
+    let isPlaying = false;
+    const durationSeconds = <%= typeof durationSeconds !== 'undefined' ? durationSeconds : 0 %>;
+
+    function initAudioPlayer() {
+      audioElement = document.getElementById('audioElement');
+      const playBtn = document.getElementById('playBtn');
+      const audioError = document.getElementById('audioError');
+
+      if (!audioElement) return;
+
+      // etv-aud01: Show loading state while audio loads
+      if (playBtn) {
+        playBtn.classList.add('loading');
+        playBtn.innerHTML = '<span class="loading-spinner"></span>';
+      }
+
+      // Reset loading state when audio can play
+      audioElement.addEventListener('canplay', function() {
+        if (playBtn) {
+          playBtn.classList.remove('loading');
+          playBtn.innerHTML = `
+            <svg id="playIcon" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="pauseIcon" fill="currentColor" viewBox="0 0 24 24" style="display: none;">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          `;
+        }
+        console.log('[AudioPlayer] Audio ready to play');
+      });
+
+      // etv-aud01: Handle audio load errors
+      audioElement.addEventListener('error', function(e) {
+        console.error('[AudioPlayer] Error loading audio:', e);
+        if (playBtn) {
+          playBtn.classList.remove('loading');
+          playBtn.innerHTML = `
+            <svg fill="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+          `;
+          playBtn.style.background = '#dc2626';
+        }
+        if (audioError) {
+          audioError.classList.add('visible');
+        }
+      });
+
+      audioElement.addEventListener('timeupdate', updateProgress);
+      audioElement.addEventListener('ended', function() {
+        isPlaying = false;
+        updatePlayButton();
+      });
+      audioElement.addEventListener('loadedmetadata', function() {
+        document.getElementById('totalTime').textContent = formatTime(audioElement.duration);
+      });
+
+      // Start loading
+      audioElement.load();
+    }
+
+    // ========================================================
+    // Phase 7: Expandable Section Toggle Functions (etv-ux01)
+    // ========================================================
+
+    /**
+     * Toggle evidence section visibility
+     */
+    function toggleEvidence(button) {
+      const content = button.nextElementSibling;
+      const icon = button.querySelector('.toggle-icon');
+      const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+      if (isExpanded) {
+        content.style.display = 'none';
+        button.setAttribute('aria-expanded', 'false');
+        if (icon) icon.textContent = '▶';
+      } else {
+        content.style.display = 'block';
+        button.setAttribute('aria-expanded', 'true');
+        if (icon) icon.textContent = '▼';
+      }
+    }
+
+    /**
+     * Toggle help section visibility
+     */
+    function toggleHelp(button) {
+      const content = button.nextElementSibling;
+      const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+      if (isExpanded) {
+        content.style.display = 'none';
+        button.setAttribute('aria-expanded', 'false');
+      } else {
+        content.style.display = 'block';
+        button.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    // ========================================================
+    // Phase 7 v3.11: Insight Tile Toggle Function
+    // ========================================================
+
+    /**
+     * Toggle insight tile details (SLO Mastery / Classroom Climate)
+     * @param {string} tileId - 'slo' or 'climate'
+     */
+    function toggleInsightDetails(tileId) {
+      const details = document.getElementById(tileId + '-details');
+      const toggle = document.getElementById(tileId + '-toggle');
+      const tile = document.getElementById(tileId + '-tile');
+
+      if (!details || !toggle) return;
+
+      const isExpanded = details.classList.contains('show');
+
+      if (isExpanded) {
+        details.classList.remove('show');
+        toggle.innerHTML = '<span class="toggle-arrow">▶</span> View Details';
+        if (tile) tile.classList.remove('expanded');
+      } else {
+        details.classList.add('show');
+        toggle.innerHTML = '<span class="toggle-arrow">▼</span> Hide Details';
+        if (tile) tile.classList.add('expanded');
+      }
+    }
+
+    /**
+     * Toggle objective evidence display
+     * @param {HTMLElement} element - The objective element clicked
+     */
+    function toggleObjectiveEvidence(element) {
+      if (!element || !element.classList.contains('has-evidence')) return;
+      element.classList.toggle('expanded');
+    }
+
+    // ========================================================
+    // Audio Player Functions
+    // ========================================================
+
+    function togglePlay() {
+      if (!audioElement) return;
+
+      const playBtn = document.getElementById('playBtn');
+      if (playBtn && playBtn.classList.contains('loading')) {
+        console.log('[AudioPlayer] Still loading, please wait...');
+        return;
+      }
+
+      if (isPlaying) {
+        audioElement.pause();
+      } else {
+        audioElement.play().catch(err => {
+          console.error('[AudioPlayer] Play error:', err);
+          const audioError = document.getElementById('audioError');
+          if (audioError) {
+            audioError.classList.add('visible');
+          }
+        });
+      }
+      isPlaying = !isPlaying;
+      updatePlayButton();
+    }
+
+    function updatePlayButton() {
+      const playIcon = document.getElementById('playIcon');
+      const pauseIcon = document.getElementById('pauseIcon');
+      if (playIcon && pauseIcon) {
+        playIcon.style.display = isPlaying ? 'none' : 'block';
+        pauseIcon.style.display = isPlaying ? 'block' : 'none';
+      }
+    }
+
+    function updateProgress() {
+      if (!audioElement) return;
+
+      const progress = (audioElement.currentTime / audioElement.duration) * 100;
+      const progressFill = document.getElementById('progressFill');
+      const currentTimeEl = document.getElementById('currentTime');
+      const playhead = document.getElementById('playhead');
+
+      if (progressFill) {
+        progressFill.style.width = progress + '%';
+      }
+      if (currentTimeEl) {
+        currentTimeEl.textContent = formatTime(audioElement.currentTime);
+      }
+      if (playhead) {
+        playhead.style.left = progress + '%';
+      }
+
+      // Highlight active transcript line
+      highlightActiveLine(audioElement.currentTime * 1000);
+    }
+
+    function seekAudio(event) {
+      if (!audioElement) return;
+
+      const progressBar = document.getElementById('progressBar');
+      const rect = progressBar.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const progress = clickX / rect.width;
+      audioElement.currentTime = progress * audioElement.duration;
+    }
+
+    function seekToTime(seconds) {
+      if (!audioElement) return;
+      audioElement.currentTime = seconds;
+      if (!isPlaying) {
+        audioElement.play();
+        isPlaying = true;
+        updatePlayButton();
+      }
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return mins + ':' + String(secs).padStart(2, '0');
+    }
+
+    /* ===========================================
+       PHASE 4: Speaker Timeline
+       =========================================== */
+    const diarizationData = <%- typeof diarizationData !== 'undefined' && diarizationData ? JSON.stringify(diarizationData) : 'null' %>;
+    const silenceMarkers = <%- typeof silenceMarkers !== 'undefined' && silenceMarkers ? JSON.stringify(silenceMarkers) : '[]' %>;
+
+    function initTimeline() {
+      const timelineTrack = document.getElementById('timelineTrack');
+      if (!timelineTrack || !diarizationData || !diarizationData.segments) return;
+
+      const totalMs = durationSeconds * 1000;
+      if (totalMs <= 0) return;
+
+      // Render speaker segments
+      diarizationData.segments.forEach(function(segment) {
+        const startPercent = (segment.start_ms / totalMs) * 100;
+        const widthPercent = ((segment.end_ms - segment.start_ms) / totalMs) * 100;
+
+        const el = document.createElement('div');
+        el.className = 'timeline-segment ' + (segment.label === 'Teacher' ? 'teacher' : 'student');
+        el.style.left = startPercent + '%';
+        el.style.width = widthPercent + '%';
+        el.title = segment.label + ' (' + formatTime(segment.start_ms / 1000) + ' - ' + formatTime(segment.end_ms / 1000) + ')';
+        timelineTrack.appendChild(el);
+      });
+
+      // Render silence markers
+      silenceMarkers.forEach(function(marker) {
+        const startPercent = (marker.start_ms / totalMs) * 100;
+        const widthPercent = ((marker.end_ms - marker.start_ms) / totalMs) * 100;
+
+        const el = document.createElement('div');
+        el.className = 'timeline-segment silence';
+        el.style.left = startPercent + '%';
+        el.style.width = widthPercent + '%';
+        el.title = marker.activity + ' (' + formatTime(marker.start_ms / 1000) + ' - ' + formatTime(marker.end_ms / 1000) + ')';
+        timelineTrack.appendChild(el);
+      });
+    }
+
+    function seekFromTimeline(event) {
+      if (!audioElement) return;
+
+      const track = document.getElementById('timelineTrack');
+      const rect = track.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const progress = clickX / rect.width;
+      const seekTime = progress * audioElement.duration;
+      seekToTime(seekTime);
+    }
+
+    /* ===========================================
+       PHASE 4: Click-to-Seek & Highlight
+       =========================================== */
+    function initClickToSeek() {
+      const lines = document.querySelectorAll('.transcript-line[data-start-ms]');
+      lines.forEach(function(line) {
+        line.addEventListener('click', function() {
+          const startMs = parseInt(line.getAttribute('data-start-ms'), 10);
+          if (!isNaN(startMs)) {
+            seekToTime(startMs / 1000);
+          }
+        });
+      });
+    }
+
+    function highlightActiveLine(currentMs) {
+      const lines = document.querySelectorAll('.transcript-line[data-start-ms]');
+      let activeLine = null;
+
+      lines.forEach(function(line) {
+        const startMs = parseInt(line.getAttribute('data-start-ms'), 10);
+        const endMs = parseInt(line.getAttribute('data-end-ms'), 10) || (startMs + 5000);
+
+        if (currentMs >= startMs && currentMs < endMs) {
+          activeLine = line;
+        }
+        line.classList.remove('active');
+      });
+
+      if (activeLine) {
+        activeLine.classList.add('active');
+        // Scroll into view if needed
+        if (!isElementInViewport(activeLine)) {
+          activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+
+    function isElementInViewport(el) {
+      const rect = el.getBoundingClientRect();
+      return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+      );
+    }
+
+    /* ===========================================
+       PHASE 4: Board Content Blocks
+       Renders "chalkboard" style blocks for board writing
+       =========================================== */
+    function initBoardBlocks() {
+      if (!silenceMarkers || silenceMarkers.length === 0) return;
+
+      // Filter for board_writing activities only
+      const boardMarkers = silenceMarkers.filter(function(marker) {
+        return marker.activity === 'board_writing' || marker.activity === 'potential_board_writing';
+      });
+
+      if (boardMarkers.length === 0) return;
+
+      const allLines = document.querySelectorAll('.transcript-line[data-start-ms]');
+      if (allLines.length === 0) return;
+
+      // Sort lines by start time
+      const linesArray = Array.from(allLines).sort(function(a, b) {
+        return parseInt(a.getAttribute('data-start-ms'), 10) - parseInt(b.getAttribute('data-start-ms'), 10);
+      });
+
+      // For each board marker, find where to insert it
+      boardMarkers.forEach(function(marker) {
+        // Find the first line that starts AFTER the silence ends
+        let insertBeforeLine = null;
+        for (let i = 0; i < linesArray.length; i++) {
+          const lineStart = parseInt(linesArray[i].getAttribute('data-start-ms'), 10);
+          if (lineStart >= marker.end_ms) {
+            insertBeforeLine = linesArray[i];
+            break;
+          }
+        }
+
+        // Create the board content block
+        const boardBlock = createBoardBlock(marker);
+
+        // Insert before the next line, or at the end of the section
+        if (insertBeforeLine) {
+          insertBeforeLine.parentNode.insertBefore(boardBlock, insertBeforeLine);
+        } else if (linesArray.length > 0) {
+          // Insert after the last line
+          const lastLine = linesArray[linesArray.length - 1];
+          lastLine.parentNode.insertBefore(boardBlock, lastLine.nextSibling);
+        }
+      });
+    }
+
+    function createBoardBlock(marker) {
+      const div = document.createElement('div');
+      div.className = 'board-content-block';
+      div.setAttribute('data-start-ms', marker.start_ms);
+      div.setAttribute('data-end-ms', marker.end_ms);
+
+      // Determine activity label
+      const activityLabel = marker.activity === 'board_writing'
+        ? '📝 Teacher Writing on Board'
+        : '📝 Possible Board Writing';
+
+      // Format duration
+      const durationSec = Math.round(marker.duration_ms / 1000);
+      const durationText = durationSec + ' seconds';
+
+      // Build HTML
+      let html = '<div class="board-header">';
+      html += '<span class="board-icon">🎓</span>';
+      html += '<span class="board-title">' + activityLabel + '</span>';
+      html += '<span class="board-duration">' + durationText + '</span>';
+      html += '<span class="board-confidence ' + marker.confidence + '">' + marker.confidence.toUpperCase() + '</span>';
+      html += '</div>';
+
+      // Add the inferred content area
+      html += '<div class="board-content">';
+      if (marker.context_before && marker.context_after) {
+        // Show what happened before the silence (likely what was being written)
+        html += '<em>Teacher spoke about topic, then wrote on board...</em>';
+      } else {
+        html += '<em>Board activity detected during this silence</em>';
+      }
+      html += '</div>';
+
+      // Show context if available
+      if (marker.context_before || marker.context_after) {
+        html += '<div class="board-context">';
+        if (marker.context_before) {
+          html += '<div class="board-context-label">Before silence:</div>';
+          html += '<div class="board-context-text">' + escapeHtml(marker.context_before) + '</div>';
+        }
+        if (marker.context_after) {
+          html += '<div class="board-context-label" style="margin-top: 8px;">After silence:</div>';
+          html += '<div class="board-context-text">' + escapeHtml(marker.context_after) + '</div>';
+        }
+        html += '</div>';
+      }
+
+      div.innerHTML = html;
+
+      // Make it clickable to seek
+      div.style.cursor = 'pointer';
+      div.onclick = function() {
+        seekToTime(marker.start_ms / 1000);
+      };
+
+      return div;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

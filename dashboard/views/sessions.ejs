@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* Word Cloud Styles */
+    .refresh-btn {
+      background: hsl(var(--muted));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 8px;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .refresh-btn:hover {
+      background: hsl(var(--border));
+    }
+
+    .refresh-btn:disabled {
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid hsl(var(--muted));
+      border-top-color: hsl(var(--primary));
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #wordCloudCanvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+    }
+
+    .chart-description {
+      text-align: center;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body class="bg-background">
+  <!-- Navigation -->
+  <%- include('partials/navigation', { currentPage: 'sessions', username: username, userRole: userRole }) %>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <h2 class="text-2xl font-light text-foreground mb-6">Session Analytics</h2>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Sessions -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Total Sessions</dt>
+            <dd class="mt-1 text-3xl font-light" style="color: hsl(var(--success));"><%= stats.totalSessions || 0 %></dd>
+          </div>
+        </div>
+
+        <!-- Sessions This Week -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">This Week</dt>
+            <dd class="mt-1 text-3xl font-light text-primary"><%= stats.sessionsThisWeek || 0 %></dd>
+          </div>
+        </div>
+
+        <!-- Average Length -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Avg Session Length</dt>
+            <dd class="mt-1 text-3xl font-light" style="color: hsl(var(--warning));"><%= analytics.avgLength || 0 %> min</dd>
+          </div>
+        </div>
+
+        <!-- Avg Messages -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-muted-foreground truncate">Avg Messages/Session</dt>
+            <dd class="mt-1 text-3xl font-light text-accent"><%= analytics.avgMessages || 0 %></dd>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Sessions Per Day Chart -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:px-6 border-b border-border">
+            <h3 class="text-lg font-medium text-foreground">Sessions Per Day (Last 7 Days)</h3>
+          </div>
+          <div class="px-4 py-5 sm:p-6">
+            <canvas id="sessionsPerDayChart" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Session Type Breakdown Chart -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:px-6 border-b border-border">
+            <h3 class="text-lg font-medium text-foreground">Session Type Breakdown</h3>
+          </div>
+          <div class="px-4 py-5 sm:p-6">
+            <canvas id="sessionTypeChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Hours Chart -->
+      <div class="card-primary overflow-hidden mb-8">
+        <div class="px-4 py-5 sm:px-6 border-b border-border">
+          <h3 class="text-lg font-medium text-foreground">Most Active Session Hours</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <canvas id="activeHoursChart" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Session Type Breakdown Table -->
+      <div class="card-primary overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 border-b border-border">
+          <h3 class="text-lg font-medium text-foreground">Session Types Detail</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <% if (analytics.sessionTypeBreakdown && analytics.sessionTypeBreakdown.length > 0) { %>
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-border">
+                <thead class="bg-muted">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Count</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-card divide-y divide-border">
+                  <%
+                    const totalSessions = analytics.sessionTypeBreakdown.reduce((sum, item) => sum + item.count, 0);
+                    analytics.sessionTypeBreakdown.forEach(item => {
+                      const percentage = ((item.count / totalSessions) * 100).toFixed(1);
+                  %>
+                    <tr>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-primary/10 text-primary">
+                          <%= item.type %>
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= item.count %></td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div class="w-full bg-muted rounded-full h-2 mr-2">
+                            <div class="bg-primary h-2 rounded-full transition-smooth" style="width: <%= percentage %>%"></div>
+                          </div>
+                          <span class="text-sm text-muted-foreground"><%= percentage %>%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="text-muted-foreground text-center py-4">No session data available yet. Sessions will appear after the migration is run.</p>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Word Cloud Section -->
+      <div class="card-primary mt-8">
+        <div class="px-4 py-5 sm:px-6 border-b border-border flex justify-between items-center">
+          <h3 class="text-lg font-medium text-foreground">Conversation Analysis</h3>
+          <button id="refreshWordCloud" class="refresh-btn" title="Refresh Word Cloud">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 00-9-9 9.75 9.75 0 00-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5M3 12a9 9 0 009 9 9.75 9.75 0 006.74-2.74L21 16"/>
+              <path d="M16 16h5v5"/>
+            </svg>
+          </button>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <div class="chart-container" style="position: relative; height: 400px;">
+            <canvas id="wordCloudCanvas" width="800" height="400"></canvas>
+            <div id="wordCloudLoading" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+              <div class="spinner"></div>
+              <p style="margin-top: 10px; color: hsl(var(--muted-foreground));">Loading word cloud...</p>
+            </div>
+          </div>
+          <p class="chart-description">Most frequent words from user conversations (excluding common stop words)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts JavaScript -->
+  <script>
+    // Get CSS variables
+    const styles = getComputedStyle(document.documentElement);
+    const primaryColor = `hsl(${styles.getPropertyValue('--primary')})`;
+    const accentColor = `hsl(${styles.getPropertyValue('--accent')})`;
+    const successColor = `hsl(${styles.getPropertyValue('--success')})`;
+    const warningColor = `hsl(${styles.getPropertyValue('--warning')})`;
+    const borderColor = `hsl(${styles.getPropertyValue('--border')})`;
+    const mutedColor = `hsl(${styles.getPropertyValue('--muted-foreground')})`;
+
+    // Sessions Per Day Chart
+    const sessionsPerDayCtx = document.getElementById('sessionsPerDayChart').getContext('2d');
+    const sessionsPerDayData = <%- JSON.stringify(analytics.sessionsPerDay) %>;
+
+    new Chart(sessionsPerDayCtx, {
+      type: 'line',
+      data: {
+        labels: sessionsPerDayData.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+        datasets: [{
+          label: 'Sessions',
+          data: sessionsPerDayData.map(d => d.count),
+          borderColor: successColor,
+          backgroundColor: successColor.replace(')', ' / 0.1)'),
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1, color: mutedColor },
+            grid: { color: borderColor }
+          },
+          x: {
+            ticks: { color: mutedColor },
+            grid: { color: borderColor }
+          }
+        }
+      }
+    });
+
+    // Session Type Breakdown Pie Chart
+    const sessionTypeCtx = document.getElementById('sessionTypeChart').getContext('2d');
+    const sessionTypeData = <%- JSON.stringify(analytics.sessionTypeBreakdown) %>;
+
+    new Chart(sessionTypeCtx, {
+      type: 'doughnut',
+      data: {
+        labels: sessionTypeData.map(d => d.type),
+        datasets: [{
+          data: sessionTypeData.map(d => d.count),
+          backgroundColor: [
+            primaryColor,
+            successColor,
+            warningColor,
+            accentColor,
+            `hsl(${styles.getPropertyValue('--error')})`
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: mutedColor }
+          }
+        }
+      }
+    });
+
+    // Active Hours Chart
+    const activeHoursCtx = document.getElementById('activeHoursChart').getContext('2d');
+    const activeHoursData = <%- JSON.stringify(analytics.activeHours) %>;
+
+    new Chart(activeHoursCtx, {
+      type: 'bar',
+      data: {
+        labels: activeHoursData.map(d => d.hour),
+        datasets: [{
+          label: 'Sessions',
+          data: activeHoursData.map(d => d.count),
+          backgroundColor: primaryColor.replace(')', ' / 0.6)'),
+          borderColor: primaryColor,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1, color: mutedColor },
+            grid: { color: borderColor }
+          },
+          x: {
+            ticks: { color: mutedColor },
+            grid: { color: borderColor }
+          }
+        }
+      }
+    });
+
+    // Word Cloud Visualization
+    const wordCloudCanvas = document.getElementById('wordCloudCanvas');
+    let wordCloudData = [];
+
+    // Function to load word cloud
+    async function loadWordCloud(refresh = false) {
+      const loadingDiv = document.getElementById('wordCloudLoading');
+      loadingDiv.style.display = 'block';
+
+      try {
+        const response = await fetch(`/observability/api/wordcloud/words${refresh ? '?refresh=true' : ''}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          wordCloudData = result.data;
+          renderWordCloud();
+        } else {
+          console.error('Failed to load word cloud data');
+        }
+      } catch (error) {
+        console.error('Error fetching word cloud:', error);
+      } finally {
+        loadingDiv.style.display = 'none';
+      }
+    }
+
+    // Function to render word cloud
+    function renderWordCloud() {
+      if (!wordCloudData || wordCloudData.length === 0) {
+        return;
+      }
+
+      // Calculate weights for font size
+      const maxValue = Math.max(...wordCloudData.map(d => d.value));
+      const minValue = Math.min(...wordCloudData.map(d => d.value));
+
+      // Prepare data for WordCloud2
+      const list = wordCloudData.map(item => {
+        const fontSize = 12 + (item.value - minValue) / (maxValue - minValue) * 48;
+        return [item.text, fontSize];
+      });
+
+      // Configure and render word cloud
+      WordCloud(wordCloudCanvas, {
+        list: list,
+        gridSize: 8,
+        weightFactor: 1,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        color: function() {
+          const colors = [primaryColor, accentColor, successColor, warningColor];
+          return colors[Math.floor(Math.random() * colors.length)];
+        },
+        rotateRatio: 0.3,
+        rotationSteps: 2,
+        backgroundColor: 'transparent',
+        drawOutOfBound: false,
+        shrinkToFit: true,
+        shape: 'square'
+      });
+    }
+
+    // Refresh button handler
+    document.getElementById('refreshWordCloud').addEventListener('click', async function() {
+      this.disabled = true;
+      this.style.opacity = '0.5';
+      await loadWordCloud(true);
+      this.disabled = false;
+      this.style.opacity = '1';
+    });
+
+    // Load word cloud on page load
+    loadWordCloud();
+  </script>
+
+  <!-- WordCloud2.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
+</body>
+</html>

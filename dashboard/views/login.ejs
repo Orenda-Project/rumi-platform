@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <style>
+    /* SIMPLEST POSSIBLE VERTICAL SCROLL - NOTHING FANCY */
+    .scroll-container {
+      height: 200px;
+      overflow: hidden;
+      position: relative;
+      /* Fade on BOTH ends - top and bottom */
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 15%,
+        black 85%,
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 15%,
+        black 85%,
+        transparent 100%
+      );
+    }
+
+    .scroll-content {
+      animation: scrollVertical 45s linear infinite;
+    }
+
+    .scroll-container:hover .scroll-content {
+      animation-play-state: paused;
+    }
+
+    @keyframes scrollVertical {
+      0% {
+        transform: translateY(0);
+      }
+      100% {
+        transform: translateY(-50%);
+      }
+    }
+
+    .scroll-item {
+      padding: 12px 0;
+    }
+    .scroll-date {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .scroll-title {
+      font-size: 14px;
+      color: #1a1a2e;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4" style="background: var(--gradient-subtle);">
+  <%
+    function getRelativeTime(dateString) {
+      const now = new Date();
+      const date = new Date(dateString);
+      const diffMs = now - date;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return diffDays + ' days ago';
+      if (diffDays < 14) return '1 week ago';
+      if (diffDays < 30) return Math.floor(diffDays / 7) + ' weeks ago';
+      if (diffDays < 60) return '1 month ago';
+      return Math.floor(diffDays / 30) + ' months ago';
+    }
+  %>
+
+  <div class="flex flex-col items-center justify-center min-h-screen">
+    <div class="card-primary p-8 w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="flex justify-center mb-4">
+          <img src="/images/rumi-logo.png" alt="Rumi logo" class="w-16 h-16 object-contain">
+        </div>
+        <h1 class="text-3xl font-light text-foreground mb-2">Rumi</h1>
+        <p class="text-muted-foreground">Observability Portal</p>
+      </div>
+
+      <% if (error) { %>
+        <div class="status-error border rounded-lg px-4 py-3 mb-6" role="alert">
+          <p class="font-medium text-sm"><%= error %></p>
+        </div>
+      <% } %>
+
+      <form method="POST" action="/observability/login" class="space-y-6">
+        <div>
+          <label for="username" class="block text-sm font-medium text-foreground mb-2">Username</label>
+          <input type="text" id="username" name="username" required autofocus class="input-field" placeholder="Enter your username">
+        </div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-foreground mb-2">Password</label>
+          <input type="password" id="password" name="password" required class="input-field" placeholder="Enter your password">
+        </div>
+        <button type="submit" class="w-full btn-primary py-3">Sign In</button>
+      </form>
+
+      <div class="mt-4 text-center">
+        <a href="/observability/forgot-password" class="text-sm text-primary hover:text-primary/80">Forgot your password?</a>
+      </div>
+      <div class="mt-8 text-center text-sm text-muted-foreground">
+        <p>Rumi by Taleemabad</p>
+      </div>
+    </div>
+
+    <% if (releaseNotes && releaseNotes.length > 0) { %>
+    <div class="w-full max-w-md mt-8 px-2">
+      <div style="font-size: 14px; font-weight: 300; color: #666; margin-bottom: 16px;">
+        Here's what I got better at while you were away!
+      </div>
+
+      <div class="scroll-container">
+        <div class="scroll-content">
+          <!-- First set -->
+          <% releaseNotes.forEach(function(note) { %>
+          <div class="scroll-item">
+            <div class="scroll-date"><%= getRelativeTime(note.created_at) %></div>
+            <div class="scroll-title"><%= note.title %></div>
+          </div>
+          <% }); %>
+          <!-- Duplicate for seamless loop -->
+          <% releaseNotes.forEach(function(note) { %>
+          <div class="scroll-item">
+            <div class="scroll-date"><%= getRelativeTime(note.created_at) %></div>
+            <div class="scroll-title"><%= note.title %></div>
+          </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</body>
+</html>

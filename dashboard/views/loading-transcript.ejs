@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Processing Transcript - Rumi</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Rumi Brand Colors */
+    :root {
+      --rumi-navy: #001F3F;
+      --rumi-navy-light: #003366;
+      --rumi-black: #000000;
+      --rumi-white: #FFFFFF;
+      --rumi-gray-light: #F9FAFB;
+      --border-color: #e5e7eb;
+      --text-secondary: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--rumi-gray-light);
+      color: var(--rumi-black);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .loading-container {
+      background: var(--rumi-white);
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 10px 15px rgba(0, 0, 0, 0.05);
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* Logo with pulse animation */
+    .logo-container {
+      margin-bottom: 32px;
+    }
+
+    .rumi-logo {
+      width: 80px;
+      height: auto;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+    }
+
+    /* Progress bar */
+    .progress-container {
+      margin: 24px 0;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--rumi-gray-light);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--rumi-navy) 0%, var(--rumi-navy-light) 100%);
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    .progress-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+
+    /* Status title */
+    .status-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--rumi-navy);
+      margin-bottom: 16px;
+    }
+
+    /* Status steps */
+    .status-steps {
+      text-align: left;
+      margin: 24px 0;
+    }
+
+    .status-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: color 0.3s;
+    }
+
+    .status-step.completed {
+      color: var(--rumi-navy);
+    }
+
+    .status-step.active {
+      color: var(--rumi-black);
+      font-weight: 500;
+    }
+
+    .step-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .step-icon.completed::before {
+      content: '✓';
+      color: var(--rumi-navy);
+    }
+
+    .step-icon.active::before {
+      content: '●';
+      animation: pulse 1s ease-in-out infinite;
+      color: var(--rumi-navy);
+    }
+
+    .step-icon.pending::before {
+      content: '○';
+      color: var(--text-secondary);
+    }
+
+    /* Estimated time */
+    .time-estimate {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 24px;
+    }
+
+    /* Info box */
+    .info-box {
+      background: var(--rumi-gray-light);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .info-box .icon {
+      font-size: 16px;
+      margin-right: 8px;
+    }
+
+    /* Cancel link */
+    .cancel-link {
+      display: inline-block;
+      margin-top: 24px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .cancel-link:hover {
+      color: var(--rumi-navy);
+    }
+
+    /* Error state */
+    .error-container {
+      display: none;
+    }
+
+    .error-container.show {
+      display: block;
+    }
+
+    .error-message {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 24px;
+      font-size: 14px;
+    }
+
+    .retry-button {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: var(--rumi-navy);
+      color: var(--rumi-white);
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .retry-button:hover {
+      background: var(--rumi-navy-light);
+    }
+
+    /* Session info */
+    .session-info {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-container">
+    <!-- Logo -->
+    <div class="logo-container">
+      <img src="/images/rumi-logo.png" alt="Rumi" class="rumi-logo" onerror="this.style.display='none'">
+    </div>
+
+    <!-- Status Title -->
+    <h1 class="status-title" id="statusTitle">Processing transcript...</h1>
+    <p class="session-info"><%= teacherName %> - <%= schoolName %></p>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar" style="width: 10%"></div>
+      </div>
+      <p class="progress-text" id="progressText">10%</p>
+    </div>
+
+    <!-- Status Steps -->
+    <div class="status-steps" id="statusSteps">
+      <div class="status-step completed" id="step1">
+        <span class="step-icon completed"></span>
+        <span>Fetching raw transcript</span>
+      </div>
+      <div class="status-step active" id="step2">
+        <span class="step-icon active"></span>
+        <span>Analyzing speaker patterns</span>
+      </div>
+      <div class="status-step pending" id="step3">
+        <span class="step-icon pending"></span>
+        <span>Fixing Urdu word spacing</span>
+      </div>
+      <div class="status-step pending" id="step4">
+        <span class="step-icon pending"></span>
+        <span>Detecting English words</span>
+      </div>
+      <div class="status-step pending" id="step5">
+        <span class="step-icon pending"></span>
+        <span>Generating section headers</span>
+      </div>
+      <div class="status-step pending" id="step6">
+        <span class="step-icon pending"></span>
+        <span>Creating lesson summary</span>
+      </div>
+    </div>
+
+    <!-- Time Estimate -->
+    <p class="time-estimate" id="timeEstimate">Estimated time: ~2 minutes remaining</p>
+
+    <!-- Info Box -->
+    <div class="info-box">
+      <span class="icon">💡</span>
+      First-time processing may take 2-3 minutes for long sessions. Future views will load instantly!
+    </div>
+
+    <!-- Error Container (hidden by default) -->
+    <div class="error-container" id="errorContainer">
+      <div class="error-message" id="errorMessage">
+        An error occurred while processing the transcript.
+      </div>
+      <button class="retry-button" onclick="location.reload()">Try Again</button>
+    </div>
+
+    <!-- Cancel Link -->
+    <a href="/observability/coaching" class="cancel-link">← Back to Sessions</a>
+  </div>
+
+  <script>
+    const sessionId = '<%= sessionId %>';
+    const startTime = Date.now();
+    const POLL_INTERVAL = 2000; // Poll every 2 seconds
+    const MAX_POLL_TIME = 300000; // Max 5 minutes (GPT can take 2+ minutes for long transcripts)
+    const EXPECTED_TIME = 150000; // Expected ~2.5 minutes for GPT processing (long transcripts)
+
+    // Time-based progress (more accurate than poll-based)
+    // GPT processing typically takes 90-180 seconds for 30+ minute transcripts
+    const TIME_STAGES = [
+      { time: 0, step: 1, progress: 10 },       // 0s - Fetching
+      { time: 5000, step: 2, progress: 15 },    // 5s - Analyzing
+      { time: 15000, step: 3, progress: 25 },   // 15s - Fixing spacing
+      { time: 35000, step: 4, progress: 40 },   // 35s - Detecting English (critical step)
+      { time: 60000, step: 5, progress: 55 },   // 60s - Section headers
+      { time: 90000, step: 6, progress: 70 },   // 90s - Summary
+      { time: 120000, step: 6, progress: 85 },  // 120s - Still working
+      { time: 150000, step: 6, progress: 92 },  // 150s - Almost there
+      { time: 180000, step: 6, progress: 95 },  // 180s - Long transcript
+    ];
+
+    function getProgressForTime(elapsed) {
+      // Find the appropriate stage based on elapsed time
+      let stage = TIME_STAGES[0];
+      for (const s of TIME_STAGES) {
+        if (elapsed >= s.time) {
+          stage = s;
+        } else {
+          break;
+        }
+      }
+
+      // Smooth interpolation between stages
+      const stageIndex = TIME_STAGES.indexOf(stage);
+      if (stageIndex < TIME_STAGES.length - 1) {
+        const nextStage = TIME_STAGES[stageIndex + 1];
+        const stageProgress = (elapsed - stage.time) / (nextStage.time - stage.time);
+        const interpolatedProgress = stage.progress + (nextStage.progress - stage.progress) * Math.min(stageProgress, 1);
+        return { step: stage.step, progress: Math.min(Math.round(interpolatedProgress), 95) };
+      }
+
+      return { step: stage.step, progress: Math.min(stage.progress, 95) };
+    }
+
+    function updateProgress(progress, currentStep) {
+      document.getElementById('progressBar').style.width = progress + '%';
+      document.getElementById('progressText').textContent = progress + '%';
+
+      // Update steps
+      for (let i = 1; i <= 6; i++) {
+        const stepEl = document.getElementById('step' + i);
+        const iconEl = stepEl.querySelector('.step-icon');
+
+        if (i < currentStep) {
+          stepEl.className = 'status-step completed';
+          iconEl.className = 'step-icon completed';
+        } else if (i === currentStep) {
+          stepEl.className = 'status-step active';
+          iconEl.className = 'step-icon active';
+        } else {
+          stepEl.className = 'status-step pending';
+          iconEl.className = 'step-icon pending';
+        }
+      }
+
+      // Update time estimate based on expected time
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, Math.round((EXPECTED_TIME - elapsed) / 1000));
+
+      if (elapsed > EXPECTED_TIME * 1.5) {
+        // Taking much longer than expected
+        document.getElementById('timeEstimate').textContent = 'Taking longer than usual... please wait';
+      } else if (remaining <= 0) {
+        document.getElementById('timeEstimate').textContent = 'Almost done...';
+      } else if (remaining <= 10) {
+        document.getElementById('timeEstimate').textContent = 'Finishing up...';
+      } else {
+        document.getElementById('timeEstimate').textContent = `Estimated time: ~${remaining} seconds remaining`;
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('errorContainer').classList.add('show');
+      document.getElementById('errorMessage').textContent = message;
+      document.getElementById('statusTitle').textContent = 'Processing failed';
+    }
+
+    async function pollStatus() {
+      try {
+        const elapsed = Date.now() - startTime;
+
+        // Check if we've exceeded max poll time
+        if (elapsed > MAX_POLL_TIME) {
+          showError('Processing is taking longer than expected. Please try again later.');
+          return;
+        }
+
+        const response = await fetch(`/observability/api/transcript-status/${sessionId}`);
+        const data = await response.json();
+
+        if (data.status === 'completed') {
+          // Redirect to the transcript page
+          document.getElementById('statusTitle').textContent = 'Redirecting...';
+          updateProgress(100, 7); // All steps complete
+          window.location.href = `/observability/proxy/transcript/${sessionId}?processed=true`;
+          return;
+        }
+
+        if (data.status === 'error') {
+          showError(data.error || 'An error occurred while processing the transcript.');
+          return;
+        }
+
+        // Handle 'not_started' status (can happen if server restarted and lost in-memory state)
+        if (data.status === 'not_started') {
+          // Redirect to transcript page without ?processed=true to restart processing
+          console.log('Status is not_started - restarting processing...');
+          window.location.href = `/observability/proxy/transcript/${sessionId}`;
+          return;
+        }
+
+        // Still processing - update progress based on elapsed time
+        const { step, progress } = getProgressForTime(elapsed);
+        updateProgress(progress, step);
+
+        // Continue polling
+        setTimeout(pollStatus, POLL_INTERVAL);
+      } catch (error) {
+        console.error('Poll error:', error);
+        // Retry on network error
+        setTimeout(pollStatus, POLL_INTERVAL);
+      }
+    }
+
+    // Start polling immediately
+    pollStatus();
+
+    // Also update progress more frequently for smoother animation
+    setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const { step, progress } = getProgressForTime(elapsed);
+      updateProgress(progress, step);
+    }, 500);
+  </script>
+</body>
+</html>

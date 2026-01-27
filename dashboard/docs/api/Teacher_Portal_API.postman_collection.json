@@ -1,0 +1,318 @@
+{
+  "info": {
+    "name": "Teacher Portal API",
+    "description": "Complete API collection for Rumi Teacher Portal\n\nAuthentication Flow:\n1. User receives invitation link → frontend calls /validate-token\n2. User sets password → /setup\n3. User logs in → /login\n4. Access protected endpoints (dashboard, lesson-plans, etc.)\n5. Password reset → /request-reset → /verify-reset-code → /reset-password\n\nAll authenticated endpoints require session cookie.\n\nMobile-First Design: All endpoints optimized for mobile clients.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "portal_api",
+      "value": "{{base_url}}/api/portal",
+      "type": "string"
+    },
+    {
+      "key": "test_phone",
+      "value": "923001234567",
+      "type": "string"
+    },
+    {
+      "key": "test_token",
+      "value": "your-invitation-token-here",
+      "type": "string"
+    },
+    {
+      "key": "test_session_id",
+      "value": "coaching-session-uuid-here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "1. Validate Invitation Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{test_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{portal_api}}/validate-token",
+              "host": ["{{portal_api}}"],
+              "path": ["validate-token"]
+            },
+            "description": "Validate invitation token before showing setup form.\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"user\": {\n    \"firstName\": \"Ahmed\",\n    \"lastName\": \"Khan\",\n    \"phoneNumber\": \"923001234567\"\n  }\n}\n```\n\n**Error Responses**:\n- 400: Token expired\n- 404: Invalid token\n- 400: Portal already activated (redirectToLogin: true)"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Complete Portal Setup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{test_token}}\",\n  \"password\": \"securePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{portal_api}}/setup",
+              "host": ["{{portal_api}}"],
+              "path": ["setup"]
+            },
+            "description": "Complete portal setup by setting password.\n\n**Password Requirements**:\n- Minimum 8 characters\n- At least one number\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"message\": \"Portal setup complete! Redirecting to dashboard...\"\n}\n```\n\nCreates session cookie automatically.\n\n**Error Responses**:\n- 400: Password too short or missing number\n- 400: Token expired\n- 404: Invalid token"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Login to Portal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\",\n  \"password\": \"securePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{portal_api}}/login",
+              "host": ["{{portal_api}}"],
+              "path": ["login"]
+            },
+            "description": "Log in to teacher portal.\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"user\": {\n    \"firstName\": \"Ahmed\"\n  }\n}\n```\n\nCreates session cookie.\n\n**Rate Limiting**: 5 attempts per 15 minutes\n\n**Error Responses**:\n- 401: Invalid credentials\n- 429: Too many attempts"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{portal_api}}/logout",
+              "host": ["{{portal_api}}"],
+              "path": ["logout"]
+            },
+            "description": "Log out and destroy session.\n\n**Requires**: Authentication\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"message\": \"Logged out successfully\"\n}\n```"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints for portal access"
+    },
+    {
+      "name": "Password Reset",
+      "item": [
+        {
+          "name": "1. Request Reset Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{portal_api}}/request-reset",
+              "host": ["{{portal_api}}"],
+              "path": ["request-reset"]
+            },
+            "description": "Request password reset code via WhatsApp.\n\n**Flow**:\n1. User enters phone number\n2. 6-digit code sent to WhatsApp\n3. Code expires in 10 minutes\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"message\": \"Reset code sent to your WhatsApp. Please check your messages.\"\n}\n```\n\n**Rate Limiting**: Cannot request new code while previous one is valid (10 min)\n\n**Error Responses**:\n- 404: No portal account found\n- 429: Previous code still valid"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Verify Reset Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\",\n  \"code\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{portal_api}}/verify-reset-code",
+              "host": ["{{portal_api}}"],
+              "path": ["verify-reset-code"]
+            },
+            "description": "Verify the 6-digit reset code.\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"message\": \"Code verified. You can now reset your password.\"\n}\n```\n\nStores userId in session for next step.\n\n**Error Responses**:\n- 400: Invalid code\n- 400: Code expired"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newSecurePass456\"\n}"
+            },
+            "url": {
+              "raw": "{{portal_api}}/reset-password",
+              "host": ["{{portal_api}}"],
+              "path": ["reset-password"]
+            },
+            "description": "Reset password after code verification.\n\n**Requires**: Must call /verify-reset-code first\n\n**Password Requirements**:\n- Minimum 8 characters\n- At least one number\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"message\": \"Password reset successful. Please log in with your new password.\"\n}\n```\n\n**Error Responses**:\n- 401: Code not verified\n- 400: Password validation failed"
+          },
+          "response": []
+        }
+      ],
+      "description": "Password reset flow via WhatsApp verification"
+    },
+    {
+      "name": "Dashboard Data",
+      "item": [
+        {
+          "name": "Get Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{portal_api}}/dashboard",
+              "host": ["{{portal_api}}"],
+              "path": ["dashboard"]
+            },
+            "description": "Get dashboard overview with stats and recent activity.\n\n**Requires**: Authentication\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"user\": {\n    \"firstName\": \"Ahmed\",\n    \"lastName\": \"Khan\",\n    \"phoneNumber\": \"923001234567\"\n  },\n  \"stats\": {\n    \"totalLessonPlans\": 12,\n    \"totalCoachingSessions\": 3\n  },\n  \"recentLessonPlans\": [\n    {\n      \"id\": \"uuid\",\n      \"title\": \"Photosynthesis Lesson\",\n      \"created_at\": \"2025-01-15T10:30:00Z\",\n      \"content_type\": \"lesson_plan\",\n      \"gamma_url\": \"https://gamma.app/...\"\n    }\n  ],\n  \"recentCoachingSession\": {\n    \"id\": \"uuid\",\n    \"date\": \"2025-01-14T14:00:00Z\",\n    \"score\": 87,\n    \"maxScore\": 118\n  }\n}\n```\n\n**Mobile Optimization**: Includes only last 3 lesson plans and 1 coaching session for fast load."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Lesson Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{portal_api}}/lesson-plans?page=1&limit=20&type=lesson_plan",
+              "host": ["{{portal_api}}"],
+              "path": ["lesson-plans"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page (default: 20)"
+                },
+                {
+                  "key": "type",
+                  "value": "lesson_plan",
+                  "description": "Filter by type: 'lesson_plan' or 'presentation' (optional)"
+                }
+              ]
+            },
+            "description": "Get all lesson plans with pagination and filtering.\n\n**Requires**: Authentication\n\n**Query Parameters**:\n- `page` (optional): Page number, default 1\n- `limit` (optional): Items per page, default 20\n- `type` (optional): Filter by 'lesson_plan' or 'presentation'\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"lessonPlans\": [\n    {\n      \"id\": \"uuid\",\n      \"title\": \"Photosynthesis\",\n      \"subject\": \"Biology\",\n      \"grade_level\": \"Grade 7\",\n      \"content_type\": \"lesson_plan\",\n      \"gamma_url\": \"https://gamma.app/...\",\n      \"pdf_url\": \"https://storage.com/...\",\n      \"created_at\": \"2025-01-15T10:30:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 12,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 1\n  }\n}\n```\n\n**Mobile Optimization**: Paginated for efficient mobile loading."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Coaching Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{portal_api}}/coaching-sessions?page=1&limit=20",
+              "host": ["{{portal_api}}"],
+              "path": ["coaching-sessions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get all coaching sessions with summary data.\n\n**Requires**: Authentication\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"sessions\": [\n    {\n      \"id\": \"uuid\",\n      \"date\": \"2025-01-14T14:00:00Z\",\n      \"duration\": 2400,\n      \"overallScore\": 87,\n      \"maxScore\": 118,\n      \"percentage\": 73.7\n    }\n  ],\n  \"pagination\": {\n    \"total\": 3,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 1\n  }\n}\n```\n\n**Mobile Optimization**: Returns summary data only, full details on separate endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Coaching Session Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{portal_api}}/coaching-session/{{test_session_id}}",
+              "host": ["{{portal_api}}"],
+              "path": ["coaching-session", "{{test_session_id}}"]
+            },
+            "description": "Get full coaching session analysis.\n\n**Requires**: Authentication\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"session\": {\n    \"id\": \"uuid\",\n    \"date\": \"2025-01-14T14:00:00Z\",\n    \"duration\": 2400,\n    \"audioUrl\": \"https://storage.com/audio.mp3\",\n    \"transcript\": \"Full transcript text...\",\n    \"analysisData\": {\n      \"overall_score\": {\n        \"points\": 87,\n        \"max_points\": 118,\n        \"percentage\": 73.7\n      },\n      \"goal_scores\": [\n        {\n          \"goal\": \"Formative Assessment\",\n          \"points\": 15,\n          \"max_points\": 20,\n          \"percentage\": 75.0\n        }\n      ],\n      \"criterion_scores\": [...],\n      \"strengths\": [\"Clear objectives\", \"Real-world examples\"],\n      \"growth_opportunities\": [\"Increase wait time\", \"More collaboration\"],\n      \"recommendations\": [...]\n    },\n    \"reportPdfUrl\": \"https://storage.com/report.pdf\"\n  }\n}\n```\n\n**Security**: Returns only sessions belonging to authenticated user.\n\n**Error**: 404 if session not found or doesn't belong to user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Coaching Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{portal_api}}/coaching-analytics",
+              "host": ["{{portal_api}}"],
+              "path": ["coaching-analytics"]
+            },
+            "description": "Get coaching score trends and analytics.\n\n**Requires**: Authentication\n\n**Success Response (200)**:\n```json\n{\n  \"success\": true,\n  \"analytics\": {\n    \"overallScoreTrend\": [\n      {\n        \"date\": \"2025-01-10T10:00:00Z\",\n        \"score\": 82,\n        \"percentage\": 69.5\n      },\n      {\n        \"date\": \"2025-01-14T14:00:00Z\",\n        \"score\": 87,\n        \"percentage\": 73.7\n      }\n    ],\n    \"goalAreaBreakdown\": [\n      {\n        \"name\": \"Formative Assessment\",\n        \"score\": 15,\n        \"maxScore\": 20,\n        \"percentage\": 75.0\n      },\n      {\n        \"name\": \"Student Engagement\",\n        \"score\": 14,\n        \"maxScore\": 20,\n        \"percentage\": 70.0\n      }\n    ],\n    \"insights\": {\n      \"totalSessions\": 3,\n      \"averageScore\": 84.3,\n      \"improvement\": 5.0,\n      \"bestGoalArea\": \"Formative Assessment\",\n      \"focusArea\": \"Debrief & Reflection\"\n    }\n  }\n}\n```\n\n**Mobile Optimization**: Data formatted for ApexCharts (line and bar charts).\n\n**Empty State**: Returns empty arrays if no coaching sessions completed."
+          },
+          "response": []
+        }
+      ],
+      "description": "Protected endpoints for accessing teacher data"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Sessions are managed via cookies",
+          "// No manual token management needed"
+        ]
+      }
+    }
+  ]
+}

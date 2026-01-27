@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  </style>
+</head>
+<body class="bg-background">
+  <!-- Navigation -->
+  <!-- Navigation -->
+  <%- include("partials/navigation", { currentPage: "funnel", username: username, userRole: userRole }) %>
+
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-foreground">Funnel Analytics</h2>
+        <p class="text-sm text-muted-foreground">Website → CTA → Chat → Registration</p>
+      </div>
+
+      <!-- Funnel Stage Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <!-- Stage 1: Website Visits -->
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg rounded-lg overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-blue-100 truncate">1. Website Visits</dt>
+            <dd class="mt-1 text-3xl font-semibold text-white"><%= funnelMetrics.counts.websiteVisits %></dd>
+            <p class="mt-2 text-xs text-blue-100">Starting point</p>
+          </div>
+        </div>
+
+        <!-- Stage 2: CTA Clicks -->
+        <div class="bg-gradient-to-br from-green-500 to-green-600 shadow-lg rounded-lg overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-green-100 truncate">2. CTA Clicks</dt>
+            <dd class="mt-1 text-3xl font-semibold text-white"><%= funnelMetrics.counts.ctaClicks %></dd>
+            <p class="mt-2 text-xs text-green-100"><%= funnelMetrics.conversionRates.visitToCta %>% from visits</p>
+          </div>
+        </div>
+
+        <!-- Stage 3: Chat Starts -->
+        <div class="bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg rounded-lg overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-amber-100 truncate">3. Chat Starts</dt>
+            <dd class="mt-1 text-3xl font-semibold text-white"><%= funnelMetrics.counts.chatStarts %></dd>
+            <p class="mt-2 text-xs text-amber-100"><%= funnelMetrics.conversionRates.ctaToChat %>% from clicks</p>
+          </div>
+        </div>
+
+        <!-- Stage 4: Registrations -->
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg rounded-lg overflow-hidden">
+          <div class="px-4 py-5 sm:p-6">
+            <dt class="text-sm font-medium text-purple-100 truncate">4. Registrations</dt>
+            <dd class="mt-1 text-3xl font-semibold text-white"><%= funnelMetrics.counts.registrations %></dd>
+            <p class="mt-2 text-xs text-purple-100"><%= funnelMetrics.conversionRates.chatToRegistration %>% from chats</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overall Conversion Rate -->
+      <div class="card-primary overflow-hidden mb-8">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-foreground mb-2">Overall Conversion Rate</h3>
+            <p class="text-5xl font-bold text-indigo-600"><%= funnelMetrics.conversionRates.overall %>%</p>
+            <p class="text-sm text-muted-foreground mt-2">From website visit to registration</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Funnel Visualization Chart (Inverted Pyramid) -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:px-6 border-b border-border">
+            <h3 class="text-lg font-medium text-foreground">Conversion Funnel</h3>
+          </div>
+          <div class="px-4 py-5 sm:p-6" style="height: 400px;">
+            <div id="funnelChart"></div>
+          </div>
+        </div>
+
+        <!-- Traffic Sources Chart -->
+        <div class="card-primary overflow-hidden">
+          <div class="px-4 py-5 sm:px-6 border-b border-border">
+            <h3 class="text-lg font-medium text-foreground">Traffic Sources</h3>
+          </div>
+          <div class="px-4 py-5 sm:p-6" style="height: 400px;">
+            <% if (trafficSources && trafficSources.length > 0) { %>
+              <canvas id="trafficSourcesChart"></canvas>
+            <% } else { %>
+              <div class="flex items-center justify-center h-full">
+                <div class="text-center">
+                  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <p class="mt-4 text-muted-foreground">No traffic data available yet.</p>
+                  <p class="mt-1 text-sm text-gray-400">Data will appear once users visit your website</p>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Trends Chart -->
+      <div class="card-primary overflow-hidden mb-8">
+        <div class="px-4 py-5 sm:px-6 border-b border-border">
+          <h3 class="text-lg font-medium text-foreground">Daily Trends (Last <%= selectedDays %> Days)</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <canvas id="dailyTrendsChart" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Dropoff Analysis Table -->
+      <div class="card-primary overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 border-b border-border">
+          <h3 class="text-lg font-medium text-foreground">Dropoff Analysis</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-border">
+              <thead class="bg-background">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Stage</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Count</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Dropoff</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Conversion Rate</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-border">
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Website Visits
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= funnelMetrics.counts.websiteVisits %></td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">-</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">100%</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      CTA Clicks
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= funnelMetrics.counts.ctaClicks %></td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600"><%= funnelMetrics.dropoff.afterVisit %> users</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= funnelMetrics.conversionRates.visitToCta %>%</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                      Chat Starts
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= funnelMetrics.counts.chatStarts %></td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600"><%= funnelMetrics.dropoff.afterCta %> users</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= funnelMetrics.conversionRates.ctaToChat %>%</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      Registrations
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= funnelMetrics.counts.registrations %></td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600"><%= funnelMetrics.dropoff.afterChat %> users</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground"><%= funnelMetrics.conversionRates.chatToRegistration %>%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts JavaScript -->
+  <script>
+    // Funnel Chart (Inverted Pyramid using ApexCharts)
+    const funnelOptions = {
+      series: [
+        {
+          name: 'Users',
+          data: [
+            <%= funnelMetrics.counts.websiteVisits %>,
+            <%= funnelMetrics.counts.ctaClicks %>,
+            <%= funnelMetrics.counts.chatStarts %>,
+            <%= funnelMetrics.counts.registrations %>
+          ]
+        }
+      ],
+      chart: {
+        type: 'bar',
+        height: 400,
+        toolbar: {
+          show: false
+        }
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 6,
+          horizontal: true,
+          isFunnel: true,
+          distributed: true
+        }
+      },
+      colors: [
+        '#3B82F6',  // blue-500
+        '#10B981',  // green-500
+        '#F59E0B',  // amber-500
+        '#8B5CF6'   // purple-500
+      ],
+      dataLabels: {
+        enabled: true,
+        formatter: function(val, opt) {
+          const rates = [
+            '100%',
+            '<%= funnelMetrics.conversionRates.visitToCta %>%',
+            '<%= funnelMetrics.conversionRates.ctaToChat %>%',
+            '<%= funnelMetrics.conversionRates.chatToRegistration %>%'
+          ];
+          return val + ' users (' + rates[opt.dataPointIndex] + ')';
+        },
+        offsetX: 0,
+        style: {
+          fontSize: '13px',
+          fontWeight: 600,
+          colors: ['#1f2937']  // gray-800 for better readability outside bars
+        },
+        background: {
+          enabled: true,
+          foreColor: '#fff',
+          padding: 6,
+          borderRadius: 4,
+          borderWidth: 1,
+          borderColor: '#e5e7eb',
+          opacity: 0.95
+        }
+      },
+      xaxis: {
+        categories: ['Website Visits', 'CTA Clicks', 'Chat Starts', 'Registrations']
+      },
+      yaxis: {
+        labels: {
+          show: true,
+          style: {
+            fontSize: '13px',
+            fontWeight: 500,
+            colors: ['#374151']
+          }
+        }
+      },
+      legend: {
+        show: false
+      },
+      tooltip: {
+        enabled: true,
+        y: {
+          formatter: function(value, { seriesIndex, dataPointIndex, w }) {
+            const rates = [
+              '100%',
+              '<%= funnelMetrics.conversionRates.visitToCta %>%',
+              '<%= funnelMetrics.conversionRates.ctaToChat %>%',
+              '<%= funnelMetrics.conversionRates.chatToRegistration %>%'
+            ];
+            return value + ' users (Conversion Rate: ' + rates[dataPointIndex] + ')';
+          }
+        }
+      }
+    };
+
+    const funnelChart = new ApexCharts(document.querySelector("#funnelChart"), funnelOptions);
+    funnelChart.render();
+
+    // Traffic Sources Pie Chart
+    <% if (trafficSources && trafficSources.length > 0) { %>
+    const trafficSourcesCtx = document.getElementById('trafficSourcesChart').getContext('2d');
+    const trafficSourcesData = <%- JSON.stringify(trafficSources) %>;
+
+    new Chart(trafficSourcesCtx, {
+      type: 'doughnut',
+      data: {
+        labels: trafficSourcesData.map(d => d.source),
+        datasets: [{
+          data: trafficSourcesData.map(d => d.count),
+          backgroundColor: [
+            'rgb(59, 130, 246)',
+            'rgb(16, 185, 129)',
+            'rgb(245, 158, 11)',
+            'rgb(239, 68, 68)'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+    <% } %>
+
+    // Daily Trends Chart
+    const dailyTrendsCtx = document.getElementById('dailyTrendsChart').getContext('2d');
+    const dailyMetricsData = <%- JSON.stringify(dailyMetrics) %>;
+
+    new Chart(dailyTrendsCtx, {
+      type: 'line',
+      data: {
+        labels: dailyMetricsData.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+        datasets: [
+          {
+            label: 'Visits',
+            data: dailyMetricsData.map(d => d.visits),
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: 'CTA Clicks',
+            data: dailyMetricsData.map(d => d.clicks),
+            borderColor: 'rgb(16, 185, 129)',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: 'Chats',
+            data: dailyMetricsData.map(d => d.chats),
+            borderColor: 'rgb(245, 158, 11)',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: 'Registrations',
+            data: dailyMetricsData.map(d => d.registrations),
+            borderColor: 'rgb(139, 92, 246)',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              padding: 15,
+              font: {
+                size: 12
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleFont: {
+              size: 14
+            },
+            bodyFont: {
+              size: 13
+            },
+            displayColors: true
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              precision: 0
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

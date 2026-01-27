@@ -1,0 +1,57 @@
+name: Documentation Validation
+
+on:
+  pull_request:
+    branches: [main, staging]
+    paths:
+      - 'CLAUDE.md'
+      - '.claude/**'
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check CLAUDE.md size
+        run: |
+          if [ -f CLAUDE.md ]; then
+            lines=$(wc -l < CLAUDE.md | tr -d ' ')
+            if [ "$lines" -gt 100 ]; then
+              echo "::error::CLAUDE.md is $lines lines (max 100)"
+              exit 1
+            fi
+            echo "CLAUDE.md: $lines lines (OK)"
+          fi
+
+      - name: Check for inline credentials
+        run: |
+          if grep -q "PGPASSWORD\|Kill_Rex" CLAUDE.md 2>/dev/null; then
+            echo "::error::Credentials found in CLAUDE.md - move to 03_ACCESS_CREDENTIALS.md"
+            exit 1
+          fi
+          echo "No inline credentials (OK)"
+
+      - name: Check for hardcoded paths
+        run: |
+          if grep -r "/Users/" .claude/agents/ 2>/dev/null | grep -v "Binary"; then
+            echo "::error::Hardcoded /Users/ paths found in agents"
+            exit 1
+          fi
+          echo "No hardcoded paths (OK)"
+
+      - name: Validate README routers exist
+        run: |
+          required_readmes=".claude/README.md .claude/agents/README.md .claude/skills/README.md"
+          missing=0
+          for readme in $required_readmes; do
+            if [ ! -f "$readme" ]; then
+              echo "::warning::Missing README: $readme"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "::warning::$missing README files missing"
+          else
+            echo "All required READMEs present (OK)"
+          fi

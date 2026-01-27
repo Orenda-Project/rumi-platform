@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <%- include("partials/navigation", { currentPage: "broadcast-history", username: username, userRole: userRole }) %>
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Broadcast History
+        </h1>
+        <p class="text-gray-600 mt-2">View past broadcast messages and their delivery stats</p>
+      </div>
+      <a href="/observability/broadcast" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+        New Broadcast
+      </a>
+    </div>
+
+    <!-- Broadcasts Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Filters</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% if (broadcasts && broadcasts.length > 0) { %>
+            <% broadcasts.forEach((broadcast) => { %>
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">
+                    <%= new Date(broadcast.created_at).toLocaleDateString() %>
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    <%= new Date(broadcast.created_at).toLocaleTimeString() %>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm text-gray-900 max-w-xs truncate" title="<%= broadcast.message_content %>">
+                    <%= broadcast.message_content?.substring(0, 50) %><%= broadcast.message_content?.length > 50 ? '...' : '' %>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-600">
+                    <% const filters = broadcast.filters || {}; %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                      <%= filters.activity === 'all' ? 'All users' : filters.activity === '24h' ? '24h active' : filters.activity === '7d' ? '7d active' : '30d active' %>
+                    </span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 ml-1">
+                      <%= filters.country === 'all' ? 'All' : filters.country === '92' ? 'PK' : 'LK' %>
+                    </span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <%
+                    let statusColor = 'gray';
+                    let statusText = broadcast.status || 'unknown';
+
+                    switch(broadcast.status) {
+                      case 'completed': statusColor = 'green'; statusText = 'Completed'; break;
+                      case 'completed_with_errors': statusColor = 'yellow'; statusText = 'With Errors'; break;
+                      case 'sending': statusColor = 'blue'; statusText = 'Sending'; break;
+                      case 'template_pending': statusColor = 'blue'; statusText = 'Pending Approval'; break;
+                      case 'template_rejected': statusColor = 'red'; statusText = 'Rejected'; break;
+                      case 'template_timeout': statusColor = 'red'; statusText = 'Timeout'; break;
+                      case 'failed': statusColor = 'red'; statusText = 'Failed'; break;
+                      case 'cancelled': statusColor = 'gray'; statusText = 'Cancelled'; break;
+                    }
+                  %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-<%= statusColor %>-100 text-<%= statusColor %>-800">
+                    <%= statusText %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm">
+                    <span class="text-green-600"><%= broadcast.sent_count || 0 %></span>
+                    <span class="text-gray-400">/</span>
+                    <span class="text-gray-600"><%= broadcast.total_recipients || 0 %></span>
+                    <% if (broadcast.failed_count > 0) { %>
+                      <span class="text-red-500 ml-1">(<%= broadcast.failed_count %> failed)</span>
+                    <% } %>
+                  </div>
+                  <% if (broadcast.delivered_count > 0 || broadcast.read_count > 0) { %>
+                    <div class="text-xs text-gray-500">
+                      <span title="Delivered"><%= broadcast.delivered_count || 0 %> delivered</span>
+                      <span class="mx-1">|</span>
+                      <span title="Read"><%= broadcast.read_count || 0 %> read</span>
+                    </div>
+                  <% } %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <%= broadcast.admin_username || 'Unknown' %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="6" class="px-6 py-12 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No broadcasts yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating your first broadcast message.</p>
+                <div class="mt-6">
+                  <a href="/observability/broadcast" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    New Broadcast
+                  </a>
+                </div>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

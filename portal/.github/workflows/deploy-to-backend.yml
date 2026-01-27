@@ -1,0 +1,92 @@
+name: Deploy Portal Frontend to Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'vite.config.ts'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Portal Frontend Repo
+        uses: actions/checkout@v4
+        with:
+          path: portal-frontend
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: portal-frontend/package-lock.json
+
+      - name: 📦 Install Dependencies
+        working-directory: portal-frontend
+        run: npm ci
+
+      - name: 🏗️ Build Frontend
+        working-directory: portal-frontend
+        run: npm run build
+
+      - name: 📥 Checkout Backend Repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.BACKEND_REPO || 'your-org/rumi-platform' }}
+          token: ${{ secrets.GH_PAT }}
+          path: backend
+
+      - name: 🗑️ Clear Old Frontend Build
+        run: |
+          rm -rf backend/portal-frontend/dist/*
+          mkdir -p backend/portal-frontend/dist
+
+      - name: 📋 Copy New Build to Backend
+        run: |
+          cp -r portal-frontend/dist/* backend/portal-frontend/dist/
+          echo "✅ Copied build files to backend repo"
+
+      - name: 📊 Show Changes
+        working-directory: backend
+        run: |
+          echo "Changed files:"
+          git status --short portal-frontend/dist/
+
+      - name: 💾 Commit and Push to Backend
+        working-directory: backend
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add portal-frontend/dist/
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🚀 Auto-deploy: Update portal frontend from Lovable
+
+            Source: ${{ github.repository }}@${{ github.sha }}
+            Triggered by: ${{ github.actor }}
+            Workflow: ${{ github.workflow }}"
+
+            git push
+            echo "✅ Successfully pushed to backend repo"
+          fi
+
+      - name: 🎉 Deployment Summary
+        run: |
+          echo "================================================"
+          echo "✅ Portal frontend deployed successfully!"
+          echo "================================================"
+          echo "📦 Frontend repo: portal/"
+          echo "🚀 Backend repo: dashboard/"
+          echo "⏱️ Railway will auto-deploy in ~2 minutes"
+          echo "🌐 Live at your configured portal domain"
+          echo "================================================"

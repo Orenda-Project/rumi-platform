@@ -1,0 +1,14 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+# plt-mem01: Added --max-old-space-size to limit V8 heap memory
+# Prevents OOM crashes by forcing garbage collection earlier
+# Full memory/CPU limits should be configured in Railway Dashboard
+# Uses entrypoint.js to support both main server and SQS worker modes
+# Set WORKER_MODE=sqs for worker service
+startCommand = "node entrypoint.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 5

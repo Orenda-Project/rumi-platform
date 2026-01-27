@@ -1,0 +1,179 @@
+{
+  "nav": {
+    "features": "Características",
+    "meetRumi": "Conoce a Rumi"
+  },
+  "hero": {
+    "title": "No estás",
+    "titleContinued": "enseñando solo",
+    "subtitle": "Tu compañero de enseñanza 24/7. Haz preguntas, comparte dificultades, obtén apoyo—en cualquier momento, a través de WhatsApp.",
+    "meetRumi": "Conoce a Rumi",
+    "seeHowItWorks": "Ver Cómo Funciona"
+  },
+  "lonelyTruth": {
+    "title": "La enseñanza es uno de los trabajos más importantes del mundo.",
+    "titleContinued": "Y uno de los más solitarios.",
+    "description": "Planeas lecciones a medianoche. Manejas desafíos del aula solo. Tomas decisiones en segundos sin respaldo. Lo das todo por tus estudiantes—¿pero quién está ahí para ti?",
+    "conclusion": "Por eso construimos Rumi. No como otra herramienta. Como alguien que aparece."
+  },
+  "alwaysThere": {
+    "title": "Tu compañero, dondequiera que te lleve la enseñanza",
+    "moments": [
+      {
+        "title": "En el momento",
+        "description": "¿Un estudiante hace una pregunta de la que no estás seguro? Envía un mensaje a Rumi allí mismo en clase. Obtén orientación en segundos, no en días."
+      },
+      {
+        "title": "Tarde en la noche",
+        "description": "¿Planificando la lección de mañana a las 11 pm? Envía un mensaje de voz a Rumi. Piensa en voz alta, obtén retroalimentación inmediata. Como hablar con un mentor que nunca duerme."
+      },
+      {
+        "title": "Cuando estás atascado",
+        "description": "¿El manejo del aula se sale de control? ¿Te sientes abrumado? Compártelo. Sin juicios. Solo comprensión y ayuda práctica."
+      }
+    ]
+  },
+  "realSupport": {
+    "title": "Más que respuestas. Apoyo real.",
+    "features": [
+      {
+        "title": "Chatea en Cualquier Momento, en Cualquier Formato",
+        "subtitle": "Texto o voz - Tu elección, siempre",
+        "description": "Envía preguntas de texto rápidas durante la clase, graba mensajes de voz mientras conduces a casa, u obtén respuestas en el mismo formato que enviaste.",
+        "bullets": [
+          "Texto para preguntas rápidas",
+          "Voz cuando las manos están ocupadas",
+          "Reflejo de formato"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "¿Pregunta rápida sobre manejo del comportamiento?" },
+          { "from": "rumi", "message": "¡Por supuesto! ¿Qué está pasando?" },
+          { "from": "teacher", "message": "Un estudiante sigue interrumpiendo durante el trabajo en grupo" },
+          { "from": "rumi", "message": "Probemos proximidad + redirección. Acércate cuando comience, redirige con una pregunta sobre la tarea." }
+        ]
+      },
+      {
+        "title": "Habla en Tu Idioma",
+        "subtitle": "Inglés, Urdu, Árabe o Español",
+        "description": "Rumi detecta automáticamente tu idioma y responde naturalmente. Cambia de idioma en cualquier momento. Comprensión verdadera, no solo traducción.",
+        "bullets": [
+          "Detección automática de idioma",
+          "Cambia de idioma en cualquier momento",
+          "Comprensión real del contenido educativo"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "¿Puedes ayudarme con un plan de lección?" },
+          { "from": "rumi", "message": "¡Absolutamente! ¿Qué materia y grado?" },
+          { "from": "teacher", "message": "Actually, speak in Spanish please" },
+          { "from": "rumi", "message": "¡Por supuesto! ¿Qué materia y grado?" }
+        ]
+      },
+      {
+        "title": "Obtén Apoyo para Tu Aula",
+        "subtitle": "Ayuda de enseñanza en tiempo real",
+        "description": "Estrategias de comportamiento estudiantil. Consejos de diferenciación para habilidades mixtas. Ideas de actividades al instante. Ánimo cuando es difícil.",
+        "bullets": [
+          "Estrategias de manejo del aula",
+          "Consejos de diferenciación",
+          "Ideas de actividades bajo demanda",
+          "Ánimo cuando lo necesitas"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "Mis estudiantes avanzados terminan temprano y se aburren" },
+          { "from": "rumi", "message": "Prueba tareas de extensión: mini-investigación, enseñanza entre pares o problemas desafiantes. ¿Quieres ideas específicas para tu materia?" },
+          { "from": "teacher", "message": "Sí por favor, enseño matemáticas de 5to grado" },
+          { "from": "rumi", "message": "¡Perfecto! Aquí hay 3 estrategias..." }
+        ]
+      },
+      {
+        "title": "Planifica Mejores Lecciones, Más Rápido",
+        "subtitle": "Planes de lección y presentaciones generados por IA",
+        "description": "Solicita: \"Generar plan de lección: Fotosíntesis para 5to grado\". Obtén: PDF completo con objetivos, actividades, tiempo, materiales. Toma 60-90 segundos, no 60-90 minutos.",
+        "bullets": [
+          "Planes de lección completos en minutos",
+          "Incluye objetivos y materiales",
+          "Listo para usar o personalizar",
+          "Ahorra horas de planificación"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "Generar plan de lección: fracciones para 3er grado" },
+          { "from": "rumi", "message": "Creando tu plan de lección ahora... 📄" },
+          { "from": "rumi", "message": "¡Listo! Aquí está tu plan de lección completo con actividades prácticas, ayudas visuales y evaluación. [Descargar PDF]" }
+        ]
+      },
+      {
+        "title": "Reflexiona sobre Tu Enseñanza",
+        "subtitle": "Sesiones de coaching para crecimiento más profundo",
+        "description": "Graba 20 minutos de audio del aula. Obtén análisis pedagógico personalizado. Recibe resumen de voz con fortalezas y sugerencias. Sigue tu progreso con el tiempo.",
+        "bullets": [
+          "Análisis del aula basado en audio",
+          "Retroalimentación personalizada",
+          "Resumen de voz que puedes escuchar",
+          "Sigue el crecimiento con el tiempo"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "Grabé la lección de hoy, ¿puedes analizarla?" },
+          { "from": "rumi", "message": "Escucharé y te daré retroalimentación. Esto toma unos 5 minutos..." },
+          { "from": "rumi", "message": "¡Análisis listo! 🎙️ Tu técnica de preguntas fue fuerte. Trabajemos en el tiempo de espera. Aquí hay un resumen de voz de 3 minutos: [Escuchar]" }
+        ]
+      },
+      {
+        "title": "Rumi Recuerda Tus Conversaciones",
+        "subtitle": "Contexto a través de sesiones",
+        "description": "Continúa donde lo dejaste. Hace referencia a discusiones pasadas. Aprende tu estilo de enseñanza y desafíos. No necesitas volver a explicar cada vez.",
+        "bullets": [
+          "Recuerda tu contexto",
+          "Hace referencia a conversaciones pasadas",
+          "Aprende tu estilo de enseñanza",
+          "Continuidad sin problemas"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "¿Cómo funcionó esa estrategia de comportamiento?" },
+          { "from": "rumi", "message": "¿La proximidad + redirección que discutimos la semana pasada? ¿Cómo va con ese estudiante?" },
+          { "from": "teacher", "message": "¡Mucho mejor! ¿Podemos construir sobre eso?" },
+          { "from": "rumi", "message": "¡Genial! Agreguemos refuerzo positivo..." }
+        ]
+      },
+      {
+        "title": "Siempre Aquí, Nunca Juzgando",
+        "subtitle": "Disponibilidad 24/7",
+        "description": "¿Planificación de lecciones a las 11 PM? Rumi está despierto. ¿Ansiedad matutina a las 6 AM? Rumi escucha. No hay \"preguntas tontas\", sin juicios, nunca.",
+        "bullets": [
+          "Disponible 24/7",
+          "Sin preguntas tontas",
+          "Cero juicio",
+          "Solo apoyo"
+        ],
+        "chat": [
+          { "from": "teacher", "message": "Son las 11 PM y todavía estoy planificando la lección de mañana 😓" },
+          { "from": "rumi", "message": "No estás solo. Hagamos esto más fácil. ¿Qué tienes hasta ahora?" },
+          { "from": "teacher", "message": "Solo el tema. Me siento abrumado" },
+          { "from": "rumi", "message": "Está bien. Comienza con un objetivo. ¿Qué es lo más importante que los estudiantes deben aprender?" }
+        ]
+      }
+    ]
+  },
+  "theDifference": {
+    "title": "¿Qué hace diferente a Rumi?",
+    "para1": "Otras herramientas te dan plantillas y recursos. Rumi te da compañía.",
+    "para2": "Recuerda tu conversación. Entiende tu contexto. Responde a lo que realmente estás luchando—no lo que una base de datos cree que necesitas.",
+    "para3": "Piensa en ello como el colega que desearías tener al lado. El mentor que desearías tener. El amigo que enseña y lo entiende.",
+    "conclusion": "Disponible 24/7. Nunca cansado. Nunca juzgando. Siempre ayudando."
+  },
+  "globalTeachers": {
+    "title": "Construido para maestros, por personas que se preocupan por la enseñanza",
+    "para1": "Ya sea que estés enseñando en Pakistán, Perú o Portland. En una escuela de una sola aula o un campus de 2,000 estudiantes. Con tecnología de vanguardia o solo tiza y corazón.",
+    "para2": "Rumi habla tu idioma. Entiende tu contexto. Se adapta a tu realidad.",
+    "conclusion": "Porque cada maestro merece apoyo. Sin excepciones."
+  },
+  "finalCta": {
+    "title": "¿Listo para dejar de enseñar solo?",
+    "subtitle": "Miles de maestros ya tienen a Rumi a su lado.",
+    "subtitleContinued": "Conoce al tuyo hoy.",
+    "cta": "Conoce a Rumi",
+    "note": "Sin tarjeta de crédito. Sin configuración. Solo tú y tu compañero de enseñanza."
+  },
+  "footer": {
+    "copyright": "© 2025 Rumi. Apoyando a maestros en todas partes."
+  }
+}

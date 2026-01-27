@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Digital Coach Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .audio-player {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 12px;
+      color: white;
+    }
+    .pdf-viewer-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 9999;
+    }
+    .pdf-viewer-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pdf-viewer-content {
+      background: white;
+      width: 90%;
+      height: 90%;
+      border-radius: 8px;
+      position: relative;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Navigation -->
+  <nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex">
+          <div class="flex-shrink-0 flex items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Digital Coach</h1>
+          </div>
+          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <a href="/observability/dashboard" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Dashboard
+            </a>
+            <a href="/observability/sessions" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Sessions
+            </a>
+            <a href="/observability/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Users & Chats
+            </a>
+            <a href="/observability/funnel" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Funnel
+            </a>
+            <a href="/observability/api-health" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              API Health
+            </a>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <span class="text-gray-700 mr-4">👤 <%= username %></span>
+          <a href="/observability/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <!-- Back Button -->
+      <div class="mb-6">
+        <a href="/observability/users" class="text-indigo-600 hover:text-indigo-800 flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Back to Users
+        </a>
+      </div>
+
+      <!-- User Info Card -->
+      <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800"><%= user.name || 'Unknown User' %></h2>
+            <p class="text-gray-600 mt-1"><%= user.phone_number %></p>
+            <div class="mt-2 flex items-center space-x-4">
+              <% if (user.grades_taught) { %>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  <%= user.grades_taught %>
+                </span>
+              <% } %>
+              <% if (user.subjects_taught && user.subjects_taught.length > 0) { %>
+                <% user.subjects_taught.forEach(subject => { %>
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <%= subject %>
+                  </span>
+                <% }) %>
+              <% } %>
+              <% if (user.registration_completed) { %>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                  Registered
+                </span>
+              <% } %>
+            </div>
+          </div>
+          <div class="text-right text-sm text-gray-500">
+            <p>Joined: <%= new Date(user.created_at).toLocaleDateString() %></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="mb-4">
+        <nav class="flex space-x-4" aria-label="Tabs">
+          <button onclick="switchTab('conversations')" id="conversations-tab" class="tab-btn bg-indigo-100 text-indigo-700 px-3 py-2 font-medium text-sm rounded-md">
+            Conversations
+          </button>
+          <button onclick="switchTab('coaching')" id="coaching-tab" class="tab-btn text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
+            Coaching Sessions
+          </button>
+          <button onclick="switchTab('lessons')" id="lessons-tab" class="tab-btn text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
+            Lesson Plans
+          </button>
+        </nav>
+      </div>
+
+      <!-- Conversations Tab -->
+      <div id="conversations-content" class="tab-content bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h3 class="text-lg font-medium text-gray-900">Conversation History</h3>
+          <p class="text-sm text-gray-500 mt-1">Showing <%= conversations.length %> messages</p>
+        </div>
+
+        <div class="p-6 space-y-4 max-h-[600px] overflow-y-auto">
+          <% if (conversations && conversations.length > 0) { %>
+            <% conversations.forEach(msg => { %>
+              <div class="flex <%= msg.role === 'user' ? 'justify-end' : 'justify-start' %>">
+                <div class="max-w-[70%]">
+                  <!-- Message Bubble -->
+                  <div class="<%= msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800' %> rounded-lg px-4 py-3 shadow">
+                    <div class="flex items-center mb-1">
+                      <span class="text-xs font-semibold <%= msg.role === 'user' ? 'text-blue-100' : 'text-gray-600' %>">
+                        <%= msg.role === 'user' ? 'User' : 'Bot' %>
+                      </span>
+                      <% if (msg.message_type && msg.message_type !== 'text') { %>
+                        <span class="ml-2 px-2 py-0.5 text-xs rounded <%= msg.role === 'user' ? 'bg-blue-600' : 'bg-gray-300' %>">
+                          <%= msg.message_type %>
+                        </span>
+                      <% } %>
+                    </div>
+
+                    <!-- Voice Message Player -->
+                    <% if (msg.message_type === 'voice' && msg.media_url) { %>
+                      <div class="audio-player mb-2">
+                        <audio controls class="w-full">
+                          <source src="<%= msg.media_url %>" type="<%= msg.mime_type || 'audio/ogg' %>">
+                          Your browser does not support the audio element.
+                        </audio>
+                      </div>
+                    <% } %>
+
+                    <!-- Document/PDF Link -->
+                    <% if (msg.message_type === 'document' && msg.media_url) { %>
+                      <div class="mb-2">
+                        <button onclick="openPdfViewer('<%= msg.media_url %>')" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded flex items-center">
+                          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-5L9 2H4z"></path>
+                          </svg>
+                          View Document
+                        </button>
+                      </div>
+                    <% } %>
+
+                    <!-- Text Content -->
+                    <p class="text-sm whitespace-pre-wrap"><%= msg.content %></p>
+                  </div>
+
+                  <!-- Timestamp -->
+                  <p class="text-xs <%= msg.role === 'user' ? 'text-right' : 'text-left' %> text-gray-500 mt-1 px-1">
+                    <%= new Date(msg.created_at).toLocaleString() %>
+                  </p>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="text-center py-12">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+              </svg>
+              <p class="mt-4 text-gray-500">No conversation history yet</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Coaching Sessions Tab -->
+      <div id="coaching-content" class="tab-content hidden bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h3 class="text-lg font-medium text-gray-900">Coaching Sessions</h3>
+          <p class="text-sm text-gray-500 mt-1">Classroom observation reports and audio</p>
+        </div>
+
+        <div class="p-6">
+          <% if (coachingSessions && coachingSessions.length > 0) { %>
+            <div class="space-y-4">
+              <% coachingSessions.forEach(session => { %>
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <h4 class="text-lg font-medium text-gray-900">Session <%= session.id.substring(0, 8) %></h4>
+                      <p class="text-sm text-gray-500">Status:
+                        <span class="px-2 py-1 rounded-full text-xs font-medium
+                          <%= session.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              session.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800' %>">
+                          <%= session.status %>
+                        </span>
+                      </p>
+                      <p class="text-sm text-gray-500 mt-1">
+                        <%= new Date(session.created_at).toLocaleString() %>
+                      </p>
+                    </div>
+
+                    <div class="flex space-x-2">
+                      <% if (session.audio_url) { %>
+                        <button onclick="playAudio('<%= session.audio_url %>')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm">
+                          🎵 Play Audio
+                        </button>
+                      <% } %>
+
+                      <% if (session.report_pdf_url) { %>
+                        <button onclick="openPdfViewer('<%= session.report_pdf_url %>')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                          📄 View Report
+                        </button>
+                      <% } %>
+                    </div>
+                  </div>
+
+                  <% if (session.analysis_data && session.analysis_data.rubric_scores) { %>
+                    <div class="mt-3 pt-3 border-t border-gray-200">
+                      <p class="text-sm text-gray-600">
+                        Overall Score: <strong><%= session.analysis_data.rubric_scores.overall || 0 %>%</strong>
+                      </p>
+                    </div>
+                  <% } %>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-12">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3m-3 0a9 9 0 110 18 9 9 0 010-18zm9 0a9 9 0 110 18 9 9 0 010-18zm-9 0h3m-3 0V6m0 6v6"></path>
+              </svg>
+              <p class="mt-4 text-gray-500">No coaching sessions yet</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Lesson Plans Tab -->
+      <div id="lessons-content" class="tab-content hidden bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h3 class="text-lg font-medium text-gray-900">Lesson Plans & Presentations</h3>
+          <p class="text-sm text-gray-500 mt-1">Generated teaching materials</p>
+        </div>
+
+        <div class="p-6">
+          <% if (lessonPlans && lessonPlans.length > 0) { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <% lessonPlans.forEach(plan => { %>
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <h4 class="text-lg font-medium text-gray-900"><%= plan.title || 'Untitled' %></h4>
+                  <p class="text-sm text-gray-500">
+                    Type: <span class="font-medium"><%= plan.content_type === 'lesson_plan' ? 'Lesson Plan' : 'Presentation' %></span>
+                  </p>
+                  <p class="text-sm text-gray-500 mt-1">
+                    <%= new Date(plan.created_at).toLocaleDateString() %>
+                  </p>
+
+                  <div class="mt-3 flex space-x-2">
+                    <% if (plan.pdf_url) { %>
+                      <button onclick="openPdfViewer('<%= plan.pdf_url %>')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                        📄 View PDF
+                      </button>
+                    <% } %>
+
+                    <% if (plan.gamma_url) { %>
+                      <a href="<%= plan.gamma_url %>" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm inline-block">
+                        ✨ Open in Gamma
+                      </a>
+                    <% } %>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-12">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+              <p class="mt-4 text-gray-500">No lesson plans generated yet</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Viewer Modal -->
+  <div id="pdfViewerModal" class="pdf-viewer-modal">
+    <div class="pdf-viewer-content">
+      <button onclick="closePdfViewer()" class="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded z-10">
+        Close
+      </button>
+      <iframe id="pdfFrame" src="" class="w-full h-full rounded-lg"></iframe>
+    </div>
+  </div>
+
+  <!-- Audio Player Modal -->
+  <div id="audioPlayerModal" style="display: none;" class="fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50">
+    <div class="flex items-center space-x-4">
+      <button onclick="closeAudioPlayer()" class="text-gray-500 hover:text-gray-700">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      <audio id="globalAudioPlayer" controls class="w-64"></audio>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching functionality
+    function switchTab(tabName) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+
+      // Remove active state from all tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-100', 'text-indigo-700');
+        btn.classList.add('text-gray-500', 'hover:text-gray-700');
+      });
+
+      // Show selected tab content
+      document.getElementById(tabName + '-content').classList.remove('hidden');
+
+      // Activate selected tab button
+      const activeBtn = document.getElementById(tabName + '-tab');
+      activeBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
+      activeBtn.classList.add('bg-indigo-100', 'text-indigo-700');
+    }
+
+    // PDF Viewer functionality
+    function openPdfViewer(pdfUrl) {
+      const modal = document.getElementById('pdfViewerModal');
+      const frame = document.getElementById('pdfFrame');
+
+      // Set the PDF URL
+      frame.src = pdfUrl;
+
+      // Show the modal
+      modal.classList.add('active');
+    }
+
+    function closePdfViewer() {
+      const modal = document.getElementById('pdfViewerModal');
+      const frame = document.getElementById('pdfFrame');
+
+      // Clear the iframe
+      frame.src = '';
+
+      // Hide the modal
+      modal.classList.remove('active');
+    }
+
+    // Audio Player functionality
+    function playAudio(audioUrl) {
+      const modal = document.getElementById('audioPlayerModal');
+      const player = document.getElementById('globalAudioPlayer');
+
+      // Set the audio source
+      player.src = audioUrl;
+
+      // Show the modal
+      modal.style.display = 'block';
+
+      // Play the audio
+      player.play();
+    }
+
+    function closeAudioPlayer() {
+      const modal = document.getElementById('audioPlayerModal');
+      const player = document.getElementById('globalAudioPlayer');
+
+      // Pause and reset the audio
+      player.pause();
+      player.src = '';
+
+      // Hide the modal
+      modal.style.display = 'none';
+    }
+
+    // Close PDF viewer on Escape key
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closePdfViewer();
+      }
+    });
+  </script>
+</body>
+</html>

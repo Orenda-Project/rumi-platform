@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2025-12-25T15:55:00.000Z",
+  "r2BaseUrl": "https://58a6fb2a86d61397895d6b97b73a3ebe.r2.cloudflarestorage.com/digital-coach-audio",
+  "overlayOpacity": 0.85,
+  "fallbackColors": {
+    "letters": "#FFF9E6",
+    "words": "#E6F7FF",
+    "sentences": "#F0FFF0",
+    "paragraph": "#FFF5F5",
+    "story": "#FFF0F5"
+  },
+  "levels": {
+    "letters": [
+      "reading_backgrounds/letters/letters_bg_1.png",
+      "reading_backgrounds/letters/letters_bg_2.png",
+      "reading_backgrounds/letters/letters_bg_3.png",
+      "reading_backgrounds/letters/letters_bg_4.png"
+    ],
+    "words": [
+      "reading_backgrounds/words/words_bg_1.png",
+      "reading_backgrounds/words/words_bg_2.png",
+      "reading_backgrounds/words/words_bg_3.png",
+      "reading_backgrounds/words/words_bg_4.png"
+    ],
+    "sentences": [
+      "reading_backgrounds/sentences/sentences_bg_1.png",
+      "reading_backgrounds/sentences/sentences_bg_2.png",
+      "reading_backgrounds/sentences/sentences_bg_3.png",
+      "reading_backgrounds/sentences/sentences_bg_4.png"
+    ],
+    "paragraph": [
+      "reading_backgrounds/paragraph/paragraph_bg_1.png",
+      "reading_backgrounds/paragraph/paragraph_bg_2.png",
+      "reading_backgrounds/paragraph/paragraph_bg_3.png",
+      "reading_backgrounds/paragraph/paragraph_bg_4.png"
+    ],
+    "story": [
+      "reading_backgrounds/story/story_bg_1.png",
+      "reading_backgrounds/story/story_bg_2.png",
+      "reading_backgrounds/story/story_bg_3.png",
+      "reading_backgrounds/story/story_bg_4.png"
+    ]
+  }
+}

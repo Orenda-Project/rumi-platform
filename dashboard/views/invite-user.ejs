@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Digital Coach Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Navigation -->
+  <nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex">
+          <div class="flex-shrink-0 flex items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Digital Coach</h1>
+          </div>
+          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <a href="/observability/dashboard" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Dashboard
+            </a>
+            <a href="/observability/sessions" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Sessions
+            </a>
+            <a href="/observability/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Users & Chats
+            </a>
+            <a href="/observability/funnel" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Funnel
+            </a>
+            <a href="/observability/api-health" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              API Health
+            </a>
+            <a href="/observability/settings" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Settings
+            </a>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <span class="text-gray-700 mr-4">👤 <%= username %></span>
+          <a href="/observability/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <!-- Back Link -->
+      <div class="mb-6">
+        <a href="/observability/settings" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+          <svg class="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Settings
+        </a>
+      </div>
+
+      <!-- Form Card -->
+      <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-1">
+            Invite New User
+          </h3>
+          <p class="text-sm text-gray-500 mb-6">
+            Send an invitation to a new user to join the dashboard.
+          </p>
+
+          <!-- Success/Error Messages -->
+          <% if (success) { %>
+            <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium">
+                    <%= success %>
+                  </p>
+                </div>
+              </div>
+            </div>
+          <% } %>
+          <% if (error) { %>
+            <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium">
+                    <%= error %>
+                  </p>
+                </div>
+              </div>
+            </div>
+          <% } %>
+
+          <form action="/observability/settings/invite" method="POST" class="space-y-6">
+            <!-- Email Input -->
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                required
+                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="user@example.com"
+              >
+              <p class="mt-1 text-sm text-gray-500">
+                The user will receive an invitation email to set up their account.
+              </p>
+            </div>
+
+            <!-- Role Selection -->
+            <div>
+              <label for="role" class="block text-sm font-medium text-gray-700 mb-1">
+                User Role
+              </label>
+              <select
+                name="role"
+                id="role"
+                required
+                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              >
+                <option value="viewer">Viewer - Read-only access</option>
+                <option value="admin">Admin - Full access including user management</option>
+              </select>
+            </div>
+
+            <!-- Role Descriptions -->
+            <div class="bg-gray-50 rounded-lg p-4">
+              <h4 class="text-sm font-medium text-gray-900 mb-3">Role Permissions:</h4>
+              <div class="space-y-3">
+                <div>
+                  <p class="text-sm font-medium text-gray-700">👁 Viewer</p>
+                  <ul class="mt-1 text-sm text-gray-500 list-disc list-inside">
+                    <li>View all dashboard analytics and reports</li>
+                    <li>Access conversation history</li>
+                    <li>Read-only access to all features</li>
+                    <li>Change their own password</li>
+                  </ul>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">👤 Admin</p>
+                  <ul class="mt-1 text-sm text-gray-500 list-disc list-inside">
+                    <li>All viewer permissions</li>
+                    <li>Invite and manage other users</li>
+                    <li>Change user roles</li>
+                    <li>Deactivate user accounts</li>
+                    <li>Access to system settings</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4">
+              <button
+                type="submit"
+                class="w-full inline-flex justify-center py-3 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition"
+              >
+                Send Invitation
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Railway Config for SQS Worker Service
+# Set this file path in Railway: Settings → Config File Path → /workers/sqs-worker.railway.toml
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node workers/sqs-worker.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+# No healthcheck - this is a background worker, not a web service

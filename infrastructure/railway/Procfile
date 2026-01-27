@@ -1,0 +1,2 @@
+web: node bot/whatsapp-bot.js
+worker: node bot/workers/bullmq-worker.js

@@ -1,0 +1,13 @@
+{
+  "name": "feature_menu_carousel_v3",
+  "id": "1369678924940082",
+  "status": "PENDING",
+  "createdAt": "2025-12-25T17:51:48.280Z",
+  "environment": "staging",
+  "cards": [
+    "lesson_plan",
+    "video_generation",
+    "coaching",
+    "reading"
+  ]
+}
