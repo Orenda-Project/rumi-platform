@@ -20,13 +20,9 @@ require('dotenv').config();
 const supabase = require('../config/supabase');
 const { processTranscriptWithFallback } = require('../services/transcript-processor.service');
 
-// Sessions with JSON parsing errors
+// Sessions with JSON parsing errors — replace with your own session IDs
 const ERROR_SESSIONS = [
-  { id: 'cfaee385-86a9-4d99-9189-648a945df0bb', charCount: 287867, description: 'VERY LONG' },
-  { id: '8fe7a1f2-8e8a-4c10-a991-77b654d6c6bd', charCount: 119681, description: 'LONG' },
-  { id: '8b46a650-6586-43c6-8fe6-a226c3d54412', charCount: 35297, description: 'MEDIUM' },
-  { id: 'fd3b8246-919a-4b05-a1f3-6ad74c783a59', charCount: 26185, description: 'MEDIUM' },
-  { id: '283bf8da-9b5d-4752-936b-c4b41f2c3f6a', charCount: 21830, description: 'MEDIUM' }
+  // { id: 'your-session-uuid-here', charCount: 0, description: 'EXAMPLE' },
 ];
 
 /**

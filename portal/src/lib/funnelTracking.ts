@@ -3,7 +3,7 @@
  * Tracks user journey from website visit → CTA click → WhatsApp chat
  */
 
-const TRACKING_API_URL = 'https://digital-coach-dashboard-production.up.railway.app/api/track';
+const TRACKING_API_URL = import.meta.env.VITE_TRACKING_API_URL || '/api/track';
 
 /**
  * Generate a unique session ID

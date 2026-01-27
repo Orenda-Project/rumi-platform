@@ -111,7 +111,11 @@ async function requeueLessonPlan(requestId) {
 }
 
 // Main
-const requestId = process.argv[2] || 'a5e688c6-e223-4d4b-9aed-05a06bb93a97';
+const requestId = process.argv[2];
+if (!requestId) {
+  console.error('Usage: node requeue-lesson-plan.js <request-id>');
+  process.exit(1);
+}
 console.log('Request ID:', requestId);
 console.log('');
 
