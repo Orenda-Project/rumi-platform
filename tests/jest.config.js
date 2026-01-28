@@ -21,6 +21,13 @@ module.exports = {
   testEnvironment: 'node',
   testEnvironmentOptions: {
     customExportConditions: ['node', 'node-addons'],
+    // Disable Web Storage APIs to avoid Node.js 25 SecurityError
+    experimentalVmModules: false,
+  },
+  // Disable localStorage/sessionStorage to avoid Node.js 25 SecurityError
+  globals: {
+    localStorage: undefined,
+    sessionStorage: undefined,
   },
   verbose: true,
   collectCoverageFrom: [

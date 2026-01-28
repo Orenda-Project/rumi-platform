@@ -1,0 +1,40 @@
+# Files and directories to NEVER sync from internal to public repo
+# Used by infrastructure/scripts/sync-from-internal.sh
+
+# QA / Testing infrastructure (internal only)
+bugbuster/
+bugbuster-*
+*bugbuster*
+
+# SQS queue (internal uses SQS, public uses BullMQ)
+workers/sqs-worker.js
+shared/services/queue/sqs-queue.service.js
+shared/services/queue/sqs-*
+
+# Credentials and secrets
+keys/
+*.pem
+*.key
+.env
+.env.*
+.env.staging*
+.env.production*
+credentials*
+
+# Temporary and generated files
+temp/
+logs/
+*.log
+node_modules/
+.setup-state.json
+
+# Internal tooling
+.claude/
+claude-progress.txt
+.beads/
+
+# Database migrations (handled separately via migration system)
+database/migrations/
+
+# Internal documentation
+*.internal.md

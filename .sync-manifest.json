@@ -1,0 +1,115 @@
+{
+  "version": "1.0.0",
+  "description": "Maps internal repo paths to public monorepo paths for curated sync",
+  "lastSync": null,
+  "mappings": [
+    {
+      "internal": "shared/handlers/",
+      "public": "bot/shared/handlers/",
+      "direction": "internal-to-public",
+      "notes": "Message handlers — core bot logic, almost always safe to sync"
+    },
+    {
+      "internal": "shared/services/coaching/",
+      "public": "bot/shared/services/coaching/",
+      "direction": "internal-to-public",
+      "notes": "Coaching pipeline — review for SQS references before applying"
+    },
+    {
+      "internal": "shared/services/reading/",
+      "public": "bot/shared/services/reading/",
+      "direction": "internal-to-public",
+      "notes": "Reading assessment — sync directly"
+    },
+    {
+      "internal": "shared/services/video/",
+      "public": "bot/shared/services/video/",
+      "direction": "internal-to-public",
+      "notes": "Video generation — sync directly"
+    },
+    {
+      "internal": "shared/database/",
+      "public": "bot/shared/database/",
+      "direction": "internal-to-public",
+      "notes": "Database helpers — sync directly"
+    },
+    {
+      "internal": "shared/utils/",
+      "public": "bot/shared/utils/",
+      "direction": "internal-to-public",
+      "notes": "Utilities — sync directly, but skip version-check.js and setup-validator.js (publicOnly)"
+    },
+    {
+      "internal": "shared/constants/",
+      "public": "bot/shared/constants/",
+      "direction": "internal-to-public",
+      "notes": "Constants — sync directly"
+    },
+    {
+      "internal": "shared/middleware/",
+      "public": "bot/shared/middleware/",
+      "direction": "internal-to-public",
+      "notes": "Express middleware — sync directly"
+    },
+    {
+      "internal": "shared/routes/",
+      "public": "bot/shared/routes/",
+      "direction": "internal-to-public",
+      "notes": "API routes — sync directly"
+    }
+  ],
+  "exclude": [
+    "bugbuster/",
+    "bugbuster-*",
+    "workers/sqs-worker.js",
+    "shared/services/queue/sqs-queue.service.js",
+    "shared/services/queue/sqs-*",
+    "keys/",
+    "temp/",
+    "logs/",
+    "*.pem",
+    ".env",
+    ".env.*",
+    "node_modules/",
+    ".claude/",
+    "claude-progress.txt",
+    "database/migrations/"
+  ],
+  "publicOnly": [
+    "bot/shared/config/branding.js",
+    "bot/shared/config/feature-tiers.js",
+    "bot/shared/services/queue/bullmq-queue.service.js",
+    "bot/shared/services/llm-client.js",
+    "bot/shared/utils/version-check.js",
+    "bot/shared/utils/setup-validator.js",
+    "bot/workers/bullmq-worker.js",
+    "bot/scripts/setup/",
+    "bot/scripts/simulate.js",
+    "infrastructure/",
+    "tests/",
+    "docs/",
+    "dashboard/",
+    "portal/",
+    ".github/",
+    "AGENTS.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "SETUP.md",
+    "LICENSE",
+    "README.md",
+    ".sync-manifest.json",
+    ".sync-exclude"
+  ],
+  "translationRules": [
+    {
+      "pattern": "require.*sqs-queue",
+      "replacement": "require.*bullmq-queue",
+      "note": "SQS queue imports must be translated to BullMQ in public repo"
+    },
+    {
+      "pattern": "SQSQueueService",
+      "replacement": "BullMQQueueService",
+      "note": "Class name translation"
+    }
+  ]
+}
