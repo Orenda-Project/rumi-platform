@@ -10,9 +10,13 @@ module.exports = {
     '/dist/',
     '/build/',
   ],
-  // Note: Tests must run BEFORE `cd bot && npm ci`. When bot/node_modules
-  // exists, Node resolves bullmq/ioredis from bot/node_modules instead of
-  // using Jest's mocks. CI workflow handles this ordering correctly.
+  // Force module resolution to root node_modules so Jest mocks work
+  // even when bot/node_modules exists (dual-install scenario)
+  moduleNameMapper: {
+    '^openai$': '<rootDir>/node_modules/openai',
+    '^bullmq$': '<rootDir>/node_modules/bullmq',
+    '^ioredis$': '<rootDir>/node_modules/ioredis',
+  },
   setupFiles: ['<rootDir>/tests/setup.js'],
   testEnvironment: 'node',
   testEnvironmentOptions: {

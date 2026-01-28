@@ -1,7 +1,7 @@
 /**
  * Sprint 1 TDD: OpenRouter LLM Provider Tests (bd-273)
  *
- * RED phase: Tests define the API contract for the LLM client factory
+ * Tests define the API contract for the LLM client factory
  * that routes through OpenRouter by default, with direct OpenAI fallback.
  *
  * Key requirements:
@@ -18,7 +18,7 @@ const llmClientPath = path.resolve(
   '../../../bot/shared/services/llm-client.js'
 );
 
-// Mock the OpenAI SDK
+// Mock the OpenAI SDK — constructor captures config for assertion
 jest.mock('openai', () => {
   const mockCreate = jest.fn(async () => ({
     id: 'gen-test',
@@ -76,35 +76,20 @@ describe('LLM Client (OpenRouter Integration)', () => {
     });
 
     test('createLLMClient() configures OpenAI SDK with OpenRouter baseURL', () => {
-      const OpenAI = require('openai');
       const client = llmClient.createLLMClient();
-      expect(OpenAI).toHaveBeenCalledWith(
-        expect.objectContaining({
-          baseURL: 'https://openrouter.ai/api/v1',
-        })
-      );
+      expect(client._config.baseURL).toBe('https://openrouter.ai/api/v1');
     });
 
     test('uses OPENROUTER_API_KEY for authentication', () => {
-      const OpenAI = require('openai');
-      llmClient.createLLMClient();
-      expect(OpenAI).toHaveBeenCalledWith(
-        expect.objectContaining({
-          apiKey: 'sk-or-test-key',
-        })
-      );
+      const client = llmClient.createLLMClient();
+      expect(client._config.apiKey).toBe('sk-or-test-key');
     });
 
     test('sets OpenRouter-specific default headers', () => {
-      const OpenAI = require('openai');
-      llmClient.createLLMClient();
-      expect(OpenAI).toHaveBeenCalledWith(
-        expect.objectContaining({
-          defaultHeaders: expect.objectContaining({
-            'X-Title': expect.any(String),
-          }),
-        })
-      );
+      const client = llmClient.createLLMClient();
+      expect(client._config.defaultHeaders).toBeDefined();
+      expect(client._config.defaultHeaders['X-Title']).toBeDefined();
+      expect(typeof client._config.defaultHeaders['X-Title']).toBe('string');
     });
   });
 
@@ -112,13 +97,10 @@ describe('LLM Client (OpenRouter Integration)', () => {
     test('LLM_PROVIDER=openai uses direct OpenAI baseURL', () => {
       process.env.LLM_PROVIDER = 'openai';
       process.env.OPENAI_API_KEY = 'sk-openai-test';
-      const OpenAI = require('openai');
       llmClient = require(llmClientPath);
-      llmClient.createLLMClient();
-      // Should NOT set baseURL (uses default OpenAI)
-      const callArgs = OpenAI.mock.calls[OpenAI.mock.calls.length - 1][0];
-      expect(callArgs.apiKey).toBe('sk-openai-test');
-      expect(callArgs.baseURL).toBeUndefined();
+      const client = llmClient.createLLMClient();
+      expect(client._config.apiKey).toBe('sk-openai-test');
+      expect(client._config.baseURL).toBeUndefined();
     });
   });
 
