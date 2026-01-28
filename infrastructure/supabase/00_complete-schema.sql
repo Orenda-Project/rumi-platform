@@ -479,9 +479,11 @@ CREATE TABLE IF NOT EXISTS failed_operations (
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS schema_versions (
+  id SERIAL,
   version VARCHAR(20) PRIMARY KEY,
+  description TEXT,
   applied_at TIMESTAMP DEFAULT NOW(),
-  description TEXT
+  checksum VARCHAR(64)
 );
 
 -- =============================================================================

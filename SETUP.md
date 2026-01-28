@@ -101,6 +101,44 @@ cd bot && node whatsapp-bot.js
 4. Set verify token: (same as `WEBHOOK_VERIFY_TOKEN` in your `.env`)
 5. Subscribe to: `messages`
 
+## Step 7.5: Register WhatsApp Flows & Templates
+
+Rumi uses WhatsApp Flows (interactive forms) and Message Templates (carousel menus). These must be registered with your WABA.
+
+### Automated (Recommended)
+
+```bash
+node bot/scripts/setup/run-full-setup.js \
+  --waba-id=$WABA_ID \
+  --token=$WHATSAPP_TOKEN \
+  --phone-number-id=$PHONE_NUMBER_ID \
+  --endpoint-base=https://your-railway-url.up.railway.app
+```
+
+This registers:
+- **3 Flows**: Reading Assessment, Attendance Setup, Attendance Marking
+- **2 Templates**: Video Style Selection, Feature Menu Carousel
+- **Encryption**: RSA keypair for encrypted flow endpoints
+
+The script outputs environment variables to set in Railway:
+- `READING_ASSESSMENT_FLOW_ID`
+- `ATTENDANCE_SETUP_FLOW_ID`
+- `ATTENDANCE_MARKING_FLOW_ID`
+- `FLOW_PRIVATE_KEY`
+
+Templates require Meta review (1-24 hours). The bot uses fallback interactive lists until templates are approved.
+
+### Manual Fallback
+
+If the automated script fails:
+
+1. **Encryption**: Run `node bot/scripts/setup/setup-encryption.js` separately
+2. **Flows**: Register each flow at [Meta Business Manager > WhatsApp > Flows](https://business.facebook.com/)
+3. **Templates**: Create templates at WhatsApp > Message Templates
+4. Set the resulting IDs as environment variables in Railway
+
+See `bot/scripts/setup/assets/README.md` for template asset requirements.
+
 ## Step 8: Test
 
 Send "Hi" to your WhatsApp bot number. You should receive a welcome message and registration flow.
@@ -122,6 +160,27 @@ To upgrade from Minimal to Recommended:
 | Database errors | Re-run `verify-schema.sql` in Supabase |
 | Redis connection failed | Verify `REDIS_URL` is correct |
 | WhatsApp webhook fails | Verify `WEBHOOK_VERIFY_TOKEN` matches |
+
+## Pulling Updates
+
+To receive bug fixes and new features from the upstream Rumi repository:
+
+```bash
+# One-time: add upstream remote
+git remote add upstream https://github.com/taleemabad/rumi-platform.git
+
+# Pull latest
+git fetch upstream
+git merge upstream/main
+
+# Apply any new database migrations
+node infrastructure/scripts/migrate.js
+
+# Restart your bot
+railway up
+```
+
+See `docs/pulling-updates.md` for the full migration guide.
 
 ## Support
 

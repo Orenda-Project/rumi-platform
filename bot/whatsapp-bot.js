@@ -1547,4 +1547,24 @@ ${'='.repeat(70)}
 
   console.log(startupMessage);
   logToFile('🚀 Bot server started', { port: constants.PORT, logsDir: LOGS_DIR });
+
+  // Non-blocking startup checks (delayed to not slow boot)
+  setTimeout(() => {
+    try {
+      const { validateBootRequirements } = require('./shared/utils/setup-validator');
+      const result = validateBootRequirements();
+      if (!result.ok) {
+        logToFile('Setup validation issues detected', { warnings: result.warnings, errors: result.errors });
+      }
+    } catch (err) {
+      // setup-validator is optional — skip silently if not present
+    }
+
+    try {
+      const { checkForUpdates } = require('./shared/utils/version-check');
+      checkForUpdates(version).catch(() => {});
+    } catch (err) {
+      // version-check is optional — skip silently if not present
+    }
+  }, 10000);
 });

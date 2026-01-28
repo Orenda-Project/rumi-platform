@@ -112,6 +112,40 @@ railway up
 cd bot && node whatsapp-bot.js
 ```
 
+### Step 5.5: Register WhatsApp Flows & Templates
+
+After deploying, register the WhatsApp Flows (interactive forms) and Message Templates (carousel menus) with Meta:
+
+```bash
+node bot/scripts/setup/run-full-setup.js \
+  --waba-id=$WABA_ID \
+  --token=$WHATSAPP_TOKEN \
+  --phone-number-id=$PHONE_NUMBER_ID \
+  --endpoint-base=https://your-app.up.railway.app
+```
+
+The script will:
+1. Generate RSA-2048 encryption keys
+2. Register 3 flows: Reading Assessment, Attendance Setup, Attendance Marking
+3. Submit 2 templates: Video Style Selection, Feature Menu Carousel
+
+**Output**: Flow IDs and env var values to set in Railway:
+- `READING_ASSESSMENT_FLOW_ID`
+- `ATTENDANCE_SETUP_FLOW_ID`
+- `ATTENDANCE_MARKING_FLOW_ID`
+- `FLOW_PRIVATE_KEY` (base64-encoded)
+
+**Note**: Templates need Meta approval (1-24 hours). The bot uses fallback interactive lists until approved.
+
+Set the output values as Railway env vars:
+
+```bash
+railway variables set READING_ASSESSMENT_FLOW_ID=<value>
+railway variables set ATTENDANCE_SETUP_FLOW_ID=<value>
+railway variables set ATTENDANCE_MARKING_FLOW_ID=<value>
+railway variables set FLOW_PRIVATE_KEY=<base64-value>
+```
+
 ### Step 6: WhatsApp Webhook
 
 1. Go to Meta Business Manager > WhatsApp > Configuration > Webhook

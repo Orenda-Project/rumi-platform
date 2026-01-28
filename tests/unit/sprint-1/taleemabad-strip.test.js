@@ -37,6 +37,8 @@ describe('Taleemabad Content Stripping', () => {
         if (file.includes('branding.js')) continue;
         // Allow feature-tiers.js
         if (file.includes('feature-tiers.js')) continue;
+        // Allow version-check.js which references the upstream GitHub repo URL
+        if (file.includes('version-check.js')) continue;
 
         const content = fs.readFileSync(file, 'utf8');
         if (/taleemabad/i.test(content)) {
