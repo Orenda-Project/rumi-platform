@@ -248,7 +248,7 @@ See [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) for development setup, co
 
 ## About
 
-Rumi is built by [Taleemabad](https://taleemabad.com) (Oraan Education Pvt. Ltd.), Pakistan's leading EdTech company. The name comes from Jalaluddin Rumi, the 13th-century poet and teacher who believed that education is not the filling of a vessel but the kindling of a flame.
+Rumi is built by [Taleemabad](https://taleemabad.com), Pakistan's leading EdTech company. The name comes from Jalaluddin Rumi, the 13th-century poet and teacher who believed that education is not the filling of a vessel but the kindling of a flame.
 
 **Website**: [hellorumi.ai](https://hellorumi.ai) | **Research**: [hellorumi.ai/research](https://hellorumi.ai/research)
 
