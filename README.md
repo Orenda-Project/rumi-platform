@@ -1,8 +1,24 @@
-# Rumi - AI Teaching Assistant for WhatsApp
+<p align="center">
+  <img src=".github/rumi-logo.png" alt="Rumi" width="120" />
+</p>
 
-**You're not teaching alone.** Rumi is an open-source AI teaching companion that runs on WhatsApp, giving teachers 24/7 access to classroom coaching, reading assessments, lesson plan generation, and professional development — in their own language, on the device they already have.
+<h1 align="center">Rumi</h1>
 
-**Website**: [hellorumi.ai](https://hellorumi.ai) | **Research**: [hellorumi.ai/research](https://hellorumi.ai/research)
+<p align="center">
+  <strong>AI Teaching Assistant for WhatsApp</strong><br>
+  You're not teaching alone.
+</p>
+
+<p align="center">
+  <a href="https://hellorumi.ai">Website</a> &middot;
+  <a href="https://hellorumi.ai/research">Research</a> &middot;
+  <a href="docs/agent-customization.md">Customization Guide</a> &middot;
+  <a href="SETUP.md">Setup</a>
+</p>
+
+---
+
+Rumi is an open-source AI teaching companion that runs on WhatsApp, giving teachers 24/7 access to classroom coaching, reading assessments, lesson plan generation, and professional development — in their own language, on the device they already have.
 
 ---
 
