@@ -113,7 +113,9 @@ npm run validate:env  # Check environment variables
 |-----|-------------|
 | [SETUP.md](SETUP.md) | Manual setup guide |
 | [docs/architecture.md](docs/architecture.md) | System architecture |
-| [docs/customization.md](docs/customization.md) | Customization guide |
+| [docs/customization.md](docs/customization.md) | Basic customization (branding, tiers, LLM) |
+| [docs/agent-customization.md](docs/agent-customization.md) | Agent-first deep customization (swap frameworks, change assessments, add features) |
+| [docs/monitoring.md](docs/monitoring.md) | Observability, monitoring, and debugging |
 | [docs/cost-guide.md](docs/cost-guide.md) | Cost estimates per tier |
 
 ## Contributing

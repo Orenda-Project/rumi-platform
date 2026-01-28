@@ -46,6 +46,13 @@ npm run test:schema   # Sprint 2: Schema validation
 npm run validate:env  # Check environment variables
 ```
 
+## Customization
+
+For deep customization (swapping frameworks, changing assessments, adding features), see:
+- `docs/agent-customization.md` — Agent-first guide with file maps for every change type
+- `docs/customization.md` — Basic branding, tiers, LLM provider
+- `docs/monitoring.md` — Observability, dashboards, debugging
+
 ## Important Rules
 
 1. Never commit `.env` files
