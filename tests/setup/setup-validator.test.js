@@ -17,6 +17,7 @@ const FLOW_ENV_VARS = [
   'ATTENDANCE_SETUP_FLOW_ID',
   'ATTENDANCE_MARKING_FLOW_ID',
   'FLOW_PRIVATE_KEY',
+  'INTERNAL_API_KEY',
 ];
 
 describe('validateBootRequirements', () => {
@@ -80,6 +81,7 @@ describe('validateBootRequirements', () => {
       process.env.ATTENDANCE_SETUP_FLOW_ID = 'flow_as_2';
       process.env.ATTENDANCE_MARKING_FLOW_ID = 'flow_am_3';
       process.env.FLOW_PRIVATE_KEY = 'private_key_data';
+      process.env.INTERNAL_API_KEY = 'test-api-key';
 
       const result = validateBootRequirements();
 

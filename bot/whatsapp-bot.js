@@ -1387,7 +1387,7 @@ app.post('/api/internal/send-password-reset', async (req, res) => {
   try {
     // Verify API key (shared secret between portal and main bot)
     const apiKey = req.headers['x-api-key'];
-    const expectedApiKey = process.env.INTERNAL_API_KEY || 'rumi-internal-2025';
+    const expectedApiKey = process.env.INTERNAL_API_KEY;
 
     if (apiKey !== expectedApiKey) {
       logToFile('❌ Unauthorized internal API call', {

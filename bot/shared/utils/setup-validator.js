@@ -67,7 +67,28 @@ function validateBootRequirements() {
   }
 
   // -----------------------------------------------------------------------
-  // 3. Return structured result
+  // 3. Check INTERNAL_API_KEY — warn if not set (bd-331)
+  // -----------------------------------------------------------------------
+  if (!process.env.INTERNAL_API_KEY) {
+    const msg = `${PREFIX} INTERNAL_API_KEY not set — internal admin API routes will be inaccessible. Set a random key in .env`;
+    warnings.push(msg);
+    console.warn(msg);
+  }
+
+  // -----------------------------------------------------------------------
+  // 4. Check MMS_SERVICE_URL in production — warn if localhost (bd-336)
+  // -----------------------------------------------------------------------
+  if (process.env.NODE_ENV === 'production') {
+    const mmsUrl = process.env.MMS_SERVICE_URL || '';
+    if (!mmsUrl || mmsUrl.includes('localhost')) {
+      const msg = `${PREFIX} MMS_SERVICE_URL is localhost — regional language transcription (Balochi, Sindhi, Pashto) will not work. Deploy Modal.com MMS service for full tier.`;
+      warnings.push(msg);
+      console.warn(msg);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 5. Return structured result
   // -----------------------------------------------------------------------
   return {
     ok: errors.length === 0,
