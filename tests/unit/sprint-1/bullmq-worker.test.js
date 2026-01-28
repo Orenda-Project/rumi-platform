@@ -1,7 +1,7 @@
 /**
  * Sprint 1 TDD: BullMQ Worker Tests (bd-230)
  *
- * RED phase: Tests define the API contract for the BullMQ worker
+ * Tests define the API contract for the BullMQ worker
  * that replaces sqs-worker.js.
  *
  * The worker must:
@@ -18,7 +18,10 @@ const workerModulePath = path.resolve(
   '../../../bot/workers/bullmq-worker.js'
 );
 
-// Mock bullmq Worker
+// Track Worker constructor calls via a shared array (survives jest.resetModules)
+const workerConstructorCalls = [];
+
+// Mock bullmq at top level (Jest hoists this)
 jest.mock('bullmq', () => {
   const eventHandlers = {};
   const mockWorker = {
@@ -30,7 +33,10 @@ jest.mock('bullmq', () => {
     _eventHandlers: eventHandlers,
   };
   return {
-    Worker: jest.fn(() => mockWorker),
+    Worker: jest.fn((...args) => {
+      workerConstructorCalls.push(args);
+      return mockWorker;
+    }),
     Queue: jest.fn(() => ({
       add: jest.fn(async () => ({ id: 'test-job' })),
       getJobCounts: jest.fn(async () => ({ waiting: 0, active: 0, completed: 0, failed: 0 })),
@@ -50,36 +56,18 @@ jest.mock('ioredis', () => jest.fn(() => ({
 
 describe('BullMQ Worker', () => {
   let workerModule;
+  const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    workerConstructorCalls.length = 0;
+    jest.clearAllMocks();
+    process.env = { ...originalEnv };
     jest.resetModules();
-    // Re-apply mocks after reset
-    jest.mock('bullmq', () => {
-      const eventHandlers = {};
-      const mockWorker = {
-        on: jest.fn((event, handler) => { eventHandlers[event] = handler; }),
-        close: jest.fn(async () => {}),
-        isRunning: jest.fn(() => true),
-        _eventHandlers: eventHandlers,
-      };
-      return {
-        Worker: jest.fn(() => mockWorker),
-        Queue: jest.fn(() => ({
-          add: jest.fn(async () => ({ id: 'test-job' })),
-          getJobCounts: jest.fn(async () => ({ waiting: 0, active: 0, completed: 0, failed: 0 })),
-          close: jest.fn(async () => {}),
-        })),
-        _mockWorker: mockWorker,
-      };
-    });
-    jest.mock('ioredis', () => jest.fn(() => ({
-      get: jest.fn(async () => null),
-      set: jest.fn(async () => 'OK'),
-      del: jest.fn(async () => 1),
-      quit: jest.fn(async () => {}),
-      status: 'ready',
-    })));
     workerModule = require(workerModulePath);
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   describe('module exports', () => {
@@ -106,51 +94,27 @@ describe('BullMQ Worker', () => {
 
   describe('createWorker()', () => {
     test('creates a BullMQ Worker instance', () => {
-      const bullmq = require('bullmq');
       const worker = workerModule.createWorker();
-      expect(bullmq.Worker).toHaveBeenCalled();
       expect(worker).toBeDefined();
+      expect(worker.on).toBeDefined();
+      expect(workerConstructorCalls.length).toBeGreaterThan(0);
     });
 
     test('configures concurrency (default 3)', () => {
-      const bullmq = require('bullmq');
       workerModule.createWorker();
-      const workerConfig = bullmq.Worker.mock.calls[0];
-      // Second arg is processor, third is options
-      expect(workerConfig[2]).toHaveProperty('concurrency', 3);
+      const lastCall = workerConstructorCalls[workerConstructorCalls.length - 1];
+      // Third arg is options object
+      expect(lastCall[2]).toHaveProperty('concurrency', 3);
     });
 
     test('allows concurrency override via WORKER_CONCURRENCY env var', () => {
       process.env.WORKER_CONCURRENCY = '5';
       jest.resetModules();
-      jest.mock('bullmq', () => {
-        const eventHandlers = {};
-        const mockWorker = {
-          on: jest.fn((event, handler) => { eventHandlers[event] = handler; }),
-          close: jest.fn(async () => {}),
-          isRunning: jest.fn(() => true),
-        };
-        return {
-          Worker: jest.fn(() => mockWorker),
-          Queue: jest.fn(() => ({
-            add: jest.fn(async () => ({ id: 'test-job' })),
-            getJobCounts: jest.fn(async () => ({ waiting: 0, active: 0, completed: 0, failed: 0 })),
-            close: jest.fn(async () => {}),
-          })),
-        };
-      });
-      jest.mock('ioredis', () => jest.fn(() => ({
-        get: jest.fn(async () => null),
-        set: jest.fn(async () => 'OK'),
-        del: jest.fn(async () => 1),
-        quit: jest.fn(async () => {}),
-        status: 'ready',
-      })));
+      workerConstructorCalls.length = 0;
       const mod = require(workerModulePath);
-      const bullmq = require('bullmq');
       mod.createWorker();
-      const config = bullmq.Worker.mock.calls[0][2];
-      expect(config.concurrency).toBe(5);
+      const lastCall = workerConstructorCalls[workerConstructorCalls.length - 1];
+      expect(lastCall[2].concurrency).toBe(5);
       delete process.env.WORKER_CONCURRENCY;
     });
   });
@@ -162,7 +126,6 @@ describe('BullMQ Worker', () => {
 
     test('routes coaching_analysis jobs correctly', async () => {
       const job = { name: 'analysis', data: { sessionId: 'test-123', userId: 'user-456' } };
-      // Should not throw (handler exists even if mocked)
       const result = await workerModule.processJob(job);
       expect(result).toBeDefined();
       expect(result.status).toBe('completed');
@@ -205,7 +168,6 @@ describe('BullMQ Worker', () => {
     test('createHealthApp returns an express-like app', () => {
       const app = workerModule.createHealthApp();
       expect(app).toBeDefined();
-      // Should have .listen method (express app)
       expect(typeof app.listen === 'function' || typeof app.get === 'function').toBe(true);
     });
   });
