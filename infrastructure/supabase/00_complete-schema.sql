@@ -487,6 +487,170 @@ CREATE TABLE IF NOT EXISTS schema_versions (
 );
 
 -- =============================================================================
+-- 21. LESSON PLAN REQUESTS (async job queue)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS lesson_plan_requests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  phone_number VARCHAR(20),
+  topic VARCHAR(500) NOT NULL,
+  full_message TEXT,
+  language VARCHAR(10) DEFAULT 'en',
+  content_type VARCHAR(30) DEFAULT 'lesson_plan',
+  status VARCHAR(30) DEFAULT 'pending',
+  gamma_url VARCHAR(500),
+  pdf_url VARCHAR(500),
+  error_message TEXT,
+  retry_count INTEGER DEFAULT 0,
+  processing_started_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  last_retry_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE lesson_plan_requests ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 22. VIDEO TASKS (video generation task persistence)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS video_tasks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  video_request_id UUID REFERENCES video_requests(id) ON DELETE CASCADE,
+  filename VARCHAR(200) NOT NULL,
+  task_id VARCHAR(200),
+  task_type VARCHAR(20) DEFAULT 'image',
+  status VARCHAR(30) DEFAULT 'polling',
+  result_url VARCHAR(500),
+  ephemeral_url VARCHAR(500),
+  completed_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(video_request_id, filename)
+);
+
+ALTER TABLE video_tasks ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 23. BROADCAST MESSAGES (broadcast delivery tracking)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS broadcast_messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  broadcast_id UUID,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  message_id VARCHAR(200),
+  status VARCHAR(20) DEFAULT 'pending',
+  sent_at TIMESTAMP,
+  delivered_at TIMESTAMP,
+  read_at TIMESTAMP,
+  replied_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE broadcast_messages ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 24. USER FEATURE FIRST USE (onboarding intro tracking)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS user_feature_first_use (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  feature VARCHAR(50) NOT NULL,
+  video_shown_at TIMESTAMP,
+  feature_used_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, feature)
+);
+
+ALTER TABLE user_feature_first_use ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 25. FEATURE SUGGESTIONS (cross-feature recommendation tracking)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS feature_suggestions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  suggested_feature VARCHAR(50) NOT NULL,
+  trigger_type VARCHAR(30),
+  confidence_score FLOAT,
+  message_context TEXT,
+  was_shown BOOLEAN DEFAULT FALSE,
+  was_clicked BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE feature_suggestions ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 26. A/B TESTS (multi-armed bandit experiment definitions)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS ab_tests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  test_name VARCHAR(100) UNIQUE NOT NULL,
+  description TEXT,
+  status VARCHAR(20) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE ab_tests ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 27. A/B TEST VARIANTS (experiment arms with Thompson Sampling stats)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS ab_test_variants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  test_id UUID REFERENCES ab_tests(id) ON DELETE CASCADE,
+  variant_name VARCHAR(100) NOT NULL,
+  variant_content JSONB,
+  successes INTEGER DEFAULT 1,
+  failures INTEGER DEFAULT 1,
+  impressions INTEGER DEFAULT 0,
+  conversions INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(test_id, variant_name)
+);
+
+ALTER TABLE ab_test_variants ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 28. A/B TEST EVENTS (experiment event log)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS ab_test_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  test_id UUID REFERENCES ab_tests(id) ON DELETE CASCADE,
+  variant_name VARCHAR(100) NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  phone_number VARCHAR(20),
+  event_type VARCHAR(30) NOT NULL,
+  event_data JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE ab_test_events ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 29. CHAT STARTS (website-to-WhatsApp funnel tracking)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS chat_starts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  phone_number VARCHAR(20),
+  session_id VARCHAR(200),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE chat_starts ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
 -- INDEXES
 -- =============================================================================
 
@@ -503,6 +667,18 @@ CREATE INDEX IF NOT EXISTS idx_coaching_sessions_status ON coaching_sessions(sta
 CREATE INDEX IF NOT EXISTS idx_reading_assessments_user ON reading_assessments(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id, last_activity_at DESC);
 CREATE INDEX IF NOT EXISTS idx_attendance_sessions_user_date ON attendance_sessions(user_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_lesson_plan_requests_user ON lesson_plan_requests(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lesson_plan_requests_status ON lesson_plan_requests(status);
+CREATE INDEX IF NOT EXISTS idx_video_tasks_request ON video_tasks(video_request_id);
+CREATE INDEX IF NOT EXISTS idx_broadcast_messages_message_id ON broadcast_messages(message_id);
+CREATE INDEX IF NOT EXISTS idx_broadcast_messages_user ON broadcast_messages(user_id, sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_broadcast_messages_broadcast ON broadcast_messages(broadcast_id);
+CREATE INDEX IF NOT EXISTS idx_user_feature_first_use_user ON user_feature_first_use(user_id);
+CREATE INDEX IF NOT EXISTS idx_feature_suggestions_user ON feature_suggestions(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ab_tests_name ON ab_tests(test_name);
+CREATE INDEX IF NOT EXISTS idx_ab_test_variants_test ON ab_test_variants(test_id);
+CREATE INDEX IF NOT EXISTS idx_ab_test_events_test ON ab_test_events(test_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_starts_user ON chat_starts(user_id, created_at DESC);
 
 -- =============================================================================
 -- TRIGGERS
@@ -531,4 +707,8 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 INSERT INTO schema_versions (version, description)
 VALUES ('1.0.0', 'Rumi Platform open-source consolidated schema')
+ON CONFLICT (version) DO NOTHING;
+
+INSERT INTO schema_versions (version, description)
+VALUES ('1.1.0', 'Add missing tables: lesson_plan_requests, video_tasks, broadcast_messages, user_feature_first_use, feature_suggestions, ab_tests, ab_test_variants, ab_test_events, chat_starts')
 ON CONFLICT (version) DO NOTHING;

@@ -18,6 +18,7 @@
 
 const Redis = require('ioredis');
 const { logToFile } = require('../../utils/logger');
+const { RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_SECONDS } = require('../../utils/constants');
 
 class RailwayRedisService {
   constructor() {
@@ -122,7 +123,7 @@ class RailwayRedisService {
    * @param {number} windowSeconds - Time window in seconds (default: 60)
    * @returns {Promise<{allowed: boolean, count: number, remaining: number, resetAt: Date}>}
    */
-  async checkRateLimit(identifier, limit = 30, windowSeconds = 60) {
+  async checkRateLimit(identifier, limit = RATE_LIMIT_MAX, windowSeconds = RATE_LIMIT_WINDOW_SECONDS) {
     if (!this.isAvailable()) {
       // If Redis is down, allow the request (fail open)
       logToFile('⚠️  Redis unavailable, rate limit check bypassed', { identifier });

@@ -101,7 +101,32 @@ cd bot && node whatsapp-bot.js
 4. Set verify token: (same as `WEBHOOK_VERIFY_TOKEN` in your `.env`)
 5. Subscribe to: `messages`
 
-## Step 7.5: Register WhatsApp Flows & Templates
+## Step 7.5: Set Up Stale Session Cron Job (Recommended+ Tier)
+
+If you are using the coaching feature (recommended tier or higher), you need a cron job to clean up stuck coaching sessions. Without this, sessions that error mid-way or where the teacher stops responding will stay stuck indefinitely, preventing those teachers from starting new sessions.
+
+The worker at `bot/workers/stale-session.worker.js` handles this by:
+- Sending a reminder after 2 hours of inactivity
+- Auto-generating a partial coaching report after 12 hours of inactivity
+
+### Option A: Railway Cron (Recommended)
+
+1. In Railway dashboard, add a **Cron Service** to your project
+2. Set the schedule to `*/15 * * * *` (every 15 minutes)
+3. Set the start command to `node bot/workers/stale-session.worker.js`
+4. Use the same environment variables as your main bot service (same Supabase, Redis, WhatsApp credentials)
+
+### Option B: External Cron
+
+If not using Railway, any cron scheduler that runs the following command every 15 minutes will work:
+
+```bash
+node bot/workers/stale-session.worker.js
+```
+
+The worker process runs once and exits (it is not a long-running server).
+
+## Step 7.6: Register WhatsApp Flows & Templates
 
 Rumi uses WhatsApp Flows (interactive forms) and Message Templates (carousel menus). These must be registered with your WABA.
 
@@ -145,12 +170,52 @@ Send "Hi" to your WhatsApp bot number. You should receive a welcome message and 
 
 ## Upgrading Tiers
 
-To upgrade from Minimal to Recommended:
+### Minimal to Recommended
 
 1. Get a Soniox API key at [soniox.com](https://soniox.com)
 2. Add to `.env`: `SONIOX_API_KEY=your-key`
 3. Update: `RUMI_TIER=recommended`
 4. Redeploy
+5. Set up the stale session cron job (see Step 7.5 above)
+
+### Recommended to Full (Regional Language Support)
+
+The full tier adds speech-to-text for regional Pakistani languages (Balochi, Sindhi, Pashto) using Meta's MMS-ASR model. This requires deploying a separate GPU-powered Python service on [Modal.com](https://modal.com).
+
+**Prerequisites:**
+
+- Python 3.10+
+- A Modal.com account ([modal.com](https://modal.com))
+- `pip install modal` and `modal setup` (one-time auth)
+
+**Deploy the MMS-ASR service:**
+
+```bash
+cd bot/06_MMS_Inference_Service
+modal secret create mms-api-key MMS_API_KEY=your-secret-key-here
+modal deploy modal_app.py
+```
+
+After deployment, Modal will print the service URL (e.g., `https://your-workspace--mms-asr-service-web-app.modal.run`).
+
+**Set environment variables in your bot:**
+
+```env
+MMS_SERVICE_URL=https://your-workspace--mms-asr-service-web-app.modal.run
+MMS_API_KEY=your-secret-key-here
+RUMI_TIER=full
+```
+
+**Cost and scaling:** The Modal service uses a T4 GPU (~$0.0005/second) and scales to zero when idle. Cold starts take 4-8 seconds. The bot's MMS client has a 15-second health check timeout to accommodate this.
+
+**Verify the deployment:**
+
+```bash
+curl https://your-modal-url/health
+# Should return: {"status": "ok", "model_loaded": true, "gpu_available": true, ...}
+```
+
+If you do not need regional language support, skip this step. The bot works without MMS -- it will use Soniox for Urdu/English transcription at the recommended tier.
 
 ## Troubleshooting
 
