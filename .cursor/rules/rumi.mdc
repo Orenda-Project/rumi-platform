@@ -1,0 +1,47 @@
+---
+description: Rumi Platform project rules for WhatsApp AI teaching assistant
+globs: ["bot/**/*.js", "tests/**/*.js", "infrastructure/**/*.sql"]
+---
+
+# Rumi Platform
+
+Open-source AI teaching assistant on WhatsApp (Node.js + Express + Supabase + BullMQ).
+
+## Architecture
+
+- `bot/whatsapp-bot.js` — Entry point (webhook, message routing)
+- `bot/shared/config/` — Branding, feature tiers, capabilities
+- `bot/shared/services/` — 39+ service modules (LLM, coaching, reading, video)
+- `bot/shared/handlers/` — Message handlers (text, voice, image, flow)
+- `bot/workers/` — 8 background workers
+- `infrastructure/supabase/` — SQL schema (52+ tables)
+- `tests/` — 158 tests across 11 suites
+
+## Rules
+
+1. Never commit `.env` files — use `.env.template` for documentation
+2. Branding via `bot/shared/config/branding.js` — no hardcoded bot names or org names
+3. All LLM calls go through `bot/shared/services/llm-client.js`
+4. Background jobs use BullMQ (Redis), not SQS
+5. Feature gating via `RUMI_TIER` env var: `minimal`, `recommended`, or `full`
+6. Tests run without external services — no Supabase/Redis/WhatsApp needed
+
+## Commands
+
+```bash
+npm test              # All tests
+npm run test:security # Security scan
+npm run validate:env  # Environment check
+npm run simulate      # CLI simulator
+```
+
+## Key Files for Common Changes
+
+| Change | Files |
+|--------|-------|
+| Bot personality/name | `bot/shared/config/branding.js` |
+| LLM model/provider | `bot/shared/services/llm-client.js`, `.env` |
+| Feature availability | `bot/shared/config/feature-tiers.js` |
+| Coaching framework | `bot/shared/services/coaching-service.js`, `bot/shared/constants/scoring-rubric.js` |
+| Reading benchmarks | `bot/shared/services/reading-assessment-service.js` |
+| Add a language | 7 config files (see `docs/agent-customization.md#4`) |
