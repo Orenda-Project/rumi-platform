@@ -5,8 +5,9 @@
  * bd-350: Programmatic Soniox temp key provisioning
  *
  * Default limits:
- * - 24-hour expiration (auto-refresh recommended)
+ * - 1-hour expiration (Soniox max: 3600 seconds)
  * - WebSocket transcription access
+ * - Clone bots should auto-refresh keys using their own SONIOX_MASTER_API_KEY
  *
  * Docs: https://soniox.com/docs/stt/api-reference/auth/create_temporary_api_key
  */
@@ -28,13 +29,13 @@ class SonioxProvisioner {
    * @param {string} deploymentName - Name for the deployment (for logging)
    * @param {Object} options - Key options
    * @param {string} options.usageType - Usage type: 'transcribe_websocket' (default)
-   * @param {number} options.expiresInSeconds - Seconds until key expires (default: 86400 = 24 hours)
+   * @param {number} options.expiresInSeconds - Seconds until key expires (default: 3600 = 1 hour, max: 3600)
    * @returns {Promise<Object>} Created key details
    */
   async createTempKey(deploymentName, options = {}) {
     const {
       usageType = 'transcribe_websocket',
-      expiresInSeconds = 86400 // 24 hours
+      expiresInSeconds = 3600 // 1 hour (Soniox max)
     } = options;
 
     console.log(`Creating Soniox temp key for: ${deploymentName}`);
