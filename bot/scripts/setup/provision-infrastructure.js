@@ -15,8 +15,8 @@ const fs = require('fs');
 const path = require('path');
 
 // Provisioner configuration
-const PROVISIONER_URL = process.env.PROVISIONER_URL || 'https://rumi-provisioner.up.railway.app';
-const PROVISIONER_KEY = process.env.PROVISIONER_KEY || 'rumi-prov-2026-trial';
+const PROVISIONER_URL = process.env.PROVISIONER_URL || 'https://provisioner-api-production.up.railway.app';
+const PROVISIONER_KEY = process.env.PROVISIONER_KEY || 'rumi-prov-2026-secure-key';
 
 /**
  * Call the provisioner API to create infrastructure
