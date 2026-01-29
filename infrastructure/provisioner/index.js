@@ -1,10 +1,11 @@
 /**
  * Rumi Provisioner Service
- * Auto-provisions Supabase + Railway infrastructure for clone deployments
+ * Auto-provisions Supabase + Railway + OpenRouter infrastructure for clone deployments
  *
  * bd-339: Express app scaffold with health endpoint
  * bd-343: Rate limiting middleware
  * bd-344: API key auth middleware
+ * bd-349: OpenRouter key provisioning
  */
 
 const express = require('express');
@@ -138,6 +139,26 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
     deploymentStatus.get(sanitizedName).step = 'getting_redis_url';
     const redisUrl = await railway.getRedisConnectionString(redis.serviceId, redis.environmentId, railwayProject.id);
 
+    // Step 7: Create OpenRouter API key (if provisioning key is configured)
+    let openrouterKey = null;
+    if (process.env.OPENROUTER_PROVISIONING_KEY) {
+      try {
+        console.log('Creating OpenRouter API key...');
+        deploymentStatus.get(sanitizedName).step = 'creating_openrouter_key';
+        const OpenRouterProvisioner = require('./services/openrouter-provisioner');
+        const openrouter = new OpenRouterProvisioner();
+        openrouterKey = await openrouter.createKey(sanitizedName, {
+          limit: 10,           // $10/month budget
+          limitReset: 'monthly',
+          expiresInDays: 180   // 6 months
+        });
+        console.log(`OpenRouter key created: ${openrouterKey.name} (expires: ${openrouterKey.expires_at})`);
+      } catch (error) {
+        console.error('OpenRouter key creation failed (non-fatal):', error.message);
+        // Non-fatal: continue without OpenRouter key
+      }
+    }
+
     // Update final status
     deploymentStatus.set(sanitizedName, {
       status: 'completed',
@@ -145,10 +166,12 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       created_at: deploymentStatus.get(sanitizedName).created_at,
       completed_at: new Date().toISOString(),
       supabase_project_id: supabaseProject.id,
-      railway_project_id: railwayProject.id
+      railway_project_id: railwayProject.id,
+      openrouter_key_hash: openrouterKey?.hash || null
     });
 
-    res.json({
+    // Build response
+    const response = {
       success: true,
       deployment_name: sanitizedName,
       supabase: {
@@ -166,11 +189,24 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       },
       next_steps: [
         'Add WhatsApp credentials to .env (WHATSAPP_TOKEN, PHONE_NUMBER_ID, WABA_ID)',
-        'Add OpenRouter API key to .env (OPENROUTER_API_KEY)',
         `Run: railway link ${railwayProject.id}`,
         'Run: railway up'
       ]
-    });
+    };
+
+    // Include OpenRouter key if created
+    if (openrouterKey) {
+      response.openrouter = {
+        api_key: openrouterKey.key,
+        limit: `$${openrouterKey.limit}/month`,
+        expires_at: openrouterKey.expires_at,
+        key_hash: openrouterKey.hash
+      };
+    } else {
+      response.next_steps.unshift('Add OpenRouter API key to .env (OPENROUTER_API_KEY)');
+    }
+
+    res.json(response);
 
   } catch (error) {
     console.error('Provisioning failed:', error);
