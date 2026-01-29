@@ -172,7 +172,7 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
         const soniox = new SonioxProvisioner();
         sonioxKey = await soniox.createTempKey(sanitizedName, {
           usageType: 'transcribe_websocket',
-          expiresInSeconds: 86400  // 24 hours - clone should auto-refresh
+          expiresInSeconds: 3600  // 1 hour (Soniox max) - clone should auto-refresh
         });
         console.log(`Soniox temp key created (expires: ${sonioxKey.expires_at})`);
       } catch (error) {

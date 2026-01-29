@@ -39,7 +39,7 @@ When asked "Which tier?":
 | Tier | Features | Auto-Provisioned Services |
 |------|----------|--------------------------|
 | **Minimal** | AI Chat + Registration | Supabase, Railway, Redis, OpenRouter |
-| **Recommended** | + Coaching + Reading Assessment | + Soniox STT (24hr temp key) |
+| **Recommended** | + Coaching + Reading Assessment | + Soniox STT (1hr temp key*) |
 | **Full** | All features (voice, video, lesson plans, attendance) | + ElevenLabs TTS, Azure Speech |
 
 ## Setup Steps (Detailed)
