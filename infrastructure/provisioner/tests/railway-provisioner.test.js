@@ -101,7 +101,7 @@ describe('RailwayProvisioner', () => {
   });
 
   describe('getRedisConnectionString', () => {
-    test('returns Redis connection URL', async () => {
+    test('returns Redis connection URL when available', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({
@@ -114,12 +114,12 @@ describe('RailwayProvisioner', () => {
       });
 
       const provisioner = new RailwayProvisioner();
-      const url = await provisioner.getRedisConnectionString('redis-service-123', 'env-123');
+      const url = await provisioner.getRedisConnectionString('redis-service-123', 'env-123', 'proj-123');
 
       expect(url).toBe('redis://default:password@host.railway.app:6379');
     });
 
-    test('throws if REDIS_URL not found', async () => {
+    test('falls back to internal URL if REDIS_URL not found', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({
@@ -128,9 +128,23 @@ describe('RailwayProvisioner', () => {
       });
 
       const provisioner = new RailwayProvisioner();
+      const url = await provisioner.getRedisConnectionString('redis-123', 'env-123', 'proj-123');
 
-      await expect(provisioner.getRedisConnectionString('redis-123', 'env-123'))
-        .rejects.toThrow('Redis URL not found');
+      expect(url).toBe('redis://redis.railway.internal:6379');
+    });
+
+    test('falls back to internal URL on GraphQL error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          errors: [{ message: 'Variables not available' }]
+        })
+      });
+
+      const provisioner = new RailwayProvisioner();
+      const url = await provisioner.getRedisConnectionString('redis-123', 'env-123', 'proj-123');
+
+      expect(url).toBe('redis://redis.railway.internal:6379');
     });
   });
 
