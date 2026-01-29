@@ -147,24 +147,35 @@ class RailwayProvisioner {
    * Get Redis connection string from service variables
    * @param {string} serviceId - Redis service ID
    * @param {string} environmentId - Environment ID
+   * @param {string} projectId - Project ID
    * @returns {Promise<string>} Redis connection URL
    */
-  async getRedisConnectionString(serviceId, environmentId) {
-    const query = `
-      query GetVariables($serviceId: String!, $environmentId: String!) {
-        variables(serviceId: $serviceId, environmentId: $environmentId)
+  async getRedisConnectionString(serviceId, environmentId, projectId) {
+    // For self-deployed Redis images, Railway uses internal networking
+    // The service name becomes the hostname within the project
+    // Format: redis.railway.internal:6379
+
+    // Try to get variables if available
+    try {
+      const query = `
+        query GetVariables($projectId: String!, $serviceId: String!, $environmentId: String!) {
+          variables(projectId: $projectId, serviceId: $serviceId, environmentId: $environmentId)
+        }
+      `;
+
+      const data = await this.graphql(query, { projectId, serviceId, environmentId });
+
+      if (data.variables && data.variables.REDIS_URL) {
+        return data.variables.REDIS_URL;
       }
-    `;
-
-    const data = await this.graphql(query, { serviceId, environmentId });
-
-    if (!data.variables || !data.variables.REDIS_URL) {
-      // For self-deployed Redis, construct the URL
-      // Railway generates internal URLs like redis.railway.internal:6379
-      throw new Error('Redis URL not found - service may still be deploying');
+    } catch (error) {
+      // Variables may not be available yet, use internal URL
+      console.log('Variables not available yet, using internal URL');
     }
 
-    return data.variables.REDIS_URL;
+    // Return internal Railway URL for Redis
+    // This works within the Railway private network
+    return 'redis://redis.railway.internal:6379';
   }
 
   /**

@@ -136,7 +136,7 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
     // Step 6: Get Redis connection string
     console.log('Getting Redis connection string...');
     deploymentStatus.get(sanitizedName).step = 'getting_redis_url';
-    const redisUrl = await railway.getRedisConnectionString(redis.serviceId, redis.environmentId);
+    const redisUrl = await railway.getRedisConnectionString(redis.serviceId, redis.environmentId, railwayProject.id);
 
     // Update final status
     deploymentStatus.set(sanitizedName, {
