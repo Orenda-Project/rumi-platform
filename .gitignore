@@ -83,3 +83,4 @@ dump.rdb
 supabase/.temp/
 **/supabase/.temp/
 dashboard/supabase/.temp/
+.env.provisioner
