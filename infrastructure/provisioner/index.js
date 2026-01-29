@@ -6,6 +6,9 @@
  * bd-343: Rate limiting middleware
  * bd-344: API key auth middleware
  * bd-349: OpenRouter key provisioning
+ * bd-350: Soniox temp key provisioning (Tier 2+)
+ * bd-351: ElevenLabs shared key passthrough (Tier 3)
+ * bd-352: Azure Speech shared config passthrough (Tier 3)
  */
 
 const express = require('express');
@@ -159,15 +162,63 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       }
     }
 
+    // Step 8: Create Soniox temp key for STT (Tier 2+: recommended or full)
+    let sonioxKey = null;
+    if ((tier === 'recommended' || tier === 'full') && process.env.SONIOX_MASTER_API_KEY) {
+      try {
+        console.log('Creating Soniox temp key...');
+        deploymentStatus.get(sanitizedName).step = 'creating_soniox_key';
+        const SonioxProvisioner = require('./services/soniox-provisioner');
+        const soniox = new SonioxProvisioner();
+        sonioxKey = await soniox.createTempKey(sanitizedName, {
+          usageType: 'transcribe_websocket',
+          expiresInSeconds: 86400  // 24 hours - clone should auto-refresh
+        });
+        console.log(`Soniox temp key created (expires: ${sonioxKey.expires_at})`);
+      } catch (error) {
+        console.error('Soniox key creation failed (non-fatal):', error.message);
+        // Non-fatal: continue without Soniox key
+      }
+    }
+
+    // Step 9: Pass shared ElevenLabs key (Tier 3: full only)
+    let elevenlabsKey = null;
+    if (tier === 'full' && process.env.ELEVENLABS_API_KEY) {
+      console.log('Including shared ElevenLabs API key...');
+      deploymentStatus.get(sanitizedName).step = 'adding_elevenlabs_key';
+      elevenlabsKey = {
+        api_key: process.env.ELEVENLABS_API_KEY,
+        type: 'shared',
+        note: 'Shared Pro plan key - usage is pooled across all Tier 3 deployments'
+      };
+    }
+
+    // Step 10: Pass shared Azure Speech config (Tier 3: full only)
+    let azureSpeechConfig = null;
+    if (tier === 'full' && process.env.AZURE_SPEECH_KEY && process.env.AZURE_SPEECH_REGION) {
+      console.log('Including shared Azure Speech config...');
+      deploymentStatus.get(sanitizedName).step = 'adding_azure_speech';
+      azureSpeechConfig = {
+        key: process.env.AZURE_SPEECH_KEY,
+        region: process.env.AZURE_SPEECH_REGION,
+        type: 'shared',
+        note: 'Shared Azure Cognitive Services key for pronunciation assessment'
+      };
+    }
+
     // Update final status
     deploymentStatus.set(sanitizedName, {
       status: 'completed',
       step: 'done',
+      tier: tier,
       created_at: deploymentStatus.get(sanitizedName).created_at,
       completed_at: new Date().toISOString(),
       supabase_project_id: supabaseProject.id,
       railway_project_id: railwayProject.id,
-      openrouter_key_hash: openrouterKey?.hash || null
+      openrouter_key_hash: openrouterKey?.hash || null,
+      has_soniox: !!sonioxKey,
+      has_elevenlabs: !!elevenlabsKey,
+      has_azure_speech: !!azureSpeechConfig
     });
 
     // Build response
@@ -205,6 +256,36 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
     } else {
       response.next_steps.unshift('Add OpenRouter API key to .env (OPENROUTER_API_KEY)');
     }
+
+    // Include Soniox temp key if created (Tier 2+)
+    if (sonioxKey) {
+      response.soniox = {
+        api_key: sonioxKey.api_key,
+        usage_type: sonioxKey.usage_type,
+        expires_at: sonioxKey.expires_at,
+        note: 'Key expires in 24 hours. Bot should auto-refresh using SONIOX_MASTER_API_KEY.'
+      };
+      response.next_steps.push('Configure SONIOX_MASTER_API_KEY for auto-refresh of temp keys');
+    } else if (tier === 'recommended' || tier === 'full') {
+      response.next_steps.push('Soniox STT not configured - add SONIOX_MASTER_API_KEY to provisioner');
+    }
+
+    // Include ElevenLabs shared key if available (Tier 3)
+    if (elevenlabsKey) {
+      response.elevenlabs = elevenlabsKey;
+    } else if (tier === 'full') {
+      response.next_steps.push('ElevenLabs TTS not configured - add ELEVENLABS_API_KEY to provisioner');
+    }
+
+    // Include Azure Speech shared config if available (Tier 3)
+    if (azureSpeechConfig) {
+      response.azure_speech = azureSpeechConfig;
+    } else if (tier === 'full') {
+      response.next_steps.push('Azure Speech not configured - add AZURE_SPEECH_KEY and AZURE_SPEECH_REGION to provisioner');
+    }
+
+    // Add tier info to response
+    response.tier = tier;
 
     res.json(response);
 
