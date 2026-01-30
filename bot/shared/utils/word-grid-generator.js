@@ -11,9 +11,13 @@
  * 3. Canvas renders in 2-column layout (professional formatting)
  *
  * Layout: 2 columns x 7 rows (14 total words)
+ *
+ * NOTE: This module requires the 'canvas' optional dependency.
+ * If canvas is not installed, grid generation will throw an error.
+ * See shared/utils/canvas-loader.js for installation instructions.
  */
 
-const { createCanvas } = require('canvas');
+const { isCanvasAvailable, getCanvas } = require('./canvas-loader');
 const { logToFile } = require('./logger');
 const OpenAI = require('openai');
 
@@ -145,6 +149,15 @@ Example output format: word1, word2, word3, ...`;
  * @returns {Promise<Buffer>} PNG image buffer
  */
 async function generateWordGrid(words, language, fontFamily) {
+  // Check canvas availability before attempting to generate
+  if (!isCanvasAvailable()) {
+    const error = new Error('Word grid generation requires the canvas module which is not installed.');
+    error.code = 'CANVAS_NOT_AVAILABLE';
+    error.installInstructions = 'See https://github.com/Automattic/node-canvas/wiki for installation instructions.';
+    logToFile('❌ Canvas not available for word grid generation');
+    throw error;
+  }
+
   try {
     logToFile('📊 Generating word grid', {
       language,
@@ -156,6 +169,9 @@ async function generateWordGrid(words, language, fontFamily) {
     if (!words || words.length !== 14) {
       throw new Error(`Expected 14 words, got ${words?.length || 0}`);
     }
+
+    // Get canvas module
+    const { createCanvas } = getCanvas();
 
     // Calculate layout
     const lineHeight = FONT_SIZE * LINE_HEIGHT_MULTIPLIER;
