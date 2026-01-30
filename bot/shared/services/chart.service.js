@@ -2,15 +2,25 @@
  * Chart Service
  * Generates charts for classroom observation reports using ChartJS
  * Server-side rendering for embedding in PDF reports
+ *
+ * NOTE: This service requires the 'canvas' module which has native dependencies.
+ * If canvas is not installed, chart generation will be disabled and null will be returned.
+ * See shared/utils/canvas-loader.js for installation instructions.
  */
 
-const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+const { isChartAvailable, getChartJSNodeCanvas } = require('../utils/canvas-loader');
 const { logToFile } = require('../utils/logger');
 
 // Chart configuration
 const CHART_WIDTH = 600;
 const CHART_HEIGHT = 400;
 const BACKGROUND_COLOR = 'white';
+
+// Check canvas availability once at module load
+const CHARTS_ENABLED = isChartAvailable();
+if (!CHARTS_ENABLED) {
+  console.warn('[chart.service] Chart generation disabled - canvas module not available');
+}
 
 /**
  * Chart Service
@@ -21,12 +31,18 @@ class ChartService {
    * Generate Talk Time Pie Chart
    * Shows distribution of teacher vs student talk time
    * @param {object} talkTimeData - { teacher_percentage, student_percentage }
-   * @returns {Promise<string>} Base64 image data URL
+   * @returns {Promise<string|null>} Base64 image data URL, or null if canvas not available
    */
   static async generateTalkTimePieChart(talkTimeData) {
+    if (!CHARTS_ENABLED) {
+      logToFile('Chart generation skipped - canvas not available');
+      return null;
+    }
+
     try {
       logToFile('Generating Talk Time Pie Chart', talkTimeData);
 
+      const { ChartJSNodeCanvas } = getChartJSNodeCanvas();
       const chartJSNodeCanvas = new ChartJSNodeCanvas({
         width: CHART_WIDTH,
         height: CHART_HEIGHT,
@@ -119,12 +135,18 @@ class ChartService {
    * Generate Question Types Bar Chart
    * Shows count of open-ended vs closed-ended questions
    * @param {object} questionsData - { open_ended_count, closed_ended_count }
-   * @returns {Promise<string>} Base64 image data URL
+   * @returns {Promise<string|null>} Base64 image data URL, or null if canvas not available
    */
   static async generateQuestionTypesBarChart(questionsData) {
+    if (!CHARTS_ENABLED) {
+      logToFile('Chart generation skipped - canvas not available');
+      return null;
+    }
+
     try {
       logToFile('Generating Question Types Bar Chart', questionsData);
 
+      const { ChartJSNodeCanvas } = getChartJSNodeCanvas();
       const chartJSNodeCanvas = new ChartJSNodeCanvas({
         width: CHART_WIDTH,
         height: CHART_HEIGHT,
@@ -239,12 +261,18 @@ class ChartService {
    * Generate Scores Radar Chart
    * Shows Danielson Framework scores across domains
    * @param {object} scoresData - { planning, environment, instruction, overall }
-   * @returns {Promise<string>} Base64 image data URL
+   * @returns {Promise<string|null>} Base64 image data URL, or null if canvas not available
    */
   static async generateScoresRadarChart(scoresData) {
+    if (!CHARTS_ENABLED) {
+      logToFile('Chart generation skipped - canvas not available');
+      return null;
+    }
+
     try {
       logToFile('Generating Scores Radar Chart', scoresData);
 
+      const { ChartJSNodeCanvas } = getChartJSNodeCanvas();
       const chartJSNodeCanvas = new ChartJSNodeCanvas({
         width: CHART_WIDTH,
         height: CHART_HEIGHT,

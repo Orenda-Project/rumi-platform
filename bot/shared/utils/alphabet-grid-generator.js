@@ -6,9 +6,13 @@
  * without GPT-4 Vision's prompt injection risk
  *
  * Layout: 3 rows of 4 letters + 1 row of 2 letters (14 total)
+ *
+ * NOTE: This module requires the 'canvas' optional dependency.
+ * If canvas is not installed, grid generation will throw an error.
+ * See shared/utils/canvas-loader.js for installation instructions.
  */
 
-const { createCanvas } = require('canvas');
+const { isCanvasAvailable, getCanvas } = require('./canvas-loader');
 const { logToFile } = require('./logger');
 
 // Grid configuration
@@ -29,6 +33,15 @@ const START_Y = 50; // Bug #26: Reduced from 100 to prevent top row clipping
  * @returns {Promise<Buffer>} PNG image buffer
  */
 async function generateAlphabetGrid(letters, language, fontFamily) {
+  // Check canvas availability before attempting to generate
+  if (!isCanvasAvailable()) {
+    const error = new Error('Alphabet grid generation requires the canvas module which is not installed.');
+    error.code = 'CANVAS_NOT_AVAILABLE';
+    error.installInstructions = 'See https://github.com/Automattic/node-canvas/wiki for installation instructions.';
+    logToFile('❌ Canvas not available for alphabet grid generation');
+    throw error;
+  }
+
   try {
     // Bug #5 Fix: Determine if RTL language (Urdu, Arabic read right-to-left)
     const isRTL = ['ur', 'ar'].includes(language);
@@ -44,6 +57,9 @@ async function generateAlphabetGrid(letters, language, fontFamily) {
     if (!letters || letters.length !== 14) {
       throw new Error(`Expected 14 letters, got ${letters?.length || 0}`);
     }
+
+    // Get canvas module
+    const { createCanvas } = getCanvas();
 
     // Bug #5 Fix: For RTL languages, reverse letter order so position 0 is on the RIGHT
     // This allows natural right-to-left reading while maintaining position-based scoring

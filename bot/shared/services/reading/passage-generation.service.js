@@ -10,9 +10,13 @@
  * - Update assessment records with passage data
  *
  * CRITICAL: Urdu passages MUST NOT contain diacritical marks (matches Pakistani textbooks)
+ *
+ * NOTE: This service requires the 'canvas' optional dependency.
+ * If canvas is not installed, passage image generation will fail gracefully.
+ * See shared/utils/canvas-loader.js for installation instructions.
  */
 
-const { createCanvas, registerFont } = require('canvas');
+const { isCanvasAvailable, getCanvas } = require('../../utils/canvas-loader');
 const fs = require('fs');
 const path = require('path');
 const OpenAI = require('openai');
@@ -22,7 +26,6 @@ const { logToFile } = require('../../utils/logger');
 const { OPENAI_API_KEY, TEMP_DIR } = require('../../utils/constants');
 const { generateAlphabetGrid } = require('../../utils/alphabet-grid-generator');
 const { generateRandomWords, generateWordGrid } = require('../../utils/word-grid-generator');
-const { loadImage } = require('canvas');
 const https = require('https');
 const { getPresignedUrl } = require('../../storage/r2');
 
@@ -34,33 +37,63 @@ const PASSAGE_BACKGROUNDS = require('../../config/passage-backgrounds.json');
 // Feature flag for background images (enable after uploading to R2)
 const USE_BACKGROUND_IMAGES = process.env.USE_PASSAGE_BACKGROUNDS === 'true';
 
-// Register fonts for proper Urdu rendering with contextual shaping
-registerFont(path.join(__dirname, '../../fonts/NotoNastaliqUrdu-Regular.ttf'), {
-  family: 'Noto Nastaliq Urdu',
-  weight: 'normal',
-  style: 'normal'
-});
+// Canvas availability flag - checked once at module load
+const CANVAS_AVAILABLE = isCanvasAvailable();
 
-registerFont(path.join(__dirname, '../../fonts/NotoNastaliqUrdu-Bold.ttf'), {
-  family: 'Noto Nastaliq Urdu',
-  weight: 'bold',
-  style: 'normal'
-});
+// Register fonts for proper Urdu rendering (only if canvas is available)
+if (CANVAS_AVAILABLE) {
+  try {
+    const { registerFont } = getCanvas();
+    registerFont(path.join(__dirname, '../../fonts/NotoNastaliqUrdu-Regular.ttf'), {
+      family: 'Noto Nastaliq Urdu',
+      weight: 'normal',
+      style: 'normal'
+    });
 
-// Bug #20 Fix: Register Lexend font for English passages (improves reading proficiency)
-registerFont(path.join(__dirname, '../../fonts/Lexend-Regular.ttf'), {
-  family: 'Lexend',
-  weight: 'normal',
-  style: 'normal'
-});
+    registerFont(path.join(__dirname, '../../fonts/NotoNastaliqUrdu-Bold.ttf'), {
+      family: 'Noto Nastaliq Urdu',
+      weight: 'bold',
+      style: 'normal'
+    });
+  } catch (fontError) {
+    console.warn('[passage-generation] Font registration failed:', fontError.message);
+  }
+  // Bug #20 Fix: Register Lexend font for English passages (improves reading proficiency)
+  try {
+    const { registerFont } = getCanvas();
+    registerFont(path.join(__dirname, '../../fonts/Lexend-Regular.ttf'), {
+      family: 'Lexend',
+      weight: 'normal',
+      style: 'normal'
+    });
 
-registerFont(path.join(__dirname, '../../fonts/Lexend-Bold.ttf'), {
-  family: 'Lexend',
-  weight: 'bold',
-  style: 'normal'
-});
+    registerFont(path.join(__dirname, '../../fonts/Lexend-Bold.ttf'), {
+      family: 'Lexend',
+      weight: 'bold',
+      style: 'normal'
+    });
+    logToFile('✅ Noto Nastaliq Urdu and Lexend fonts registered for passage rendering');
+  } catch (fontError) {
+    console.warn('[passage-generation] Lexend font registration failed:', fontError.message);
+  }
+} else {
+  console.warn('[passage-generation] Canvas not available - passage image generation will be disabled');
+}
 
-logToFile('✅ Noto Nastaliq Urdu and Lexend fonts registered for passage rendering');
+// Helper functions that get canvas module at runtime (to handle optional dependency)
+function getCreateCanvas() {
+  if (!CANVAS_AVAILABLE) {
+    throw new Error('Canvas module not available - passage image generation disabled');
+  }
+  return getCanvas().createCanvas;
+}
+
+function getLoadImage() {
+  if (!CANVAS_AVAILABLE) {
+    throw new Error('Canvas module not available - passage image generation disabled');
+  }
+  return getCanvas().loadImage;
+}
 
 // Canvas configuration for mobile-optimized passages
 const CANVAS_WIDTH = 1080;
@@ -200,7 +233,7 @@ class PassageGenerationService {
               redirectResponse.on('end', async () => {
                 try {
                   const buffer = Buffer.concat(chunks);
-                  const image = await loadImage(buffer);
+                  const image = await getLoadImage()(buffer);
                   resolve(image);
                 } catch (error) {
                   logToFile('⚠️ Failed to load background image after redirect', { url, error: error.message });
@@ -217,7 +250,7 @@ class PassageGenerationService {
           response.on('end', async () => {
             try {
               const buffer = Buffer.concat(chunks);
-              const image = await loadImage(buffer);
+              const image = await getLoadImage()(buffer);
               resolve(image);
             } catch (error) {
               logToFile('⚠️ Failed to load background image', { url, error: error.message });
@@ -867,7 +900,7 @@ IMPORTANT: Return ONLY valid JSON in this exact format (no markdown, no code blo
 
       // Standard single-column layout for all other types
       // Create temporary canvas to measure text
-      const tempCanvas = createCanvas(CANVAS_WIDTH, 100);
+      const tempCanvas = getCreateCanvas()(CANVAS_WIDTH, 100);
       const tempCtx = tempCanvas.getContext('2d');
 
       tempCtx.font = `${fontSize}px "${fontFamily}"`; // Quoted font name for fonts with spaces
@@ -881,7 +914,7 @@ IMPORTANT: Return ONLY valid JSON in this exact format (no markdown, no code blo
       const canvasHeight = (lines.length * lineHeight) + (CANVAS_PADDING * 2) + 100; // Extra space at bottom
 
       // Create final canvas
-      const canvas = createCanvas(CANVAS_WIDTH, canvasHeight);
+      const canvas = getCreateCanvas()(CANVAS_WIDTH, canvasHeight);
       const ctx = canvas.getContext('2d');
 
       // Try to use background image if enabled
@@ -979,7 +1012,7 @@ IMPORTANT: Return ONLY valid JSON in this exact format (no markdown, no code blo
     const canvasHeight = (maxRows * lineHeight) + (CANVAS_PADDING * 2) + 100;
 
     // Create canvas
-    const canvas = createCanvas(CANVAS_WIDTH, canvasHeight);
+    const canvas = getCreateCanvas()(CANVAS_WIDTH, canvasHeight);
     const ctx = canvas.getContext('2d');
 
     // Fill background
