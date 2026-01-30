@@ -253,7 +253,25 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
         `Set your WhatsApp webhook URL to: ${railwayResult.domain.webhookUrl}`,
         `Deploy using: RAILWAY_TOKEN=${railwayResult.deployToken.token} railway up`,
         `View project at: ${railwayResult.project.url}`
-      ]
+      ],
+      cli_commands: {
+        setup: `export RAILWAY_TOKEN=${railwayResult.deployToken.token}`,
+        deploy: 'railway up',
+        logs: 'railway logs --follow',
+        variables: 'railway variables',
+        set_variable: 'railway variables --set KEY=value',
+        note: 'Save RAILWAY_TOKEN in your shell profile for persistent access'
+      },
+      github_integration: {
+        instructions: [
+          '1. Push your code to GitHub: git push origin main',
+          '2. Go to Railway dashboard > bot service > Settings > Source',
+          '3. Click Connect Repository and select your repo',
+          '4. Set Root Directory to: bot',
+          '5. Enable Automatic Deployments'
+        ],
+        note: 'GitHub connection requires Railway UI (cannot be done via API)'
+      }
     };
 
     // Include OpenRouter key if created

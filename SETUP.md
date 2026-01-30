@@ -168,6 +168,76 @@ See `bot/scripts/setup/assets/README.md` for template asset requirements.
 
 Send "Hi" to your WhatsApp bot number. You should receive a welcome message and registration flow.
 
+## Step 9: Set Up for Ongoing Development
+
+If you plan to modify the bot and deploy updates, complete these additional steps.
+
+### Save Your Deploy Token
+
+If you used the provisioner, your response includes a `deploy_token`. Set it as an environment variable:
+
+```bash
+# Add to your shell profile (~/.bashrc, ~/.zshrc)
+export RAILWAY_TOKEN=your-deploy-token-here
+```
+
+This enables CLI operations without re-authenticating each time.
+
+### Connect Your GitHub Repository (Recommended)
+
+For automatic deployments on every `git push`:
+
+1. Push your forked repo to GitHub:
+   ```bash
+   git remote add origin https://github.com/YOUR-ORG/rumi-platform.git
+   git push -u origin main
+   ```
+
+2. Connect in Railway UI (one-time setup):
+   - Go to your Railway project dashboard
+   - Click **bot** service > **Settings** > **Source**
+   - Click **Connect Repository** and select your repo
+   - Set **Root Directory** to `bot`
+
+Now every push to `main` triggers a deployment automatically.
+
+### Manual Deployment Workflow
+
+If not using GitHub integration:
+
+```bash
+cd bot
+# Make your changes
+railway up  # Deploy to Railway
+```
+
+### View Logs
+
+```bash
+railway logs --follow
+```
+
+### Manage Environment Variables
+
+```bash
+# View all
+railway variables
+
+# Set a variable
+railway variables --set KEY=value
+```
+
+### Accessing Railway Dashboard (UI)
+
+The deploy token allows CLI operations but not UI access. To access the web dashboard:
+
+1. **Request a team invite** from your Rumi administrator
+2. Create a Railway account at [railway.app](https://railway.app)
+3. Accept the invitation email
+4. Access your project via the dashboard
+
+See [docs/railway-operations.md](docs/railway-operations.md) for the complete Railway operations guide.
+
 ## Upgrading Tiers
 
 ### Minimal to Recommended
