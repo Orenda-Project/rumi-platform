@@ -251,26 +251,25 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       next_steps: [
         'Add WhatsApp credentials to .env (WHATSAPP_TOKEN, PHONE_NUMBER_ID, WABA_ID)',
         `Set your WhatsApp webhook URL to: ${railwayResult.domain.webhookUrl}`,
-        `Deploy using: RAILWAY_TOKEN=${railwayResult.deployToken.token} railway up`,
+        `Deploy using: cd bot && RAILWAY_TOKEN=${railwayResult.deployToken.token} railway up --service bot`,
         `View project at: ${railwayResult.project.url}`
       ],
       cli_commands: {
         setup: `export RAILWAY_TOKEN=${railwayResult.deployToken.token}`,
-        deploy: 'railway up',
-        logs: 'railway logs --follow',
-        variables: 'railway variables',
-        set_variable: 'railway variables --set KEY=value',
-        note: 'Save RAILWAY_TOKEN in your shell profile for persistent access'
+        deploy: 'cd bot && railway up --service bot',
+        logs: 'railway logs --service bot --follow',
+        variables: 'railway variables --service bot',
+        set_variable: 'railway variables --service bot --set KEY=value',
+        note: 'All commands require --service bot to target the correct service'
       },
       github_integration: {
         instructions: [
-          '1. Push your code to GitHub: git push origin main',
-          '2. Go to Railway dashboard > bot service > Settings > Source',
-          '3. Click Connect Repository and select your repo',
-          '4. Set Root Directory to: bot',
-          '5. Enable Automatic Deployments'
+          '1. Add RAILWAY_TOKEN to GitHub repo secrets (Settings > Secrets > Actions)',
+          '2. Copy .github/workflows/deploy.yml from rumi-platform repo',
+          '3. Push to main branch - auto-deploys via GitHub Actions',
+          'Alternative: Manual deploy with `cd bot && railway up --service bot`'
         ],
-        note: 'GitHub connection requires Railway UI (cannot be done via API)'
+        note: 'GitHub Actions workflow uses RAILWAY_TOKEN secret - no Railway UI needed'
       }
     };
 

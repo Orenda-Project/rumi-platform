@@ -39,18 +39,17 @@ The project token allows deployment, logs, and environment variables. It does NO
 
 ## Viewing Logs
 
+**Important**: Always specify `--service bot` to target the bot service.
+
 ```bash
 # View recent logs
-railway logs
+railway logs --service bot
 
 # Follow logs in real-time
-railway logs --follow
+railway logs --service bot --follow
 
 # View last 100 lines
-railway logs --num 100
-
-# Filter by service (if you have multiple)
-railway logs --service bot
+railway logs --service bot --num 100
 ```
 
 **Common log patterns:**
@@ -72,11 +71,13 @@ After making code changes locally:
 # Navigate to your bot directory
 cd rumi-platform/bot
 
-# Deploy to Railway
-railway up
+# Deploy to Railway (always specify --service bot)
+railway up --service bot
 ```
 
 This pushes your local code to Railway and triggers a rebuild.
+
+**Why `--service bot`?** Your Railway project has multiple services (bot, redis). Without specifying the service, Railway CLI doesn't know which one to deploy to.
 
 ### Method 2: Git-Based Auto-Deploy (Recommended)
 
@@ -108,27 +109,38 @@ Connect your GitHub repository for automatic deployments on every push:
 To restart your bot (e.g., after changing env vars):
 
 ```bash
-railway up --force
+cd bot
+railway up --service bot --force
 ```
+
+### Method 4: GitHub Actions (No UI Required)
+
+If you don't have Railway UI access, use GitHub Actions for auto-deploy:
+
+1. Add `RAILWAY_TOKEN` to GitHub repo secrets (Settings > Secrets > Actions)
+2. Copy `.github/workflows/deploy.yml` from the rumi-platform repo
+3. Push to main branch — deploys automatically
+
+See `.github/workflows/deploy.yml` for the workflow file.
 
 ## Managing Environment Variables
 
 ### View Current Variables
 
 ```bash
-railway variables
+railway variables --service bot
 ```
 
 ### Set a Variable
 
 ```bash
-railway variables --set KEY=value
+railway variables --service bot --set KEY=value
 ```
 
 ### Set Multiple Variables
 
 ```bash
-railway variables --set KEY1=value1 --set KEY2=value2
+railway variables --service bot --set KEY1=value1 --set KEY2=value2
 ```
 
 ### Common Variables to Update
@@ -215,10 +227,10 @@ Common causes:
 ### Redis Connection Failed
 
 ```bash
-railway variables | grep REDIS_URL
+railway variables --service bot | grep REDIS_URL
 ```
 
-Ensure `REDIS_URL` is set. If using Railway Redis, it should be auto-populated.
+Ensure `REDIS_URL` is set. If using Railway Redis, it should be auto-populated via the shared variable.
 
 ## Scaling Considerations
 
@@ -243,15 +255,17 @@ Railway may spin down idle services. First message after inactivity may take 5-1
 
 ## CLI Reference
 
+**Note**: Always include `--service bot` to target the bot service.
+
 | Command | Description |
 |---------|-------------|
-| `railway logs` | View logs |
-| `railway logs --follow` | Stream logs |
-| `railway up` | Deploy code |
-| `railway variables` | List env vars |
-| `railway variables --set K=V` | Set env var |
+| `railway logs --service bot` | View logs |
+| `railway logs --service bot --follow` | Stream logs |
+| `railway up --service bot` | Deploy code |
+| `railway variables --service bot` | List env vars |
+| `railway variables --service bot --set K=V` | Set env var |
 | `railway status` | Check deployment status |
-| `railway rollback` | Revert to previous deployment |
+| `railway rollback --service bot` | Revert to previous deployment |
 
 ## Getting Help
 
