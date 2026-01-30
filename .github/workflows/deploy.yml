@@ -1,0 +1,59 @@
+# Deploy to Railway on push to main
+#
+# This workflow uses the RAILWAY_TOKEN secret to deploy the bot service
+# to Railway. This is the recommended method for auto-deployment when
+# you don't have Railway UI access.
+#
+# Setup:
+# 1. Go to your GitHub repo > Settings > Secrets and variables > Actions
+# 2. Add a new secret called RAILWAY_TOKEN
+# 3. Paste the deploy token from your provisioning response
+# 4. Push to main branch - auto-deploys!
+
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bot/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force deployment even without changes'
+        required: false
+        default: 'false'
+
+jobs:
+  deploy:
+    name: Deploy Bot to Railway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd bot
+          echo "Deploying to Railway..."
+          railway up --service bot --ci
+          echo "Deployment complete!"
+
+      - name: Verify deployment
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "Checking deployment status..."
+          railway status || true

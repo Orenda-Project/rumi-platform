@@ -183,9 +183,9 @@ export RAILWAY_TOKEN=your-deploy-token-here
 
 This enables CLI operations without re-authenticating each time.
 
-### Connect Your GitHub Repository (Recommended)
+### Set Up Auto-Deploy with GitHub Actions (Recommended)
 
-For automatic deployments on every `git push`:
+For automatic deployments on every `git push`, use the included GitHub Actions workflow:
 
 1. Push your forked repo to GitHub:
    ```bash
@@ -193,38 +193,51 @@ For automatic deployments on every `git push`:
    git push -u origin main
    ```
 
-2. Connect in Railway UI (one-time setup):
-   - Go to your Railway project dashboard
-   - Click **bot** service > **Settings** > **Source**
-   - Click **Connect Repository** and select your repo
-   - Set **Root Directory** to `bot`
+2. Add your Railway token to GitHub Secrets:
+   - Go to your GitHub repo > **Settings** > **Secrets and variables** > **Actions**
+   - Click **New repository secret**
+   - Name: `RAILWAY_TOKEN`
+   - Value: Paste the deploy token from your provisioning response
 
-Now every push to `main` triggers a deployment automatically.
+3. The workflow file is already included at `.github/workflows/deploy.yml`
 
-### Manual Deployment Workflow
+Now every push to `main` automatically deploys to Railway!
 
-If not using GitHub integration:
+### Alternative: Railway UI Integration
+
+If you have Railway dashboard access (requires team invite), you can also connect via UI:
+
+1. Go to your Railway project dashboard
+2. Click **bot** service > **Settings** > **Source**
+3. Click **Connect Repository** and select your repo
+4. Set **Root Directory** to `bot`
+
+### Manual Deployment
+
+If not using auto-deploy:
 
 ```bash
 cd bot
 # Make your changes
-railway up  # Deploy to Railway
+railway up --service bot  # Deploy to the bot service on Railway
 ```
+
+**Important**: Always include `--service bot` to target the correct service.
 
 ### View Logs
 
 ```bash
-railway logs --follow
+railway logs --service bot --follow
 ```
 
 ### Manage Environment Variables
 
 ```bash
-# View all
-railway variables
+# View all for bot service
+railway variables --service bot
 
 # Set a variable
-railway variables --set KEY=value
+railway variables --service bot --set KEY=value
 ```
 
 ### Accessing Railway Dashboard (UI)

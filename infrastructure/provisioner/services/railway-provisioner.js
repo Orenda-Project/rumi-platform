@@ -400,7 +400,7 @@ class RailwayProvisioner {
       deployToken: {
         token: token.token,
         name: token.tokenName,
-        usage: `RAILWAY_TOKEN=${token.token} railway up`
+        usage: `cd bot && RAILWAY_TOKEN=${token.token} railway up --service bot`
       }
     };
   }

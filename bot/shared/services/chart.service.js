@@ -3,9 +3,11 @@
  * Generates charts for classroom observation reports using ChartJS
  * Server-side rendering for embedding in PDF reports
  *
- * NOTE: This service requires the 'canvas' module which has native dependencies.
- * If canvas is not installed, chart generation will be disabled and null will be returned.
- * See shared/utils/canvas-loader.js for installation instructions.
+ * Supports two backends:
+ * 1. Local canvas (chartjs-node-canvas) - Preferred, requires native dependencies
+ * 2. QuickChart.io API - Fallback, works on all platforms including Windows
+ *
+ * The service automatically falls back to QuickChart.io when canvas is not available.
  */
 
 const { isChartAvailable, getChartJSNodeCanvas } = require('../utils/canvas-loader');
@@ -16,10 +18,88 @@ const CHART_WIDTH = 600;
 const CHART_HEIGHT = 400;
 const BACKGROUND_COLOR = 'white';
 
+// QuickChart.io configuration
+const QUICKCHART_URL = 'https://quickchart.io/chart';
+
 // Check canvas availability once at module load
-const CHARTS_ENABLED = isChartAvailable();
-if (!CHARTS_ENABLED) {
-  console.warn('[chart.service] Chart generation disabled - canvas module not available');
+const LOCAL_CANVAS_AVAILABLE = isChartAvailable();
+if (!LOCAL_CANVAS_AVAILABLE) {
+  console.warn('[chart.service] Local canvas not available - using QuickChart.io fallback');
+}
+
+/**
+ * Generate chart using QuickChart.io API
+ * @param {object} config - Chart.js configuration
+ * @returns {Promise<string>} Base64 data URL
+ */
+async function generateWithQuickChart(config) {
+  const url = new URL(QUICKCHART_URL);
+  url.searchParams.set('c', JSON.stringify(config));
+  url.searchParams.set('w', CHART_WIDTH.toString());
+  url.searchParams.set('h', CHART_HEIGHT.toString());
+  url.searchParams.set('bkg', BACKGROUND_COLOR);
+  url.searchParams.set('f', 'png');
+
+  const response = await fetch(url.toString());
+
+  if (!response.ok) {
+    throw new Error(`QuickChart API error: ${response.status} ${response.statusText}`);
+  }
+
+  const buffer = await response.arrayBuffer();
+  const base64Image = Buffer.from(buffer).toString('base64');
+  return `data:image/png;base64,${base64Image}`;
+}
+
+/**
+ * Generate chart using local canvas
+ * @param {object} config - Chart.js configuration
+ * @returns {Promise<string>} Base64 data URL
+ */
+async function generateWithLocalCanvas(config) {
+  const { ChartJSNodeCanvas } = getChartJSNodeCanvas();
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({
+    width: CHART_WIDTH,
+    height: CHART_HEIGHT,
+    backgroundColour: BACKGROUND_COLOR
+  });
+
+  // Add background plugin for local rendering
+  const configWithBackground = {
+    ...config,
+    plugins: [
+      ...(config.plugins || []),
+      {
+        id: 'background',
+        beforeDraw: (chart) => {
+          const ctx = chart.ctx;
+          ctx.fillStyle = BACKGROUND_COLOR;
+          ctx.fillRect(0, 0, chart.width, chart.height);
+        }
+      }
+    ]
+  };
+
+  const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configWithBackground);
+  const base64Image = imageBuffer.toString('base64');
+  return `data:image/png;base64,${base64Image}`;
+}
+
+/**
+ * Generate chart with automatic fallback
+ * Uses local canvas if available, otherwise falls back to QuickChart.io
+ * @param {object} config - Chart.js configuration
+ * @param {string} chartName - Name for logging
+ * @returns {Promise<string>} Base64 data URL
+ */
+async function generateChart(config, chartName) {
+  if (LOCAL_CANVAS_AVAILABLE) {
+    logToFile(`Generating ${chartName} with local canvas`);
+    return await generateWithLocalCanvas(config);
+  } else {
+    logToFile(`Generating ${chartName} with QuickChart.io`);
+    return await generateWithQuickChart(config);
+  }
 }
 
 /**
@@ -28,26 +108,31 @@ if (!CHARTS_ENABLED) {
  */
 class ChartService {
   /**
+   * Check if chart generation is available
+   * @returns {boolean} True if charts can be generated (either locally or via QuickChart)
+   */
+  static isAvailable() {
+    // Always available now - QuickChart.io is the fallback
+    return true;
+  }
+
+  /**
+   * Check which backend is being used
+   * @returns {string} 'local' or 'quickchart'
+   */
+  static getBackend() {
+    return LOCAL_CANVAS_AVAILABLE ? 'local' : 'quickchart';
+  }
+
+  /**
    * Generate Talk Time Pie Chart
    * Shows distribution of teacher vs student talk time
    * @param {object} talkTimeData - { teacher_percentage, student_percentage }
-   * @returns {Promise<string|null>} Base64 image data URL, or null if canvas not available
+   * @returns {Promise<string>} Base64 image data URL
    */
   static async generateTalkTimePieChart(talkTimeData) {
-    if (!CHARTS_ENABLED) {
-      logToFile('Chart generation skipped - canvas not available');
-      return null;
-    }
-
     try {
       logToFile('Generating Talk Time Pie Chart', talkTimeData);
-
-      const { ChartJSNodeCanvas } = getChartJSNodeCanvas();
-      const chartJSNodeCanvas = new ChartJSNodeCanvas({
-        width: CHART_WIDTH,
-        height: CHART_HEIGHT,
-        backgroundColour: BACKGROUND_COLOR
-      });
 
       const configuration = {
         type: 'pie',
@@ -90,40 +175,20 @@ class ChartService {
                 },
                 padding: 15
               }
-            },
-            tooltip: {
-              enabled: true,
-              callbacks: {
-                label: function(context) {
-                  const label = context.label || '';
-                  const value = context.parsed || 0;
-                  return `${label}: ${value.toFixed(1)}%`;
-                }
-              }
             }
           }
-        },
-        plugins: [{
-          id: 'background',
-          beforeDraw: (chart) => {
-            const ctx = chart.ctx;
-            ctx.fillStyle = BACKGROUND_COLOR;
-            ctx.fillRect(0, 0, chart.width, chart.height);
-          }
-        }]
+        }
       };
 
-      const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-      const base64Image = imageBuffer.toString('base64');
-      const dataUrl = `data:image/png;base64,${base64Image}`;
+      const dataUrl = await generateChart(configuration, 'Talk Time Pie Chart');
 
-      logToFile('✅ Talk Time Pie Chart generated', {
-        size: imageBuffer.length
+      logToFile('Talk Time Pie Chart generated successfully', {
+        backend: ChartService.getBackend()
       });
 
       return dataUrl;
     } catch (error) {
-      logToFile('❌ Error generating Talk Time Pie Chart', {
+      logToFile('Error generating Talk Time Pie Chart', {
         error: error.message,
         stack: error.stack
       });
@@ -135,23 +200,11 @@ class ChartService {
    * Generate Question Types Bar Chart
    * Shows count of open-ended vs closed-ended questions
    * @param {object} questionsData - { open_ended_count, closed_ended_count }
-   * @returns {Promise<string|null>} Base64 image data URL, or null if canvas not available
+   * @returns {Promise<string>} Base64 image data URL
    */
   static async generateQuestionTypesBarChart(questionsData) {
-    if (!CHARTS_ENABLED) {
-      logToFile('Chart generation skipped - canvas not available');
-      return null;
-    }
-
     try {
       logToFile('Generating Question Types Bar Chart', questionsData);
-
-      const { ChartJSNodeCanvas } = getChartJSNodeCanvas();
-      const chartJSNodeCanvas = new ChartJSNodeCanvas({
-        width: CHART_WIDTH,
-        height: CHART_HEIGHT,
-        backgroundColour: BACKGROUND_COLOR
-      });
 
       const configuration = {
         type: 'bar',
@@ -217,39 +270,20 @@ class ChartService {
             },
             legend: {
               display: false
-            },
-            tooltip: {
-              enabled: true,
-              callbacks: {
-                label: function(context) {
-                  const value = context.parsed.y || 0;
-                  return `Count: ${value}`;
-                }
-              }
             }
           }
-        },
-        plugins: [{
-          id: 'background',
-          beforeDraw: (chart) => {
-            const ctx = chart.ctx;
-            ctx.fillStyle = BACKGROUND_COLOR;
-            ctx.fillRect(0, 0, chart.width, chart.height);
-          }
-        }]
+        }
       };
 
-      const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-      const base64Image = imageBuffer.toString('base64');
-      const dataUrl = `data:image/png;base64,${base64Image}`;
+      const dataUrl = await generateChart(configuration, 'Question Types Bar Chart');
 
-      logToFile('✅ Question Types Bar Chart generated', {
-        size: imageBuffer.length
+      logToFile('Question Types Bar Chart generated successfully', {
+        backend: ChartService.getBackend()
       });
 
       return dataUrl;
     } catch (error) {
-      logToFile('❌ Error generating Question Types Bar Chart', {
+      logToFile('Error generating Question Types Bar Chart', {
         error: error.message,
         stack: error.stack
       });
@@ -261,23 +295,11 @@ class ChartService {
    * Generate Scores Radar Chart
    * Shows Danielson Framework scores across domains
    * @param {object} scoresData - { planning, environment, instruction, overall }
-   * @returns {Promise<string|null>} Base64 image data URL, or null if canvas not available
+   * @returns {Promise<string>} Base64 image data URL
    */
   static async generateScoresRadarChart(scoresData) {
-    if (!CHARTS_ENABLED) {
-      logToFile('Chart generation skipped - canvas not available');
-      return null;
-    }
-
     try {
       logToFile('Generating Scores Radar Chart', scoresData);
-
-      const { ChartJSNodeCanvas } = getChartJSNodeCanvas();
-      const chartJSNodeCanvas = new ChartJSNodeCanvas({
-        width: CHART_WIDTH,
-        height: CHART_HEIGHT,
-        backgroundColour: BACKGROUND_COLOR
-      });
 
       const configuration = {
         type: 'radar',
@@ -316,10 +338,6 @@ class ChartService {
                 stepSize: 1,
                 font: {
                   size: 12
-                },
-                callback: function(value) {
-                  const labels = ['', 'Unsatisfactory', 'Basic', 'Proficient', 'Distinguished'];
-                  return labels[value] || value;
                 }
               },
               pointLabels: {
@@ -344,40 +362,20 @@ class ChartService {
             },
             legend: {
               display: false
-            },
-            tooltip: {
-              enabled: true,
-              callbacks: {
-                label: function(context) {
-                  const value = context.parsed.r || 0;
-                  const labels = ['', 'Unsatisfactory', 'Basic', 'Proficient', 'Distinguished'];
-                  return `Score: ${value} (${labels[Math.round(value)] || ''})`;
-                }
-              }
             }
           }
-        },
-        plugins: [{
-          id: 'background',
-          beforeDraw: (chart) => {
-            const ctx = chart.ctx;
-            ctx.fillStyle = BACKGROUND_COLOR;
-            ctx.fillRect(0, 0, chart.width, chart.height);
-          }
-        }]
+        }
       };
 
-      const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-      const base64Image = imageBuffer.toString('base64');
-      const dataUrl = `data:image/png;base64,${base64Image}`;
+      const dataUrl = await generateChart(configuration, 'Scores Radar Chart');
 
-      logToFile('✅ Scores Radar Chart generated', {
-        size: imageBuffer.length
+      logToFile('Scores Radar Chart generated successfully', {
+        backend: ChartService.getBackend()
       });
 
       return dataUrl;
     } catch (error) {
-      logToFile('❌ Error generating Scores Radar Chart', {
+      logToFile('Error generating Scores Radar Chart', {
         error: error.message,
         stack: error.stack
       });
@@ -395,7 +393,8 @@ class ChartService {
       logToFile('Generating all charts for report', {
         hasTalkTime: !!analysisData.talk_time,
         hasQuestions: !!analysisData.questions,
-        hasScores: !!analysisData.scores
+        hasScores: !!analysisData.scores,
+        backend: ChartService.getBackend()
       });
 
       const charts = {};
@@ -415,13 +414,14 @@ class ChartService {
         charts.scoresRadar = await this.generateScoresRadarChart(analysisData.scores);
       }
 
-      logToFile('✅ All charts generated', {
-        chartsGenerated: Object.keys(charts).length
+      logToFile('All charts generated', {
+        chartsGenerated: Object.keys(charts).length,
+        backend: ChartService.getBackend()
       });
 
       return charts;
     } catch (error) {
-      logToFile('❌ Error generating all charts', {
+      logToFile('Error generating all charts', {
         error: error.message,
         stack: error.stack
       });
