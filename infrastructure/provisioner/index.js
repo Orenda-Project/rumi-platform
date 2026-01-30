@@ -127,20 +127,13 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
     deploymentStatus.get(sanitizedName).step = 'getting_api_keys';
     const supabaseKeys = await supabase.getApiKeys(supabaseProject.id);
 
-    // Step 4: Create Railway project
-    console.log('Creating Railway project...');
+    // Step 4: Create Railway project with bot service, domain, and token (bd-211)
+    console.log('Provisioning complete Railway infrastructure...');
     deploymentStatus.get(sanitizedName).step = 'creating_railway';
-    const railwayProject = await railway.createProject(sanitizedName);
+    const railwayResult = await railway.provisionComplete(sanitizedName);
 
-    // Step 5: Add Redis plugin
-    console.log('Adding Redis plugin...');
-    deploymentStatus.get(sanitizedName).step = 'adding_redis';
-    const redis = await railway.addRedisPlugin(railwayProject.id);
-
-    // Step 6: Get Redis connection string
-    console.log('Getting Redis connection string...');
-    deploymentStatus.get(sanitizedName).step = 'getting_redis_url';
-    const redisUrl = await railway.getRedisConnectionString(redis.serviceId, redis.environmentId, railwayProject.id);
+    const railwayProject = railwayResult.project;
+    const redisUrl = railwayResult.redis.url;
 
     // Step 7: Create OpenRouter API key (if provisioning key is configured)
     let openrouterKey = null;
@@ -215,6 +208,8 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       completed_at: new Date().toISOString(),
       supabase_project_id: supabaseProject.id,
       railway_project_id: railwayProject.id,
+      railway_webhook_url: railwayResult.domain.webhookUrl,
+      railway_deploy_token: railwayResult.deployToken.name,
       openrouter_key_hash: openrouterKey?.hash || null,
       has_soniox: !!sonioxKey,
       has_elevenlabs: !!elevenlabsKey,
@@ -234,14 +229,30 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       },
       railway: {
         project_id: railwayProject.id,
-        project_url: railway.getProjectUrl(railwayProject.id),
+        project_name: railwayProject.name,
+        project_url: railwayResult.project.url,
         redis_url: redisUrl,
-        deploy_command: `railway link ${railwayProject.id} && railway up`
+        bot_service: {
+          id: railwayResult.botService.id,
+          name: railwayResult.botService.name,
+          environment_id: railwayResult.botService.environmentId
+        },
+        domain: {
+          url: railwayResult.domain.url,
+          webhook_url: railwayResult.domain.webhookUrl,
+          domain: railwayResult.domain.domain
+        },
+        deploy_token: {
+          token: railwayResult.deployToken.token,
+          name: railwayResult.deployToken.name,
+          usage: railwayResult.deployToken.usage
+        }
       },
       next_steps: [
         'Add WhatsApp credentials to .env (WHATSAPP_TOKEN, PHONE_NUMBER_ID, WABA_ID)',
-        `Run: railway link ${railwayProject.id}`,
-        'Run: railway up'
+        `Set your WhatsApp webhook URL to: ${railwayResult.domain.webhookUrl}`,
+        `Deploy using: RAILWAY_TOKEN=${railwayResult.deployToken.token} railway up`,
+        `View project at: ${railwayResult.project.url}`
       ]
     };
 

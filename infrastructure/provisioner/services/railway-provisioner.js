@@ -3,6 +3,7 @@
  * Handles Railway project creation via GraphQL API
  *
  * bd-342: Create project, add Redis plugin, get connection string
+ * bd-211: Create bot service, domain, and project token for clone users
  */
 
 const fetch = require('node-fetch');
@@ -185,6 +186,223 @@ class RailwayProvisioner {
    */
   getProjectUrl(projectId) {
     return `https://railway.com/project/${projectId}`;
+  }
+
+  /**
+   * Create the main bot service (empty - user deploys code to it)
+   * @param {string} projectId - Railway project ID
+   * @returns {Promise<Object>} Bot service details with serviceId and environmentId
+   */
+  async createBotService(projectId) {
+    // First, get the production environment
+    const environments = await this.getEnvironments(projectId);
+    const prodEnv = environments.find(e => e.name === 'production') || environments[0];
+
+    if (!prodEnv) {
+      throw new Error('No environment found for project');
+    }
+
+    // Create empty bot service (user will deploy code to it)
+    const query = `
+      mutation ServiceCreate($input: ServiceCreateInput!) {
+        serviceCreate(input: $input) {
+          id
+          name
+        }
+      }
+    `;
+
+    const data = await this.graphql(query, {
+      input: {
+        projectId: projectId,
+        name: 'bot'
+      }
+    });
+
+    if (!data.serviceCreate) {
+      throw new Error('Bot service creation returned empty response');
+    }
+
+    return {
+      serviceId: data.serviceCreate.id,
+      environmentId: prodEnv.id,
+      serviceName: data.serviceCreate.name
+    };
+  }
+
+  /**
+   * Create a Railway-provided domain for a service
+   * @param {string} serviceId - Service ID
+   * @param {string} environmentId - Environment ID
+   * @param {number} targetPort - Port to expose (default: 3000)
+   * @returns {Promise<Object>} Domain details including the full URL
+   */
+  async createServiceDomain(serviceId, environmentId, targetPort = 3000) {
+    const query = `
+      mutation ServiceDomainCreate($input: ServiceDomainCreateInput!) {
+        serviceDomainCreate(input: $input) {
+          id
+          domain
+          targetPort
+        }
+      }
+    `;
+
+    const data = await this.graphql(query, {
+      input: {
+        serviceId: serviceId,
+        environmentId: environmentId,
+        targetPort: targetPort
+      }
+    });
+
+    if (!data.serviceDomainCreate) {
+      throw new Error('Domain creation returned empty response');
+    }
+
+    return {
+      domainId: data.serviceDomainCreate.id,
+      domain: data.serviceDomainCreate.domain,
+      url: `https://${data.serviceDomainCreate.domain}`,
+      webhookUrl: `https://${data.serviceDomainCreate.domain}/webhook`,
+      targetPort: data.serviceDomainCreate.targetPort
+    };
+  }
+
+  /**
+   * Create a project token for deployment access
+   * This allows users to deploy to the project without being team members
+   * @param {string} projectId - Project ID
+   * @param {string} environmentId - Environment ID
+   * @param {string} tokenName - Name for the token
+   * @returns {Promise<Object>} Token details
+   */
+  async createProjectToken(projectId, environmentId, tokenName) {
+    const query = `
+      mutation ProjectTokenCreate($input: ProjectTokenCreateInput!) {
+        projectTokenCreate(input: $input) {
+          id
+          name
+          displayToken
+        }
+      }
+    `;
+
+    const data = await this.graphql(query, {
+      input: {
+        projectId: projectId,
+        environmentId: environmentId,
+        name: tokenName
+      }
+    });
+
+    if (!data.projectTokenCreate) {
+      throw new Error('Project token creation returned empty response');
+    }
+
+    return {
+      tokenId: data.projectTokenCreate.id,
+      tokenName: data.projectTokenCreate.name,
+      token: data.projectTokenCreate.displayToken
+    };
+  }
+
+  /**
+   * Set environment variables for a service
+   * @param {string} projectId - Project ID
+   * @param {string} serviceId - Service ID
+   * @param {string} environmentId - Environment ID
+   * @param {Object} variables - Key-value pairs of environment variables
+   * @returns {Promise<boolean>} True if successful
+   */
+  async setServiceVariables(projectId, serviceId, environmentId, variables) {
+    const query = `
+      mutation VariableCollectionUpsert($input: VariableCollectionUpsertInput!) {
+        variableCollectionUpsert(input: $input)
+      }
+    `;
+
+    await this.graphql(query, {
+      input: {
+        projectId: projectId,
+        serviceId: serviceId,
+        environmentId: environmentId,
+        variables: variables
+      }
+    });
+
+    return true;
+  }
+
+  /**
+   * Full provisioning: Create project with bot service, domain, and deployment token
+   * @param {string} name - Deployment name
+   * @returns {Promise<Object>} Complete provisioning result
+   */
+  async provisionComplete(name) {
+    console.log(`Starting complete Railway provisioning for: ${name}`);
+
+    // Step 1: Create project
+    const project = await this.createProject(name);
+    console.log(`Created project: ${project.id}`);
+
+    // Step 2: Create bot service
+    const botService = await this.createBotService(project.id);
+    console.log(`Created bot service: ${botService.serviceId}`);
+
+    // Step 3: Create domain for bot service
+    const domain = await this.createServiceDomain(
+      botService.serviceId,
+      botService.environmentId,
+      3000
+    );
+    console.log(`Created domain: ${domain.domain}`);
+
+    // Step 4: Create Redis service
+    const redis = await this.addRedisPlugin(project.id);
+    console.log(`Created Redis service: ${redis.serviceId}`);
+
+    // Step 5: Create project token for user deployment
+    const token = await this.createProjectToken(
+      project.id,
+      botService.environmentId,
+      `${name}-deploy-token`
+    );
+    console.log(`Created project token: ${token.tokenName}`);
+
+    // Step 6: Get Redis connection string
+    const redisUrl = await this.getRedisConnectionString(
+      redis.serviceId,
+      redis.environmentId,
+      project.id
+    );
+
+    return {
+      project: {
+        id: project.id,
+        name: project.name,
+        url: this.getProjectUrl(project.id)
+      },
+      botService: {
+        id: botService.serviceId,
+        name: botService.serviceName,
+        environmentId: botService.environmentId
+      },
+      domain: {
+        url: domain.url,
+        webhookUrl: domain.webhookUrl,
+        domain: domain.domain
+      },
+      redis: {
+        serviceId: redis.serviceId,
+        url: redisUrl
+      },
+      deployToken: {
+        token: token.token,
+        name: token.tokenName,
+        usage: `RAILWAY_TOKEN=${token.token} railway up`
+      }
+    };
   }
 }
 
