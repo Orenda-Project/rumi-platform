@@ -16,19 +16,52 @@ jest.mock('../services/supabase-provisioner', () => {
     getApiKeys: jest.fn().mockResolvedValue({
       anon_key: 'mock-anon-key',
       service_key: 'mock-service-key'
+    }),
+    runMigrations: jest.fn().mockResolvedValue({
+      '00_complete-schema.sql': { status: 'applied' },
+      '01_rls-policies.sql': { status: 'applied' },
+      '02_seed-data.sql': { status: 'applied' }
+    }),
+    getConnectionDetails: jest.fn().mockReturnValue({
+      host: 'db.mock-supabase-id.supabase.co',
+      port: 5432,
+      database: 'postgres',
+      user: 'postgres',
+      password: 'mock-password',
+      connection_string: 'postgresql://postgres:mock-password@db.mock-supabase-id.supabase.co:5432/postgres',
+      pooler_string: 'postgresql://postgres.mock-supabase-id:mock-password@aws-0-ap-south-1.pooler.supabase.com:6543/postgres'
     })
   }));
 });
 
 jest.mock('../services/railway-provisioner', () => {
   return jest.fn().mockImplementation(() => ({
-    createProject: jest.fn().mockResolvedValue({ id: 'mock-railway-id' }),
-    addRedisPlugin: jest.fn().mockResolvedValue({
-      serviceId: 'mock-redis-service',
-      environmentId: 'mock-env-id'
-    }),
-    getRedisConnectionString: jest.fn().mockResolvedValue('redis://localhost:6379'),
-    getProjectUrl: jest.fn().mockReturnValue('https://railway.com/project/mock')
+    provisionComplete: jest.fn().mockResolvedValue({
+      project: {
+        id: 'mock-railway-id',
+        name: 'rumi-test',
+        url: 'https://railway.com/project/mock-railway-id'
+      },
+      botService: {
+        id: 'mock-bot-service-id',
+        name: 'bot',
+        environmentId: 'mock-env-id'
+      },
+      domain: {
+        url: 'https://mock-domain.up.railway.app',
+        webhookUrl: 'https://mock-domain.up.railway.app/webhook',
+        domain: 'mock-domain.up.railway.app'
+      },
+      redis: {
+        serviceId: 'mock-redis-service',
+        url: 'redis://redis.railway.internal:6379'
+      },
+      deployToken: {
+        token: 'mock-deploy-token',
+        name: 'test-deploy-token',
+        usage: 'cd bot && RAILWAY_TOKEN=mock-deploy-token railway up --service bot'
+      }
+    })
   }));
 });
 

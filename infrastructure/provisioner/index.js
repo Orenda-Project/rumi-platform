@@ -9,6 +9,7 @@
  * bd-350: Soniox temp key provisioning (Tier 2+)
  * bd-351: ElevenLabs shared key passthrough (Tier 3)
  * bd-352: Azure Speech shared config passthrough (Tier 3)
+ * bd-380: Auto-run DB migrations + return connection details
  */
 
 const express = require('express');
@@ -127,6 +128,22 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
     deploymentStatus.get(sanitizedName).step = 'getting_api_keys';
     const supabaseKeys = await supabase.getApiKeys(supabaseProject.id);
 
+    // Step 3.5: Run database migrations (bd-380)
+    let migrationResult = null;
+    try {
+      console.log('Running database migrations...');
+      deploymentStatus.get(sanitizedName).step = 'running_migrations';
+      migrationResult = await supabase.runMigrations(supabaseProject.id);
+      console.log('Database migrations completed successfully');
+    } catch (error) {
+      console.error('Database migration failed (non-fatal):', error.message);
+      // Non-fatal: user can run migrations manually
+      migrationResult = { error: error.message };
+    }
+
+    // Get DB connection details (bd-380)
+    const dbConnection = supabase.getConnectionDetails(supabaseProject.id, supabaseProject.db_password);
+
     // Step 4: Create Railway project with bot service, domain, and token (bd-211)
     console.log('Provisioning complete Railway infrastructure...');
     deploymentStatus.get(sanitizedName).step = 'creating_railway';
@@ -211,6 +228,7 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       railway_webhook_url: railwayResult.domain.webhookUrl,
       railway_deploy_token: railwayResult.deployToken.name,
       openrouter_key_hash: openrouterKey?.hash || null,
+      migrations_applied: migrationResult && !migrationResult.error,
       has_soniox: !!sonioxKey,
       has_elevenlabs: !!elevenlabsKey,
       has_azure_speech: !!azureSpeechConfig
@@ -223,9 +241,12 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       supabase: {
         project_id: supabaseProject.id,
         url: `https://${supabaseProject.id}.supabase.co`,
+        dashboard_url: `https://supabase.com/dashboard/project/${supabaseProject.id}`,
         anon_key: supabaseKeys.anon_key,
         service_key: supabaseKeys.service_key,
-        db_password: supabaseProject.db_password
+        db_password: supabaseProject.db_password,
+        db_connection: dbConnection,
+        migrations: migrationResult
       },
       railway: {
         project_id: railwayProject.id,

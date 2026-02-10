@@ -4,6 +4,7 @@
  *
  * bd-340: Create project, wait for healthy, get keys
  * bd-341: Apply schema (TODO)
+ * bd-380: Auto-run migrations via database/query endpoint
  */
 
 const fetch = require('node-fetch');
@@ -154,6 +155,93 @@ class SupabaseProvisioner {
     }
 
     return response.json();
+  }
+
+  /**
+   * Run a SQL query against a project database (bd-380)
+   * Uses the /database/query endpoint which is more reliable than /migrations
+   * @param {string} projectRef - Supabase project ref (same as project ID)
+   * @param {string} sql - SQL to execute
+   * @returns {Promise<Array>} Query results
+   */
+  async runQuery(projectRef, sql) {
+    const response = await fetch(`${this.baseUrl}/projects/${projectRef}/database/query`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query: sql })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(`Database query failed: ${error.message || response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Run all migration SQL files against a project (bd-380)
+   * Executes schema, RLS policies, and seed data in order
+   * @param {string} projectRef - Supabase project ref
+   * @returns {Promise<Object>} Migration results summary
+   */
+  async runMigrations(projectRef) {
+    const fs = require('fs');
+    const path = require('path');
+    const schemaDir = path.join(__dirname, '..', 'schema');
+
+    const migrationFiles = [
+      '00_complete-schema.sql',
+      '01_rls-policies.sql',
+      '02_seed-data.sql'
+    ];
+
+    const results = {};
+
+    for (const file of migrationFiles) {
+      const filePath = path.join(schemaDir, file);
+      if (!fs.existsSync(filePath)) {
+        console.warn(`Migration file not found: ${file}, skipping`);
+        results[file] = { status: 'skipped', reason: 'file not found' };
+        continue;
+      }
+
+      const sql = fs.readFileSync(filePath, 'utf-8');
+      console.log(`Running migration: ${file} (${sql.length} chars)`);
+
+      try {
+        await this.runQuery(projectRef, sql);
+        results[file] = { status: 'applied' };
+        console.log(`Migration applied: ${file}`);
+      } catch (error) {
+        console.error(`Migration failed: ${file} - ${error.message}`);
+        results[file] = { status: 'failed', error: error.message };
+        throw new Error(`Migration ${file} failed: ${error.message}`);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Get the direct database connection string for a project (bd-380)
+   * @param {string} projectRef - Supabase project ref
+   * @param {string} dbPassword - Database password from project creation
+   * @returns {Object} Connection details
+   */
+  getConnectionDetails(projectRef, dbPassword) {
+    return {
+      host: `db.${projectRef}.supabase.co`,
+      port: 5432,
+      database: 'postgres',
+      user: 'postgres',
+      password: dbPassword,
+      connection_string: `postgresql://postgres:${encodeURIComponent(dbPassword)}@db.${projectRef}.supabase.co:5432/postgres`,
+      pooler_string: `postgresql://postgres.${projectRef}:${encodeURIComponent(dbPassword)}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres`
+    };
   }
 }
 
