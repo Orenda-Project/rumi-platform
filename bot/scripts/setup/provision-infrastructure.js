@@ -72,6 +72,7 @@ function writeEnvFile(credentials, envPath) {
 SUPABASE_URL=${credentials.supabase.url}
 SUPABASE_ANON_KEY=${credentials.supabase.anon_key}
 SUPABASE_SERVICE_KEY=${credentials.supabase.service_key}
+${credentials.supabase.db_connection ? `DATABASE_URL=${credentials.supabase.db_connection.connection_string}` : '# DATABASE_URL=postgresql://postgres:PASSWORD@db.PROJECT_REF.supabase.co:5432/postgres'}
 
 # Redis Configuration
 REDIS_URL=${credentials.railway.redis_url}
@@ -236,6 +237,22 @@ async function main() {
     console.log('📦 Supabase Project:');
     console.log(`   URL: ${credentials.supabase.url}`);
     console.log(`   Project ID: ${credentials.supabase.project_id}`);
+    if (credentials.supabase.dashboard_url) {
+      console.log(`   Dashboard: ${credentials.supabase.dashboard_url}`);
+    }
+    if (credentials.supabase.db_connection) {
+      console.log(`   DB Host: ${credentials.supabase.db_connection.host}`);
+      console.log(`   DB Connection: ${credentials.supabase.db_connection.connection_string}`);
+    }
+    if (credentials.supabase.migrations) {
+      const migrationError = credentials.supabase.migrations.error;
+      if (migrationError) {
+        console.log(`   ⚠️  Migrations failed: ${migrationError}`);
+        console.log('   Run manually: See SETUP.md Step 4');
+      } else {
+        console.log('   ✅ Database schema + seed data applied');
+      }
+    }
 
     console.log('\n🚂 Railway Project:');
     console.log(`   Dashboard: ${credentials.railway.project_url}`);

@@ -64,19 +64,23 @@ WABA_ID=your-waba-id
 WEBHOOK_VERIFY_TOKEN=your-random-verify-token
 ```
 
-## Step 4: Run Database Migrations
+## Step 4: Verify Database Schema
 
-After provisioning, set up the database schema:
+The provisioner **automatically runs database migrations** (schema, RLS policies, and seed data). You can verify everything was set up correctly:
 
 ```bash
-# Copy the SUPABASE_URL from your .env, open it in a browser,
-# go to SQL Editor, and run these files in order:
+# The DATABASE_URL is in your .env file after provisioning
+# You can also check via the Supabase dashboard URL shown in the provisioning output
 ```
 
-1. `infrastructure/supabase/00_complete-schema.sql`
-2. `infrastructure/supabase/01_rls-policies.sql`
-3. `infrastructure/supabase/02_seed-data.sql`
-4. `infrastructure/supabase/verify-schema.sql` (to confirm)
+If migrations failed during provisioning (check the output for warnings), run them manually using the `DATABASE_URL` from your `.env`:
+
+1. Open your Supabase dashboard (URL shown in provisioning output)
+2. Go to SQL Editor and run these files in order:
+   - `infrastructure/supabase/00_complete-schema.sql`
+   - `infrastructure/supabase/01_rls-policies.sql`
+   - `infrastructure/supabase/02_seed-data.sql`
+3. Verify with: `infrastructure/supabase/verify-schema.sql`
 
 ## Step 5: Deploy
 
