@@ -1,107 +1,101 @@
-# Rumi Platform - Manual Setup Guide
+# Rumi Platform - Setup Guide
 
-This guide walks through setting up Rumi manually. For automated setup, use `/setup` in Claude Code.
+## What You Need
 
-## Prerequisites
+You only need **one thing** to get started: **WhatsApp Business credentials** from [Meta Business Manager](https://business.facebook.com).
 
-- Node.js 18+ ([nodejs.org](https://nodejs.org))
-- A Supabase account ([supabase.com](https://supabase.com))
-- A Railway account ([railway.app](https://railway.app))
-- An OpenRouter API key ([openrouter.ai/keys](https://openrouter.ai/keys))
-- WhatsApp Business credentials (from your admin)
+Everything else (database, Redis, hosting, AI keys) is **automatically provisioned** for you.
 
-## Step 1: Clone and Configure
+| Credential | Where to Get It |
+|-----------|----------------|
+| WhatsApp Token | Meta Business Manager > WhatsApp > API Setup |
+| Phone Number ID | Same WhatsApp API Setup page |
+| WABA ID | WhatsApp > Business Account Settings |
+| Webhook Verify Token | You choose this — any random string |
+
+## Step 1: Clone and Install
 
 ```bash
 git clone https://github.com/taleemabad/rumi-platform.git
 cd rumi-platform
-cp .env.template .env
+npm install
+cd bot && npm install && cd ..
 ```
 
-Edit `.env` and fill in your values. Start with:
+## Step 2: Auto-Provision Infrastructure
+
+This single command creates your Supabase database, Railway hosting (with Redis), and OpenRouter AI key:
+
+```bash
+node bot/scripts/setup/provision-infrastructure.js --name my-school-name
+```
+
+Options:
+- `--name` (required) — A name for your deployment (e.g., `my-school`, `acme-education`)
+- `--tier` (optional) — `minimal` (default), `recommended`, or `full`
+- `--region` (optional) — `ap-south-1` (default), `us-east-1`, `eu-west-1`, `ap-southeast-1`
+
+This will:
+1. Create a Supabase project with the full database schema
+2. Create a Railway project with a bot service, Redis, and a public domain
+3. Generate an OpenRouter API key ($10/month budget, 6-month expiry)
+4. Write all credentials to your `.env` file automatically
+
+When it finishes, you'll see your Railway webhook URL (e.g., `https://rumi-my-school.up.railway.app/webhook`).
+
+## Step 3: Add WhatsApp Credentials
+
+Open your `.env` file and fill in the 4 WhatsApp values:
 
 ```env
-RUMI_TIER=minimal
-LLM_PROVIDER=openrouter
-OPENROUTER_API_KEY=sk-or-v1-your-key-here
+WHATSAPP_TOKEN=your-whatsapp-token
+PHONE_NUMBER_ID=your-phone-number-id
+WABA_ID=your-waba-id
+WEBHOOK_VERIFY_TOKEN=your-random-verify-token
 ```
 
-## Step 2: Set Up Supabase
+## Step 4: Run Database Migrations
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor
-3. Run `infrastructure/supabase/00_complete-schema.sql`
-4. Run `infrastructure/supabase/01_rls-policies.sql`
-5. Run `infrastructure/supabase/02_seed-data.sql`
-6. Run `infrastructure/supabase/verify-schema.sql` to confirm
-
-Copy your project URL and service role key to `.env`:
-
-```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
-## Step 3: Set Up Redis
-
-### Option A: Railway Redis (Recommended)
+After provisioning, set up the database schema:
 
 ```bash
-railway login
-railway init
-railway add --plugin redis
+# Copy the SUPABASE_URL from your .env, open it in a browser,
+# go to SQL Editor, and run these files in order:
 ```
 
-Railway auto-sets `REDIS_URL`. Copy it to your `.env`.
+1. `infrastructure/supabase/00_complete-schema.sql`
+2. `infrastructure/supabase/01_rls-policies.sql`
+3. `infrastructure/supabase/02_seed-data.sql`
+4. `infrastructure/supabase/verify-schema.sql` (to confirm)
 
-### Option B: Local Redis
+## Step 5: Deploy
 
 ```bash
-docker run -d -p 6379:6379 redis:7
+cd bot
+railway up --service bot
 ```
 
-```env
-REDIS_URL=redis://localhost:6379
-```
-
-## Step 4: Install Dependencies
+Or use the deploy token from provisioning:
 
 ```bash
-cd bot && npm install
-cd ..
+cd bot && RAILWAY_TOKEN=your-deploy-token railway up --service bot
 ```
 
-## Step 5: Validate Environment
-
-```bash
-npm run validate:env
-npm run validate:connections
-```
-
-Both should show all green.
-
-## Step 6: Deploy to Railway
-
-```bash
-cd infrastructure/railway
-railway up
-```
-
-Or for local development:
-
-```bash
-cd bot && node whatsapp-bot.js
-```
-
-## Step 7: Configure WhatsApp
+## Step 6: Configure WhatsApp Webhook
 
 1. Go to [Meta Business Manager](https://developers.facebook.com/apps/)
 2. Navigate to WhatsApp > Configuration > Webhook
-3. Set webhook URL: `https://your-railway-url.up.railway.app/webhook`
-4. Set verify token: (same as `WEBHOOK_VERIFY_TOKEN` in your `.env`)
+3. Set webhook URL: `https://your-railway-domain.up.railway.app/webhook` (shown after provisioning)
+4. Set verify token: same as `WEBHOOK_VERIFY_TOKEN` in your `.env`
 5. Subscribe to: `messages`
 
-## Step 7.5: Set Up Stale Session Cron Job (Recommended+ Tier)
+## Step 7: Test
+
+Send "Hi" to your WhatsApp bot number. You should receive a welcome message and registration flow.
+
+## Step 8: Register WhatsApp Flows & Templates (Optional)
+
+## Step 8.5: Set Up Stale Session Cron Job (Recommended+ Tier)
 
 If you are using the coaching feature (recommended tier or higher), you need a cron job to clean up stuck coaching sessions. Without this, sessions that error mid-way or where the teacher stops responding will stay stuck indefinitely, preventing those teachers from starting new sessions.
 
@@ -126,7 +120,7 @@ node bot/workers/stale-session.worker.js
 
 The worker process runs once and exits (it is not a long-running server).
 
-## Step 7.6: Register WhatsApp Flows & Templates
+## Step 8.6: Register WhatsApp Flows & Templates
 
 Rumi uses WhatsApp Flows (interactive forms) and Message Templates (carousel menus). These must be registered with your WABA.
 
@@ -163,10 +157,6 @@ If the automated script fails:
 4. Set the resulting IDs as environment variables in Railway
 
 See `bot/scripts/setup/assets/README.md` for template asset requirements.
-
-## Step 8: Test
-
-Send "Hi" to your WhatsApp bot number. You should receive a welcome message and registration flow.
 
 ## Step 9: Set Up for Ongoing Development
 
@@ -259,7 +249,7 @@ See [docs/railway-operations.md](docs/railway-operations.md) for the complete Ra
 2. Add to `.env`: `SONIOX_API_KEY=your-key`
 3. Update: `RUMI_TIER=recommended`
 4. Redeploy
-5. Set up the stale session cron job (see Step 7.5 above)
+5. Set up the stale session cron job (see Step 8.5 above)
 
 ### Recommended to Full (Regional Language Support)
 
@@ -329,6 +319,46 @@ railway up
 ```
 
 See `docs/pulling-updates.md` for the full migration guide.
+
+---
+
+## Appendix: Manual Setup (Without Provisioner)
+
+If you prefer to set up each service manually or if the provisioner is unavailable:
+
+### Supabase (Manual)
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to SQL Editor and run the migration files from `infrastructure/supabase/`
+3. Go to Settings > API and copy your project URL and service role key to `.env`
+
+### Redis (Manual)
+
+**Option A: Railway Redis**
+```bash
+railway login && railway init && railway add --plugin redis
+```
+Copy the `REDIS_URL` from Railway to your `.env`.
+
+**Option B: Local Docker**
+```bash
+docker run -d -p 6379:6379 redis:7
+```
+Set `REDIS_URL=redis://localhost:6379` in your `.env`.
+
+### OpenRouter (Manual)
+
+1. Sign up at [openrouter.ai/keys](https://openrouter.ai/keys)
+2. Create an API key
+3. Set `OPENROUTER_API_KEY=sk-or-v1-...` in your `.env`
+
+### Railway Hosting (Manual)
+
+1. Sign up at [railway.app](https://railway.app)
+2. Create a new project
+3. Deploy: `cd bot && railway up --service bot`
+
+---
 
 ## Support
 

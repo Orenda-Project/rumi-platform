@@ -278,13 +278,10 @@ class RailwayProvisioner {
    * @returns {Promise<Object>} Token details
    */
   async createProjectToken(projectId, environmentId, tokenName) {
+    // Railway API returns projectTokenCreate as a String! (the token directly)
     const query = `
       mutation ProjectTokenCreate($input: ProjectTokenCreateInput!) {
-        projectTokenCreate(input: $input) {
-          id
-          name
-          displayToken
-        }
+        projectTokenCreate(input: $input)
       }
     `;
 
@@ -301,9 +298,9 @@ class RailwayProvisioner {
     }
 
     return {
-      tokenId: data.projectTokenCreate.id,
-      tokenName: data.projectTokenCreate.name,
-      token: data.projectTokenCreate.displayToken
+      tokenId: null,
+      tokenName: tokenName,
+      token: data.projectTokenCreate
     };
   }
 

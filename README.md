@@ -103,34 +103,28 @@ Adding a new language requires updates to 7 configuration files. See [docs/agent
 
 ## Quick Start
 
-### Option A: Automated Setup (Recommended)
-
 ```bash
 git clone https://github.com/taleemabad/rumi-platform.git
 cd rumi-platform
+npm install && cd bot && npm install && cd ..
+
+# Auto-provision Supabase + Railway + Redis + OpenRouter:
+node bot/scripts/setup/provision-infrastructure.js --name my-school-name
+
+# Add your WhatsApp credentials to .env, then deploy:
+cd bot && railway up --service bot
 ```
 
-Open in [Cursor](https://cursor.com) or any IDE with Claude Code, then type:
-
-```
-/setup
-```
-
-The setup agent guides you through Supabase, Redis, Railway, WhatsApp, and API key configuration interactively.
-
-### Option B: Manual Setup
-
-See [SETUP.md](SETUP.md) for step-by-step instructions.
+The provisioner creates everything automatically. You only need to provide **WhatsApp Business credentials** (Token, Phone Number ID, WABA ID) from [Meta Business Manager](https://business.facebook.com).
 
 ### What You Need
 
 | Requirement | Where to Get It |
 |------------|----------------|
 | Node.js 18+ | [nodejs.org](https://nodejs.org) |
-| Supabase account (free tier) | [supabase.com](https://supabase.com) |
-| Railway account (free tier) | [railway.app](https://railway.app) |
-| OpenRouter API key | [openrouter.ai/keys](https://openrouter.ai/keys) |
 | WhatsApp Business credentials | [Meta Business Manager](https://business.facebook.com) |
+
+Everything else (Supabase, Railway, Redis, OpenRouter) is auto-provisioned. See [SETUP.md](SETUP.md) for the full guide, including manual setup as a fallback.
 
 ---
 
