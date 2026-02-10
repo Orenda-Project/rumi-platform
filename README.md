@@ -103,24 +103,35 @@ Adding a new language requires updates to 7 configuration files. See [docs/agent
 
 ## Quick Start
 
+**Step 1: Fork this repo** — Click the **Fork** button on GitHub to create your own copy.
+
 ```bash
-git clone https://github.com/taleemabad/rumi-platform.git
+# Step 2: Clone YOUR fork (not this repo)
+git clone https://github.com/YOUR-ORG/rumi-platform.git
 cd rumi-platform
+
+# Step 3: Add upstream for future updates
+git remote add upstream https://github.com/taleemabad/rumi-platform.git
+
+# Step 4: Install dependencies
 npm install && cd bot && npm install && cd ..
 
-# Auto-provision Supabase + Railway + Redis + OpenRouter:
+# Step 5: Auto-provision infrastructure (Supabase + Railway + Redis + OpenRouter)
 node bot/scripts/setup/provision-infrastructure.js --name my-school-name
 
-# Add your WhatsApp credentials to .env, then deploy:
+# Step 6: Add WhatsApp credentials to .env, then deploy
 cd bot && railway up --service bot
 ```
 
 The provisioner creates everything automatically. You only need to provide **WhatsApp Business credentials** (Token, Phone Number ID, WABA ID) from [Meta Business Manager](https://business.facebook.com).
 
+> **Why fork?** Each deployment needs its own copy on GitHub. You push changes to *your fork*, not to this repo. You can still pull updates from upstream with `git fetch upstream && git merge upstream/main`.
+
 ### What You Need
 
 | Requirement | Where to Get It |
 |------------|----------------|
+| GitHub account | [github.com](https://github.com) (to fork the repo) |
 | Node.js 18+ | [nodejs.org](https://nodejs.org) |
 | WhatsApp Business credentials | [Meta Business Manager](https://business.facebook.com) |
 

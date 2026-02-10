@@ -13,14 +13,24 @@ Everything else (database, Redis, hosting, AI keys) is **automatically provision
 | WABA ID | WhatsApp > Business Account Settings |
 | Webhook Verify Token | You choose this — any random string |
 
-## Step 1: Clone and Install
+## Step 1: Fork, Clone, and Install
+
+**First, fork the repo** on GitHub — click the **Fork** button at [github.com/taleemabad/rumi-platform](https://github.com/taleemabad/rumi-platform). This creates your own independent copy.
 
 ```bash
-git clone https://github.com/taleemabad/rumi-platform.git
+# Clone YOUR fork (replace YOUR-ORG with your GitHub username or org)
+git clone https://github.com/YOUR-ORG/rumi-platform.git
 cd rumi-platform
+
+# Add the original repo as upstream (for pulling future updates)
+git remote add upstream https://github.com/taleemabad/rumi-platform.git
+
+# Install dependencies
 npm install
 cd bot && npm install && cd ..
 ```
+
+> **Important:** Do NOT clone directly from `taleemabad/rumi-platform`. Each deployment needs its own fork so you can push changes independently without affecting other users.
 
 ## Step 2: Auto-Provision Infrastructure
 
@@ -177,10 +187,9 @@ This enables CLI operations without re-authenticating each time.
 
 For automatic deployments on every `git push`, use the included GitHub Actions workflow:
 
-1. Push your forked repo to GitHub:
+1. Push your changes to your fork:
    ```bash
-   git remote add origin https://github.com/YOUR-ORG/rumi-platform.git
-   git push -u origin main
+   git push origin main
    ```
 
 2. Add your Railway token to GitHub Secrets:
@@ -304,18 +313,21 @@ If you do not need regional language support, skip this step. The bot works with
 To receive bug fixes and new features from the upstream Rumi repository:
 
 ```bash
-# One-time: add upstream remote
+# If you haven't already (done in Step 1):
 git remote add upstream https://github.com/taleemabad/rumi-platform.git
 
-# Pull latest
+# Pull latest from upstream
 git fetch upstream
 git merge upstream/main
+
+# Push the merged changes to your fork
+git push origin main
 
 # Apply any new database migrations
 node infrastructure/scripts/migrate.js
 
-# Restart your bot
-railway up
+# Redeploy (auto-deploys if GitHub Actions is set up)
+cd bot && railway up --service bot
 ```
 
 See `docs/pulling-updates.md` for the full migration guide.

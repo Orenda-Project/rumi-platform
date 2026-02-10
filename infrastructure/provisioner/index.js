@@ -264,12 +264,13 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       },
       github_integration: {
         instructions: [
-          '1. Add RAILWAY_TOKEN to GitHub repo secrets (Settings > Secrets > Actions)',
-          '2. Copy .github/workflows/deploy.yml from rumi-platform repo',
-          '3. Push to main branch - auto-deploys via GitHub Actions',
+          '1. Fork taleemabad/rumi-platform to your own GitHub account',
+          '2. Add RAILWAY_TOKEN to your fork\'s GitHub secrets (Settings > Secrets > Actions)',
+          '3. The deploy workflow (.github/workflows/deploy.yml) is already included',
+          '4. Push to main on your fork - auto-deploys via GitHub Actions',
           'Alternative: Manual deploy with `cd bot && railway up --service bot`'
         ],
-        note: 'GitHub Actions workflow uses RAILWAY_TOKEN secret - no Railway UI needed'
+        note: 'Always push to YOUR fork, not to the upstream repo'
       }
     };
 

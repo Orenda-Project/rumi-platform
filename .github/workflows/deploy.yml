@@ -29,6 +29,8 @@ jobs:
   deploy:
     name: Deploy Bot to Railway
     runs-on: ubuntu-latest
+    # Skip if RAILWAY_TOKEN is not configured (e.g., on the upstream template repo)
+    if: ${{ secrets.RAILWAY_TOKEN != '' }}
 
     steps:
       - name: Checkout code
