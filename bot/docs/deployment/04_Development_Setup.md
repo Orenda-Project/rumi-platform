@@ -38,16 +38,17 @@ Complete guide to setting up the Rumi bot for local development.
 
 ## Initial Setup
 
-### 1. Clone Repository
+### 1. Fork and Clone Repository
+
+First, **fork** [taleemabad/rumi-platform](https://github.com/taleemabad/rumi-platform) on GitHub, then clone your fork:
 
 ```bash
-# HTTPS (recommended)
-git clone https://github.com/taleemabad/rumi-platform.git
+# HTTPS (recommended) — replace YOUR-ORG with your GitHub username/org
+git clone https://github.com/YOUR-ORG/rumi-platform.git
 cd rumi-platform
 
-# OR SSH (if you have SSH keys)
-git clone git@github.com:taleemabad/rumi-platform.git
-cd rumi-platform
+# Add upstream for pulling future updates
+git remote add upstream https://github.com/taleemabad/rumi-platform.git
 ```
 
 ### 2. Install Dependencies

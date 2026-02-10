@@ -83,10 +83,9 @@ This pushes your local code to Railway and triggers a rebuild.
 
 Connect your GitHub repository for automatic deployments on every push:
 
-1. **Push your code to GitHub:**
+1. **Push your code to your fork on GitHub:**
    ```bash
-   git remote add origin https://github.com/YOUR-ORG/rumi-platform.git
-   git push -u origin main
+   git push origin main
    ```
 
 2. **Connect GitHub to Railway (UI required):**
