@@ -111,7 +111,7 @@ git clone https://github.com/YOUR-ORG/rumi-platform.git
 cd rumi-platform
 
 # Step 3: Add upstream for future updates
-git remote add upstream https://github.com/taleemabad/rumi-platform.git
+git remote add upstream https://github.com/hyasin270/rumi-platform.git
 
 # Step 4: Install dependencies
 npm install && cd bot && npm install && cd ..

@@ -1,7 +1,7 @@
 const { checkForUpdates } = require('../../bot/shared/utils/version-check');
 
 const GITHUB_API_URL =
-  'https://api.github.com/repos/taleemabad/rumi-platform/releases/latest';
+  'https://api.github.com/repos/hyasin270/rumi-platform/releases/latest';
 
 describe('checkForUpdates', () => {
   let originalFetch;
@@ -23,7 +23,7 @@ describe('checkForUpdates', () => {
       ok: true,
       json: async () => ({
         tag_name: 'v2.9.39',
-        html_url: 'https://github.com/taleemabad/rumi-platform/releases/tag/v2.9.39',
+        html_url: 'https://github.com/hyasin270/rumi-platform/releases/tag/v2.9.39',
       }),
     });
 
@@ -40,7 +40,7 @@ describe('checkForUpdates', () => {
       ok: true,
       json: async () => ({
         tag_name: 'v3.0.0',
-        html_url: 'https://github.com/taleemabad/rumi-platform/releases/tag/v3.0.0',
+        html_url: 'https://github.com/hyasin270/rumi-platform/releases/tag/v3.0.0',
       }),
     });
 
@@ -50,7 +50,7 @@ describe('checkForUpdates', () => {
       upToDate: false,
       current: '2.9.39',
       latest: '3.0.0',
-      url: 'https://github.com/taleemabad/rumi-platform/releases/tag/v3.0.0',
+      url: 'https://github.com/hyasin270/rumi-platform/releases/tag/v3.0.0',
     });
   });
 
@@ -83,7 +83,7 @@ describe('checkForUpdates', () => {
       ok: true,
       json: async () => ({
         tag_name: 'v2.9.39',
-        html_url: 'https://github.com/taleemabad/rumi-platform/releases/tag/v2.9.39',
+        html_url: 'https://github.com/hyasin270/rumi-platform/releases/tag/v2.9.39',
       }),
     });
 
@@ -101,7 +101,7 @@ describe('checkForUpdates', () => {
       ok: true,
       json: async () => ({
         tag_name: 'v2.9.39',
-        html_url: 'https://github.com/taleemabad/rumi-platform/releases/tag/v2.9.39',
+        html_url: 'https://github.com/hyasin270/rumi-platform/releases/tag/v2.9.39',
       }),
     });
 
@@ -135,7 +135,7 @@ describe('checkForUpdates', () => {
       ok: true,
       json: async () => ({
         tag_name: 'v2.9.39',
-        html_url: 'https://github.com/taleemabad/rumi-platform/releases/tag/v2.9.39',
+        html_url: 'https://github.com/hyasin270/rumi-platform/releases/tag/v2.9.39',
       }),
     });
 
