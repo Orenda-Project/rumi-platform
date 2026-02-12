@@ -70,22 +70,25 @@ describe('writeEnvFile', () => {
     }
   });
 
-  test('writes credentials to .env file', () => {
-    const credentials = {
-      deployment_name: 'test-org',
-      supabase: {
-        url: 'https://test.supabase.co',
-        anon_key: 'anon-key',
-        service_key: 'service-key'
-      },
-      railway: {
-        redis_url: 'redis://localhost:6379',
-        project_url: 'https://railway.app/project/123',
-        deploy_command: 'railway up'
+  const baseCredentials = {
+    deployment_name: 'test-org',
+    supabase: {
+      url: 'https://test.supabase.co',
+      anon_key: 'anon-key',
+      service_key: 'service-key'
+    },
+    railway: {
+      redis_url: 'redis://localhost:6379',
+      project_url: 'https://railway.app/project/123',
+      deploy_token: {
+        token: 'test-token-123',
+        usage: 'cd bot && RAILWAY_TOKEN=test-token-123 railway up --service bot'
       }
-    };
+    }
+  };
 
-    writeEnvFile(credentials, testEnvPath);
+  test('writes credentials to .env file', () => {
+    writeEnvFile(baseCredentials, testEnvPath);
 
     expect(fs.existsSync(testEnvPath)).toBe(true);
 
@@ -93,6 +96,74 @@ describe('writeEnvFile', () => {
     expect(content).toContain('SUPABASE_URL=https://test.supabase.co');
     expect(content).toContain('SUPABASE_ANON_KEY=anon-key');
     expect(content).toContain('REDIS_URL=redis://localhost:6379');
+  });
+
+  // bd-381: Must use SUPABASE_SERVICE_ROLE_KEY (not SUPABASE_SERVICE_KEY)
+  test('writes SUPABASE_SERVICE_ROLE_KEY not SUPABASE_SERVICE_KEY', () => {
+    writeEnvFile(baseCredentials, testEnvPath);
+    const content = fs.readFileSync(testEnvPath, 'utf-8');
+
+    expect(content).toContain('SUPABASE_SERVICE_ROLE_KEY=service-key');
+    expect(content).not.toContain('SUPABASE_SERVICE_KEY=');
+  });
+
+  // bd-382: Deploy command should not show "undefined"
+  test('writes deploy command from deploy_token.usage', () => {
+    writeEnvFile(baseCredentials, testEnvPath);
+    const content = fs.readFileSync(testEnvPath, 'utf-8');
+
+    expect(content).not.toContain('undefined');
+    expect(content).toContain('RAILWAY_TOKEN=test-token-123');
+  });
+
+  // bd-382: Should handle missing deploy_token gracefully
+  test('handles missing deploy_token without undefined', () => {
+    const creds = {
+      ...baseCredentials,
+      railway: { ...baseCredentials.railway, deploy_token: undefined }
+    };
+    writeEnvFile(creds, testEnvPath);
+    const content = fs.readFileSync(testEnvPath, 'utf-8');
+
+    expect(content).not.toContain('undefined');
+  });
+
+  // bd-383: Should preserve existing WhatsApp credentials
+  test('preserves existing WhatsApp credentials from .env', () => {
+    // Pre-populate .env with WhatsApp creds
+    fs.writeFileSync(testEnvPath, `WHATSAPP_TOKEN=existing-wa-token
+PHONE_NUMBER_ID=12345
+WABA_ID=67890
+WEBHOOK_VERIFY_TOKEN=my-verify-token
+SOME_OTHER_VAR=should-be-lost
+`);
+
+    writeEnvFile(baseCredentials, testEnvPath);
+    const content = fs.readFileSync(testEnvPath, 'utf-8');
+
+    // WhatsApp creds should be preserved
+    expect(content).toContain('WHATSAPP_TOKEN=existing-wa-token');
+    expect(content).toContain('PHONE_NUMBER_ID=12345');
+    expect(content).toContain('WABA_ID=67890');
+    expect(content).toContain('WEBHOOK_VERIFY_TOKEN=my-verify-token');
+    // Non-WhatsApp creds should be overwritten by provisioner values
+    expect(content).not.toContain('SOME_OTHER_VAR');
+  });
+
+  // bd-383: Should use placeholder when no existing WhatsApp creds
+  test('uses placeholder when no existing .env', () => {
+    writeEnvFile(baseCredentials, testEnvPath);
+    const content = fs.readFileSync(testEnvPath, 'utf-8');
+
+    expect(content).toContain('WHATSAPP_TOKEN=your_whatsapp_token_here');
+  });
+
+  // bd-381: Writes RAILWAY_DEPLOY_TOKEN for future deploys
+  test('writes RAILWAY_DEPLOY_TOKEN', () => {
+    writeEnvFile(baseCredentials, testEnvPath);
+    const content = fs.readFileSync(testEnvPath, 'utf-8');
+
+    expect(content).toContain('RAILWAY_DEPLOY_TOKEN=test-token-123');
   });
 });
 
