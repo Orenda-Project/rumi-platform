@@ -1,19 +1,18 @@
-const OpenAI = require('openai');
-const { OPENAI_API_KEY, CONVERSATION_HISTORY_LIMIT } = require('../utils/constants');
+const { CONVERSATION_HISTORY_LIMIT } = require('../utils/constants');
 const { logToFile } = require('../utils/logger');
 const { buildLanguagePrompt, hasEnhancedPrompt } = require('../config/language-prompts');
 const { getTtsProvider } = require('../config/tts-voices');
 const { getConversationHistory: getDbConversationHistory } = require('../database/bot-helpers');
+const { getClient } = require('./llm-client');
 
 /**
  * OpenAI Service
- * Handles all OpenAI API interactions (GPT-4, intent detection, topic extraction)
+ * Handles all LLM interactions (chat, intent detection, topic extraction)
+ * Uses llm-client.js for provider-agnostic OpenAI/OpenRouter routing.
  */
 class OpenAIService {
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: OPENAI_API_KEY,
-    });
+    this.openai = getClient();
 
     // In-memory cache for conversation history (loads from DB on cache miss)
     // Phase 1: DB-backed conversation history - survives server restarts

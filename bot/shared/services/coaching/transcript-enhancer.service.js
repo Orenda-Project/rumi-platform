@@ -13,14 +13,11 @@
  * @module transcript-enhancer.service
  */
 
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const { logToFile } = require('../../utils/logger');
 const { logEvent } = require('../../utils/structured-logger');
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openai = getClient();
 
 /**
  * Phonetic Urdu → English Dictionary

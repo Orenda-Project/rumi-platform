@@ -10,11 +10,11 @@
  * - Handle edge cases gracefully with intelligent fallbacks
  */
 
-const OpenAI = require('openai');
+const { getClient } = require('./llm-client');
 const { OPENAI_API_KEY } = require('../utils/constants');
 const { logToFile } = require('../utils/logger');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 /**
  * Platform architecture knowledge base for the helper agent

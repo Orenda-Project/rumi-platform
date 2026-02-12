@@ -19,12 +19,12 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const { logToFile } = require('../../utils/logger');
 const { TEMP_DIR, OPENAI_API_KEY } = require('../../utils/constants');
 
 // OpenAI client for translating non-Latin text
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 class ReadingReportService {
   // Brand colors (matching coaching report)

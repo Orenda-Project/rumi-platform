@@ -20,7 +20,7 @@
  * - "Everyone is present except Ahmed and Fatima"
  */
 
-const OpenAI = require('openai');
+const { getClient } = require('./llm-client');
 const AudioService = require('./audio.service');
 const { logToFile } = require('../utils/logger');
 const { OPENAI_API_KEY } = require('../utils/constants');
@@ -149,7 +149,7 @@ class VoiceAttendanceService {
    * @returns {Promise<Array>} Extracted attendance data
    */
   static async extractAttendanceWithGPT(transcript, studentList) {
-    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+    const openai = getClient();
 
     const prompt = this.buildGPTPrompt(transcript, studentList);
 

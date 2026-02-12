@@ -2,10 +2,10 @@ const WhatsAppService = require('./whatsapp.service');
 const supabase = require('../config/supabase');
 const redisService = require('./cache/railway-redis.service');
 const { logToFile } = require('../utils/logger');
-const OpenAI = require('openai');
+const { getClient } = require('./llm-client');
 const { OPENAI_API_KEY } = require('../utils/constants');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 /**
  * Reading Assessment Service

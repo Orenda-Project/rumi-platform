@@ -21,9 +21,9 @@ const AttendanceConversationService = require('../services/attendance-conversati
 const AttendanceDeliveryService = require('../services/attendance-delivery.service');
 const { logToFile } = require('../utils/logger');
 const { TEMP_DIR, LOADING_STICKER_PATH, LOADING_STICKER_MEDIA_ID, OPENAI_API_KEY, ATTENDANCE_SETUP_FLOW_ID, ATTENDANCE_MARKING_FLOW_ID } = require('../utils/constants');
-const OpenAI = require('openai');
+const { getClient } = require('../services/llm-client');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 // Import REAL language detection utilities for command detection
 const { detectLanguageOverride } = require('../utils/language-detector');
 const { getUserLanguage, setUserLanguage } = require('../utils/language-cache');

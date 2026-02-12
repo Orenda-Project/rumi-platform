@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
-const OpenAI = require('openai');
+const { getClient } = require('../shared/services/llm-client');
 const { jsonrepair } = require('jsonrepair');
 
 const supabase = require('../shared/config/supabase');
@@ -17,7 +17,7 @@ class LessonPlanExtractionWorker {
 
   static getOpenAI() {
     if (!this.openai) {
-      this.openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+      this.openai = getClient();
     }
     return this.openai;
   }

@@ -23,11 +23,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const { logToFile } = require('../../utils/logger');
 const { OPENAI_API_KEY, TEMP_DIR } = require('../../utils/constants');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 // Azure Speech SDK (install with: npm install microsoft-cognitiveservices-speech-sdk)
 let sdk = null;

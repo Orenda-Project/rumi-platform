@@ -1,8 +1,8 @@
 const { logToFile } = require('../utils/logger');
-const OpenAI = require('openai');
+const { getClient } = require('./llm-client');
 
 // Initialize OpenAI client
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = getClient();
 
 // Valid language codes (must match VALID_LANGUAGES in language-cache.js)
 const VALID_LANGUAGE_CODES = ['en', 'es', 'ur', 'ar', 'pa-PK', 'ps-PK', 'sd-PK', 'bal-PK', 'ta-LK'];
