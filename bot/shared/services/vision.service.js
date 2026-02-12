@@ -9,11 +9,11 @@
  * @since v2.9.34
  */
 
-const OpenAI = require('openai');
+const { getClient } = require('./llm-client');
 const { logEvent } = require('../utils/structured-logger');
 const { OPENAI_API_KEY } = require('../utils/constants');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 // Configuration - use gpt-4.1-mini for speed + vision + multilingual
 const CONFIG = {

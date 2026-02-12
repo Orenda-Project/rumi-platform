@@ -22,13 +22,13 @@
 
 const fs = require('fs');
 const path = require('path');
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const AudioService = require('../audio.service');
 const FluencyService = require('./fluency.service');
 const { logToFile } = require('../../utils/logger');
 const { OPENAI_API_KEY, TEMP_DIR } = require('../../utils/constants');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 class VoiceFeedbackService {
   /**

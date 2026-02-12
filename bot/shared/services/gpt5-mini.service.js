@@ -1,4 +1,4 @@
-const OpenAI = require('openai');
+const { getClient } = require('./llm-client');
 const { jsonrepair } = require('jsonrepair');
 const { OPENAI_API_KEY } = require('../utils/constants');
 const { logToFile } = require('../utils/logger');
@@ -15,11 +15,9 @@ const {
  * with 90% prompt caching for cost optimization
  */
 class GPT5MiniService {
-  // Static OpenAI client (shared across all calls)
-  // Uses OpenAI API for GPT-5 mini
-  static openai = new OpenAI({
-    apiKey: OPENAI_API_KEY
-  });
+  // Static LLM client (shared across all calls)
+  // Uses llm-client.js for provider-agnostic routing
+  static openai = getClient();
 
   constructor() {
     // Constructor kept for compatibility, but openai is now static

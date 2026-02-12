@@ -16,10 +16,10 @@
 const supabase = require('../../config/supabase');
 const WhatsAppService = require('../whatsapp.service');
 const { logToFile } = require('../../utils/logger');
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const { OPENAI_API_KEY } = require('../../utils/constants');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 // Level progression from highest to lowest complexity
 const LEVEL_ORDER = ['story', 'paragraph', 'sentences', 'words', 'letters'];

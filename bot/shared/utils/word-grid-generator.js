@@ -19,11 +19,9 @@
 
 const { isCanvasAvailable, getCanvas } = require('./canvas-loader');
 const { logToFile } = require('./logger');
-const OpenAI = require('openai');
+const { getClient } = require('../services/llm-client');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openai = getClient();
 
 // Grid configuration
 const CANVAS_WIDTH = 1080;

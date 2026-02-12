@@ -1,7 +1,7 @@
 const supabase = require('../config/supabase');
 const { logToFile } = require('../utils/logger');
 const WhatsAppService = require('./whatsapp.service');
-const OpenAI = require('openai');
+const { getClient } = require('./llm-client');
 const { OPENAI_API_KEY } = require('../utils/constants');
 const { storeConversation } = require('../database/bot-helpers');
 const redisService = require('./cache/railway-redis.service');
@@ -9,7 +9,7 @@ const redisService = require('./cache/railway-redis.service');
 // MediaLibraryService removed - Issue #28: AI Video Generation replaces Media Library
 const LessonPlanningService = require('./lesson-planning.service');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 // Menu selection state TTL (5 minutes)
 const MENU_STATE_TTL = 300;

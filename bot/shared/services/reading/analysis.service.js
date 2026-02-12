@@ -25,10 +25,10 @@ const WhatsAppService = require('../whatsapp.service');
 const FeatureLinkerService = require('../feature-linker.service');
 const FeatureRegistrationService = require('../feature-registration.service');
 const { logToFile } = require('../../utils/logger');
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const { OPENAI_API_KEY } = require('../../utils/constants');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 class AnalysisService {
   /**

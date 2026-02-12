@@ -19,7 +19,7 @@
 const { isCanvasAvailable, getCanvas } = require('../../utils/canvas-loader');
 const fs = require('fs');
 const path = require('path');
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const supabase = require('../../config/supabase');
 const WhatsAppService = require('../whatsapp.service');
 const { logToFile } = require('../../utils/logger');
@@ -29,7 +29,7 @@ const { generateRandomWords, generateWordGrid } = require('../../utils/word-grid
 const https = require('https');
 const { getPresignedUrl } = require('../../storage/r2');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 // Background configuration for child-friendly visuals
 const PASSAGE_BACKGROUNDS = require('../../config/passage-backgrounds.json');

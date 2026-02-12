@@ -8,17 +8,14 @@
  * Beads: bd-084, bd-176, bd-177
  */
 
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
 const pLimit = require('p-limit');
 const GradingScaleService = require('./grading-scale.service');
 const FeedbackService = require('./feedback.service');
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openai = getClient();
 
 // Grading system prompt
 const GRADING_SYSTEM_PROMPT = `You are an expert exam grader. Grade the student's answer fairly and accurately.

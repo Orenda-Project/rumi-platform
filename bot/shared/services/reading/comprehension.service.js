@@ -14,13 +14,13 @@
  * - Sentences/Paragraphs: 5-question standard comprehension
  */
 
-const OpenAI = require('openai');
+const { getClient } = require('../llm-client');
 const AudioService = require('../audio.service');
 const VocabularyImageService = require('./vocabulary-image.service');
 const { logToFile } = require('../../utils/logger');
 const { OPENAI_API_KEY } = require('../../utils/constants');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const openai = getClient();
 
 class ComprehensionService {
   /**
