@@ -1,5 +1,5 @@
 const GITHUB_API_URL =
-  'https://api.github.com/repos/taleemabad/rumi-platform/releases/latest';
+  'https://api.github.com/repos/hyasin270/rumi-platform/releases/latest';
 
 /**
  * Checks GitHub releases API for a newer version of rumi-platform.

@@ -10,12 +10,12 @@ Rumi uses a standard Git upstream model. Your fork/clone receives updates by mer
 
 ```bash
 # Add the upstream remote (only needed once)
-git remote add upstream https://github.com/taleemabad/rumi-platform.git
+git remote add upstream https://github.com/hyasin270/rumi-platform.git
 
 # Verify
 git remote -v
 # origin    https://github.com/YOUR-ORG/rumi-platform.git (fetch)
-# upstream  https://github.com/taleemabad/rumi-platform.git (fetch)
+# upstream  https://github.com/hyasin270/rumi-platform.git (fetch)
 ```
 
 ## Update Workflow
@@ -86,7 +86,7 @@ The bot checks for updates on startup (10-second delay, non-blocking). If a newe
 
 ```
 [version-check] Update available: 1.0.0 -> 1.1.0
-[version-check] Download: https://github.com/taleemabad/rumi-platform/releases/tag/v1.1.0
+[version-check] Download: https://github.com/hyasin270/rumi-platform/releases/tag/v1.1.0
 ```
 
 ## Migration Files

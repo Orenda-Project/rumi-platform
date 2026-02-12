@@ -15,7 +15,7 @@ Everything else (database, Redis, hosting, AI keys) is **automatically provision
 
 ## Step 1: Fork, Clone, and Install
 
-**First, fork the repo** on GitHub — click the **Fork** button at [github.com/taleemabad/rumi-platform](https://github.com/taleemabad/rumi-platform). This creates your own independent copy.
+**First, fork the repo** on GitHub — click the **Fork** button at [github.com/hyasin270/rumi-platform](https://github.com/hyasin270/rumi-platform). This creates your own independent copy.
 
 ```bash
 # Clone YOUR fork (replace YOUR-ORG with your GitHub username or org)
@@ -23,14 +23,14 @@ git clone https://github.com/YOUR-ORG/rumi-platform.git
 cd rumi-platform
 
 # Add the original repo as upstream (for pulling future updates)
-git remote add upstream https://github.com/taleemabad/rumi-platform.git
+git remote add upstream https://github.com/hyasin270/rumi-platform.git
 
 # Install dependencies
 npm install
 cd bot && npm install && cd ..
 ```
 
-> **Important:** Do NOT clone directly from `taleemabad/rumi-platform`. Each deployment needs its own fork so you can push changes independently without affecting other users.
+> **Important:** Do NOT clone directly from `hyasin270/rumi-platform`. Each deployment needs its own fork so you can push changes independently without affecting other users.
 
 ## Step 2: Auto-Provision Infrastructure
 
@@ -318,7 +318,7 @@ To receive bug fixes and new features from the upstream Rumi repository:
 
 ```bash
 # If you haven't already (done in Step 1):
-git remote add upstream https://github.com/taleemabad/rumi-platform.git
+git remote add upstream https://github.com/hyasin270/rumi-platform.git
 
 # Pull latest from upstream
 git fetch upstream
