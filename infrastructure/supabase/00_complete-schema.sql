@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS users (
   registration_completed_at TIMESTAMP,
   grades_taught TEXT,
   language_nudge_sent BOOLEAN DEFAULT FALSE,
+  first_message_at TIMESTAMP,
+  session_id VARCHAR(100),
+  source VARCHAR(20),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -402,8 +405,10 @@ CREATE TABLE IF NOT EXISTS exam_templates (
 CREATE TABLE IF NOT EXISTS student_lists (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  name VARCHAR(200) NOT NULL,
-  class_name VARCHAR(100),
+  class_name VARCHAR(100) NOT NULL,
+  section VARCHAR(20),
+  academic_year VARCHAR(10) NOT NULL,
+  attendance_frequency VARCHAR(10) DEFAULT 'once' CHECK (attendance_frequency IN ('once', 'twice')),
   student_count INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT NOW(),
@@ -412,9 +417,12 @@ CREATE TABLE IF NOT EXISTS student_lists (
 
 CREATE TABLE IF NOT EXISTS students (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  student_list_id UUID REFERENCES student_lists(id) ON DELETE CASCADE,
-  name VARCHAR(200) NOT NULL,
-  roll_number VARCHAR(50),
+  list_id UUID REFERENCES student_lists(id) ON DELETE CASCADE,
+  roll_number INTEGER,
+  student_name VARCHAR(200) NOT NULL,
+  father_name VARCHAR(200),
+  student_name_urdu TEXT,
+  father_name_urdu TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -423,28 +431,32 @@ CREATE TABLE IF NOT EXISTS students (
 CREATE TABLE IF NOT EXISTS attendance_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  student_list_id UUID REFERENCES student_lists(id) ON DELETE CASCADE,
-  date DATE NOT NULL,
-  status VARCHAR(20) DEFAULT 'in_progress',
-  total_students INTEGER DEFAULT 0,
-  present_count INTEGER DEFAULT 0,
-  absent_count INTEGER DEFAULT 0,
-  late_count INTEGER DEFAULT 0,
-  source VARCHAR(50) DEFAULT 'whatsapp_flow',
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  completed_at TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT NOW()
+  list_id UUID REFERENCES student_lists(id) ON DELETE SET NULL,
+  session_date DATE NOT NULL,
+  session_type VARCHAR(20) DEFAULT 'full_day' CHECK (session_type IN ('morning', 'afternoon', 'full_day')),
+  audio_url TEXT,
+  transcript TEXT,
+  transcript_confidence DECIMAL(3,2),
+  excel_url TEXT,
+  total_students INTEGER,
+  present_count INTEGER,
+  absent_count INTEGER,
+  was_manually_edited BOOLEAN DEFAULT FALSE,
+  marking_method VARCHAR(20) CHECK (marking_method IN ('voice', 'tap', 'everyone_present')),
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS attendance_records (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  attendance_session_id UUID REFERENCES attendance_sessions(id) ON DELETE CASCADE,
-  student_id UUID REFERENCES students(id) ON DELETE CASCADE,
-  status VARCHAR(20) NOT NULL DEFAULT 'present',
+  session_id UUID REFERENCES attendance_sessions(id) ON DELETE CASCADE,
+  student_id UUID REFERENCES students(id) ON DELETE SET NULL,
+  student_name VARCHAR(200),
+  status VARCHAR(20) NOT NULL CHECK (status IN ('present', 'absent', 'late', 'excused')),
+  confidence DECIMAL(3,2) DEFAULT 1.00,
+  detected_response TEXT,
+  was_manually_changed BOOLEAN DEFAULT FALSE,
   notes TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(attendance_session_id, student_id)
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- =============================================================================
@@ -671,7 +683,7 @@ CREATE INDEX IF NOT EXISTS idx_coaching_sessions_user ON coaching_sessions(user_
 CREATE INDEX IF NOT EXISTS idx_coaching_sessions_status ON coaching_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_reading_assessments_user ON reading_assessments(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id, last_activity_at DESC);
-CREATE INDEX IF NOT EXISTS idx_attendance_sessions_user_date ON attendance_sessions(user_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_attendance_sessions_user_date ON attendance_sessions(user_id, session_date DESC);
 CREATE INDEX IF NOT EXISTS idx_lesson_plan_requests_user ON lesson_plan_requests(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_lesson_plan_requests_status ON lesson_plan_requests(status);
 CREATE INDEX IF NOT EXISTS idx_video_tasks_request ON video_tasks(video_request_id);
