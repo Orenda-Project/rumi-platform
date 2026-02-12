@@ -58,6 +58,10 @@ CREATE TABLE IF NOT EXISTS conversations (
   format VARCHAR(20) DEFAULT 'text',
   language VARCHAR(10),
   current_state VARCHAR(50),
+  input_format VARCHAR(10),
+  input_language VARCHAR(10),
+  output_format VARCHAR(10),
+  output_language VARCHAR(10),
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -656,6 +660,7 @@ ALTER TABLE chat_starts ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number);
 CREATE INDEX IF NOT EXISTS idx_conversations_user_created ON conversations(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_format_language ON conversations(input_format, input_language, output_format, output_language);
 CREATE INDEX IF NOT EXISTS idx_audio_sessions_user_created ON audio_sessions(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_lesson_plans_user_created ON lesson_plans(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_teacher_progress_user_dimension ON teacher_progress(user_id, dimension, created_at DESC);
