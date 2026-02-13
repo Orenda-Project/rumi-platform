@@ -8,4 +8,5 @@ builder = "nixpacks"
 startCommand = "node workers/sqs-worker.js"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
-# No healthcheck - this is a background worker, not a web service
+healthcheckPath = "/stats"
+healthcheckTimeout = 600
