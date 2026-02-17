@@ -69,19 +69,27 @@ https://github.com/user-attachments/assets/8f7ad8cc-c169-415a-a473-ed0c686233eb
 
 #### Classroom Coaching
 
-[Watch demo (12 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/coaching_feature_video.mp4) — Teacher sends classroom audio; Rumi transcribes, scores against OECD framework, conducts reflective conversation, generates PDF report.
+Teacher sends classroom audio; Rumi transcribes, scores against OECD framework, conducts reflective conversation, generates PDF report.
+
+https://github.com/user-attachments/assets/7f0d2756-b30b-460a-821c-e3bb6cdc4b05
 
 #### Reading Assessment
 
-[Watch demo (11 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/reading_feature_video.mp4) — Student reads aloud; Rumi measures WCPM, accuracy, comprehension; compares to grade benchmarks.
+Student reads aloud into WhatsApp; Rumi measures WCPM, accuracy, comprehension; compares to grade benchmarks.
+
+https://github.com/user-attachments/assets/bc6526d4-5f2a-4355-8dc5-0dd3af051585
 
 #### AI Video Generation
 
-[Watch demo (10 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/video_generation_feature.mp4) — Teacher requests a topic; Rumi generates an educational video with narration and visuals.
+Teacher requests a topic; Rumi generates an educational video with narration and visuals.
+
+https://github.com/user-attachments/assets/4a55db04-ee03-4f17-9ff3-ee53102a4a6b
 
 #### Attendance Tracking
 
-[Watch demo (8 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/attendance_feature_final_2_5x.mp4) — Teacher sets up class list, marks daily attendance via WhatsApp Flow.
+Teacher sets up class list, marks daily attendance via WhatsApp Flow.
+
+https://github.com/user-attachments/assets/b35a034e-20c6-458d-8b6d-91a7ab2ddc42
 
 ### Classroom Coaching: How It Works
 
