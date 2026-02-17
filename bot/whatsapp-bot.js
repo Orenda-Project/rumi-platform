@@ -781,35 +781,31 @@ app.post('/webhook', async (req, res) => {
         logToFile('❌ Failed to parse flow response_json', { from, error: error.message });
       }
 
+      // Use centralized flow type detection (bd-387: fixes registration→attendance misrouting)
+      const { detectFlowType } = require('./shared/utils/flow-type-detector');
+      const flowType = detectFlowType(responseJson);
+
       logToFile('📋 Processing flow submission', {
         from,
         flowName,
+        flowType,
         responseFields: Object.keys(responseJson)
       });
 
-      // Route based on field detection (more reliable than flow ID)
-      // Check both old field names (v1) and new field names (v2 - Dec 2025)
-      const hasReadingFields = responseJson.screen_0_Student_Full_Name_0 ||  // v1 format
-                               responseJson.screen_0_Select_the_reading_level_2 ||  // v1 format
-                               responseJson.Student_Full_Name ||  // v2 format (Flow v2 Dec 2025)
-                               responseJson.Assessment_Mode;  // v2 format (unique to reading flow)
+      const FlowResponseHandler = require('./shared/handlers/flow-response.handler');
 
-      if (hasReadingFields) {
-        // Reading Assessment Flow (detected by presence of reading-specific fields)
+      if (flowType === 'reading_assessment') {
+        // Reading Assessment Flow
         logToFile('📖 Detected reading assessment flow submission', {
           from,
           responseFields: Object.keys(responseJson)
         });
 
         try {
-          const FlowResponseHandler = require('./shared/handlers/flow-response.handler');
           const success = await FlowResponseHandler.handleReadingAssessmentFlow(message, from, user.id);
 
           if (!success) {
-            logToFile('❌ Reading assessment flow processing failed', {
-              from,
-              responseJson
-            });
+            logToFile('❌ Reading assessment flow processing failed', { from, responseJson });
           } else {
             logToFile('✅ Reading assessment flow processed successfully', { from });
           }
@@ -821,79 +817,90 @@ app.post('/webhook', async (req, res) => {
             responseJson
           });
         }
-      } else {
-        // Check for Attendance Setup Flow fields (bd-054)
-        const hasAttendanceSetupFields = responseJson.class_name &&
-                                         (responseJson.student_list || responseJson.students_text);
+      } else if (flowType === 'registration') {
+        // Registration Flow (bd-387: PROJ-010)
+        logToFile('📝 Detected registration flow submission', {
+          from,
+          responseFields: Object.keys(responseJson)
+        });
 
-        // Check for Attendance Marking Flow fields (bd-055)
-        const hasAttendanceMarkingFields = responseJson.absent_students !== undefined ||
-                                           responseJson.flow_token?.includes(':');  // Flow token format: userId:classId:date
+        try {
+          const success = await FlowResponseHandler.handleRegistrationFlow(message, from, user?.id);
 
-        if (hasAttendanceSetupFields) {
-          // Attendance Setup Flow - creating a new class
-          logToFile('📋 Detected attendance setup flow submission', {
-            from,
-            responseFields: Object.keys(responseJson)
-          });
-
-          try {
-            const FlowResponseHandler = require('./shared/handlers/flow-response.handler');
-            const success = await FlowResponseHandler.handleAttendanceSetupFlow(message, from, user?.id);
-
-            if (!success) {
-              logToFile('❌ Attendance setup flow processing failed', { from, responseJson });
-              await WhatsAppService.sendMessage(from, 'Sorry, there was an error setting up your class. Please try again.');
-            } else {
-              logToFile('✅ Attendance setup flow processed successfully', { from });
-            }
-          } catch (flowError) {
-            logToFile('❌ Exception in attendance setup flow handler', {
-              from,
-              error: flowError.message,
-              stack: flowError.stack
-            });
-            await WhatsAppService.sendMessage(from, 'Sorry, there was an error setting up your class. Please try again.');
+          if (!success) {
+            logToFile('❌ Registration flow processing failed', { from, responseJson });
+            await WhatsAppService.sendMessage(from, 'Sorry, something went wrong with your registration. Please try /register to try again.');
+          } else {
+            logToFile('✅ Registration flow processed successfully', { from });
           }
-        } else if (hasAttendanceMarkingFields) {
-          // Attendance Marking Flow - marking students absent
-          logToFile('📋 Detected attendance marking flow submission', {
+        } catch (flowError) {
+          logToFile('❌ Exception in registration flow handler', {
             from,
-            responseFields: Object.keys(responseJson)
+            error: flowError.message,
+            stack: flowError.stack
           });
-
-          try {
-            const FlowResponseHandler = require('./shared/handlers/flow-response.handler');
-            const success = await FlowResponseHandler.handleAttendanceMarkingFlow(message, from, user?.id);
-
-            if (!success) {
-              logToFile('❌ Attendance marking flow processing failed', { from, responseJson });
-              await WhatsAppService.sendMessage(from, 'Sorry, there was an error recording attendance. Please try again.');
-            } else {
-              logToFile('✅ Attendance marking flow processed successfully', { from });
-            }
-          } catch (flowError) {
-            logToFile('❌ Exception in attendance marking flow handler', {
-              from,
-              error: flowError.message,
-              stack: flowError.stack
-            });
-            await WhatsAppService.sendMessage(from, 'Sorry, there was an error recording attendance. Please try again.');
-          }
-        } else {
-          // Legacy Registration Flow - deprecated (WhatsApp Flow registration removed Dec 2025)
-          // Registration now happens via simple name question after first feature completion
-          logToFile('⚠️ Received unknown/deprecated flow submission', {
-            from,
-            responseFields: Object.keys(responseJson)
-          });
-
-          // Guide user to new registration flow
-          await WhatsAppService.sendMessage(
-            from,
-            "Thanks for your response! Our registration process has been simplified. Just use any of my features and I'll ask for your name afterwards. Type /menu to see what I can help you with!"
-          );
+          await WhatsAppService.sendMessage(from, 'Sorry, something went wrong with your registration. Please try /register to try again.');
         }
+      } else if (flowType === 'attendance_setup') {
+        // Attendance Setup Flow - creating a new class
+        logToFile('📋 Detected attendance setup flow submission', {
+          from,
+          responseFields: Object.keys(responseJson)
+        });
+
+        try {
+          const success = await FlowResponseHandler.handleAttendanceSetupFlow(message, from, user?.id);
+
+          if (!success) {
+            logToFile('❌ Attendance setup flow processing failed', { from, responseJson });
+            await WhatsAppService.sendMessage(from, 'Sorry, there was an error setting up your class. Please try again.');
+          } else {
+            logToFile('✅ Attendance setup flow processed successfully', { from });
+          }
+        } catch (flowError) {
+          logToFile('❌ Exception in attendance setup flow handler', {
+            from,
+            error: flowError.message,
+            stack: flowError.stack
+          });
+          await WhatsAppService.sendMessage(from, 'Sorry, there was an error setting up your class. Please try again.');
+        }
+      } else if (flowType === 'attendance_marking') {
+        // Attendance Marking Flow - marking students absent
+        logToFile('📋 Detected attendance marking flow submission', {
+          from,
+          responseFields: Object.keys(responseJson)
+        });
+
+        try {
+          const success = await FlowResponseHandler.handleAttendanceMarkingFlow(message, from, user?.id);
+
+          if (!success) {
+            logToFile('❌ Attendance marking flow processing failed', { from, responseJson });
+            await WhatsAppService.sendMessage(from, 'Sorry, there was an error recording attendance. Please try again.');
+          } else {
+            logToFile('✅ Attendance marking flow processed successfully', { from });
+          }
+        } catch (flowError) {
+          logToFile('❌ Exception in attendance marking flow handler', {
+            from,
+            error: flowError.message,
+            stack: flowError.stack
+          });
+          await WhatsAppService.sendMessage(from, 'Sorry, there was an error recording attendance. Please try again.');
+        }
+      } else {
+        // Unknown flow type
+        logToFile('⚠️ Received unknown flow submission', {
+          from,
+          flowType,
+          responseFields: Object.keys(responseJson)
+        });
+
+        await WhatsAppService.sendMessage(
+          from,
+          "Thanks for your response! Type /menu to see what I can help you with."
+        );
       }
     } else if (messageType === 'interactive' && message.interactive?.type === 'list_reply') {
       // Handle interactive list responses (Reading Assessment)

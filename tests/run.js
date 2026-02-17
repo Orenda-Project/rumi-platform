@@ -9,7 +9,11 @@ const path = require('path');
 const fs = require('fs');
 const major = parseInt(process.versions.node.split('.')[0], 10);
 
-const nodeOpts = major >= 22 ? '--localstorage-file=/tmp/jest-ls' : '';
+const nodeOpts = major >= 25
+  ? '--no-experimental-webstorage'
+  : major >= 22
+    ? '--localstorage-file=/tmp/jest-ls'
+    : '';
 const args = process.argv.slice(2).join(' ');
 
 // Resolve jest binary from node_modules

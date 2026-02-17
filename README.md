@@ -103,29 +103,30 @@ Adding a new language requires updates to 7 configuration files. See [docs/agent
 
 ## Quick Start
 
-**Step 1: Fork this repo** — Click the **Fork** button on GitHub to create your own copy.
-
 ```bash
-# Step 2: Clone YOUR fork (not this repo)
+# 1. Fork this repo on GitHub, then clone YOUR fork
 git clone https://github.com/YOUR-ORG/rumi-platform.git
 cd rumi-platform
 
-# Step 3: Add upstream for future updates
-git remote add upstream https://github.com/hyasin270/rumi-platform.git
-
-# Step 4: Install dependencies
+# 2. Install dependencies
 npm install && cd bot && npm install && cd ..
 
-# Step 5: Auto-provision infrastructure (Supabase + Railway + Redis + OpenRouter)
-node bot/scripts/setup/provision-infrastructure.js --name my-school-name
+# 3. Set up services (see SETUP.md for details)
+#    - Create a Supabase database and run the schema SQL
+#    - Get an OpenRouter API key
+#    - Get WhatsApp Business credentials from Meta
 
-# Step 6: Add WhatsApp credentials to .env, then deploy
+# 4. Configure environment
+cp .env.template .env
+# Fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENROUTER_API_KEY,
+# WHATSAPP_TOKEN, PHONE_NUMBER_ID, WABA_ID, WEBHOOK_VERIFY_TOKEN, REDIS_URL
+
+# 5. Deploy to Railway
 cd bot && railway up --service bot
+
+# 6. Set up WhatsApp webhook pointing to your Railway URL
+# 7. Send "Hi" to your bot number!
 ```
-
-The provisioner creates everything automatically. You only need to provide **WhatsApp Business credentials** (Token, Phone Number ID, WABA ID) from [Meta Business Manager](https://business.facebook.com).
-
-> **Why fork?** Each deployment needs its own copy on GitHub. You push changes to *your fork*, not to this repo. You can still pull updates from upstream with `git fetch upstream && git merge upstream/main`.
 
 ### What You Need
 
@@ -133,9 +134,12 @@ The provisioner creates everything automatically. You only need to provide **Wha
 |------------|----------------|
 | GitHub account | [github.com](https://github.com) (to fork the repo) |
 | Node.js 18+ | [nodejs.org](https://nodejs.org) |
+| Supabase account | [supabase.com](https://supabase.com) (free tier works) |
+| Railway account | [railway.app](https://railway.app) (hosting + Redis) |
+| OpenRouter API key | [openrouter.ai/keys](https://openrouter.ai/keys) |
 | WhatsApp Business credentials | [Meta Business Manager](https://business.facebook.com) |
 
-Everything else (Supabase, Railway, Redis, OpenRouter) is auto-provisioned. See [SETUP.md](SETUP.md) for the full guide, including manual setup as a fallback.
+See [SETUP.md](SETUP.md) for the complete step-by-step guide with screenshots and troubleshooting.
 
 ---
 

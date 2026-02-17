@@ -34,7 +34,42 @@ VALUES
   ('Grade 5', 90, 159, 169, 174, 'DIBELS')
 ON CONFLICT DO NOTHING;
 
+-- LCPM Benchmarks (Letter Correct Per Minute)
+-- Used for early literacy assessment in English and Urdu
+-- Grade 0 = Kindergarten/Early Years
+
+-- English LCPM Benchmarks
+INSERT INTO lcpm_benchmarks (grade_level, language, season, percentile_5, percentile_10, percentile_25, percentile_50, percentile_75, percentile_90)
+VALUES
+  (0, 'en', 'fall',    0,  0,  2,  5, 12, 20),
+  (0, 'en', 'winter',  0,  2,  5, 12, 22, 32),
+  (0, 'en', 'spring',  2,  5, 12, 22, 35, 45),
+  (1, 'en', 'fall',    0,  2,  8, 29, 47, 58),
+  (1, 'en', 'winter',  5, 13, 26, 42, 55, 66),
+  (1, 'en', 'spring', 15, 24, 37, 52, 64, 74),
+  (2, 'en', 'fall',   22, 30, 42, 55, 67, 78),
+  (2, 'en', 'winter', 28, 36, 48, 61, 72, 83),
+  (2, 'en', 'spring', 32, 40, 52, 65, 76, 86),
+  (3, 'en', 'fall',   38, 45, 55, 68, 79, 89),
+  (3, 'en', 'winter', 42, 48, 58, 71, 82, 92),
+  (3, 'en', 'spring', 45, 52, 62, 74, 85, 95)
+ON CONFLICT DO NOTHING;
+
+-- Urdu LCPM Benchmarks
+INSERT INTO lcpm_benchmarks (grade_level, language, season, percentile_5, percentile_10, percentile_25, percentile_50, percentile_75, percentile_90)
+VALUES
+  (1, 'ur', 'fall',    0,  1,  5, 20, 33, 40),
+  (1, 'ur', 'winter',  3,  9, 18, 29, 38, 46),
+  (1, 'ur', 'spring', 10, 17, 26, 36, 45, 52),
+  (2, 'ur', 'fall',   15, 21, 29, 38, 47, 55),
+  (2, 'ur', 'winter', 20, 25, 34, 43, 50, 58),
+  (2, 'ur', 'spring', 22, 28, 36, 46, 53, 60),
+  (3, 'ur', 'fall',   27, 32, 38, 48, 55, 62),
+  (3, 'ur', 'winter', 29, 34, 41, 50, 57, 64),
+  (3, 'ur', 'spring', 32, 36, 43, 52, 60, 66)
+ON CONFLICT DO NOTHING;
+
 -- Schema version record
 INSERT INTO schema_versions (version, description)
-VALUES ('1.0.0', 'Rumi Platform open-source initial setup')
+VALUES ('2.0.0', 'Rumi Platform production-parity schema (60 tables, 38 functions)')
 ON CONFLICT (version) DO NOTHING;

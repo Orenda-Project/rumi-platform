@@ -6,10 +6,11 @@
  * Endpoints:
  * - POST /api/flows/attendance-marking - Handle attendance marking flow data requests
  * - POST /api/flows/attendance-setup - Handle attendance setup flow with student entry loops (bd-215)
+ * - POST /api/flows/registration - Handle registration flow data requests (bd-384: PROJ-010)
  *
- * Bead: bd-186
+ * Bead: bd-186, bd-384
  * Created: January 25, 2026
- * Updated: January 26, 2026 (bd-215: Student entry redesign)
+ * Updated: February 17, 2026 (bd-396: Registration Flow v3 added)
  */
 
 const express = require('express');
@@ -21,8 +22,14 @@ const { logToFile } = require('../utils/logger');
 const {
   handleSetupInit,
   handleSetupDataExchange,
-  getStudentListSummary
+  getStudentListSummary,
+  formatStudentsListString
 } = require('./attendance-setup-endpoint');
+const {
+  handleRegistrationInit,
+  handleRegistrationDataExchange,
+  handleRegistrationBack
+} = require('./registration-endpoint');
 
 /**
  * Handle attendance marking flow data requests
@@ -337,6 +344,11 @@ async function handleAttendanceSetupRequest(data) {
           const studentCount = students?.length || 0;
           const studentsSummary = getStudentListSummary(students || []);
 
+          // bd-388: Include pre-composed strings for pure dynamic references
+          const classInfo = `Class: ${classDisplay} | Students: ${studentCount}`;
+          const heading = `Add Student #${studentCount + 1}`;
+          const studentsList = formatStudentsListString(studentsSummary);
+
           response = {
             screen: 'ADD_STUDENT',
             data: {
@@ -344,7 +356,12 @@ async function handleAttendanceSetupRequest(data) {
               class_display: classDisplay,
               student_count: studentCount,
               students_added: studentsSummary,
-              student_number: studentCount + 1
+              student_number: studentCount + 1,
+              class_info: classInfo,
+              heading: heading,
+              students_list: studentsList,
+              // bd-389: Form-level init-values to clear TextInput fields
+              form_init_values: { first_name: '', last_name: '' }
             }
           };
           logToFile('📤 Returning BACK response with data (staying on ADD_STUDENT)', { response: JSON.stringify(response) });
@@ -362,7 +379,12 @@ async function handleAttendanceSetupRequest(data) {
           class_display: 'Unknown',
           student_count: 0,
           students_added: [],
-          student_number: 1
+          student_number: 1,
+          class_info: 'Class: Unknown | Students: 0',
+          heading: 'Add Student #1',
+          students_list: '',
+          // bd-389: Form-level init-values to clear TextInput fields
+          form_init_values: { first_name: '', last_name: '' }
         }
       };
       logToFile('📤 Returning BACK response with fallback data', { response: JSON.stringify(response) });
@@ -373,6 +395,104 @@ async function handleAttendanceSetupRequest(data) {
       data: {},
     };
     logToFile('📤 Returning BACK response (to CLASS_INFO)', { response });
+    return response;
+  }
+
+  // Unknown action
+  logToFile('Unknown flow action', { action });
+  return FlowEncryptionService.createErrorResponse('Unknown action');
+}
+
+/**
+ * Handle registration flow data requests (bd-384: PROJ-010)
+ *
+ * Actions:
+ * - ping: Health check
+ * - INIT: Initialize flow with PERSONAL_INFO screen
+ * - data_exchange: Handle screen submissions (PERSONAL_INFO → PROFESSIONAL_INFO → SUCCESS)
+ * - BACK: Navigate to previous screen
+ */
+router.post('/registration', async (req, res) => {
+  try {
+    if (!FlowEncryptionService.isConfigured()) {
+      logToFile('Flow encryption not configured', { endpoint: 'registration' });
+      return res.status(500).json({ error: 'Flow encryption not configured' });
+    }
+
+    const encryptedRequest = req.body;
+
+    const encryptedResponse = await FlowEncryptionService.processEncryptedRequest(
+      encryptedRequest,
+      async (decryptedData) => {
+        return await handleRegistrationRequest(decryptedData);
+      }
+    );
+
+    res.set('Content-Type', 'text/plain');
+    res.send(encryptedResponse);
+  } catch (error) {
+    logToFile('Flow endpoint error', {
+      endpoint: 'registration',
+      error: error.message,
+      stack: error.stack,
+    });
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * Handle decrypted registration request
+ * @param {Object} data - Decrypted request data
+ * @returns {Object} - Response to encrypt
+ */
+async function handleRegistrationRequest(data) {
+  const { action, flow_token, screen, data: screenData } = data;
+
+  logToFile('Handling registration request', {
+    action,
+    screen,
+    hasFlowToken: !!flow_token,
+    screenDataKeys: screenData ? Object.keys(screenData) : []
+  });
+
+  let response;
+
+  // Handle ping (health check)
+  if (action === 'ping') {
+    response = FlowEncryptionService.handlePing();
+    logToFile('📤 Returning ping response', { response });
+    return response;
+  }
+
+  // Parse flow token to get user ID
+  // Flow token format: "userId:registration:timestamp"
+  const userId = (flow_token || '').split(':')[0];
+
+  // Handle INIT (check both cases - learned from attendance bugs)
+  if (action === 'INIT' || action === 'init') {
+    response = await handleRegistrationInit(userId);
+    logToFile('📤 Returning INIT response', { response: JSON.stringify(response) });
+    return response;
+  }
+
+  // Handle data_exchange
+  if (action === 'data_exchange') {
+    response = await handleRegistrationDataExchange(userId, screen, screenData, flow_token);
+    logToFile('📤 Returning data_exchange response', {
+      screen: response?.screen,
+      dataKeys: response?.data ? Object.keys(response.data) : [],
+      responsePreview: JSON.stringify(response).substring(0, 500)
+    });
+    return response;
+  }
+
+  // Handle BACK navigation
+  if (action === 'BACK') {
+    response = await handleRegistrationBack(userId, screen, flow_token);
+    logToFile('📤 Returning BACK response', { response: JSON.stringify(response) });
     return response;
   }
 
