@@ -40,7 +40,7 @@ Complete guide to setting up the Rumi bot for local development.
 
 ### 1. Fork and Clone Repository
 
-First, **fork** [hyasin270/rumi-platform](https://github.com/hyasin270/rumi-platform) on GitHub, then clone your fork:
+First, **fork** [Orenda-Project/rumi-platform](https://github.com/Orenda-Project/rumi-platform) on GitHub, then clone your fork:
 
 ```bash
 # HTTPS (recommended) — replace YOUR-ORG with your GitHub username/org
@@ -48,7 +48,7 @@ git clone https://github.com/YOUR-ORG/rumi-platform.git
 cd rumi-platform
 
 # Add upstream for pulling future updates
-git remote add upstream https://github.com/hyasin270/rumi-platform.git
+git remote add upstream https://github.com/Orenda-Project/rumi-platform.git
 ```
 
 ### 2. Install Dependencies

@@ -285,7 +285,7 @@ app.post('/provision', provisionLimiter, authMiddleware, async (req, res) => {
       },
       github_integration: {
         instructions: [
-          '1. Fork hyasin270/rumi-platform to your own GitHub account',
+          '1. Fork Orenda-Project/rumi-platform to your own GitHub account',
           '2. Add RAILWAY_TOKEN to your fork\'s GitHub secrets (Settings > Secrets > Actions)',
           '3. The deploy workflow (.github/workflows/deploy.yml) is already included',
           '4. Push to main on your fork - auto-deploys via GitHub Actions',

@@ -269,5 +269,5 @@ Railway may spin down idle services. First message after inactivity may take 5-1
 ## Getting Help
 
 - **Railway Docs**: [docs.railway.app](https://docs.railway.app)
-- **Rumi Issues**: [GitHub Issues](https://github.com/hyasin270/rumi-platform/issues)
+- **Rumi Issues**: [GitHub Issues](https://github.com/Orenda-Project/rumi-platform/issues)
 - **Railway Discord**: [discord.gg/railway](https://discord.gg/railway)

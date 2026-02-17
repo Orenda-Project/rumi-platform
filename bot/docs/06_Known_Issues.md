@@ -364,7 +364,7 @@ When reporting a new issue, include:
 6. **User Impact**: How many users affected?
 
 **Where to Report**:
-- GitHub Issues: https://github.com/hyasin270/rumi-platform/issues
+- GitHub Issues: https://github.com/Orenda-Project/rumi-platform/issues
 
 ---
 
