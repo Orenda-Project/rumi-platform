@@ -10,7 +10,7 @@
  * 4. ADD_STUDENT "Done" → Validate 1+ students → SUCCESS screen
  *
  * Created: January 26, 2026
- * Bead: bd-215
+ * Bead: bd-215, bd-389
  */
 
 const supabase = require('../config/supabase');
@@ -179,6 +179,12 @@ async function handleClassInfoSubmit(userId, screenData) {
       }
     }
 
+    // bd-388: Use pre-composed strings for pure dynamic references
+    // WhatsApp Flows mixed static+dynamic text interpolation is unreliable
+    const classInfo = `Class: ${classDisplay} | Students: ${studentCount}`;
+    const heading = `Add Student #${studentCount + 1}`;
+    const studentsList = formatStudentsListString(studentsSummary);
+
     const responseData = {
       screen: 'ADD_STUDENT',
       data: {
@@ -186,7 +192,13 @@ async function handleClassInfoSubmit(userId, screenData) {
         class_display: classDisplay,
         student_count: studentCount,
         students_added: studentsSummary,
-        student_number: studentCount + 1
+        student_number: studentCount + 1,
+        // bd-388: Pre-composed strings for pure dynamic references
+        class_info: classInfo,
+        heading: heading,
+        students_list: studentsList,
+        // bd-389: Form-level init-values to clear TextInput fields on loop
+        form_init_values: { first_name: '', last_name: '' }
       }
     };
 
@@ -222,6 +234,11 @@ async function handleAddStudentAction(listId, studentData, classDisplay) {
       data: {
         list_id: listId,
         class_display: classDisplay,
+        class_info: `Class: ${classDisplay}`,
+        heading: 'Add Student',
+        students_list: '',
+        // bd-389: Form-level init-values to clear TextInput fields on loop
+        form_init_values: { first_name: '', last_name: '' },
         error: { message: 'Student name is required' }
       }
     };
@@ -262,6 +279,11 @@ async function handleAddStudentAction(listId, studentData, classDisplay) {
         data: {
           list_id: listId,
           class_display: classDisplay,
+          class_info: `Class: ${classDisplay}`,
+          heading: 'Add Student',
+          students_list: '',
+          first_name_init: '',
+          last_name_init: '',
           error: { message: 'Failed to add student. Please try again.' }
         }
       };
@@ -276,15 +298,27 @@ async function handleAddStudentAction(listId, studentData, classDisplay) {
       .order('roll_number');
 
     const studentsSummary = getStudentListSummary(allStudents || []);
+    const totalStudents = allStudents?.length || 0;
+
+    // bd-388: Pre-composed strings for pure dynamic references
+    const classInfo = `Class: ${classDisplay} | Students: ${totalStudents}`;
+    const heading = `Add Student #${totalStudents + 1}`;
+    const studentsList = formatStudentsListString(studentsSummary);
 
     const responseData = {
       screen: 'ADD_STUDENT',
       data: {
         list_id: listId,
         class_display: classDisplay,
-        student_count: allStudents?.length || 0,
+        student_count: totalStudents,
         students_added: studentsSummary,
-        student_number: (allStudents?.length || 0) + 1
+        student_number: totalStudents + 1,
+        // bd-388: Pre-composed strings for pure dynamic references
+        class_info: classInfo,
+        heading: heading,
+        students_list: studentsList,
+        // bd-389: Form-level init-values to clear TextInput fields on loop
+        form_init_values: { first_name: '', last_name: '' }
       }
     };
 
@@ -292,7 +326,7 @@ async function handleAddStudentAction(listId, studentData, classDisplay) {
       listId,
       studentName,
       rollNumber: nextRollNumber,
-      totalStudents: allStudents?.length,
+      totalStudents,
       responseData: JSON.stringify(responseData)
     });
 
@@ -300,12 +334,17 @@ async function handleAddStudentAction(listId, studentData, classDisplay) {
 
   } catch (error) {
     logToFile('❌ Exception adding student', { error: error.message });
+    // bd-388: No version field in response (Meta expects {screen, data} only)
     return {
-      version: '3.0',
       screen: 'ADD_STUDENT',
       data: {
         list_id: listId,
         class_display: classDisplay,
+        class_info: `Class: ${classDisplay}`,
+        heading: 'Add Student',
+        students_list: '',
+        // bd-389: Form-level init-values to clear TextInput fields on loop
+        form_init_values: { first_name: '', last_name: '' },
         error: { message: 'Failed to add student. Please try again.' }
       }
     };
@@ -343,19 +382,29 @@ async function handleDoneAction(listId, classDisplay) {
           student_count: 0,
           students_added: [],
           student_number: 1,
+          class_info: `Class: ${classDisplay} | Students: 0`,
+          heading: 'Add Student #1',
+          students_list: '',
+          // bd-389: Form-level init-values to clear TextInput fields on loop
+          form_init_values: { first_name: '', last_name: '' },
           error: { message: 'Please add at least one student before finishing.' }
         }
       };
     }
 
+    // bd-388: Pre-composed success_message for pure dynamic reference
+    const successMessage = `Your class ${classDisplay} has been created with ${students.length} student${students.length === 1 ? '' : 's'}.`;
+
     const responseData = {
       screen: 'SUCCESS',
       data: {
+        success_message: successMessage,
         extension_message_response: {
           params: {
             list_id: listId,
             class_display: classDisplay,
-            student_count: students.length
+            student_count: students.length,
+            success_message: successMessage
           }
         }
       }
@@ -392,6 +441,18 @@ function getStudentListSummary(students) {
 }
 
 /**
+ * Format students list as a display string for pure dynamic reference (bd-388)
+ * @param {Array} studentsSummary - Array of {name: "1. Zara Abdul"} objects
+ * @returns {string} - Formatted string or empty if no students
+ */
+function formatStudentsListString(studentsSummary) {
+  if (!studentsSummary || studentsSummary.length === 0) {
+    return '';
+  }
+  return 'Added: ' + studentsSummary.map(s => s.name).join(', ');
+}
+
+/**
  * Create error response for flow
  * @param {string} message - Error message
  * @returns {Object} - Error response
@@ -410,5 +471,6 @@ module.exports = {
   handleAddStudentAction,
   handleDoneAction,
   getStudentListSummary,
+  formatStudentsListString,
   getCurrentAcademicYear
 };

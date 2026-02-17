@@ -37,6 +37,9 @@ const READING_ASSESSMENT_FLOW_ID = process.env.READING_ASSESSMENT_FLOW_ID || '';
 const ATTENDANCE_SETUP_FLOW_ID = process.env.ATTENDANCE_SETUP_FLOW_ID || '';
 const ATTENDANCE_MARKING_FLOW_ID = process.env.ATTENDANCE_MARKING_FLOW_ID || '';
 
+// Registration Flow ID (bd-384: PROJ-010)
+const REGISTRATION_FLOW_ID = process.env.REGISTRATION_FLOW_ID || '';
+
 /**
  * Route flow responses to appropriate handlers
  * @param {object} message - WhatsApp message object with interactive.nfm_reply
@@ -645,13 +648,117 @@ async function handleAttendanceMarkingFlow(message, phoneNumber, userId) {
   }
 }
 
+/**
+ * Handle Registration Flow submission (bd-381: PROJ-010)
+ * Extracts form data and updates user record with full registration info
+ *
+ * @param {object} message - Flow response message
+ * @param {string} phoneNumber - User's phone number
+ * @param {string} userId - User's database ID
+ * @returns {Promise<boolean>} Success status
+ */
+async function handleRegistrationFlow(message, phoneNumber, userId) {
+  try {
+    logToFile('📝 Processing registration flow submission', { phoneNumber, userId });
+
+    const responseJson = JSON.parse(message.interactive?.nfm_reply?.response_json || '{}');
+
+    logToFile('📋 Registration flow response:', { responseJson: Object.keys(responseJson) });
+
+    // Extract fields from flow response
+    const fullName = responseJson.full_name || '';
+    const country = responseJson.country || '';
+    const region = responseJson.region || null;
+    const organization = responseJson.organization || null;
+    const organizationOther = responseJson.organization_other || null;
+    const schoolName = responseJson.school_name || null;
+    const grade = responseJson.grade || '';
+    const subjects = responseJson.subjects || [];
+
+    // Resolve organization: if "other", use organization_other
+    const resolvedOrg = organization === 'other' ? organizationOther : organization;
+
+    // Extract first name from full name
+    const firstName = fullName.split(/\s+/)[0] || fullName;
+
+    // Generate portal token
+    const { v4: uuidv4 } = require('uuid');
+    const portalToken = uuidv4();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // Update user record
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        first_name: firstName,
+        name: fullName,
+        country: country,
+        region: region,
+        organization: resolvedOrg,
+        school_name: schoolName,
+        grades_taught: grade,
+        subjects_taught: Array.isArray(subjects) ? subjects : [subjects],
+        registration_completed: true,
+        registration_completed_at: new Date().toISOString(),
+        registration_pending_name: false,
+        portal_invite_token: portalToken,
+        portal_invite_expires_at: expiresAt.toISOString()
+      })
+      .eq('id', userId);
+
+    if (updateError) {
+      logToFile('❌ Error updating user with registration data', { userId, error: updateError.message });
+      throw updateError;
+    }
+
+    // Send portal link as WhatsApp message (clickable)
+    const portalUrl = `https://portal.hellorumi.ai/portal/setup/${portalToken}`;
+    const userLang = country === 'PK' ? 'ur' : 'en';
+
+    const confirmMessages = {
+      en: `Thank you for registering, ${firstName}! You're all set to use Rumi.\n\n🔗 *Set up your Rumi Portal:*\n${portalUrl}\n\nThis link expires in 7 days. What would you like to work on?`,
+      ur: `رجسٹریشن کا شکریہ، ${firstName}! آپ اب Rumi استعمال کر سکتے ہیں۔\n\n🔗 *اپنا Rumi پورٹل سیٹ اپ کریں:*\n${portalUrl}\n\nیہ لنک 7 دنوں میں ختم ہو جائے گی۔ آپ کس پر کام کرنا چاہیں گے؟`
+    };
+
+    await WhatsAppService.sendMessage(phoneNumber, confirmMessages[userLang] || confirmMessages.en);
+
+    logToFile('✅ Registration completed via flow', {
+      userId,
+      firstName,
+      country,
+      region,
+      organization: resolvedOrg,
+      portalUrl: portalUrl.substring(0, 50) + '...'
+    });
+
+    return true;
+  } catch (error) {
+    logToFile('❌ Error handling registration flow', {
+      phoneNumber,
+      userId,
+      error: error.message,
+      stack: error.stack
+    });
+
+    await WhatsAppService.sendMessage(
+      phoneNumber,
+      'Sorry, something went wrong with your registration. Please try typing /register to try again.'
+    );
+
+    return false;
+  }
+}
+
 module.exports = {
   handleFlowResponse,
   handleReadingAssessmentFlow,
   handleAttendanceSetupFlow,
   handleAttendanceMarkingFlow,
+  handleRegistrationFlow,
   mapLevelToPassageType,
   READING_ASSESSMENT_FLOW_ID,
   ATTENDANCE_SETUP_FLOW_ID,
-  ATTENDANCE_MARKING_FLOW_ID
+  ATTENDANCE_MARKING_FLOW_ID,
+  REGISTRATION_FLOW_ID
 };
