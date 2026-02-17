@@ -18,7 +18,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" /></a>
-  <a href="https://github.com/hyasin270/rumi-platform/actions/workflows/ci.yml"><img src="https://github.com/hyasin270/rumi-platform/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/Orenda-Project/rumi-platform/actions/workflows/ci.yml"><img src="https://github.com/Orenda-Project/rumi-platform/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg" alt="Node.js" />
   <img src="https://img.shields.io/badge/tests-158%20passing-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/platform-WhatsApp-25D366.svg" alt="WhatsApp" />

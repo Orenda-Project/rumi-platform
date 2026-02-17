@@ -13,7 +13,7 @@
 
 ## Step 1: Fork, Clone, and Install
 
-**First, fork the repo** on GitHub — click the **Fork** button at [github.com/hyasin270/rumi-platform](https://github.com/hyasin270/rumi-platform). This creates your own independent copy.
+**First, fork the repo** on GitHub — click the **Fork** button at [github.com/Orenda-Project/rumi-platform](https://github.com/Orenda-Project/rumi-platform). This creates your own independent copy.
 
 ```bash
 # Clone YOUR fork (replace YOUR-ORG with your GitHub username or org)
@@ -21,14 +21,14 @@ git clone https://github.com/YOUR-ORG/rumi-platform.git
 cd rumi-platform
 
 # Add the original repo as upstream (for pulling future updates)
-git remote add upstream https://github.com/hyasin270/rumi-platform.git
+git remote add upstream https://github.com/Orenda-Project/rumi-platform.git
 
 # Install dependencies
 npm install
 cd bot && npm install && cd ..
 ```
 
-> **Important:** Do NOT clone directly from `hyasin270/rumi-platform`. Each deployment needs its own fork so you can push changes independently.
+> **Important:** Do NOT clone directly from `Orenda-Project/rumi-platform`. Each deployment needs its own fork so you can push changes independently.
 
 ## Step 2: Create Supabase Database
 

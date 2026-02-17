@@ -16,12 +16,18 @@ const path = require('path');
 
 // Provisioner configuration
 const PROVISIONER_URL = process.env.PROVISIONER_URL || 'https://provisioner-api-production.up.railway.app';
-const PROVISIONER_KEY = process.env.PROVISIONER_KEY || 'rumi-prov-2026-secure-key';
+const PROVISIONER_KEY = process.env.PROVISIONER_KEY;
 
 /**
  * Call the provisioner API to create infrastructure
  */
 async function provisionInfrastructure(deploymentName, region = 'ap-south-1', tier = 'recommended') {
+  if (!PROVISIONER_KEY) {
+    console.error('Error: PROVISIONER_KEY environment variable is required.');
+    console.error('Set it in your .env file or export it before running this script.');
+    process.exit(1);
+  }
+
   console.log(`\n🚀 Provisioning infrastructure for: ${deploymentName}`);
   console.log(`   Region: ${region}`);
   console.log(`   Tier: ${tier}`);
