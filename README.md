@@ -59,6 +59,18 @@ The core insight: **the best time to coach a teacher is right after they teach**
 | **Attendance** | Voice or text-based student attendance tracking via WhatsApp | Full |
 | **Exam Checker** | Teacher photographs student exam papers; Rumi grades them using OCR and AI-based assessment | Full |
 
+### Feature Demos
+
+> Each video shows a real WhatsApp interaction with Rumi. [View all demos on the Releases page](https://github.com/Orenda-Project/rumi-platform/releases/tag/v1.0.0).
+
+| Demo | What You'll See | Watch |
+|------|----------------|-------|
+| **Classroom Coaching** | Teacher sends classroom audio; Rumi transcribes, scores against OECD framework, conducts reflective conversation, generates PDF report | [Watch demo (12 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/coaching_feature_video.mp4) |
+| **Reading Assessment** | Student reads aloud; Rumi measures WCPM, accuracy, comprehension; compares to grade benchmarks | [Watch demo (11 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/reading_feature_video.mp4) |
+| **Lesson Plan Generation** | Teacher describes topic and grade; Rumi generates a full lesson plan as downloadable PDF | [Watch demo (2.5 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/lesson_plan_feature_v6_final.mp4) |
+| **AI Video Generation** | Teacher requests a topic; Rumi generates an educational video with narration and visuals | [Watch demo (10 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/video_generation_feature.mp4) |
+| **Attendance Tracking** | Teacher sets up class list, marks daily attendance via WhatsApp Flow | [Watch demo (8 MB)](https://github.com/Orenda-Project/rumi-platform/releases/download/v1.0.0/attendance_feature_final_2_5x.mp4) |
+
 ### Classroom Coaching: How It Works
 
 1. **Teacher records** their classroom (audio or video) and sends it to Rumi on WhatsApp
