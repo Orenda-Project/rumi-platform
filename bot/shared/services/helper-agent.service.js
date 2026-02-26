@@ -10,9 +10,8 @@
  * - Handle edge cases gracefully with intelligent fallbacks
  */
 
-const { getClient } = require('./llm-client');
-const { OPENAI_API_KEY } = require('../utils/constants');
 const { logToFile } = require('../utils/logger');
+const { getClient } = require('./llm-client');
 
 const openai = getClient();
 
@@ -26,7 +25,7 @@ const PLATFORM_KNOWLEDGE = `
 
 ### 1. Coaching (Primary Service)
 - Upload classroom audio/video for AI-powered teaching analysis
-- Receive detailed feedback on OECD Framework criteria
+- Receive detailed feedback on HOTS Classroom Observation criteria
 - 3-question reflective conversation
 - Comprehensive PDF report with rubric scores
 - Commands: Send audio/video directly (no command needed)
@@ -181,7 +180,7 @@ ${PLATFORM_KNOWLEDGE}
 - Be empathetic to teachers' busy schedules`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'openai/gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
@@ -254,7 +253,7 @@ Determine their intent and respond with ONLY ONE of these exact words:
 Respond with just one word, nothing else.`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userResponse }
@@ -436,7 +435,7 @@ Response format:
 - If not capability question: Just "NO"`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
@@ -552,7 +551,7 @@ IMPORTANT:
 - NO meta-commentary or markdown headers`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.5,
         max_tokens: 400
@@ -591,7 +590,7 @@ Create a message that:
 Keep it concise and friendly.`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.5,
         max_tokens: 400

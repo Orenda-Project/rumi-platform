@@ -11,10 +11,9 @@
  * Extracted from coaching.service.js as part of Phase 2 refactoring
  */
 
-const { getClient } = require('../llm-client');
 const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
-const { OPENAI_API_KEY } = require('../../utils/constants');
+const { getClient } = require('../llm-client');
 
 class CoachingHelpersService {
   /**
@@ -29,7 +28,7 @@ class CoachingHelpersService {
       const openai = getClient();
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'openai/gpt-4o',
         messages: [
           {
             role: 'system',

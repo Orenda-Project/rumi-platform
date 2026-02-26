@@ -297,9 +297,15 @@ class ReflectiveConversationService {
           await WhatsAppService.sendMessage(from, "Thank you for your thoughtful reflections! 🙏");
         }
 
-        // Queue report generation job
-        const CoachingJobQueueService = require('./coaching-job-queue.service');
-        await CoachingJobQueueService.queueReport(coachingSessionId, { from });
+        // Process report generation inline (fire-and-forget) instead of queueing to SQS
+        const ReportGeneratorService = require('./report-generator.service');
+        ReportGeneratorService.generateReport(coachingSessionId, { from }).catch(err => {
+          logToFile('❌ Inline report generation error', {
+            error: err.message,
+            coachingSessionId,
+            stack: err.stack
+          });
+        });
 
         // Update status
         await CoachingSessionService.updateConversationState(coachingSessionId, {

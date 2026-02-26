@@ -10,7 +10,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { TEMP_DIR, LISTENING_ANIMATION_MEDIA_ID, PEDAGOGICAL_ANALYSIS_MEDIA_ID } = require('../utils/constants');
-const { getClient } = require('./llm-client');
+const OpenAI = require('openai');
 
 /**
  * Coaching Service
@@ -1217,10 +1217,12 @@ class CoachingService {
   static async _generateEncouragingMessage(firstName, durationSeconds) {
     try {
       const durationMinutes = Math.round(durationSeconds / 60);
+      const { getClient } = require('./llm-client');
+
       const openai = getClient();
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'openai/gpt-4o',
         messages: [
           {
             role: 'system',

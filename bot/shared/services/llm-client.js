@@ -5,15 +5,11 @@
  * Default: OpenRouter (one key for 500+ models).
  * Override: Direct OpenAI (set LLM_PROVIDER=openai + OPENAI_API_KEY).
  *
- * When using OpenRouter, model names are auto-prefixed with 'openai/' if no
- * provider prefix is present (e.g. 'gpt-4o-mini' → 'openai/gpt-4o-mini').
- * This means existing code can use bare OpenAI model names unchanged.
- *
  * Usage:
  *   const { getClient, getDefaultModel } = require('./llm-client');
  *   const client = getClient();
  *   const response = await client.chat.completions.create({
- *     model: 'gpt-4o-mini',  // auto-prefixed to 'openai/gpt-4o-mini' on OpenRouter
+ *     model: getDefaultModel(),
  *     messages: [{ role: 'user', content: 'Hello' }],
  *   });
  */
@@ -28,7 +24,6 @@ let _client = null;
 
 /**
  * Create a new LLM client configured for the current provider.
- * For OpenRouter, wraps chat.completions.create to auto-prefix model names.
  */
 function createLLMClient() {
   if (PROVIDER === 'openai') {
@@ -39,25 +34,14 @@ function createLLMClient() {
   }
 
   // Default: OpenRouter — uses OpenAI-compatible API
-  const client = new OpenAI({
+  return new OpenAI({
     apiKey: process.env.OPENROUTER_API_KEY,
     baseURL: OPENROUTER_BASE_URL,
     defaultHeaders: {
       'HTTP-Referer': process.env.APP_URL || '',
-      'X-Title': 'Rumi Teaching Assistant',
+      'X-Title': `${require('../config/branding').botName} Teaching Assistant`,
     },
   });
-
-  // Auto-prefix model names for OpenRouter (e.g. 'gpt-4o-mini' → 'openai/gpt-4o-mini')
-  const originalCreate = client.chat.completions.create.bind(client.chat.completions);
-  client.chat.completions.create = (params, options) => {
-    if (params.model && !params.model.includes('/')) {
-      params = { ...params, model: `openai/${params.model}` };
-    }
-    return originalCreate(params, options);
-  };
-
-  return client;
 }
 
 /**

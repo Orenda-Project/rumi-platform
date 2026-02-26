@@ -435,197 +435,95 @@ class ReportGeneratorService {
 
     const goals = [];
 
-    // GOAL 1: FORMATIVE ASSESSMENT AND FEEDBACK (22 marks total)
-    if (enhancedAnalysis.goal1_formative_assessment) {
-      const goal1Data = enhancedAnalysis.goal1_formative_assessment;
-      goals.push({
-        title: 'Goal 1: Formative Assessment and Feedback',
-        score: enhancedAnalysis.scores?.goal1_total || 0,
-        maxScore: 22,
-        criteria: [
-          {
-            name: 'SMART Objectives',
-            score: goal1Data.smart_objectives?.computed_marks || 0,
-            max: goal1Data.smart_objectives?.max_marks || 4,
-            evidence: goal1Data.smart_objectives?.evidence || 'No evidence provided',
-            timestamp: goal1Data.smart_objectives?.timestamp || null
-          },
-          {
-            name: "Teacher's Role",
-            score: goal1Data.teachers_role?.computed_marks || 0,
-            max: goal1Data.teachers_role?.max_marks || 4,
-            evidence: goal1Data.teachers_role?.evidence || 'No evidence provided',
-            timestamp: goal1Data.teachers_role?.timestamp || null
-          },
-          {
-            name: 'Assessment',
-            score: goal1Data.assessment?.computed_marks || 0,
-            max: goal1Data.assessment?.max_marks || 9,
-            evidence: goal1Data.assessment?.evidence || 'No evidence provided',
-            timestamp: goal1Data.assessment?.timestamp || null
-          }
+    // HOTS Area-to-report mapping
+    const areaDefinitions = [
+      {
+        key: 'area1_classroom_management',
+        title: 'Area 1: Classroom Management',
+        scoreKey: 'area1_classroom_management_total',
+        maxScore: 9,
+        indicators: [
+          { key: 'open_discussions', name: 'Open Discussions & Critical Thinking', defaultMax: 3 },
+          { key: 'resources_organization', name: 'Resources & Space Organization', defaultMax: 3 },
+          { key: 'complex_task_expectations', name: 'Complex Task Expectations', defaultMax: 3 }
         ]
-      });
-    }
-
-    // GOAL 2: STUDENT ENGAGEMENT (22 marks total)
-    if (enhancedAnalysis.goal2_student_engagement) {
-      const goal2Data = enhancedAnalysis.goal2_student_engagement;
-      goals.push({
-        title: 'Goal 2: Student Engagement',
-        score: enhancedAnalysis.scores?.goal2_total || 0,
-        maxScore: 22,
-        criteria: [
-          {
-            name: 'Cognitive Rigor',
-            score: goal2Data.cognitive_rigor?.computed_marks || 0,
-            max: goal2Data.cognitive_rigor?.max_marks || 9,
-            evidence: goal2Data.cognitive_rigor?.evidence || 'No evidence provided',
-            timestamp: goal2Data.cognitive_rigor?.timestamp || null
-          },
-          {
-            name: 'Real World Connections',
-            score: goal2Data.real_world_connections?.computed_marks || 0,
-            max: goal2Data.real_world_connections?.max_marks || 4,
-            evidence: goal2Data.real_world_connections?.evidence || 'No evidence provided',
-            timestamp: goal2Data.real_world_connections?.timestamp || null
-          },
-          {
-            name: 'Multimodality',
-            score: goal2Data.multimodality?.computed_marks || 0,
-            max: goal2Data.multimodality?.max_marks || 5,
-            evidence: goal2Data.multimodality?.evidence || 'No evidence provided',
-            timestamp: goal2Data.multimodality?.timestamp || null
-          },
-          {
-            name: 'Addressing Misconceptions',
-            score: goal2Data.misconceptions?.computed_marks || 0,
-            max: goal2Data.misconceptions?.max_marks || 4,
-            evidence: goal2Data.misconceptions?.evidence || 'No evidence provided',
-            timestamp: goal2Data.misconceptions?.timestamp || null
-          }
+      },
+      {
+        key: 'area2_lesson_planning',
+        title: 'Area 2: Lesson Planning',
+        scoreKey: 'area2_lesson_planning_total',
+        maxScore: 9,
+        indicators: [
+          { key: 'objectives_hots_alignment', name: 'Objectives & HOTS Alignment', defaultMax: 3 },
+          { key: 'analysis_evaluation_strategies', name: 'Analysis & Evaluation Strategies', defaultMax: 3 },
+          { key: 'interdisciplinary_applications', name: 'Interdisciplinary Applications', defaultMax: 3 }
         ]
-      });
-    }
-
-    // GOAL 3: QUALITY SUBJECT CONTENT (dynamic marks)
-    if (enhancedAnalysis.goal3_quality_content) {
-      const goal3Data = enhancedAnalysis.goal3_quality_content;
-      const goal3Criteria = [
-        {
-          name: 'Prior Knowledge',
-          score: goal3Data.prior_knowledge?.computed_marks || 0,
-          max: goal3Data.prior_knowledge?.max_marks || 4,
-          evidence: goal3Data.prior_knowledge?.evidence || 'No evidence provided',
-          timestamp: goal3Data.prior_knowledge?.timestamp || null
-        },
-        {
-          name: 'Prior Knowledge Activation',
-          score: goal3Data.prior_knowledge_activation?.computed_marks || 0,
-          max: goal3Data.prior_knowledge_activation?.max_marks || 4,
-          evidence: goal3Data.prior_knowledge_activation?.evidence || 'No evidence provided',
-          timestamp: goal3Data.prior_knowledge_activation?.timestamp || null
-        },
-        {
-          name: 'Content Coverage',
-          score: goal3Data.content_coverage_accuracy?.computed_marks || 0,
-          max: goal3Data.content_coverage_accuracy?.max_marks || 11,
-          evidence: goal3Data.content_coverage_accuracy?.evidence || 'No evidence provided',
-          timestamp: goal3Data.content_coverage_accuracy?.timestamp || null
-        },
-        {
-          name: 'Organization',
-          score: goal3Data.content_organization?.computed_marks || 0,
-          max: goal3Data.content_organization?.max_marks || 7,
-          evidence: goal3Data.content_organization?.evidence || 'No evidence provided',
-          timestamp: goal3Data.content_organization?.timestamp || null
-        },
-        {
-          name: 'Verbal Questioning',
-          score: goal3Data.verbal_questioning?.computed_marks || 0,
-          max: goal3Data.verbal_questioning?.max_marks || 4,
-          evidence: goal3Data.verbal_questioning?.evidence || 'No evidence provided',
-          timestamp: goal3Data.verbal_questioning?.timestamp || null
-        },
-        {
-          name: 'Coherence and Transitions',
-          score: goal3Data.coherence_transitions?.computed_marks || 0,
-          max: goal3Data.coherence_transitions?.max_marks || 4,
-          evidence: goal3Data.coherence_transitions?.evidence || 'No evidence provided',
-          timestamp: goal3Data.coherence_transitions?.timestamp || null
-        }
-      ];
-
-      const goal3Max = goal3Criteria.reduce((sum, criterion) => sum + (criterion.max || 0), 0);
-
-      goals.push({
-        title: 'Goal 3: Quality Subject Content',
-        score: enhancedAnalysis.scores?.goal3_total || 0,
-        maxScore: goal3Max,
-        criteria: goal3Criteria
-      });
-    }
-
-    // GOAL 4: CLASSROOM INTERACTION (5 marks total)
-    if (enhancedAnalysis.goal4_classroom_interaction) {
-      const goal4Data = enhancedAnalysis.goal4_classroom_interaction;
-      goals.push({
-        title: 'Goal 4: Classroom Interaction',
-        score: enhancedAnalysis.scores?.goal4_total || 0,
-        maxScore: 5,
-        criteria: [
-          {
-            name: 'Peer and Group Interactions',
-            score: goal4Data.peer_group_interactions?.computed_marks || 0,
-            max: goal4Data.peer_group_interactions?.max_marks || 5,
-            evidence: goal4Data.peer_group_interactions?.evidence || 'No evidence provided',
-            timestamp: goal4Data.peer_group_interactions?.timestamp || null
-          }
+      },
+      {
+        key: 'area3_instructional_strategies',
+        title: 'Area 3: Instructional Strategies',
+        scoreKey: 'area3_instructional_strategies_total',
+        maxScore: 12,
+        indicators: [
+          { key: 'open_ended_questions', name: 'Open-Ended Questions', defaultMax: 3 },
+          { key: 'student_analysis_critique', name: 'Student Analysis & Critique', defaultMax: 3 },
+          { key: 'problem_solving_creativity', name: 'Problem-Solving & Creativity', defaultMax: 3 },
+          { key: 'scaffolding', name: 'Scaffolding', defaultMax: 3 }
         ]
-      });
-    }
-
-    // GOAL 5: CLASSROOM MANAGEMENT (24 marks total)
-    if (enhancedAnalysis.goal5_classroom_management) {
-      const goal5Data = enhancedAnalysis.goal5_classroom_management;
-      goals.push({
-        title: 'Goal 5: Classroom Management',
-        score: enhancedAnalysis.scores?.goal5_total || 0,
-        maxScore: 24,
-        criteria: [
-          {
-            name: 'Classroom Management',
-            score: goal5Data.classroom_management?.computed_marks || 0,
-            max: goal5Data.classroom_management?.max_marks || 9,
-            evidence: goal5Data.classroom_management?.evidence || 'No evidence provided',
-            timestamp: goal5Data.classroom_management?.timestamp || null
-          },
-          {
-            name: 'Visibility',
-            score: goal5Data.visibility_materials?.computed_marks || 0,
-            max: goal5Data.visibility_materials?.max_marks || 3,
-            evidence: goal5Data.visibility_materials?.evidence || 'No evidence provided',
-            timestamp: goal5Data.visibility_materials?.timestamp || null
-          },
-          {
-            name: 'Culture of Learning',
-            score: goal5Data.classroom_culture?.computed_marks || 0,
-            max: goal5Data.classroom_culture?.max_marks || 9,
-            evidence: goal5Data.classroom_culture?.evidence || 'No evidence provided',
-            timestamp: goal5Data.classroom_culture?.timestamp || null
-          },
-          {
-            name: 'Materials and Resources',
-            score: goal5Data.teaching_learning_materials?.computed_marks || 0,
-            max: goal5Data.teaching_learning_materials?.max_marks || 3,
-            evidence: goal5Data.teaching_learning_materials?.evidence || 'No evidence provided',
-            timestamp: goal5Data.teaching_learning_materials?.timestamp || null
-          }
+      },
+      {
+        key: 'area4_student_engagement',
+        title: 'Area 4: Student Engagement',
+        scoreKey: 'area4_student_engagement_total',
+        maxScore: 9,
+        indicators: [
+          { key: 'collaborative_synthesis', name: 'Collaborative Synthesis', defaultMax: 3 },
+          { key: 'multiple_perspectives', name: 'Multiple Perspectives', defaultMax: 3 },
+          { key: 'discussions_debates', name: 'Discussions & Debates', defaultMax: 3 }
         ]
-      });
+      },
+      {
+        key: 'area5_assessment_feedback',
+        title: 'Area 5: Assessment & Feedback',
+        scoreKey: 'area5_assessment_feedback_total',
+        maxScore: 9,
+        indicators: [
+          { key: 'self_peer_assessment', name: 'Self/Peer Assessment', defaultMax: 3 },
+          { key: 'refinement_feedback', name: 'Refinement Feedback', defaultMax: 3 },
+          { key: 'hots_assessment_tasks', name: 'HOTS Assessment Tasks', defaultMax: 3 }
+        ]
+      }
+    ];
+
+    for (const areaDef of areaDefinitions) {
+      const areaData = enhancedAnalysis[areaDef.key];
+      if (areaData) {
+        goals.push({
+          title: areaDef.title,
+          score: enhancedAnalysis.scores?.[areaDef.scoreKey] || 0,
+          maxScore: areaDef.maxScore,
+          criteria: areaDef.indicators.map(ind => {
+            let evidence = areaData[ind.key]?.evidence || 'No evidence provided';
+            const timestamp = areaData[ind.key]?.timestamp || null;
+
+            // Safety net: prepend timestamp to evidence if it exists but isn't already embedded
+            if (timestamp && !evidence.startsWith('[') && !evidence.includes(`[${timestamp}`)) {
+              evidence = `[${timestamp}] ${evidence}`;
+            }
+
+            return {
+              name: ind.name,
+              score: areaData[ind.key]?.computed_marks || 0,
+              max: areaData[ind.key]?.max_marks || ind.defaultMax,
+              evidence,
+              timestamp
+            };
+          })
+        });
+      }
     }
 
-    // PRIOR FEEDBACK (separate from 5 main goals, 5 marks total)
+    // PRIOR FEEDBACK (separate from 5 main areas, 5 marks total)
     // Check if user has prior completed sessions
     let hasPriorSessions = false;
     const { count, error: countError } = await supabase
@@ -641,10 +539,10 @@ class ReportGeneratorService {
 
     hasPriorSessions = (count || 0) > 0;
 
-    // Extract incorporation_of_feedback from goal1 data
+    // Extract incorporation_of_feedback from uptake_of_feedback in debrief or prior feedback data
     let priorFeedback = null;
-    if (enhancedAnalysis.goal1_formative_assessment?.incorporation_of_feedback) {
-      const priorData = enhancedAnalysis.goal1_formative_assessment.incorporation_of_feedback;
+    if (enhancedAnalysis.debrief_reflection?.uptake_of_feedback) {
+      const priorData = enhancedAnalysis.debrief_reflection.uptake_of_feedback;
 
       if (hasPriorSessions) {
         // Has prior sessions - normal scoring
@@ -776,7 +674,7 @@ class ReportGeneratorService {
       observationDate,
       subject: session.lesson_plan_structured?.subject || enhancedAnalysis.subject || 'N/A',
       topic: session.lesson_plan_structured?.topic || enhancedAnalysis.topic || 'N/A',
-      observerName: 'Rumi',
+      observerName: require('../../config/branding').botName,
       hasLessonPlan: hasLessonPlanData,
       totalScore,
       maxScore: maxPossibleMarks,
@@ -785,6 +683,9 @@ class ReportGeneratorService {
       debriefReflection,
       fidelitySection,
       feedback: enhancedAnalysis.executive_summary || enhancedAnalysis.summary || 'Analysis complete.',
+      strengths: enhancedAnalysis.strengths || [],
+      growthOpportunities: enhancedAnalysis.growth_opportunities || [],
+      recommendations: enhancedAnalysis.recommendations || [],
       // Bug #9: Partial report metadata
       isPartialReport: session._isPartialReport || false,
       partialReportNote
@@ -830,16 +731,16 @@ class ReportGeneratorService {
       criterion.evidence = `${planLines.join('\n')}\n${classroomLine}`;
     };
 
-    const isGoal = {
-      formative: (title = '') => title.toLowerCase().includes('formative assessment'),
-      subject: (title = '') => title.toLowerCase().includes('quality subject content'),
-      management: (title = '') => title.toLowerCase().includes('classroom management')
+    const isArea = {
+      lessonPlanning: (title = '') => title.toLowerCase().includes('lesson planning'),
+      management: (title = '') => title.toLowerCase().includes('classroom management'),
+      assessment: (title = '') => title.toLowerCase().includes('assessment')
     };
 
-    enhanceCriterion(isGoal.formative, 'SMART Objectives', 'smartObjectives');
-    enhanceCriterion(isGoal.subject, 'Prior Knowledge', 'priorKnowledge');
-    enhanceCriterion(isGoal.formative, 'Assessment', 'assessment');
-    enhanceCriterion(isGoal.management, 'Materials and Resources', 'materials');
+    enhanceCriterion(isArea.lessonPlanning, 'Objectives & HOTS Alignment', 'smartObjectives');
+    enhanceCriterion(isArea.lessonPlanning, 'Interdisciplinary Applications', 'priorKnowledge');
+    enhanceCriterion(isArea.assessment, 'HOTS Assessment Tasks', 'assessment');
+    enhanceCriterion(isArea.management, 'Resources & Space Organization', 'materials');
   }
 
   /**

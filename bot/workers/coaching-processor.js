@@ -17,7 +17,7 @@ require('../shared/utils/structured-logger');
 require('dotenv').config();
 const supabase = require('../shared/config/supabase');
 const { logToFile } = require('../shared/utils/logger');
-const CoachingService = require('../shared/services/coaching.service');
+const CoachingService = require('../shared/services/coaching-orchestrator.service');
 const os = require('os');
 
 // Configuration

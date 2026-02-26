@@ -28,6 +28,7 @@ const ReflectiveConversationService = require('./coaching/reflective-conversatio
 const ReportGeneratorService = require('./coaching/report-generator.service');
 const CoachingJobQueueService = require('./coaching/coaching-job-queue.service');
 const CoachingHelpersService = require('./coaching/coaching-helpers.service');
+const { logToFile } = require('../utils/logger');
 
 class CoachingOrchestrator {
   /**
@@ -46,10 +47,15 @@ class CoachingOrchestrator {
     const result = await CoachingSessionService.handleConfirmation(coachingSessionId, from, confirmed);
 
     if (result.confirmed) {
-      // Queue transcription job
-      await this.queueTranscription(coachingSessionId, {
-        from,
-        audioId: result.session.audio_id
+      // Process transcription inline (fire-and-forget) instead of queueing to SQS
+      // This ensures the bot's own code (with HOTS framework) is used
+      const payload = { from, audioId: result.session.audio_id };
+      this.processTranscription(coachingSessionId, payload).catch(err => {
+        logToFile('❌ Inline transcription processing error', {
+          error: err.message,
+          coachingSessionId,
+          stack: err.stack
+        });
       });
     }
 
@@ -252,13 +258,19 @@ class CoachingOrchestrator {
       })
       .eq('id', coachingSessionId);
 
-    // Re-queue analysis job
-    await this.queueAnalysis(coachingSessionId, {
+    // Process analysis inline (fire-and-forget) instead of queueing to SQS
+    AnalysisProcessorService.processAnalysis(coachingSessionId, {
       from,
       retryAttempt: true
+    }).catch(err => {
+      logToFile('❌ Inline analysis retry error', {
+        error: err.message,
+        coachingSessionId,
+        stack: err.stack
+      });
     });
 
-    logToFile('✅ Analysis requeued successfully', { coachingSessionId });
+    logToFile('✅ Analysis retry started inline', { coachingSessionId });
     return { success: true };
   }
 }

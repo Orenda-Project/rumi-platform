@@ -353,11 +353,15 @@ async function autoCompleteSession(session) {
       })
       .eq('id', session.id);
 
-    // 2. Queue report generation with partial flag
-    await CoachingJobQueueService.queueReport(session.id, {
+    // 2. Process report generation inline (fire-and-forget) instead of queueing to SQS
+    const ReportGeneratorService = require('../shared/services/coaching/report-generator.service');
+    ReportGeneratorService.generateReport(session.id, {
       from: session.users.phone_number,
       partial: questionsAnswered < 3,
       autoCompleted: true
+    }).catch(err => {
+      const { logToFile } = require('../shared/utils/logger');
+      logToFile('❌ Inline report generation error (stale session)', { error: err.message, sessionId: session.id });
     });
 
     // 3. Notify user

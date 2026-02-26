@@ -17,6 +17,7 @@ const { logToFile } = require('../../utils/logger');
 const WhatsAppService = require('../whatsapp.service');
 const CoachingSessionService = require('./coaching-session.service');
 const CoachingJobQueueService = require('./coaching-job-queue.service');
+const AnalysisProcessorService = require('./analysis-processor.service');
 const { uploadLessonPlanBuffer, buildR2PublicUrl } = require('../../storage/r2');
 
 class LessonPlanProcessorService {
@@ -47,17 +48,28 @@ class LessonPlanProcessorService {
 
         await WhatsAppService.sendMessage(from, "No problem! I'll analyze your classroom audio without the lesson plan.");
 
-        // Queue analysis job
-        const CoachingJobQueueService = require('./coaching-job-queue.service');
-        await CoachingJobQueueService.queueAnalysis(coachingSessionId, { from });
+        // Process analysis inline (fire-and-forget) instead of queueing to SQS
+        AnalysisProcessorService.processAnalysis(coachingSessionId, { from }).catch(err => {
+          logToFile('❌ Inline analysis processing error', {
+            error: err.message,
+            coachingSessionId,
+            stack: err.stack
+          });
+        });
         return;
       }
 
       // User has lesson plan
       if (documentId) {
         await this.handleLessonPlanUpload(coachingSessionId, from, documentId);
-        // Queue analysis job immediately; LP extraction happens in background
-        await CoachingJobQueueService.queueAnalysis(coachingSessionId, { from, lpUploaded: true });
+        // Process analysis inline (fire-and-forget); LP extraction happens in background
+        AnalysisProcessorService.processAnalysis(coachingSessionId, { from, lpUploaded: true }).catch(err => {
+          logToFile('❌ Inline analysis processing error', {
+            error: err.message,
+            coachingSessionId,
+            stack: err.stack
+          });
+        });
       } else {
         // User said yes but no document yet - ask them to send it
         await WhatsAppService.sendMessage(from,

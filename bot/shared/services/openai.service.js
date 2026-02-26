@@ -7,8 +7,7 @@ const { getClient } = require('./llm-client');
 
 /**
  * OpenAI Service
- * Handles all LLM interactions (chat, intent detection, topic extraction)
- * Uses llm-client.js for provider-agnostic OpenAI/OpenRouter routing.
+ * Handles all OpenAI API interactions (GPT-4, intent detection, topic extraction)
  */
 class OpenAIService {
   constructor() {
@@ -124,7 +123,7 @@ Keep your responses relatively short as they will be sent via WhatsApp messages 
 
       // Get response from OpenAI
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4.1-mini',
+        model: 'openai/gpt-4.1-mini',
         messages: history,
         max_tokens: 500,
         temperature: 0.7,
@@ -626,7 +625,7 @@ Keep your responses relatively short as they will be sent via WhatsApp messages.
       const voiceMaxTokens = isRTL ? 400 : 250;
 
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4.1-mini',
+        model: 'openai/gpt-4.1-mini',
         messages: messages,
         max_tokens: format === 'voice' ? voiceMaxTokens : 500,
         temperature: 0.7,
@@ -670,7 +669,7 @@ Keep your responses relatively short as they will be sent via WhatsApp messages.
   async detectIntent(message) {
     try {
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4.1-mini',
+        model: 'openai/gpt-4.1-mini',
         messages: [
           {
             role: 'system',
@@ -800,7 +799,7 @@ Return ONLY one word: lesson_plan, presentation, video, or general`
   async extractTopic(message) {
     try {
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4.1-mini',
+        model: 'openai/gpt-4.1-mini',
         messages: [
           {
             role: 'system',

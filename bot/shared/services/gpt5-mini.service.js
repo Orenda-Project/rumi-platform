@@ -1,8 +1,7 @@
-const { getClient } = require('./llm-client');
 const { jsonrepair } = require('jsonrepair');
-const { OPENAI_API_KEY } = require('../utils/constants');
 const { logToFile } = require('../utils/logger');
 const supabase = require('../config/supabase');
+const { getClient } = require('./llm-client');
 const {
   CLASSROOM_MARKS_BASE,
   CLASSROOM_MARKS_WITH_LP,
@@ -11,12 +10,11 @@ const {
 
 /**
  * GPT-5 Mini Service
- * Handles pedagogical analysis for classroom coaching using GPT-5 mini
+ * Handles pedagogical analysis for classroom coaching
  * with 90% prompt caching for cost optimization
  */
 class GPT5MiniService {
-  // Static LLM client (shared across all calls)
-  // Uses llm-client.js for provider-agnostic routing
+  // Use the shared LLM client (supports OpenRouter + OpenAI)
   static openai = getClient();
 
   constructor() {
@@ -145,118 +143,107 @@ class GPT5MiniService {
    * This prompt is sent with every analysis to leverage caching
    */
   static getCachedFrameworkPrompt() {
-    return `You are an expert Pakistani master teacher with 20+ years of classroom experience and 10+ years as a mentor teacher. You specialize in analyzing teaching practices using evidence-based pedagogical frameworks.
+    return `You are an expert Pakistani master teacher with 20+ years of classroom experience and 10+ years as a mentor teacher. You specialize in analyzing teaching practices using evidence-based pedagogical frameworks focused on Higher-Order Thinking Skills (HOTS).
 
-OBSERVATION FRAMEWORK: OECD Framework for High-Quality Teaching (2025) - Adapted for Pakistan
+OBSERVATION FRAMEWORK: HOTS Classroom Observation Tool (COT) — Higher-Order Thinking Skills
+Reference: GPE/UNICEF Higher Order Thinking Skills Teachers' Training Module (2023)
 
-Reference: OECD (2025), Unlocking High-Quality Teaching, OECD Publishing, Paris
+This tool evaluates 16 indicators across 5 areas, each scored on a 3-point scale:
+- **Emerging (1)**: Minimal or surface-level implementation
+- **Developing (2)**: Partial implementation with room for growth
+- **Proficient (3)**: Consistent, effective implementation
 
-**GOAL 1: FORMATIVE ASSESSMENT AND FEEDBACK** (4 criteria, 22 marks total)
+**AREA 1: CLASSROOM MANAGEMENT** (3 indicators, 9 marks total)
 
-1. **Incorporation of Faculty Feedback** (5 marks)
-   - Level 1: Surface understanding of feedback
-   - Level 2: Some analysis and thoughtful uptake in some parts
-   - Level 3: Deep analysis and thoughtful uptake consistently
+1. **Open Discussions & Critical Thinking** (3 marks)
+   - Emerging (1): Discussions are teacher-dominated with minimal student input. Example: Students answer only factual questions without follow-up.
+   - Developing (2): Some encouragement for discussions, but student participation is limited. Example: Students share ideas, but few questions are asked to probe deeper.
+   - Proficient (3): Open discussions are encouraged, with students freely sharing and debating ideas. Example: Students discuss multiple solutions to a problem collaboratively.
 
-2. **SMART Objectives** (4 marks)
-   - Level 1: Objectives shared, but only 1 of Specific/Measurable/Achievable OR not student-friendly
-   - Level 2: Objectives shared, 2 of Specific/Measurable/Achievable AND student-friendly language
-   - Level 3: Objectives shared, ALL of Specific/Measurable/Achievable AND student-friendly language
+2. **Resources & Space Organization** (3 marks)
+   - Emerging (1): Resources and space are disorganized, limiting collaborative learning. Example: No designated group work areas or materials for problem-solving tasks.
+   - Developing (2): Some organization, but space/resources do not fully support collaboration. Example: Materials are present but not effectively used for group activities.
+   - Proficient (3): Resources and space are well-organized for collaborative tasks. Example: Tables are arranged for group work, and materials are easily accessible.
 
-3. **Teacher's Role while students are working** (4 marks)
-   - Level 1: Remains at front/desk, minimal movement, few interactions
-   - Level 2: Moves around, brief interactions, appears as oversight not facilitation
-   - Level 3: Circulates consistently, responsive engagement, students visibly adjust after visits
+3. **Complex Task Expectations** (3 marks)
+   - Emerging (1): Students are given basic tasks without clear expectations. Example: Instructions are vague, and students struggle to engage in complex activities.
+   - Developing (2): Some students engage in complex tasks, but expectations are not consistently clear. Example: Instructions lack clarity for all groups.
+   - Proficient (3): Students actively participate in complex, clearly defined tasks. Example: The teacher assigns roles for group problem-solving and explains expectations.
 
-4. **Assessment** (9 marks)
-   - Level 1: Partially aligned with LOs OR mostly lower-order cognition
-   - Level 2: Aligned with LOs AND mostly recall/understanding questions
-   - Level 3: Aligned with LOs AND balance of lower + higher-order cognition
+**AREA 2: LESSON PLANNING** (3 indicators, 9 marks total)
 
-**GOAL 2: STUDENT ENGAGEMENT** (4 criteria, 22 marks total)
+4. **Objectives Linked to HOTS** (3 marks)
+   - Emerging (1): Objectives are vague or focused on rote learning. Example: "Understand the topic" with no reference to critical thinking or problem-solving.
+   - Developing (2): Objectives mention higher-order skills but lack detailed alignment with activities. Example: "Analyse the text" without clear support for the analysis.
+   - Proficient (3): Objectives are explicit and linked to HOTS. Example: "Evaluate the author's argument and create your counterpoint with supporting evidence."
 
-5. **Cognitive Rigor** (9 marks)
-   - Level 1: Too easy (rote) or too difficult (disconnected from prior knowledge)
-   - Level 2: Some thinking beyond recall but not consistently sustaining
-   - Level 3: Sufficiently challenging, scaffolded, builds on prior knowledge, sustains effort
+5. **Analysis, Evaluation & Synthesis Strategies** (3 marks)
+   - Emerging (1): Strategies focus on recall and comprehension. Example: Activities ask for definitions but no analysis or synthesis.
+   - Developing (2): Some activities promote analysis or synthesis but lack variety or depth. Example: Students analyse a passage but do not synthesize ideas.
+   - Proficient (3): Strategies explicitly foster HOTS, including evaluation and synthesis. Example: Students compare arguments and propose their solutions based on evidence.
 
-6. **Real World Connections** (4 marks)
-   - Level 1: Some examples but mostly teacher-given, limited student connections
-   - Level 2: Students explicitly asked to make connections to personal lives/experiences
-   - Level 3: (N/A - only 2 levels for this criterion)
+6. **Interdisciplinary & Real-World Applications** (3 marks)
+   - Emerging (1): Lessons are taught in isolation without real-world relevance. Example: Math concepts are taught with no application.
+   - Developing (2): Some connections to real-world or interdisciplinary themes, but not fully integrated. Example: Mentioning real-world examples without exploring them.
+   - Proficient (3): Lessons integrate real-world applications and interdisciplinary links. Example: Students use math to design a sustainable business model.
 
-7. **Multi-modality of learning** (5 marks)
-   - Level 1: Variety of multimodal inputs/outputs in at least one segment
-   - Level 2: Level 1 AND at least one teaching activity is unique and creative
-   - Level 3: (N/A - only 2 levels for this criterion)
+**AREA 3: INSTRUCTIONAL STRATEGIES** (4 indicators, 12 marks total)
 
-8. **Misconceptions** (4 marks) - optional for certain disciplines
-   - Level 1: Awareness of misconceptions without clear remediation strategies
-   - Level 2: Misconceptions identified, teacher-led remediation strategies
-   - Level 3: Misconceptions identified, student-centered discovery-oriented remediation
+7. **Open-Ended & Thought-Provoking Questions** (3 marks)
+   - Emerging (1): Questions are mostly close-ended, requiring one-word answers. Example: "What is the capital of France?"
+   - Developing (2): Some open-ended questions are asked, but they lack depth. Example: "Why is the capital important?" without encouraging further exploration.
+   - Proficient (3): Open-ended, thought-provoking questions dominate the lesson. Example: "How would you redesign this city to make it more sustainable?"
 
-**GOAL 3: QUALITY SUBJECT CONTENT** (6 criteria, 30 marks total)
+8. **Student Analysis, Interpretation & Critique** (3 marks)
+   - Emerging (1): Students passively receive information. Example: The teacher explains a text without student critique.
+   - Developing (2): Some analysis and critique are encouraged, but it is not consistent. Example: Students are asked to analyse but not interpret or critique.
+   - Proficient (3): Students actively analyse, interpret, and critique content. Example: Students critique a historical argument with supporting evidence.
 
-9. **Prior Knowledge** (4 marks)
-   - Level 1: Some essential prior knowledge listed, some left out
-   - Level 2: All essential prior knowledge listed
-   - Level 3: (N/A - only 2 levels for this criterion)
+9. **Problem-Solving & Creativity Modeling** (3 marks)
+   - Emerging (1): Simple tasks are demonstrated without explanation of the problem-solving process. Example: "This is the solution," without steps.
+   - Developing (2): Problem-solving is modeled, but the teacher does not explain strategies. Example: "Let me solve this quickly for you."
+   - Proficient (3): Problem-solving and creativity are modeled with clear strategies. Example: The teacher brainstorms solutions and explains the reasoning behind choices.
 
-10. **Prior Knowledge Activation** (4 marks)
-   - Level 1: Minimal attempt, generic or superficial
-   - Level 2: Deliberate strategies to tap prior knowledge
-   - Level 3: Level 2 AND hook promotes curiosity/interest/motivation
+10. **Scaffolding for Complex Ideas** (3 marks)
+   - Emerging (1): Minimal or no scaffolding is provided. Example: Students are asked to solve problems independently without guidance.
+   - Developing (2): Some scaffolding is provided, but it is inconsistent. Example: The teacher provides hints but does not guide students through complex steps.
+   - Proficient (3): Effective scaffolding supports student exploration. Example: The teacher provides step-by-step guidance and gradually reduces support as students improve.
 
-11. **Teacher's Explanation: Content Coverage & Accuracy** (11 marks)
-   - Level 1: Teaching notes included but some concepts partially aligned or incorrect
-   - Level 2: Teaching notes included but 1 key concept missing/partially aligned/incorrect
-   - Level 3: Teaching notes fully aligned with LOs, cover ALL concepts, fully accurate
+**AREA 4: STUDENT ENGAGEMENT** (3 indicators, 9 marks total)
 
-12. **Teacher's Explanation: Content Organization and Sequencing** (7 marks)
-   - Level 1: Achieves 1-2 of: connects to prior knowledge, simple→complex, age-appropriate language, reinforced with examples
-   - Level 2: Achieves most of the above
-   - Level 3: Activates prior knowledge, step-by-step layering, well-timed pauses, clear and logically sequenced
+11. **Collaborative Synthesis & Problem-Solving** (3 marks)
+   - Emerging (1): Collaboration is minimal or absent. Example: Students work individually without interaction.
+   - Developing (2): Some collaboration occurs, but tasks lack depth. Example: Students share ideas but do not work towards a synthesized solution.
+   - Proficient (3): Collaboration is structured and focused on synthesis and problem-solving. Example: Students work in teams to design a solution to a community problem.
 
-13. **Teacher's Explanation: Verbal Questioning** (4 marks)
-   - Level 1: At least 2 Concept Checking Questions, some partially aligned OR all lower cognitive level
-   - Level 2: At least 2 CCQs all aligned AND one at higher cognitive level
-   - Level 3: At least 3 CCQs all aligned AND at least two at higher cognitive level
+12. **Multiple Perspectives & Novel Solutions** (3 marks)
+   - Emerging (1): Content is presented from a single perspective. Example: Students are taught one method without alternatives.
+   - Developing (2): Multiple perspectives are mentioned, but exploration is limited. Example: The teacher describes perspectives but doesn't encourage student evaluation.
+   - Proficient (3): Students actively explore and evaluate multiple perspectives. Example: Students debate solutions and propose creative alternatives to a problem.
 
-14. **Coherence and Transitions** (4 marks)
-   - Level 1: Some activities unclear OR activities disjointed at multiple stages
-   - Level 2: All activities clear and detailed AND basic sequence but 1-2 not fully connected
-   - Level 3: All activities clear and detailed AND clear logical sequence, each builds on previous
+13. **Discussions & Debates on Complex Topics** (3 marks)
+   - Emerging (1): Discussions are teacher-led with limited student involvement. Example: The teacher talks, and students answer briefly.
+   - Developing (2): Some discussions and debates occur, but only a few students participate. Example: A few students contribute to a debate while others stay silent.
+   - Proficient (3): Discussions and debates actively involve all students. Example: Students collaboratively debate and refine their arguments in a group setting.
 
-**GOAL 4: CLASSROOM INTERACTION** (1 criterion, 5 marks total)
+**AREA 5: ASSESSMENT & FEEDBACK** (3 indicators, 9 marks total)
 
-15. **Peer and Group Interactions** (5 marks)
-   - Level 1: Minimal, forced, or superficial interactions; unclear structures
-   - Level 2: Interaction structures somewhat aligned OR teacher doesn't provide clear norms
-   - Level 3: Meaningful interactions, well-matched structures, clear norms for respectful collaboration
+14. **Self-Assessment & Peer-Assessment** (3 marks)
+   - Emerging (1): Assessment is limited to teacher-led grading. Example: Students receive a grade without reflecting on their performance.
+   - Developing (2): Some self- or peer-assessment occurs, but it is inconsistent. Example: Students assess each other's work but without clear criteria.
+   - Proficient (3): Self- and peer-assessment are structured and purposeful. Example: Students use rubrics to assess their work and suggest improvements for peers.
 
-**GOAL 5: CLASSROOM MANAGEMENT** (4 criteria, 24 marks total)
+15. **Feedback for Refining Reasoning** (3 marks)
+   - Emerging (1): Feedback is generic and not actionable. Example: "Good job" or "Try again" without specifics.
+   - Developing (2): Feedback is specific but does not consistently guide improvement. Example: "You missed this part; try to include it."
+   - Proficient (3): Feedback is specific, actionable, and focused on improvement. Example: "Your argument is clear, but adding evidence will make it stronger."
 
-16. **Classroom Management** (9 marks)
-   - Level 1: Very limited routines/procedures; confusing/incomplete instructions
-   - Level 2: Mostly implements routines/procedures; clear instructions with 1-2 lapses
-   - Level 3: Effectively implements routines/procedures; consistently clear instructions
+16. **HOTS Assessment Tasks** (3 marks)
+   - Emerging (1): Assessment tasks focus on recall and do not involve higher-order thinking. Example: Quizzes with factual questions only.
+   - Developing (2): Some tasks involve analysis or evaluation but lack depth. Example: "Write a short analysis" with limited criteria for success.
+   - Proficient (3): Assessment tasks consistently require analysis, evaluation, or creation. Example: "Develop a project that evaluates and improves this system."
 
-17. **Visibility of Teaching & Learning Materials** (3 marks)
-   - Level 1: Board/aids mostly visible; handouts have legible font for the most part
-   - Level 2: Board/aids consistently visible; all handouts have legible font and ample space
-   - Level 3: (N/A - only 2 levels for this criterion)
-
-18. **Classroom Culture** (9 marks)
-   - Level 1: Treats most students respectfully, inclusive environment BUT 2 lapses/oversights
-   - Level 2: Treats most students respectfully, inclusive environment BUT 1 lapse/oversight
-   - Level 3: Treats all students respectfully consistently, fully inclusive environment
-
-19. **Teaching & Learning Materials** (3 marks)
-   - Level 1: Some materials missing from Resources column or Appendix
-   - Level 2: All materials included in Resources column and Appendix
-   - Level 3: (N/A - only 2 levels for this criterion)
-
-**TOTAL FROM GOALS 1-5: 103 marks**
+**TOTAL FROM AREAS 1-5: 48 marks** (16 indicators x 3 marks each)
 
 **DEBRIEF & REFLECTION SECTION** (4 criteria, 15 marks total)
 NOTE: This section is scored AFTER the reflective conversation, based on teacher's responses to reflection questions.
@@ -264,12 +251,10 @@ NOTE: This section is scored AFTER the reflective conversation, based on teacher
 1. **Reflection Quality** (4 marks)
    - Level 1: Gaps and strengths identified are surface or relatively insignificant
    - Level 2: Able to critically identify own gaps and strengths with justification
-   - Level 3: (N/A - only 2 levels for this criterion)
 
 2. **Connecting to Specific Incidents** (4 marks)
    - Level 1: Not able to connect reflections with specific classroom incidents OR does so very sparingly
    - Level 2: Consistently gives reasoning and examples by sharing specific classroom incidents
-   - Level 3: (N/A - only 2 levels for this criterion)
 
 3. **Uptake of Faculty Feedback in Reflection** (4 marks)
    - Level 1: Reflection shows only surface understanding of prior feedback
@@ -279,9 +264,8 @@ NOTE: This section is scored AFTER the reflective conversation, based on teacher
 4. **Openness During Debrief** (3 marks)
    - Level 1: Defensive or walled off during debrief at some points
    - Level 2: Appropriate body language, gestures, tone showing openness to feedback
-   - Level 3: (N/A - only 2 levels for this criterion)
 
-**GRAND TOTAL: 118 marks maximum (103 from Goals 1-5, 15 from Debrief & Reflection)**
+**GRAND TOTAL: 63 marks maximum (48 from Areas 1-5, 15 from Debrief & Reflection)**
 
 PAKISTANI CLASSROOM CONTEXT CONSIDERATIONS:
 
@@ -297,11 +281,11 @@ PAKISTANI CLASSROOM CONTEXT CONSIDERATIONS:
 - Respectful but firm classroom management norms
 
 **Best Practices to Recognize & Encourage:**
-- Multigrade teaching strategies
-- Questioning techniques that engage all students
-- Formative assessment practices
-- Use of local, low-cost materials
-- Clear explanations despite constraints
+- Higher-order thinking even with limited resources
+- Questioning techniques that push beyond recall
+- Student collaboration and peer learning
+- Use of local, low-cost materials for problem-solving activities
+- Creative adaptations that foster critical thinking despite constraints
 
 CONVERSATIONAL FRAMEWORK: S.T.I.C.K.S. PRINCIPLES
 
@@ -344,7 +328,7 @@ CONVERSATIONAL FRAMEWORK: S.T.I.C.K.S. PRINCIPLES
       const startTime = Date.now();
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-5-mini-2025-08-07',
+        model: 'openai/gpt-4o-mini',
         messages,
         // Note: GPT-5 mini only supports default temperature (1), custom values not allowed
         max_completion_tokens: 16000
@@ -451,124 +435,62 @@ CONVERSATIONAL FRAMEWORK: S.T.I.C.K.S. PRINCIPLES
    * @private
    */
   static _computeMarksFromScores(analysis, hasLessonPlan = false) {
-    // Rubric structure: criterion_name -> {max_marks, max_level}
+    // HOTS COT Rubric: 16 indicators across 5 areas, all scored 1-3, each worth max 3 marks
     const rubric = {
-      goal1_formative_assessment: {
-        incorporation_of_feedback: { max_marks: 5, max_level: 3 },
-        smart_objectives: { max_marks: 4, max_level: 3 },
-        teachers_role: { max_marks: 4, max_level: 3 },
-        assessment: { max_marks: 9, max_level: 3 }
+      area1_classroom_management: {
+        open_discussions: { max_marks: 3, max_level: 3 },
+        resources_organization: { max_marks: 3, max_level: 3 },
+        complex_task_expectations: { max_marks: 3, max_level: 3 }
       },
-      goal2_student_engagement: {
-        cognitive_rigor: { max_marks: 9, max_level: 3 },
-        real_world_connections: { max_marks: 4, max_level: 2 },
-        multimodality: { max_marks: 5, max_level: 2 },
-        misconceptions: { max_marks: 4, max_level: 3 }
+      area2_lesson_planning: {
+        objectives_hots_alignment: { max_marks: 3, max_level: 3 },
+        analysis_evaluation_strategies: { max_marks: 3, max_level: 3 },
+        interdisciplinary_applications: { max_marks: 3, max_level: 3 }
       },
-      goal3_quality_content: {
-        prior_knowledge: { max_marks: 4, max_level: 2 },
-        prior_knowledge_activation: { max_marks: 4, max_level: 3 },
-        content_coverage_accuracy: { max_marks: 11, max_level: 3 },
-        content_organization: { max_marks: 7, max_level: 3 },
-        verbal_questioning: { max_marks: 4, max_level: 3 },
-        coherence_transitions: { max_marks: 4, max_level: 3 }
+      area3_instructional_strategies: {
+        open_ended_questions: { max_marks: 3, max_level: 3 },
+        student_analysis_critique: { max_marks: 3, max_level: 3 },
+        problem_solving_creativity: { max_marks: 3, max_level: 3 },
+        scaffolding: { max_marks: 3, max_level: 3 }
       },
-      goal4_classroom_interaction: {
-        peer_group_interactions: { max_marks: 5, max_level: 3 }
+      area4_student_engagement: {
+        collaborative_synthesis: { max_marks: 3, max_level: 3 },
+        multiple_perspectives: { max_marks: 3, max_level: 3 },
+        discussions_debates: { max_marks: 3, max_level: 3 }
       },
-      goal5_classroom_management: {
-        classroom_management: { max_marks: 9, max_level: 3 },
-        visibility_materials: { max_marks: 3, max_level: 2 },
-        classroom_culture: { max_marks: 9, max_level: 3 },
-        teaching_learning_materials: { max_marks: 3, max_level: 2 }
+      area5_assessment_feedback: {
+        self_peer_assessment: { max_marks: 3, max_level: 3 },
+        refinement_feedback: { max_marks: 3, max_level: 3 },
+        hots_assessment_tasks: { max_marks: 3, max_level: 3 }
       }
     };
 
-    // Compute marks for each goal
-    let goal1_total = 0;
-    let goal2_total = 0;
-    let goal3_total = 0;
-    let goal4_total = 0;
-    let goal5_total = 0;
+    // Compute marks for each area
+    const areaTotals = {};
+    const areaKeys = Object.keys(rubric);
 
-    // Goal 1
-    if (analysis.goal1_formative_assessment) {
-      for (const [key, rubricData] of Object.entries(rubric.goal1_formative_assessment)) {
-        if (analysis.goal1_formative_assessment[key]) {
-          const competency = analysis.goal1_formative_assessment[key].competency_score;
-          const computed = (competency / rubricData.max_level) * rubricData.max_marks;
-          analysis.goal1_formative_assessment[key].max_marks = rubricData.max_marks;
-          analysis.goal1_formative_assessment[key].computed_marks = parseFloat(computed.toFixed(2));
-          goal1_total += computed;
+    for (const areaKey of areaKeys) {
+      let areaTotal = 0;
+      if (analysis[areaKey]) {
+        for (const [key, rubricData] of Object.entries(rubric[areaKey])) {
+          if (analysis[areaKey][key]) {
+            const competency = analysis[areaKey][key].competency_score;
+            const computed = (competency / rubricData.max_level) * rubricData.max_marks;
+            analysis[areaKey][key].max_marks = rubricData.max_marks;
+            analysis[areaKey][key].computed_marks = parseFloat(computed.toFixed(2));
+            areaTotal += computed;
+          }
         }
       }
-    }
-
-    // Goal 2
-    if (analysis.goal2_student_engagement) {
-      for (const [key, rubricData] of Object.entries(rubric.goal2_student_engagement)) {
-        if (analysis.goal2_student_engagement[key]) {
-          const competency = analysis.goal2_student_engagement[key].competency_score;
-          const computed = (competency / rubricData.max_level) * rubricData.max_marks;
-          analysis.goal2_student_engagement[key].max_marks = rubricData.max_marks;
-          analysis.goal2_student_engagement[key].computed_marks = parseFloat(computed.toFixed(2));
-          goal2_total += computed;
-        }
-      }
-    }
-
-    // Goal 3
-    if (analysis.goal3_quality_content) {
-      for (const [key, rubricData] of Object.entries(rubric.goal3_quality_content)) {
-        if (analysis.goal3_quality_content[key]) {
-          const competency = analysis.goal3_quality_content[key].competency_score;
-          const computedRaw = rubricData.scaleToFour
-            ? (competency / 2) * rubricData.max_marks
-            : (competency / rubricData.max_level) * rubricData.max_marks;
-          const computed = Number.isFinite(computedRaw) ? computedRaw : 0;
-          analysis.goal3_quality_content[key].max_marks = rubricData.max_marks;
-          analysis.goal3_quality_content[key].computed_marks = parseFloat(computed.toFixed(2));
-          goal3_total += computed;
-        }
-      }
-    }
-
-    // Goal 4
-    if (analysis.goal4_classroom_interaction) {
-      for (const [key, rubricData] of Object.entries(rubric.goal4_classroom_interaction)) {
-        if (analysis.goal4_classroom_interaction[key]) {
-          const competency = analysis.goal4_classroom_interaction[key].competency_score;
-          const computed = (competency / rubricData.max_level) * rubricData.max_marks;
-          analysis.goal4_classroom_interaction[key].max_marks = rubricData.max_marks;
-          analysis.goal4_classroom_interaction[key].computed_marks = parseFloat(computed.toFixed(2));
-          goal4_total += computed;
-        }
-      }
-    }
-
-    // Goal 5
-    if (analysis.goal5_classroom_management) {
-      for (const [key, rubricData] of Object.entries(rubric.goal5_classroom_management)) {
-        if (analysis.goal5_classroom_management[key]) {
-          const competency = analysis.goal5_classroom_management[key].competency_score;
-          const computed = (competency / rubricData.max_level) * rubricData.max_marks;
-          analysis.goal5_classroom_management[key].max_marks = rubricData.max_marks;
-          analysis.goal5_classroom_management[key].computed_marks = parseFloat(computed.toFixed(2));
-          goal5_total += computed;
-        }
-      }
+      areaTotals[areaKey + '_total'] = parseFloat(areaTotal.toFixed(2));
     }
 
     // Add scores summary
-    const overall_marks = goal1_total + goal2_total + goal3_total + goal4_total + goal5_total;
+    const overall_marks = Object.values(areaTotals).reduce((sum, v) => sum + v, 0);
     const maxClassroomMarks = hasLessonPlan ? CLASSROOM_MARKS_WITH_LP : CLASSROOM_MARKS_BASE;
 
     analysis.scores = {
-      goal1_total: parseFloat(goal1_total.toFixed(2)),
-      goal2_total: parseFloat(goal2_total.toFixed(2)),
-      goal3_total: parseFloat(goal3_total.toFixed(2)),
-      goal4_total: parseFloat(goal4_total.toFixed(2)),
-      goal5_total: parseFloat(goal5_total.toFixed(2)),
+      ...areaTotals,
       overall_marks: parseFloat(overall_marks.toFixed(2)),
       max_marks: maxClassroomMarks,
       percentage: parseFloat(((overall_marks / maxClassroomMarks) * 100).toFixed(1)),
@@ -694,10 +616,10 @@ ${lessonPlanStructuredBlock}${lpInstructions}
 CLASSROOM TRANSCRIPT:
 ${transcript}
 
-TASK: Provide a comprehensive pedagogical analysis in JSON format using the OECD rubric with this EXACT structure:
+TASK: Provide a comprehensive pedagogical analysis in JSON format using the HOTS COT rubric with this EXACT structure:
 
 {
-  "executive_summary": "2-3 sentences summarizing lesson strengths and key growth area. CRITICAL: You MUST use the teacher's FIRST NAME (${teacherFirstName || 'the teacher'}) when referring to the teacher - NEVER use 'Rumi' or 'the teacher'.",
+  "executive_summary": "3-5 sentences using SANDWICH METHOD: (1) Start with a genuine strength you observed with a specific example, (2) Identify ONE key growth area with a brief, kind explanation, (3) End with encouragement and a concrete next-step suggestion (e.g., 'Next time, try using think-pair-share during the counting activity to check individual understanding'). CRITICAL: You MUST use the teacher's FIRST NAME (${teacherFirstName || 'the teacher'}) - NEVER use 'Rumi' or 'the teacher'. Tone should be warm, supportive, and coaching-oriented — like a mentor who believes in the teacher's potential.",
   "talk_time": {
     "teacher_percentage": <0-100>,
     "student_percentage": <0-100>,
@@ -709,60 +631,58 @@ TASK: Provide a comprehensive pedagogical analysis in JSON format using the OECD
     "examples": ["Example open question 1", "Example closed question 1"],
     "analysis": "Analysis of questioning techniques"
   },
-  "goal1_formative_assessment": {
-    "incorporation_of_feedback": {
+  "area1_classroom_management": {
+    "open_discussions": {
       "competency_score": <1-3>,
-      "evidence": "Direct quote or observation from transcript",
+      "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote",
       "justification": "Why this score - what was observed",
       "timestamp": "Exact minute mark (e.g., '0:05-0:12' or '5:30-6:45'). MUST be specific time from transcript, NOT 'opening' or 'middle'"
     },
-    "smart_objectives": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time (e.g., '0:00-0:30')" },
-    "teachers_role": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time (e.g., '2:15-5:30')" },
-    "assessment": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time (e.g., '10:00-12:45')" }
+    "resources_organization": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "complex_task_expectations": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" }
   },
-  "goal2_student_engagement": {
-    "cognitive_rigor": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "real_world_connections": { "competency_score": <1-2>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "multimodality": { "competency_score": <1-2>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "misconceptions": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" }
+  "area2_lesson_planning": {
+    "objectives_hots_alignment": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "analysis_evaluation_strategies": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "interdisciplinary_applications": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" }
   },
-  "goal3_quality_content": {
-    "prior_knowledge": { "competency_score": <1-2>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "prior_knowledge_activation": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "content_coverage_accuracy": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "content_organization": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "verbal_questioning": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "coherence_transitions": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" }
+  "area3_instructional_strategies": {
+    "open_ended_questions": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "student_analysis_critique": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "problem_solving_creativity": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "scaffolding": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" }
   },
-  "goal4_classroom_interaction": {
-    "peer_group_interactions": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" }
+  "area4_student_engagement": {
+    "collaborative_synthesis": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "multiple_perspectives": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "discussions_debates": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" }
   },
-  "goal5_classroom_management": {
-    "classroom_management": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "visibility_materials": { "competency_score": <1-2>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "classroom_culture": { "competency_score": <1-3>, "evidence": "...", "justification": "...", "timestamp": "exact time" },
-    "teaching_learning_materials": { "competency_score": <1-2>, "evidence": "...", "justification": "...", "timestamp": "exact time" }
+  "area5_assessment_feedback": {
+    "self_peer_assessment": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "refinement_feedback": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" },
+    "hots_assessment_tasks": { "competency_score": <1-3>, "evidence": "RICH coaching paragraph: 6-8 sentences, ~150 words. [timestamp] + vivid observation with student responses + pedagogical insight or growth suggestion + transcript quote", "justification": "...", "timestamp": "exact time" }
   },
   "strengths": [
     {
       "title": "Specific strength title",
-      "evidence": "Direct quote or description from transcript",
-      "analysis": "Why this is pedagogically effective",
-      "impact": "Impact on student learning"
+      "evidence": "Direct quote or description from transcript WITH timestamp (e.g., '[5:30-6:45] Teacher used...')",
+      "analysis": "Why this is pedagogically effective — celebrate what worked",
+      "impact": "Positive impact on student learning"
     }
   ],
   "growth_opportunities": [
     {
       "area": "Specific area for development",
-      "observation": "What was observed (with evidence)",
-      "rationale": "Why this matters pedagogically",
-      "strategies": ["Concrete strategy 1", "Concrete strategy 2", "Concrete strategy 3"]
+      "observation": "What was observed WITH timestamp (e.g., '[12:00-13:30] During the group activity...')",
+      "rationale": "Why this matters — frame kindly as an opportunity, not a flaw",
+      "strategies": ["Concrete strategy 1", "Concrete strategy 2"],
+      "quick_tip": "One practical, immediately actionable sentence the teacher can try tomorrow (e.g., 'Try asking one open-ended question per activity like: What do you think would happen if...?')"
     }
   ],
   "recommendations": [
-    "Actionable recommendation 1",
-    "Actionable recommendation 2",
-    "Actionable recommendation 3"
+    "Actionable, practical recommendation the teacher can implement right away — be specific and encouraging",
+    "Another concrete suggestion with an example of what to say or do",
+    "A third quick win that builds on the teacher's existing strengths"
   ],
   "notable_moments": [
     {
@@ -774,83 +694,73 @@ TASK: Provide a comprehensive pedagogical analysis in JSON format using the OECD
 }
 
 CRITICAL SCORING INSTRUCTIONS:
-1. For each criterion, provide ONLY a competency_score (1, 2, or 3)
-2. Some criteria only have 2 levels (e.g., "prior_knowledge", "real_world_connections") - for these, score 1 or 2 ONLY
-3. Marks will be AUTO-COMPUTED using formula: (competency_score / max_level) * max_marks
-4. Example: "smart_objectives" max 4 marks, you score competency 2 → system computes (2/3)*4 = 2.67 marks
-5. DO NOT calculate raw marks yourself - ONLY provide competency scores 1-3
+1. For each indicator in Areas 1-5, provide ONLY a competency_score (1, 2, or 3)
+2. ALL 16 indicators use the same 3-point scale: 1 (Emerging), 2 (Developing), 3 (Proficient)
+3. Marks will be AUTO-COMPUTED using formula: (competency_score / 3) * 3 = competency_score
+4. DO NOT calculate raw marks yourself - ONLY provide competency scores 1-3
+5. You MUST use the exact JSON keys shown above (area1_classroom_management, area2_lesson_planning, etc.)
 
-EVIDENCE FORMAT (CRITICAL - FOLLOW EXACTLY):
-Each criterion's "evidence" field must follow this TWO-part format with RICH, DETAILED descriptions:
+EVIDENCE FORMAT — THIS IS THE COACHING FEEDBACK THE TEACHER READS (CRITICAL):
+Each indicator's "evidence" field IS the actual feedback paragraph the teacher will read in their PDF report. This is NOT a log — it is personalized coaching. Write it in SECOND PERSON ("You did...") as a supportive mentor talking directly to the teacher.
 
-**Part 1 - Detailed English Description (What happened):**
-Provide a RICH, SPECIFIC description of what the teacher did. Include:
-- Specific pedagogical actions the teacher took
-- Observable student responses or behaviors
-- Context about the activity or lesson phase
-- Quantitative details when relevant (how many times, how many students, duration)
-- The educational impact or reasoning visible in the moment
+Think of each evidence field as a mini coaching note — the kind a mentor would write after sitting in the teacher's class. It should feel personal, specific, and helpful. The teacher should read it and think "this person really watched my lesson and understands what I was trying to do."
 
-Be CONCRETE and DESCRIPTIVE - paint a clear picture of the classroom moment.
+EVERY evidence field MUST include ALL of the following:
 
-**Part 2 - English Translation of Dialogue:**
-Provide the English translation of what was actually said as a direct quote.
-Format: Quote: "English translation of what was said"
-DO NOT include Urdu text - ONLY the English translation in quotes.
-CRITICAL: Extract 2-3 CONSECUTIVE sentences from the transcript to provide richer dialogue context. The quote should capture meaningful back-and-forth or a complete exchange that illustrates the point being made in Part 1.
+**1. TIMESTAMP + Rich Observation (3-4 sentences):**
+Start with [mm:ss-mm:ss] timestamp, then paint a vivid picture of the classroom moment:
+- What specific actions you (the teacher) took — describe the activity, method, or technique in detail
+- How students responded — what they did, said, how many participated, their energy level, body language cues
+- The classroom dynamic — was it lively, quiet, focused, confused? What was the atmosphere?
+- Any notable details: materials used, grouping arrangements, how long the activity lasted, transitions
 
-**Examples of EXCELLENT evidence format (detailed and rich):**
-✅ "Teacher led an extended choral counting activity where students repeatedly counted groups of six items in unison (0:30-3:00). While this built rhythm and reinforced number patterns, the teacher did not pause to check individual understanding or cold-call specific students to explain their counting strategy, relying entirely on whole-class chorusing which can mask individual misconceptions.
-Quote: \"How many are there? One, two, three, four, five, six. Now let's count again together. Everyone, count with me.\""
+**2. Coaching Insight with Pedagogical Reasoning (2-3 sentences):**
+For scores 2-3: Explain WHY what the teacher did was effective using educational reasoning. Connect the teacher's actions to student learning outcomes. Help the teacher understand the deeper pedagogical principle behind their good instinct (e.g., "This works because when students hear a concept in a familiar context, their brains create stronger memory pathways").
+For score 1: Start by genuinely celebrating what the teacher DID do well. Then offer ONE practical growth suggestion with a specific example of what to say or do (e.g., "Next time, try asking 'What pattern do you notice?' before revealing the answer — this gives students 10 seconds to think independently").
 
-✅ "During the hands-on pattern-making activity, the teacher organized students into collaborative groups and gave explicit instructions for them to construct visual representations of multiples of six using physical materials (4:30-6:00). Students were asked to work collectively to create flowers, circles, and tower drawings that demonstrated grouping concepts, providing a multimodal kinesthetic learning experience that complemented the verbal instruction.
+**3. Direct Quote from Transcript (2-3 sentences of dialogue):**
+Format: Quote: "English translation of 2-3 consecutive sentences from the actual classroom dialogue"
+Pick a quote that ILLUSTRATES the observation — a meaningful teacher-student exchange, an instruction, or a moment that captures the indicator. ONLY English — no Urdu/Arabic text.
+
+MINIMUM LENGTH: Each evidence field MUST be 6-8 sentences totaling approximately 120-180 words. Evidence shorter than 6 sentences is NOT ACCEPTABLE — go back and add more detail about student responses, pedagogical reasoning, or a richer quote.
+
+**Examples of EXCELLENT evidence (this is the MINIMUM quality for EVERY indicator):**
+
+✅ HIGH SCORE (3): "[4:30-6:00] You organized students into collaborative groups and gave clear, step-by-step instructions for building visual patterns of multiples of six using physical materials. Students were actively engaged throughout — they helped each other arrange the items, discussed strategies within their groups, and several groups independently started extending the pattern beyond what was asked, which showed genuine mathematical curiosity. The classroom was buzzing with productive noise as students debated the best way to represent the multiples visually. This is a powerful example of collaborative learning in action — when students work together to construct understanding rather than passively receiving information, they develop both deeper conceptual knowledge and critical communication skills. The fact that groups went beyond the task shows they felt safe to take intellectual risks in your classroom, which is a sign of a strong learning culture you've built.
 Quote: \"Make circles, make taffies, draw the towers as I made them. Work together in your groups. Each person should contribute to the pattern.\""
 
-✅ "Teacher made an explicit real-world connection by asking students to apply their knowledge of the six-times table to a practical shopping scenario involving money calculations (7:00-8:30). This contextualization helped students see the relevance of multiplication in their daily lives and provided an authentic application of the mathematical concept being taught.
-Quote: \"If a sweet costs 6 rupees and you buy six, how much will it be? Think about it. Who can tell me the answer?\""
+✅ MEDIUM SCORE (2): "[7:00-8:30] You connected the six-times table to a real shopping scenario involving sweets and rupees, which immediately made the mathematics relevant to students' daily lives — this was a smart instructional move. Several students perked up visibly and began calling out answers enthusiastically, with at least five or six hands going up at once, showing that the real-world context activated both their interest and their prior knowledge of money calculations. The energy in the room shifted noticeably when you introduced this example compared to the abstract counting earlier. This kind of contextual teaching is highly effective because students retain mathematical concepts better when they can anchor them to familiar experiences. To deepen this even further next time, try letting students create their own real-world multiplication problems to share with a partner (e.g., 'If one samosa costs 6 rupees, how much for 4?') — this shifts students from answering your questions to generating their own mathematical thinking, which builds higher-order reasoning.
+Quote: \"If a sweet costs 6 rupees and you buy six, how much will it be? Think about it. Who can tell me the answer? Raise your hand if you know.\""
 
-**Examples of TOO BRIEF evidence (avoid these):**
-❌ "Teacher asked students to count repeatedly.
-Quote: \"How many are there?\""
-(TOO VAGUE - lacks detail about context, frequency, student response, pedagogical purpose)
+✅ LOW SCORE (1): "[0:00-0:30] You opened the lesson with wonderful energy and enthusiasm, greeting students warmly by name and immediately capturing the whole class's attention — every student was looking at you and ready to learn, which is a genuine strength that not every teacher achieves. Your natural warmth and the positive rapport you have with your students created a welcoming environment where children felt comfortable participating. The lesson launched quickly into counting activities, which kept the momentum going, though it moved past the opening without stating a specific learning goal that students could work toward. One small addition that could make a big difference: try starting with one clear sentence like 'By the end of today, you'll be able to solve real-life problems using the 6-times table.' Research shows that when students know the target, they stay more focused and you can circle back at the end to celebrate what they achieved together — it's a quick win that builds on the strong opening you already have.
+Quote: \"Good morning children! Today I will do big things with you. Are you ready? Let's start! Everyone sit up straight and listen.\""
 
-❌ "Teacher gave clear behavioral directions.
-Quote: \"No group should come to me\""
-(TOO BRIEF - needs more context about classroom management strategy and when/why this was said)
+**BAD evidence — if your evidence looks like any of these, REWRITE it with more detail:**
+❌ "You asked students to count repeatedly." (TOO SHORT — only 1 sentence, no student response, no coaching insight, no quote)
+❌ "No evidence of open-ended questioning." (NEVER say what's missing — describe what the teacher DID do)
+❌ "Teacher did not use scaffolding." (WRONG PERSON — use "you", and describe what they DID do with a growth tip)
+❌ "Good classroom management was observed." (TOO VAGUE — what specifically did the teacher do? How did students respond?)
+❌ Any evidence under 6 sentences (ALWAYS expand — add student responses, pedagogical reasoning, richer quotes)
+❌ "You used a variety of strategies." (GENERIC — name the specific strategies, describe each one, show impact)
 
-**Examples of BAD evidence format:**
-❌ Including Urdu text: "Quote: \"کتنے ہو گئے؟\"" (NO - only English translation)
-❌ "No evidence of..." (NEVER say this - see below)
-❌ Quote without translation (all quotes must be in English)
-
-HANDLING LOW SCORES:
-CRITICAL: Even for competency score 1, you MUST provide DETAILED, RICH evidence of what the teacher DID do (not what they didn't do).
-Apply the SAME level of detail and richness as high-scoring criteria.
-
-Examples:
-❌ BAD: "No explicit identification of misconceptions"
-
-✅ GOOD (DETAILED): "Teacher modeled several multiplication examples using concrete examples from daily life (pipes, sweets) and demonstrated the correct calculations (7:00-8:30). However, the instruction was teacher-led with the teacher providing the answers directly rather than using questioning techniques to surface student misconceptions or allowing students to work through errors independently. Students were told the correct answers without opportunities to explain their thinking or self-correct.
-Quote: \"If you take six pipes, how much will it cost? 60 — if someone asks for more you should know it's 60\""
-
-❌ BAD: "Objectives not clearly stated"
-
-✅ GOOD (DETAILED): "At the lesson opening (0:00-0:30), the teacher launched into the activity with an enthusiastic but vague statement about the day's plans that did not articulate specific, measurable learning outcomes students should achieve by the end of class. No student-facing success criteria were established, making it difficult for students to self-monitor their progress or for the teacher to reference back to clear learning goals during or after the lesson.
-Quote: \"Okay, today I will do big things with you\""
+HANDLING LOW SCORES (score 1) — CRITICAL:
+Even for score 1, you MUST provide a FULL, RICH paragraph (6-8 sentences) with the SAME level of detail as high-scoring indicators. NEVER just say what's missing.
+Instead: (1) Describe what the teacher DID do in that area with vivid, specific detail and student responses, (2) Genuinely celebrate the effort and what worked, (3) Offer one practical suggestion WITH a specific example of what to say/do in class, (4) Include a meaningful quote from the transcript.
 
 ANALYSIS GUIDELINES:
-1. Score EVERY criterion in all 5 goals based on observable evidence from transcript
-2. NEVER write "No evidence provided" or "No evidence of X" - always describe what WAS observed
-3. For "incorporation_of_feedback": if prior feedback exists, assess if teacher addressed those specific growth areas
-4. Identify at least 2-3 strengths with specific evidence
-5. Identify 1-2 growth opportunities (don't overwhelm)
-6. Be culturally responsive to Pakistani classroom context
-7. Use CONCRETE, SPECIFIC evidence with exact examples from transcript
-8. Make recommendations actionable and practical
-9. Consider resource constraints
-10. Be encouraging and growth-oriented
-11. In "executive_summary", you MUST use the teacher's FIRST NAME "${teacherFirstName || 'TEACHER_NAME'}" when referring to the teacher. NEVER use 'Rumi' or generic phrases like 'the teacher'.
-12. Include CONCRETE NEXT-STEP SUGGESTIONS in executive_summary (e.g., "Next time, try using think-pair-share during counting activities to increase individual accountability")`;
+1. EVERY indicator evidence MUST be a full coaching paragraph (6-8 sentences, 120-180 words) — this IS the teacher's feedback report
+2. NEVER write "No evidence" or "Not observed" — always describe what the teacher DID do
+3. TONE: You are a warm, experienced mentor who genuinely believes in this teacher's potential. Be specific, encouraging, and insightful
+4. Use SECOND PERSON throughout: "You organized..." not "Teacher organized..." or "The lesson included..."
+5. For low scores: celebrate effort FIRST, then offer ONE gentle growth suggestion WITH a concrete example (what to say/do)
+6. For high scores: explain the pedagogical PRINCIPLE behind why it worked and its impact on student learning
+7. Be culturally responsive to Pakistani classroom context and resource constraints
+8. Suggestions should be practical things the teacher can try TOMORROW with no extra materials needed
+9. In "executive_summary": use FIRST NAME "${teacherFirstName || 'TEACHER_NAME'}", sandwich method (strength → growth → encouragement), include one concrete tip
+10. EVERY evidence field MUST start with [mm:ss-mm:ss] timestamp — NON-NEGOTIABLE
+11. Each "quick_tip" in growth_opportunities: one practical sentence (e.g., "Try waiting 5 seconds after asking a question before calling on a student")
+12. Include VIVID details: what students did/said, how many responded, the classroom energy, what materials were used, how the activity unfolded
+13. Connect observations to PEDAGOGICAL PRINCIPLES — help the teacher understand WHY something worked or how a small change could improve learning outcomes`;
   }
 
   /**
@@ -900,7 +810,7 @@ Rules:
 `;
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 1200,
         temperature: 0.3
@@ -929,7 +839,7 @@ Rules:
   }
 
   /**
-   * Enhance analysis with teacher reflections (Domain 4)
+   * Enhance analysis with teacher reflections (Debrief & Reflection)
    * Called AFTER Q&A completes to incorporate teacher's reflective responses
    * @param {object} analysisData - Original pedagogical analysis
    * @param {string} transcript - Full classroom transcript
@@ -977,9 +887,12 @@ IMPORTANT: When including teacher reflections as evidence:
 
 Your output should:
 1. **Enrich existing strengths, growth opportunities, and recommendations** with insights from the teacher's responses
-2. **Add Domain 4 (Professional Responsibilities)** analysis based on the teacher's reflective thinking
+2. **Add professional reflection analysis** based on the teacher's reflective thinking
 3. **Score the DEBRIEF & REFLECTION section** (15 marks) based on the teacher's conversation responses
-4. **Preserve all original metrics** (talk_time, questions, scores from Goals 1-5, executive_summary)
+4. **Preserve all original metrics** (talk_time, questions, scores from Areas 1-5, executive_summary)
+5. **Maintain SANDWICH METHOD throughout**: strengths first, then growth areas framed kindly, then encouragement
+6. **Preserve timestamps** in all evidence fields — every evidence should start with [mm:ss-mm:ss]
+7. **Keep quick_tip fields** in growth_opportunities — practical one-liner suggestions
 
 Return JSON with this EXACT structure:
 
@@ -987,11 +900,11 @@ Return JSON with this EXACT structure:
   "executive_summary": "Keep original or slightly enhance if teacher's reflection adds crucial context",
   "talk_time": { ...keep original... },
   "questions": { ...keep original... },
-  "goal1_formative_assessment": { ...keep original... },
-  "goal2_student_engagement": { ...keep original... },
-  "goal3_quality_content": { ...keep original... },
-  "goal4_classroom_interaction": { ...keep original... },
-  "goal5_classroom_management": { ...keep original... },
+  "area1_classroom_management": { ...keep original... },
+  "area2_lesson_planning": { ...keep original... },
+  "area3_instructional_strategies": { ...keep original... },
+  "area4_student_engagement": { ...keep original... },
+  "area5_assessment_feedback": { ...keep original... },
   "strengths": [
     {
       "title": "Original or enhanced strength title",
@@ -1003,21 +916,22 @@ Return JSON with this EXACT structure:
   "growth_opportunities": [
     {
       "area": "Original or new area informed by teacher's self-awareness",
-      "observation": "Original observation",
-      "rationale": "ENHANCED - may reference teacher's own recognition",
-      "strategies": ["Enhanced strategies that align with teacher's reflections"]
+      "observation": "Original observation WITH timestamp",
+      "rationale": "ENHANCED - may reference teacher's own recognition, framed kindly",
+      "strategies": ["Enhanced strategies that align with teacher's reflections"],
+      "quick_tip": "One practical sentence the teacher can try immediately"
     }
   ],
-  "scores": { ...keep original scores from Goals 1-5... },
+  "scores": { ...keep original scores from Areas 1-5... },
   "recommendations": ["ENHANCED recommendations that build on teacher's reflections"],
   "notable_moments": [...keep original...],
-  "domain4_professional_responsibilities": {
+  "professional_reflection": {
     "reflection_quality": "Analysis of teacher's reflective responses",
     "self_awareness": "Teacher's awareness of their own practice",
     "growth_orientation": "Evidence of growth mindset",
     "professional_learning_needs": "What teacher identified from their reflections",
-    "score": <1-4>,
-    "justification": "Brief justification for Domain 4 score"
+    "score": <1-3>,
+    "justification": "Brief justification for professional reflection score"
   },
   "debrief_reflection": {
     "reflection_quality": {
@@ -1046,14 +960,17 @@ Return JSON with this EXACT structure:
 GUIDELINES:
 - Where teacher's reflections provide valuable context, weave them into strengths/growth areas
 - DO NOT just append "teacher said X" - integrate insights naturally
-- Preserve transcript evidence (don't replace with teacher's reflection)
-- Domain 4 score: Base on quality of reflection, self-awareness, and growth mindset
+- Preserve transcript evidence AND timestamps (don't replace with teacher's reflection)
+- Professional reflection score: Base on quality of reflection, self-awareness, and growth mindset
 - Debrief & Reflection scoring: Use the rubric criteria from DEBRIEF & REFLECTION SECTION above
-- If teacher's reflection contradicts observation, note it diplomatically
-- Recommendations should build on teacher's expressed intentions/concerns`;
+- If teacher's reflection contradicts observation, note it diplomatically and kindly
+- Recommendations should build on teacher's expressed intentions/concerns
+- Use SANDWICH METHOD: lead with what the teacher did well, then growth areas framed as opportunities, then encouragement
+- Keep ALL timestamps in evidence — every evidence field should start with [mm:ss-mm:ss]
+- Preserve quick_tip in each growth opportunity — a practical one-liner the teacher can try tomorrow`;
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-5-mini-2025-08-07',
+        model: 'openai/gpt-4o-mini',
         messages: [
           { role: 'system', content: this.getCachedFrameworkPrompt() },
           { role: 'user', content: prompt }
@@ -1107,7 +1024,7 @@ GUIDELINES:
           enhancedAnalysis.scores.grand_total = parseFloat(newOverallMarks.toFixed(2));
 
           // Check if user has prior completed sessions to determine max marks
-          // Goals 1-5: 107 marks (G1:22 + G2:22 + G3:34 + G4:5 + G5:24)
+          // Areas 1-5: 48 marks (16 indicators × 3 max each)
           // Debrief: 15 marks
           // Prior Feedback: 5 marks (only if has prior sessions)
           let hasPriorSessions = false;
@@ -1169,7 +1086,7 @@ GUIDELINES:
       }
 
       logToFile('✅ Analysis enhanced with reflections', {
-        hasDomain4: !!enhancedAnalysis.domain4_professional_responsibilities,
+        hasProfessionalReflection: !!enhancedAnalysis.professional_reflection,
         hasDebriefReflection: !!enhancedAnalysis.debrief_reflection,
         debriefScore: enhancedAnalysis.debrief_reflection?.total || 0,
         inputTokens: response.usage.prompt_tokens,
@@ -1255,7 +1172,7 @@ AVOID:
 Return ONLY the question text (no preamble, formatting, or explanation).`;
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o',  // Using GPT-4o for more reliable question generation
+        model: 'openai/gpt-4o',  // Using GPT-4o for more reliable question generation
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 1500,
         temperature: 0.7
@@ -1305,7 +1222,7 @@ Examples: "Multiplication Tables", "Photosynthesis Process", "Urdu Poetry Analys
 Return ONLY the topic text, nothing else.`;
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 20,
         temperature: 0.3
@@ -1354,7 +1271,7 @@ Examples: "Mathematics", "English", "Urdu", "Science", "Social Studies", "Islami
 Return ONLY the subject name, nothing else.`;
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 10,
         temperature: 0.3
@@ -1417,7 +1334,7 @@ Recommendations: ${JSON.stringify(recommendations)}
 }).join('\n')}`;
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 500,
         temperature: 0.3 // Lower temperature for more focused summarization
@@ -1494,7 +1411,7 @@ AVOID:
 Generate ONLY the script text (no stage directions, just what will be spoken).`;
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o',  // Using GPT-4o for reliable voice script generation
+        model: 'openai/gpt-4o',  // Using GPT-4o for reliable voice script generation
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 1500,
         temperature: 0.7
