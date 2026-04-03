@@ -24,7 +24,7 @@ cd .. && npm run simulate
 bot/
 ├── whatsapp-bot.js          # Main Express server + webhook handler
 ├── workers/
-│   └── bullmq-worker.js     # Background job processor
+│   └── sqs-worker.js        # Background job processor
 ├── shared/
 │   ├── config/               # Branding, feature tiers, capabilities
 │   ├── services/             # AI (LLM), queue, coaching, reading, etc.
@@ -43,7 +43,7 @@ bot/
 | Service | File | Description |
 |---------|------|-------------|
 | LLM Client | `shared/services/llm-client.js` | OpenRouter/OpenAI integration |
-| Queue | `shared/services/queue/bullmq-queue.service.js` | BullMQ job queue |
+| Queue | `shared/services/queue/sqs-queue.service.js` | AWS SQS job queue |
 | Coaching | `shared/services/coaching.service.js` | OECD coaching analysis |
 | Reading | `shared/services/reading-assessment.service.js` | Fluency assessment |
 | WhatsApp | `shared/services/whatsapp.service.js` | Message send/receive |

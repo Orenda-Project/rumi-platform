@@ -412,7 +412,7 @@ if (isFeatureEnabled('homeworkChecker') && isHomeworkRequest(messageBody)) {
 #### Step 4 (if async): Add Worker Job Type
 
 ```javascript
-// bot/workers/bullmq-worker.js
+// bot/workers/sqs-worker.js
 case 'HOMEWORK_CHECK':
   await HomeworkCheckerService.process(job.data);
   break;
@@ -521,8 +521,8 @@ This changes: welcome messages, system prompts, error messages, and all user-fac
 
 | File | What to Change |
 |------|---------------|
-| `bot/workers/bullmq-worker.js` | Add `case` for your new job type |
-| `bot/shared/services/queue/bullmq-queue.service.js` | Queue job submission |
+| `bot/workers/sqs-worker.js` | Add `case` for your new job type |
+| `bot/shared/services/queue/sqs-queue.service.js` | Queue job submission |
 | `bot/shared/config/feature-tiers.js` | Gate behind feature flag |
 
 ### Pattern
@@ -534,7 +534,7 @@ await BullMQQueueService.addJob('PARENT_REPORT', {
   conferenceDate: date,
 });
 
-// 2. Handle in worker (bullmq-worker.js)
+// 2. Handle in worker (sqs-worker.js)
 case 'PARENT_REPORT':
   await ParentReportService.generate(job.data);
   break;
@@ -552,8 +552,8 @@ WhatsApp Webhook
     → feature-keyword-detector.service.js (detects intent)
       → [Feature Service] (coaching, reading, lesson plans, etc.)
         → gpt5-mini.service.js / openai.service.js (LLM calls)
-        → bullmq-queue.service.js (async jobs)
-          → bullmq-worker.js (background processing)
+        → sqs-queue.service.js (async jobs)
+          → sqs-worker.js (background processing)
             → [Report/Delivery Service]
               → whatsapp.service.js (sends response)
 ```

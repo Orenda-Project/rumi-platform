@@ -1,12 +1,12 @@
 # /setup - Rumi Platform Setup
 
-Automated setup for deploying the Rumi AI Teaching Assistant. This skill guides you through the complete setup interactively.
+Automated setup guide for deploying the Rumi AI Teaching Assistant. This skill walks through the complete setup interactively.
 
 ## What This Does
 
 1. **Pre-flight checks**: Verifies Node.js 18+, git, npm
 2. **Tier selection**: Asks which feature tier (minimal/recommended/full)
-3. **Auto-provision infrastructure**: Calls provisioner API to create Supabase + Railway + Redis + API keys
+3. **Infrastructure setup**: Creates Supabase project + Railway project + Redis manually
 4. **WhatsApp config**: Set webhook URL, verify handshake
 5. **Register flows**: WhatsApp Flows for interactive forms
 6. **E2E test**: Send test message, verify response
@@ -23,23 +23,17 @@ The agent will guide you through each step interactively.
 
 - Node.js 18+ installed
 - WhatsApp Business credentials (from Meta Business Manager)
-
-**That's it!** The provisioner automatically creates:
-- Supabase project + schema
-- Railway project + Redis
-- OpenRouter API key ($10/mo, 180-day expiry)
-- Soniox temp key (Tier 2+)
-- ElevenLabs shared key (Tier 3)
-- Azure Speech shared key (Tier 3)
+- Supabase account (free tier works)
+- Railway account (free tier works)
 
 ## Tier Options
 
 When asked "Which tier?":
 
-| Tier | Features | Auto-Provisioned Services |
-|------|----------|--------------------------|
+| Tier | Features | Required Services |
+|------|----------|------------------|
 | **Minimal** | AI Chat + Registration | Supabase, Railway, Redis, OpenRouter |
-| **Recommended** | + Coaching + Reading Assessment | + Soniox STT (1hr temp key*) |
+| **Recommended** | + Coaching + Reading Assessment | + Soniox STT |
 | **Full** | All features (voice, video, lesson plans, attendance) | + ElevenLabs TTS, Azure Speech |
 
 ## Setup Steps (Detailed)
@@ -52,31 +46,25 @@ npm --version
 git --version
 ```
 
-### Step 2: Auto-Provision Infrastructure
+### Step 2: Create Infrastructure
 
-Run the provisioner script to automatically create all infrastructure:
+Follow [SETUP.md](../../SETUP.md) to manually create:
+- Supabase project (copy URL + service role key)
+- Railway project + Redis plugin
+- OpenRouter API key
+
+Copy the credentials into `.env` based on `.env.template`.
+
+### Step 3: Run Database Schema
 
 ```bash
-# Tier 2 (Recommended) - Coaching + Reading Assessment
-node bot/scripts/setup/provision-infrastructure.js --name my-school-name --tier recommended
-
-# Tier 1 (Minimal) - Just AI Chat
-node bot/scripts/setup/provision-infrastructure.js --name my-school-name --tier minimal
-
-# Tier 3 (Full) - All features including TTS
-node bot/scripts/setup/provision-infrastructure.js --name my-school-name --tier full
+# Apply schema to your Supabase project
+psql $DATABASE_URL -f infrastructure/supabase/00_complete-schema.sql
+psql $DATABASE_URL -f infrastructure/supabase/01_rls-policies.sql
+psql $DATABASE_URL -f infrastructure/supabase/02_seed-data.sql
 ```
 
-This automatically:
-- Creates Supabase project with full schema
-- Creates Railway project with Redis
-- Provisions OpenRouter key ($10/mo, 180-day)
-- Provisions Soniox temp key (Tier 2+)
-- Adds shared ElevenLabs key (Tier 3)
-- Adds shared Azure Speech key (Tier 3)
-- Writes all credentials to `.env`
-
-### Step 3: Add WhatsApp Credentials
+### Step 4: Add WhatsApp Credentials
 
 Edit `.env` and add your WhatsApp credentials (from Meta Business Manager):
 
@@ -87,7 +75,7 @@ WABA_ID=987654321
 WEBHOOK_VERIFY_TOKEN=your-random-string
 ```
 
-### Step 4: Install & Deploy
+### Step 5: Install & Deploy
 
 ```bash
 cd bot && npm install && cd ..
@@ -95,16 +83,16 @@ railway login
 railway up
 ```
 
-### Step 5: Configure WhatsApp Webhook
+### Step 6: Configure WhatsApp Webhook
 
 1. Go to Meta Business Manager > WhatsApp > Configuration > Webhook
 2. Set URL: `https://your-app.up.railway.app/webhook`
 3. Set verify token: same as `WEBHOOK_VERIFY_TOKEN`
 4. Subscribe to: `messages`
 
-### Step 5.5: Register WhatsApp Flows & Templates
+### Step 7: Register WhatsApp Flows & Templates
 
-After deploying, register the WhatsApp Flows (interactive forms) and Message Templates (carousel menus) with Meta:
+After deploying, register the WhatsApp Flows (interactive forms) and Message Templates with Meta:
 
 ```bash
 node bot/scripts/setup/run-full-setup.js \
@@ -116,16 +104,14 @@ node bot/scripts/setup/run-full-setup.js \
 
 The script will:
 1. Generate RSA-2048 encryption keys
-2. Register 3 flows: Reading Assessment, Attendance Setup, Attendance Marking
-3. Submit 2 templates: Video Style Selection, Feature Menu Carousel
+2. Register flows: Reading Assessment, Attendance Setup, Attendance Marking
+3. Submit message templates
 
 **Output**: Flow IDs and env var values to set in Railway:
 - `READING_ASSESSMENT_FLOW_ID`
 - `ATTENDANCE_SETUP_FLOW_ID`
 - `ATTENDANCE_MARKING_FLOW_ID`
 - `FLOW_PRIVATE_KEY` (base64-encoded)
-
-**Note**: Templates need Meta approval (1-24 hours). The bot uses fallback interactive lists until approved.
 
 Set the output values as Railway env vars:
 
@@ -136,14 +122,7 @@ railway variables set ATTENDANCE_MARKING_FLOW_ID=<value>
 railway variables set FLOW_PRIVATE_KEY=<base64-value>
 ```
 
-### Step 6: WhatsApp Webhook
-
-1. Go to Meta Business Manager > WhatsApp > Configuration > Webhook
-2. Set URL: `https://your-app.up.railway.app/webhook`
-3. Set verify token: same as `WEBHOOK_VERIFY_TOKEN`
-4. Subscribe to: `messages`
-
-### Step 7: Test
+### Step 8: Test
 
 Send "Hi" to your WhatsApp number. Expected: welcome message + registration flow.
 
@@ -164,6 +143,6 @@ Once running, see these docs for customization:
 | Change branding | [docs/customization.md](../../docs/customization.md) |
 | Add new features | [docs/agent-customization.md](../../docs/agent-customization.md) section 7 |
 
-## Manual Alternative
+## Full Manual Setup
 
-If you prefer manual setup, follow [SETUP.md](../../SETUP.md) instead.
+For detailed step-by-step instructions, follow [SETUP.md](../../SETUP.md).

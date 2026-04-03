@@ -10,7 +10,8 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { TEMP_DIR, LISTENING_ANIMATION_MEDIA_ID, PEDAGOGICAL_ANALYSIS_MEDIA_ID } = require('../utils/constants');
-const { getClient } = require('./llm-client');
+const OpenAI = require('openai');
+const { selectFramework } = require('./coaching/frameworks/framework-selector');
 
 /**
  * Coaching Service
@@ -478,10 +479,15 @@ class CoachingService {
 
       logToFile('Analysis metadata', metadata);
 
+      // Resolve pedagogical framework for this user (bd-609)
+      const framework = await selectFramework(session.user_id);
+      logToFile('Framework resolved', { userId: session.user_id, framework: framework.name });
+
       const analysisResult = await GPT5MiniService.analyzePedagogy(
         session.transcript_text,
         metadata,
-        session.lesson_plan_text
+        session.lesson_plan_text,
+        framework
       );
 
       logToFile('Analysis completed', {
@@ -1217,7 +1223,9 @@ class CoachingService {
   static async _generateEncouragingMessage(firstName, durationSeconds) {
     try {
       const durationMinutes = Math.round(durationSeconds / 60);
-      const openai = getClient();
+      const {OPENAI_API_KEY} = require('../utils/constants');
+
+      const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',

@@ -24,6 +24,7 @@ const { storeConversation, getOrCreateSession } = require('../database/bot-helpe
 
 // Idempotency TTL (1 hour - prevents reprocessing of same image)
 const IDEMPOTENCY_TTL_SECONDS = 3600;
+const MAX_COACHING_PHOTOS = 3;
 
 /**
  * Handle image message processing
@@ -45,6 +46,7 @@ async function handleImageMessage(message, from, user = null) {
 
     // Start typing indicator
     const typingController = WhatsAppService.startContinuousTypingIndicator(from, message.id);
+    let idempotencyAcquired = false; // Track if we own the lock (bd-691)
 
     try {
       // Extract image info
@@ -77,6 +79,112 @@ async function handleImageMessage(message, from, user = null) {
       }
 
       // ============================================================
+      // Phase 3 (bd-630): Classroom photo collection for coaching
+      // ============================================================
+      try {
+        const coachingSupabase = require('../config/supabase');
+        const { data: photoSession } = await coachingSupabase
+          .from('coaching_sessions')
+          .select('id, conversation_state')
+          .eq('user_id', user.id)
+          .eq('status', 'awaiting_photo')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (photoSession && (photoSession.conversation_state?.current_state === 'COLLECTING_PHOTOS' || photoSession.conversation_state?.current_state === 'AWAITING_PHOTO')) {
+          logToFile('📸 Phase 3: Classroom photo received for coaching session', {
+            coachingSessionId: photoSession.id,
+            userId: user.id
+          });
+
+          // Download and upload image to R2
+          const imageId = message.image?.id;
+          const imageBuffer = await WhatsAppService.downloadMedia(imageId);
+          const { uploadImageWithRetry: uploadPhoto } = require('../storage/r2');
+          const photoUrl = await uploadPhoto(imageBuffer, user.id, imageId, message.image?.mime_type || 'image/jpeg');
+
+          const userLang = await getUserLanguage(user.id) || user.preferred_language || 'en';
+
+          // Append photo URL to coaching_sessions.classroom_photos JSONB array
+          const existingPhotos = photoSession.conversation_state?.classroom_photos || [];
+          if (existingPhotos.length >= MAX_COACHING_PHOTOS) {
+            await WhatsAppService.sendMessage(
+              from,
+              userLang === 'ur'
+                ? '📸 آپ زیادہ سے زیادہ 3 تصاویر بھیج سکتی ہیں۔ اب تجزیہ شروع کیا جا رہا ہے۔'
+                : '📸 You can upload a maximum of 3 photos. Starting analysis now.'
+            );
+            const CoachingSessionService = require('../services/coaching/coaching-session.service');
+            const CoachingJobQueueService = require('../services/coaching/coaching-job-queue.service');
+            await CoachingSessionService.updateStatus(photoSession.id, 'analysis_started');
+            await CoachingJobQueueService.queueAnalysis(photoSession.id, {
+              from,
+              trigger: 'photo_max_limit_reached',
+              photoCount: existingPhotos.length
+            });
+            typingController.stop();
+            return;
+          }
+
+          existingPhotos.push({ url: photoUrl, uploaded_at: new Date().toISOString() });
+
+          await coachingSupabase
+            .from('coaching_sessions')
+            .update({
+              classroom_photos: existingPhotos,
+              conversation_state: {
+                ...photoSession.conversation_state,
+                classroom_photos: existingPhotos
+              }
+            })
+            .eq('id', photoSession.id);
+
+          // Photo received — ask explicitly whether to add more photos or proceed.
+          if (existingPhotos.length >= MAX_COACHING_PHOTOS) {
+            await WhatsAppService.sendMessage(
+              from,
+              userLang === 'ur'
+                ? `📸 تصویر ${existingPhotos.length} موصول۔ زیادہ سے زیادہ حد پوری ہو گئی ہے، اب تجزیہ شروع کیا جا رہا ہے۔`
+                : `📸 Photo ${existingPhotos.length} received. Maximum reached, starting analysis now.`
+            );
+            const CoachingSessionService = require('../services/coaching/coaching-session.service');
+            const CoachingJobQueueService = require('../services/coaching/coaching-job-queue.service');
+            await CoachingSessionService.updateStatus(photoSession.id, 'analysis_started');
+            await CoachingJobQueueService.queueAnalysis(photoSession.id, {
+              from,
+              trigger: 'photo_max_reached',
+              photoCount: existingPhotos.length
+            });
+          } else {
+            const confirmMsg = userLang === 'ur'
+              ? `📸 تصویر ${existingPhotos.length} موصول۔ کیا آپ ایک اور تصویر شامل کرنا چاہیں گی؟`
+              : `📸 Photo ${existingPhotos.length} received. Would you like to add another photo?`;
+            await WhatsAppService.sendInteractiveButtons(from, {
+              body: confirmMsg,
+              buttons: [
+                { id: `photo_more_${photoSession.id}`, title: userLang === 'ur' ? 'مزید تصویر' : 'Add another' },
+                { id: `photo_done_${photoSession.id}`, title: userLang === 'ur' ? 'مکمل' : 'Done' }
+              ]
+            });
+          }
+
+          logToFile('📸 Coaching photo stored, waiting for more or timeout', {
+            coachingSessionId: photoSession.id,
+            photoCount: existingPhotos.length
+          });
+
+          typingController.stop();
+          return;
+        }
+      } catch (photoCheckError) {
+        logToFile('⚠️ Phase 3: Photo collection check failed (non-critical)', {
+          error: photoCheckError.message
+        });
+        // Continue with regular image handling
+      }
+
+      // ============================================================
       // EXAM CHECKER DETECTION (bd-086): Check for active exam session
       // ============================================================
       try {
@@ -95,21 +203,32 @@ async function handleImageMessage(message, from, user = null) {
       // Get or create session for conversation history
       const sessionId = await getOrCreateSession(user.id);
 
-      // Idempotency check - prevent duplicate processing
+      // Atomic idempotency check — SET NX ensures only one handler proceeds (bd-690)
       const idempotencyKey = `image:${user.id}:${imageId}`;
-      const existingResult = await redisService.get(idempotencyKey);
+      idempotencyAcquired = await redisService.setNX(
+        idempotencyKey,
+        JSON.stringify({ status: 'processing', startedAt: Date.now() }),
+        IDEMPOTENCY_TTL_SECONDS
+      );
 
-      if (existingResult) {
-        logToFile('🔄 Duplicate image detected, returning cached result', {
-          imageId,
-          userId: user.id
-        });
-
+      if (!idempotencyAcquired) {
+        // Another handler already has this image — check for cached result
+        const existingResult = await redisService.get(idempotencyKey);
+        if (existingResult) {
+          try {
+            const cached = JSON.parse(existingResult);
+            if (cached.response) {
+              logToFile('🔄 Duplicate image, returning cached result', { imageId, userId: user.id });
+              typingController.stop();
+              await WhatsAppService.sendMessage(from, cached.response);
+              return;
+            }
+          } catch (parseErr) {
+            // Result still processing or invalid — just bail
+          }
+        }
+        logToFile('🔄 Duplicate image detected, skipping (another handler active)', { imageId, userId: user.id });
         typingController.stop();
-
-        // Parse cached result and send
-        const cached = JSON.parse(existingResult);
-        await WhatsAppService.sendMessage(from, cached.response);
         return;
       }
 
@@ -301,19 +420,22 @@ async function handleImageMessage(message, from, user = null) {
 
       typingController.stop();
 
-      // Send user-friendly error message
-      const userLanguage = user?.preferred_language || 'en';
-      const errorMessages = {
-        en: "Sorry, there was an error processing your image. Please try again.\n\nمعذرت، تصویر پر کارروائی کرتے وقت خرابی آ گئی۔",
-        ur: "معذرت، تصویر پر کارروائی کرتے وقت خرابی آ گئی۔ براہ کرم دوبارہ کوشش کریں۔",
-        ar: "عذرًا، حدث خطأ أثناء معالجة صورتك. يرجى المحاولة مرة أخرى.",
-        es: "Lo siento, hubo un error al procesar tu imagen. Por favor intenta de nuevo."
-      };
+      // Only send error message if we acquired the idempotency lock (bd-691)
+      // Without this guard, every concurrent failed handler sends an error message
+      if (idempotencyAcquired) {
+        const userLanguage = user?.preferred_language || 'en';
+        const errorMessages = {
+          en: "Sorry, there was an error processing your image. Please try again.\n\nمعذرت، تصویر پر کارروائی کرتے وقت خرابی آ گئی۔",
+          ur: "معذرت، تصویر پر کارروائی کرتے وقت خرابی آ گئی۔ براہ کرم دوبارہ کوشش کریں۔",
+          ar: "عذرًا، حدث خطأ أثناء معالجة صورتك. يرجى المحاولة مرة أخرى.",
+          es: "Lo siento, hubo un error al procesar tu imagen. Por favor intenta de nuevo."
+        };
 
-      await WhatsAppService.sendMessage(
-        from,
-        errorMessages[userLanguage] || errorMessages.en
-      );
+        await WhatsAppService.sendMessage(
+          from,
+          errorMessages[userLanguage] || errorMessages.en
+        );
+      }
     }
   });
 }

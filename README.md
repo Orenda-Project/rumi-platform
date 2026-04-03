@@ -51,7 +51,7 @@ The core insight: **the best time to coach a teacher is right after they teach**
 |---------|-------------|------|
 | **AI Chat** | Teachers ask any teaching question via text or voice; get expert responses grounded in pedagogy | Minimal |
 | **Registration** | Automated teacher onboarding via WhatsApp — name, school, grade, language | Minimal |
-| **Classroom Coaching** | Teacher uploads classroom audio; Rumi transcribes, analyzes against OECD teaching quality standards, conducts a reflective conversation, and generates a scored PDF report | Recommended |
+| **Classroom Coaching** | Teacher uploads classroom audio; Rumi transcribes, analyzes against a selectable pedagogical framework (OECD, HOTS, TEACH, FICO), conducts a reflective conversation, and generates a scored PDF report with an optional classroom photo analysis | Recommended |
 | **Reading Assessment** | Students read aloud into WhatsApp; Rumi measures fluency (WCPM), pronunciation accuracy, and comprehension against grade-level benchmarks | Recommended |
 | **Lesson Plans** | Teacher describes a topic and grade; Rumi generates a comprehensive 9-section lesson plan as a downloadable PDF | Full |
 | **Voice Messages** | Full voice interaction in 9 languages — teachers speak, Rumi listens, transcribes, responds in both text and voice | Full |
@@ -69,7 +69,7 @@ https://github.com/user-attachments/assets/8f7ad8cc-c169-415a-a473-ed0c686233eb
 
 #### Classroom Coaching
 
-Teacher sends classroom audio; Rumi transcribes, scores against OECD framework, conducts reflective conversation, generates PDF report.
+Teacher sends classroom audio; Rumi transcribes, scores against a selectable framework (OECD / HOTS / TEACH / FICO), conducts reflective conversation, generates PDF report.
 
 https://github.com/user-attachments/assets/7f0d2756-b30b-460a-821c-e3bb6cdc4b05
 
@@ -95,12 +95,17 @@ https://github.com/user-attachments/assets/b35a034e-20c6-458d-8b6d-91a7ab2ddc42
 
 1. **Teacher records** their classroom (audio or video) and sends it to Rumi on WhatsApp
 2. **Rumi transcribes** the recording using Soniox (supporting multilingual and code-switched speech)
-3. **Rumi analyzes** the transcript against the **OECD Framework for High-Quality Teaching** — scoring 19 criteria across 5 goals: Formative Assessment, Student Engagement, Quality Content, Classroom Interaction, and Classroom Management (118 total marks)
-4. **Rumi conducts a reflective conversation** — 3 voice-delivered questions prompting the teacher to reflect on specific moments from their lesson
-5. **Rumi generates a PDF report** — with scores per goal, evidence from the transcript, growth areas, actionable recommendations, and performance charts
-6. **Prior feedback tracking** — each session builds on previous ones, so recommendations evolve over time
+3. **Rumi analyzes** the transcript against the teacher's selected pedagogical framework:
+   - **OECD** — 19 criteria across 5 goals (118 marks)
+   - **HOTS** — 16 indicators across 6 areas, aligned to PESRP/PECTAA spec (48 marks)
+   - **TEACH** — World Bank classroom observation tool
+   - **FICO** — 21 indicators across 5 domains (84 marks), with photo-aware scoring
+4. **Optional classroom photo analysis** — teacher sends a photo alongside audio; Rumi uses vision AI to score photo-aware indicators (e.g. seating arrangement, materials use)
+5. **Rumi conducts a reflective conversation** — 3 voice-delivered questions prompting the teacher to reflect on specific moments from their lesson
+6. **Rumi generates a PDF report** — with scores per goal, evidence from the transcript, growth areas, actionable recommendations, and performance charts. Ends with a personalized coaching card highlighting the single highest-leverage action.
+7. **Prior feedback tracking** — each session builds on previous ones, so recommendations evolve over time
 
-The coaching framework is fully customizable. Teams can swap the OECD rubric for **Teach** (World Bank), **Danielson**, **ISTEP**, or any other classroom observation tool. See [docs/agent-customization.md](docs/agent-customization.md#1-swap-the-coaching-framework).
+The framework is selected per teacher (stored in their profile) and fully customizable. See [docs/agent-customization.md](docs/agent-customization.md#1-swap-the-coaching-framework).
 
 ### Reading Assessment: How It Works
 

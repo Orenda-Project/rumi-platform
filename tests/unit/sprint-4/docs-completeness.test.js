@@ -100,9 +100,9 @@ describe('Documentation Completeness', () => {
       expect(procfile).toContain('whatsapp-bot.js');
     });
 
-    test('worker process runs bullmq-worker.js', () => {
+    test('worker process runs sqs-worker.js', () => {
       const procfile = fs.readFileSync(path.join(ROOT, 'infrastructure/railway/Procfile'), 'utf8');
-      expect(procfile).toContain('bullmq-worker.js');
+      expect(procfile).toContain('sqs-worker.js');
     });
   });
 

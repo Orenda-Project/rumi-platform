@@ -45,8 +45,8 @@ Meta WhatsApp API
 | Service | File | Purpose |
 |---------|------|---------|
 | LLM Client | `bot/shared/services/llm-client.js` | AI chat via OpenRouter |
-| Queue | `bot/shared/services/queue/bullmq-queue.service.js` | Job queue for async tasks |
-| Worker | `bot/workers/bullmq-worker.js` | Background job processing |
+| Queue | `bot/shared/services/queue/sqs-queue.service.js` | Job queue for async tasks |
+| Worker | `bot/workers/sqs-worker.js` | Background job processing |
 | Branding | `bot/shared/config/branding.js` | Customizable bot identity |
 | Feature Tiers | `bot/shared/config/feature-tiers.js` | Feature gating by tier |
 

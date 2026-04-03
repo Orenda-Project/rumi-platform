@@ -59,7 +59,7 @@ LLM_MODEL=anthropic/claude-sonnet-4
 1. Add capability to `bot/shared/config/capabilities.config.js`
 2. Add feature flag to `bot/shared/config/feature-tiers.js`
 3. Gate with `isFeatureEnabled('your_feature')` in handlers
-4. Add job type to `bot/workers/bullmq-worker.js` if async
+4. Add job type to `bot/workers/sqs-worker.js` if async
 
 ## File Zones
 
@@ -77,7 +77,7 @@ These files are yours. Upstream updates rarely touch them, so merge conflicts ar
 | `bot/shared/config/capabilities.config.js` | Feature capabilities |
 | `bot/shared/config/system-messages.js` | Custom system prompts |
 | `bot/shared/services/llm-client.js` | LLM provider config |
-| `bot/workers/bullmq-worker.js` | Queue worker customization |
+| `bot/workers/sqs-worker.js` | Queue worker customization |
 
 ### Don't Touch (Upstream-Owned)
 

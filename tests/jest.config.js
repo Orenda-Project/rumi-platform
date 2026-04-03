@@ -14,8 +14,10 @@ module.exports = {
   // even when bot/node_modules exists (dual-install scenario)
   moduleNameMapper: {
     '^openai$': '<rootDir>/node_modules/openai',
-    '^bullmq$': '<rootDir>/node_modules/bullmq',
     '^ioredis$': '<rootDir>/node_modules/ioredis',
+    // bot-only optional/native packages — use lightweight mocks for OSS test suite
+    '^pino$': '<rootDir>/tests/__mocks__/pino.js',
+    '^canvas$': '<rootDir>/tests/__mocks__/canvas.js',
   },
   setupFiles: ['<rootDir>/tests/setup.js'],
   testEnvironment: 'node',

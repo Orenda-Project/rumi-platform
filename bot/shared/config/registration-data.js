@@ -88,7 +88,6 @@ const REGIONS_DROPDOWN = [
 ];
 
 const ORGANIZATIONS_DROPDOWN = [
-  { id: 'taleemabad', title: 'Taleemabad' },
   { id: 'fde', title: 'FDE' },
   { id: 'aga_khan', title: 'Aga Khan Foundation' },
   { id: 'tcf', title: 'TCF' },

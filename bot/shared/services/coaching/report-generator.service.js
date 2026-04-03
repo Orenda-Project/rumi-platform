@@ -33,6 +33,7 @@ const {
   CLASSROOM_MARKS_BASE,
   CLASSROOM_MARKS_WITH_LP
 } = require('../../constants/scoring.constants');
+const { getReportTransformer } = require('./report-transformers/report-transformer-dispatch');
 
 class ReportGeneratorService {
   /**
@@ -41,7 +42,7 @@ class ReportGeneratorService {
    * @param {object} payload - Job payload (may include partial, autoCompleted, userRequestedEarly flags)
    * @returns {Promise<void>}
    */
-  static async generateReport(coachingSessionId, payload) {
+  static async generateReport(coachingSessionId, payload = {}) {
     try {
       // Bug #9: Check for partial report flags
       const isPartialReport = payload.partial || false;
@@ -70,6 +71,34 @@ class ReportGeneratorService {
       const from = payload.from || session.users.phone_number;
       const teacherName = `${session.users.first_name} ${session.users.last_name}`.trim();
       const isRetry = payload.attempt && payload.attempt > 1;
+
+      // Guardrail: report generation should never run before analysis is available.
+      // If analysis is missing, re-queue analysis and exit gracefully.
+      const hasAnalysisData = !!(session.analysis_data && typeof session.analysis_data === 'object');
+      if (!hasAnalysisData) {
+        logToFile('⚠️ Report generation invoked without analysis_data; re-queueing analysis', {
+          coachingSessionId,
+          status: session.status,
+          trigger: payload.trigger || null
+        });
+
+        await CoachingSessionService.updateStatus(coachingSessionId, 'analysis_started');
+        const CoachingJobQueueService = require('./coaching-job-queue.service');
+        await CoachingJobQueueService.queueAnalysis(coachingSessionId, {
+          from,
+          trigger: 'report_guard_missing_analysis',
+          sourceJob: 'report_generation'
+        });
+
+        if (!isRetry) {
+          await WhatsAppService.sendMessage(
+            from,
+            "🔄 I'm still processing your classroom analysis. I'll share your report as soon as it's ready."
+          );
+        }
+
+        return;
+      }
 
       // Store partial report flags in session for PDF generation
       session._isPartialReport = isPartialReport;
@@ -150,10 +179,109 @@ class ReportGeneratorService {
         await this.generateAndSendVoiceDebrief(session, from, coachingSessionId, enhancedAnalysis);
       }
 
+      // Phase 3 (bd-634): Coaching Card — prioritized action + image + response buttons
+      try {
+        const { generatePrioritizedAction } = require('./coaching-card/prioritized-action.service');
+        const { generateCardImage } = require('./coaching-card/card-image.service');
+        const { uploadImageWithRetry } = require('../../storage/r2');
+
+        // Check for prior action from previous session
+        const { data: priorSessions } = await supabase
+          .from('coaching_sessions')
+          .select('prioritized_action')
+          .eq('user_id', session.user_id)
+          .not('prioritized_action', 'is', null)
+          .neq('id', coachingSessionId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const priorAction = priorSessions?.[0]?.prioritized_action || null;
+
+        const actionData = await generatePrioritizedAction(
+          enhancedAnalysis,
+          session.users?.first_name || 'Teacher',
+          priorAction
+        );
+
+        if (actionData) {
+          // Generate card image
+          const cardBuffer = generateCardImage(actionData, enhancedAnalysis.framework || 'oecd');
+
+          if (cardBuffer) {
+            // Upload card image to R2
+            const cardUrl = await uploadImageWithRetry(
+              cardBuffer,
+              session.user_id,
+              `coaching-card-${coachingSessionId}`,
+              'image/png'
+            );
+
+            // Send coaching card image
+            await WhatsAppService.sendImageFromUrl(from, cardUrl, actionData.action);
+          }
+
+          // Send coaching card text + response buttons
+          await WhatsAppService.sendMessage(from,
+            `🎯 *Your Focus Area*\n\n${actionData.action}\n\n💡 _${actionData.example}_`
+          );
+          await WhatsAppService.sendInteractiveButtons(from, {
+            body: 'Will you commit to trying this in your next class?',
+            buttons: [
+              { id: `card_yes_${coachingSessionId}`, title: "Yes, I'll try!" },
+              { id: `card_later_${coachingSessionId}`, title: 'Maybe later' },
+              { id: `card_no_${coachingSessionId}`, title: 'Not for me' }
+            ]
+          });
+
+          // Store prioritized action in coaching session
+          await supabase
+            .from('coaching_sessions')
+            .update({ prioritized_action: actionData })
+            .eq('id', coachingSessionId);
+
+          logToFile('✅ Coaching card sent', { coachingSessionId, indicator: actionData.indicator });
+        } else {
+          logToFile('⚠️ No prioritized action generated (scores may be high)', { coachingSessionId });
+        }
+      } catch (cardError) {
+        logToFile('⚠️ Coaching card generation failed (non-critical)', {
+          coachingSessionId,
+          error: cardError.message
+        });
+        // Don't fail the session — card is optional
+      }
+
       // Mark session as completed
       await this.completeSession(session, coachingSessionId);
 
       logToFile('✅ Report generation complete', { coachingSessionId });
+
+      // bd-551 Trigger 3: Offer quiz to teacher's students after coaching report
+      try {
+        const language = session.users?.preferred_language || session.transcript_language || 'en';
+        const quizTopic = enhancedAnalysis?.topic;
+        if (quizTopic) {
+          // Find the most recent lesson plan for this teacher to anchor the quiz
+          const { data: recentLP } = await supabase
+            .from('lesson_plans')
+            .select('id, topic')
+            .eq('user_id', session.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (recentLP) {
+            await this.offerQuizAfterReport(
+              { id: session.user_id },
+              from,
+              recentLP.id,
+              recentLP.topic || quizTopic,
+              language
+            );
+          }
+        }
+      } catch (error) {
+        logToFile('⚠️ Trigger 3: Error offering quiz after coaching', { error: error.message });
+      }
 
       // Suggest next feature after coaching completion
       try {
@@ -169,7 +297,7 @@ class ReportGeneratorService {
         logToFile('⚠️ Error in feature linker after coaching', { error: error.message });
       }
     } catch (error) {
-      await this.handleReportError(coachingSessionId, error, payload.from);
+      await this.handleReportError(coachingSessionId, error, payload?.from);
       throw error;
     }
   }
@@ -198,6 +326,10 @@ class ReportGeneratorService {
       session.user_id,  // Pass userId to enable prior sessions check
       session.id        // Pass currentSessionId to exclude from prior check
     );
+
+    if (!enhancedAnalysis || typeof enhancedAnalysis !== 'object') {
+      throw new Error('Reflection enhancement returned empty analysis payload');
+    }
 
     // Validate that debrief_reflection was generated
     if (!enhancedAnalysis.debrief_reflection) {
@@ -393,10 +525,45 @@ class ReportGeneratorService {
    * @private
    */
   static async generatePDFReport(session, teacherName, enhancedAnalysis) {
-    logToFile('Generating PDF report with wkhtmltopdf', { coachingSessionId: session.id });
+    logToFile('Generating PDF report', { coachingSessionId: session.id });
 
-    // Transform enhanced analysis into report data format
-    const reportData = await this.transformAnalysisToReportData(session, teacherName, enhancedAnalysis);
+    // Resolve framework and dispatch to correct transformer (bd-611)
+    // Prefer framework from enhanced payload, then persisted analysis_data, then OECD fallback.
+    const frameworkKey = enhancedAnalysis.framework || session.analysis_data?.framework || 'oecd';
+    const transformer = getReportTransformer(frameworkKey);
+
+    // Check if user has prior completed sessions (needed by OECD transformer)
+    let hasPriorSessions = false;
+    try {
+      const { count, error: countError } = await supabase
+        .from('coaching_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', session.user_id)
+        .eq('status', 'completed')
+        .neq('id', session.id);
+      if (!countError) hasPriorSessions = (count || 0) > 0;
+    } catch (e) {
+      logToFile('⚠️  Error checking prior sessions for report', { error: e.message });
+    }
+
+    // bd-723/BUG-053: For HOTS, enhanceAnalysisWithReflections reshapes analysis
+    // into OECD-style goal keys (goal1_..., goal2_...) which destroys the HOTS
+    // "areas" structure. Use the raw analysis_data (which has areas) for the
+    // HOTS transformer, merging in subject/topic from enhanced analysis.
+    let analysisForTransformer = enhancedAnalysis;
+    if (frameworkKey === 'hots' && session.analysis_data?.areas && !enhancedAnalysis.areas) {
+      analysisForTransformer = {
+        ...session.analysis_data,
+        subject: enhancedAnalysis.subject || session.analysis_data.subject,
+        topic: enhancedAnalysis.topic || session.analysis_data.topic,
+      };
+      logToFile('HOTS: Using raw analysis_data (has areas) for transformer', {
+        areaCount: Object.keys(session.analysis_data.areas).length
+      });
+    }
+
+    logToFile('Report transformer dispatched', { frameworkKey, hasPriorSessions });
+    const reportData = transformer(session, teacherName, analysisForTransformer, hasPriorSessions);
 
     // Generate PDF using our new service
     const pdfBuffer = await PDFReportService.generateClassroomObservationReport(reportData);
@@ -776,7 +943,7 @@ class ReportGeneratorService {
       observationDate,
       subject: session.lesson_plan_structured?.subject || enhancedAnalysis.subject || 'N/A',
       topic: session.lesson_plan_structured?.topic || enhancedAnalysis.topic || 'N/A',
-      observerName: 'Rumi',
+      observerName: 'Rumi Digital Coach',
       hasLessonPlan: hasLessonPlanData,
       totalScore,
       maxScore: maxPossibleMarks,
@@ -1171,6 +1338,62 @@ class ReportGeneratorService {
         error: handlerError.message,
         coachingSessionId
       });
+    }
+  }
+
+  /**
+   * bd-551 Trigger 3: Offer quiz after coaching report PDF is sent.
+   * Sends interactive buttons if teacher has a class with student phone numbers.
+   * Called from generateReport after PDF delivery.
+   *
+   * @param {Object} user         - { id: userId }
+   * @param {string} phoneNumber  - Teacher's phone number
+   * @param {string} lessonPlanId - LP UUID to base the quiz on
+   * @param {string} topic        - Lesson topic for display in message
+   * @param {string} language     - Preferred language ('en', 'ur', etc.)
+   */
+  static async offerQuizAfterReport(user, phoneNumber, lessonPlanId, topic, language = 'en') {
+    try {
+      logToFile('📝 Trigger 3: Offering quiz after coaching report', { userId: user.id, lessonPlanId, topic });
+
+      // Check if teacher has a class
+      const { data: classes } = await supabase
+        .from('student_lists')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (!classes || classes.length === 0) {
+        return; // No class — skip silently
+      }
+
+      // Check if any students in that class have phone numbers
+      const { data: studentsWithPhones } = await supabase
+        .from('students')
+        .select('id')
+        .eq('list_id', classes[0].id)
+        .not('parent_phone', 'is', null)
+        .limit(1);
+
+      if (!studentsWithPhones || studentsWithPhones.length === 0) {
+        return; // No student phones — skip silently
+      }
+
+      const bodyText = language === 'ur'
+        ? `کیا آپ اپنے طلباء کو "${topic}" پر ایک کوئز بھیجنا چاہتے ہیں؟ 📝`
+        : `Would you like to send a quiz on "${topic}" to your students? 📝`;
+
+      await WhatsAppService.sendInteractiveButtons(phoneNumber, {
+        body: bodyText,
+        buttons: [
+          { id: `quiz_yes_send_${lessonPlanId}`, title: 'Yes, send quiz ✓' },
+          { id: 'quiz_not_now', title: 'Not right now' }
+        ]
+      });
+
+      logToFile('✅ Trigger 3: Quiz offer sent', { userId: user.id, lessonPlanId });
+    } catch (err) {
+      logToFile('⚠️ Trigger 3: offerQuizAfterReport error', { error: err.message });
     }
   }
 }

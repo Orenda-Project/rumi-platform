@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-03
+
+### Added
+- **Multi-framework coaching system** — OECD, HOTS, TEACH, and FICO frameworks selectable per teacher
+- **HOTS framework** — aligned to PESRP/PECTAA official spec (16 indicators, 48 marks, 6 areas)
+- **FICO framework** — 5 domains, 21 indicators, 84-mark scale (photo-aware indicators for 3.2 and 4.4)
+- **TEACH framework** — behavior observation framework with teacher-student interaction analysis
+- **Framework registry + selector** — lazy-loaded framework modules, user preference persistence
+- **Classroom photo analysis** — AI-powered visual evidence for photo-aware coaching indicators
+- **Coaching cards** — personalized PNG action cards generated after coaching sessions
+- **Prioritized action service** — surfaces single highest-leverage action from coaching analysis
+- **LP-coaching linker** — connects lesson plan feedback into the coaching session context
+- **Report transformers** — per-framework PDF report generation (OECD, HOTS, TEACH, FICO)
+- **Coaching flow helpers** — centralized state management for multi-step coaching flows
+- **Centralized scoring constants** — `getFrameworkMaxMarks()` and `getFrameworkDisplayName()` for all frameworks
+- 25 new coaching test scenarios across framework registry, HOTS, FICO, OECD, TEACH, report transformers, and coaching card generation (753 total tests, up from 728)
+
+### Fixed
+- HOTS report: empty PDF when no lesson plan linked (BUG-053) — now uses raw analysis as fallback
+- HOTS evidence: was English-only; now infers subject/topic from transcript context (BUG-009)
+- HOTS framework selector: wrong DB column used when reading user preference
+- Coaching photo flow: state mismatch, missing `photo_yes` button handler, 2-minute timeout
+
+### Infrastructure
+- Added `pino` and `canvas` mocks to OSS test suite so tests run without native dependencies
+- `jest.config.js`: added `moduleNameMapper` entries for `pino` and `canvas`
+- `scoring.constants.js`: removed unnecessary `require('dotenv').config()` for OSS compatibility
+
 ## [1.0.0] - 2026-01-28
 
 ### Added

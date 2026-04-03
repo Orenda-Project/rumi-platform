@@ -18,6 +18,7 @@ const GPT5MiniService = require('../gpt5-mini.service');
 const WhatsAppService = require('../whatsapp.service');
 const CoachingSessionService = require('./coaching-session.service');
 const { PEDAGOGICAL_ANALYSIS_MEDIA_ID } = require('../../utils/constants');
+const { selectFramework } = require('./frameworks/framework-selector');
 
 class AnalysisProcessorService {
   /**
@@ -95,10 +96,15 @@ class AnalysisProcessorService {
 
       logToFile('Analysis metadata', metadata);
 
+      // Resolve pedagogical framework for this user (bd-609)
+      const framework = await selectFramework(session.user_id);
+      logToFile('Framework resolved', { userId: session.user_id, framework: framework.name });
+
       const analysisResult = await GPT5MiniService.analyzePedagogy(
         session.transcript_text,
         metadata,
-        session.lesson_plan_structured || null
+        session.lesson_plan_structured || null,
+        framework
       );
 
       logToFile('Analysis completed', {

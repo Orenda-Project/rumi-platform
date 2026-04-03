@@ -334,25 +334,6 @@ cd bot && railway up --service bot
 
 ---
 
-## Appendix: Auto-Provisioner (Advanced)
-
-> **Note:** The auto-provisioner is an optional convenience tool. The manual setup above is the recommended approach.
-
-If you have access to the Rumi provisioner API, you can auto-provision Supabase, Railway, and OpenRouter with a single command:
-
-```bash
-node bot/scripts/setup/provision-infrastructure.js --name my-school-name
-```
-
-Options:
-- `--name` (required) — A name for your deployment
-- `--tier` (optional) — `minimal` (default), `recommended`, or `full`
-- `--region` (optional) — `ap-south-1` (default), `us-east-1`, `eu-west-1`
-
-This creates your Supabase database, Railway project with Redis, and generates an OpenRouter API key automatically. You still need to add WhatsApp credentials manually.
-
----
-
 ## Support
 
 - GitHub Issues: Report bugs and feature requests

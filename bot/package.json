@@ -7,14 +7,14 @@
     "start": "node whatsapp-bot.js",
     "start:dashboard": "node dashboard/index.js",
     "start:coaching-worker": "node workers/coaching-processor.js",
-    "start:worker": "node workers/bullmq-worker.js",
+    "start:worker": "node workers/sqs-worker.js",
     "start:stale-worker": "node workers/stale-session.worker.js",
     "test:jest": "jest",
     "test:db": "node tests/test-database.js",
     "dev": "node whatsapp-bot.js",
     "dev:dashboard": "node dashboard/index.js",
     "dev:coaching-worker": "node workers/coaching-processor.js",
-    "dev:worker": "node workers/bullmq-worker.js",
+    "dev:worker": "node workers/sqs-worker.js",
     "simulate": "node scripts/testing/simulate-webhook.js"
   },
   "keywords": [
@@ -25,7 +25,7 @@
     "teaching-assistant",
     "rumi"
   ],
-  "author": "Taleemabad (Oraan Education Pvt. Ltd.)",
+  "author": "Orenda Project",
   "license": "Apache-2.0",
   "type": "commonjs",
   "dependencies": {
@@ -43,7 +43,6 @@
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
     "bottleneck": "^2.19.5",
-    "bullmq": "^5.67.1",
     "connect-flash": "^0.1.1",
     "csv-parser": "^3.2.0",
     "dayjs": "^1.11.19",

@@ -199,21 +199,38 @@ class TranscriptionProcessorService {
       );
       await WhatsAppService.sendMessage(from, encouragingMessage);
 
-      // Ask about lesson plan
-      await WhatsAppService.sendInteractiveButtons(from, {
-        body: "Do you have a lesson plan for this class that you'd like me to consider in my analysis?",
-        buttons: [
-          { id: `lessonplan_yes_${coachingSessionId}`, title: 'Yes' },
-          { id: `lessonplan_no_${coachingSessionId}`, title: 'No' }
-        ]
-      });
+      // Phase 3 (bd-636): Agency follow-up — remind teacher of prior commitment
+      try {
+        const { data: priorSessions } = await supabase
+          .from('coaching_sessions')
+          .select('prioritized_action')
+          .eq('user_id', session.user_id)
+          .not('prioritized_action', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      // Update conversation state
+        const priorAction = priorSessions?.[0]?.prioritized_action;
+        if (priorAction?.teacher_response === 'yes' && priorAction?.action) {
+          await WhatsAppService.sendMessage(from,
+            `💡 *Quick reminder:* Last time, you committed to:\n\n_"${priorAction.action}"_\n\nLet's see how it went in this session!`
+          );
+        }
+      } catch (agencyError) {
+        logToFile('⚠️ Agency follow-up check failed (non-critical)', { error: agencyError.message });
+      }
+
+      // Phase 3 (bd-629): Ask about classroom photo FIRST, before LP question
+      const { buildPhotoPrompt } = require('./classroom-photo/photo-prompt.service');
+      const userLanguage = await getUserLanguage(session.user_id) || 'en';
+      const photoPrompt = buildPhotoPrompt(coachingSessionId, userLanguage);
+      await WhatsAppService.sendInteractiveButtons(from, photoPrompt);
+
+      // Update conversation state to AWAITING_PHOTO
       await CoachingSessionService.updateConversationState(coachingSessionId, {
-        current_state: 'AWAITING_LESSON_PLAN'
+        current_state: 'AWAITING_PHOTO'
       });
 
-      await CoachingSessionService.updateStatus(coachingSessionId, 'awaiting_lesson_plan');
+      await CoachingSessionService.updateStatus(coachingSessionId, 'awaiting_photo');
 
       // Clean up temp file
       if (fs.existsSync(tempAudioPath)) {

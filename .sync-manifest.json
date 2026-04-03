@@ -78,11 +78,9 @@
   "publicOnly": [
     "bot/shared/config/branding.js",
     "bot/shared/config/feature-tiers.js",
-    "bot/shared/services/queue/bullmq-queue.service.js",
     "bot/shared/services/llm-client.js",
     "bot/shared/utils/version-check.js",
     "bot/shared/utils/setup-validator.js",
-    "bot/workers/bullmq-worker.js",
     "bot/scripts/setup/",
     "bot/scripts/simulate.js",
     "infrastructure/",
@@ -100,16 +98,5 @@
     ".sync-manifest.json",
     ".sync-exclude"
   ],
-  "translationRules": [
-    {
-      "pattern": "require.*sqs-queue",
-      "replacement": "require.*bullmq-queue",
-      "note": "SQS queue imports must be translated to BullMQ in public repo"
-    },
-    {
-      "pattern": "SQSQueueService",
-      "replacement": "BullMQQueueService",
-      "note": "Class name translation"
-    }
-  ]
+  "translationRules": []
 }
