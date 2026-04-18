@@ -9,9 +9,9 @@
  * mappings verbatim.
  */
 
-const Anthropic = require('@anthropic-ai/sdk');
 const { STATUS, PipelineError } = require('./_base.worker');
 const { readRowsForStage } = require('../lib/page_store');
+const { callClaude } = require('../models/providers/anthropic_client');
 
 const stageName = '04_slo_mapping';
 
@@ -87,25 +87,23 @@ async function mapSlosForBook(book, provinceConfig, bookToc) {
     learning_outcomes: c.learning_outcomes || '',
   }));
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const modelId = provinceConfig.models?.slo_mapping || 'claude-sonnet-4-5';
   const userMsg = `Book: ${book.id} | Grade ${book.grade} | Subject: ${book.subject}\n\nChapters:\n${JSON.stringify(chapters, null, 2)}\n\nMap each chapter to SLO codes. Use the map_chapter_slos tool.`;
 
-  const resp = await client.messages.create({
+  const resp = await callClaude({
     model: modelId,
-    max_tokens: 4096,
     system: SLO_SYSTEM_PROMPT,
+    userText: userMsg,
     tools: [SLO_TOOL],
-    tool_choice: { type: 'tool', name: 'map_chapter_slos' },
-    messages: [{ role: 'user', content: userMsg }],
+    toolChoice: { type: 'tool', name: 'map_chapter_slos' },
+    maxTokens: 4096,
   });
 
-  const toolUse = resp.content.find(b => b.type === 'tool_use');
-  if (!toolUse) throw new PipelineError(`No tool_use in Sonnet response: ${JSON.stringify(resp).slice(0, 300)}`);
+  if (!resp.toolInput) throw new PipelineError(`No tool call in Sonnet response`);
   return {
-    mapping: toolUse.input,
+    mapping: resp.toolInput,
     usage: resp.usage,
-    model: modelId,
+    model: resp.model,
   };
 }
 

@@ -13,9 +13,9 @@
  * Escalation: Opus 4.7 if Sonnet reports confidence < 0.85 on its own output.
  */
 
-const Anthropic = require('@anthropic-ai/sdk');
 const { STATUS, PipelineError } = require('./_base.worker');
 const { readPagesForBook, readRowsForStage } = require('../lib/page_store');
+const { callClaude } = require('../models/providers/anthropic_client');
 
 const stageName = '06_enrichment';
 
@@ -156,24 +156,22 @@ Write the full enriched_content for this segment via the emit_enriched tool. Lan
 }
 
 async function enrichSegment(book, segment, sloCodes, pages, provinceConfig) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const primaryModel = provinceConfig.models?.enrichment || 'claude-sonnet-4-5';
   const escalateModel = provinceConfig.models?.enrichment_escalate || 'claude-opus-4-5';
   const confidenceThreshold = provinceConfig.eval_gates?.enrichment?.confidence_escalation ?? 0.85;
 
   async function callEnrich(modelId) {
     const userMsg = buildEnrichmentUserMsg(book, segment, sloCodes, pages);
-    const resp = await client.messages.create({
+    const resp = await callClaude({
       model: modelId,
-      max_tokens: 4096,
       system: ENRICH_SYSTEM_PROMPT,
+      userText: userMsg,
       tools: [ENRICH_TOOL],
-      tool_choice: { type: 'tool', name: 'emit_enriched' },
-      messages: [{ role: 'user', content: userMsg }],
+      toolChoice: { type: 'tool', name: 'emit_enriched' },
+      maxTokens: 4096,
     });
-    const toolUse = resp.content.find(b => b.type === 'tool_use');
-    if (!toolUse) throw new PipelineError(`enrich no tool_use from ${modelId}`);
-    return { content: toolUse.input, usage: resp.usage, model: modelId };
+    if (!resp.toolInput) throw new PipelineError(`enrich no tool call from ${modelId}`);
+    return { content: resp.toolInput, usage: resp.usage, model: resp.model };
   }
 
   let out = await callEnrich(primaryModel);
