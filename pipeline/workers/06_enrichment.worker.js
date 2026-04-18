@@ -168,7 +168,7 @@ async function enrichSegment(book, segment, sloCodes, pages, provinceConfig) {
       userText: userMsg,
       tools: [ENRICH_TOOL],
       toolChoice: { type: 'tool', name: 'emit_enriched' },
-      maxTokens: 4096,
+      maxTokens: 8192,   // Urdu is ~2x chars/token vs English; 4096 was truncating
     });
     if (!resp.toolInput) throw new PipelineError(`enrich no tool call from ${modelId}`);
     return { content: resp.toolInput, usage: resp.usage, model: resp.model };
@@ -193,7 +193,20 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
   const segmentRows = await readRowsForStage('05_chunking');
   const sloRows = await readRowsForStage('04_slo_mapping');
   const segmentLimit = opts.segmentLimit ? parseInt(opts.segmentLimit, 10) : null;
+  const resume = opts.resume === true || opts.resume === 'true';
   const results = [];
+
+  // If resuming, skip segments already enriched successfully
+  let alreadyEnriched = new Set();
+  if (resume) {
+    const existing = await readRowsForStage('06_enrichment');
+    for (const r of existing) {
+      if (r.enriched_content && r.segment_index != null) {
+        alreadyEnriched.add(`${r.textbook_id}:${r.segment_index}`);
+      }
+    }
+    console.log(`[${stageName}] resume: ${alreadyEnriched.size} segments already enriched — will skip`);
+  }
 
   for (const book of books) {
     const bookSegments = segmentRows.filter(r => r.textbook_id === book.id && r.segment_index != null);
@@ -206,6 +219,10 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
     let enrichedCount = 0;
     const limit = segmentLimit || bookSegments.length;
     for (const seg of bookSegments.slice(0, limit)) {
+      if (resume && alreadyEnriched.has(`${book.id}:${seg.segment_index}`)) {
+        enrichedCount++;
+        continue;
+      }
       const sloCodes = (bookSloMapping?.chapter_slos || [])
         .find(c => c.chapter_number === seg.chapter_number)
         ?.slo_codes.map(s => s.code) || [];
