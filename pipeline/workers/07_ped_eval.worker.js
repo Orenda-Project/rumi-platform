@@ -76,6 +76,14 @@ const JUDGE_SCHEMA = {
 
 function formatSegmentForJudging(enrichRow) {
   const ec = enrichRow.enriched_content;
+  // Defensive: Opus sometimes returns arrays as newline-joined strings despite
+  // schema. Coerce to arrays.
+  const arr = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? v.split(/\n+/).filter(Boolean) : []);
+  const iDoSteps = arr(ec.i_do_steps);
+  const cfuChecks = arr(ec.cfu_checks);
+  const keyFacts = arr(ec.key_facts);
+  const misconceptions = arr(ec.common_misconceptions);
+  const modelAnswers = Array.isArray(ec.model_answers) ? ec.model_answers : [];
   return `Segment ${enrichRow.segment_index} | skill_type: ${enrichRow.skill_type} | SLO codes: ${(enrichRow.slo_codes || []).join(', ')}
 
 Topic (Urdu): ${ec.topic_urdu}
@@ -86,22 +94,22 @@ Warm-up: ${ec.warm_up}
 Hook story: ${ec.hook_story}
 Board work: ${ec.board_work}
 I-Do steps:
-${ec.i_do_steps.map((s, i) => `  ${i+1}. ${s}`).join('\n')}
+${iDoSteps.map((s, i) => `  ${i+1}. ${s}`).join('\n')}
 Worked example: ${ec.worked_example}
 We-Do: ${ec.we_do_partner_activity}
 You-Do: ${ec.you_do_independent_practice}
 
 CFU checks:
-${ec.cfu_checks.map(c => `  • ${c}`).join('\n')}
+${cfuChecks.map(c => `  • ${c}`).join('\n')}
 
 Key facts:
-${ec.key_facts.map(k => `  • ${k}`).join('\n')}
+${keyFacts.map(k => `  • ${k}`).join('\n')}
 
 Common misconceptions:
-${ec.common_misconceptions.map(m => `  • ${m}`).join('\n')}
+${misconceptions.map(m => `  • ${m}`).join('\n')}
 
 Model answers:
-${ec.model_answers.map(m => `  Q: ${m.question}\n  A: ${m.answer}`).join('\n')}
+${modelAnswers.map(m => `  Q: ${m.question}\n  A: ${m.answer}`).join('\n')}
 
 Differentiation:
   Below: ${ec.differentiation?.below_level}
@@ -193,7 +201,19 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
   const writeRow = opts.writeRow || ((row) => console.log(JSON.stringify({ stage: stageName, ...row })));
   const enrichRows = await readRowsForStage('06_enrichment');
   const segLimit = opts.segmentLimit ? parseInt(opts.segmentLimit, 10) : null;
+  const resume = opts.resume === true || opts.resume === 'true';
   const results = [];
+
+  let alreadyJudged = new Set();
+  if (resume) {
+    const existing = await readRowsForStage('07_ped_eval');
+    for (const r of existing) {
+      if (r.mean_score != null && r.segment_index != null) {
+        alreadyJudged.add(`${r.textbook_id}:${r.segment_index}`);
+      }
+    }
+    console.log(`[${stageName}] resume: ${alreadyJudged.size} segments already judged — will skip`);
+  }
 
   for (const book of books) {
     const bookEnriched = enrichRows.filter(r => r.textbook_id === book.id && r.enriched_content);
@@ -201,7 +221,17 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
     let ship = 0, regen = 0, failed = 0;
     const limit = segLimit || bookEnriched.length;
     for (const row of bookEnriched.slice(0, limit)) {
-      const segText = formatSegmentForJudging(row);
+      if (resume && alreadyJudged.has(`${book.id}:${row.segment_index}`)) {
+        ship++;
+        continue;
+      }
+      let segText;
+      try { segText = formatSegmentForJudging(row); }
+      catch (e) {
+        failed++;
+        await writeRow({ textbook_id: book.id, segment_index: row.segment_index, status: 'format_failed', error: e.message });
+        continue;
+      }
       const judges = pickJudges(row.model);
       try {
         const panelResults = await Promise.all(judges.map(j => j(segText)));
