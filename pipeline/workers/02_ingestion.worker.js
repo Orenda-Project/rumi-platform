@@ -92,7 +92,7 @@ function renderPageToPng(pdfPath, pageNum, dpi = 200) {
   return outPath;
 }
 
-async function ocrPageWithGeminiFlash(imgPath) {
+async function ocrPageWithGeminiFlashNative(imgPath) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
@@ -110,7 +110,124 @@ async function ocrPageWithGeminiFlash(imgPath) {
   return {
     json: JSON.parse(result.response.text()),
     usage: result.response.usageMetadata || {},
+    model: 'gemini-2.5-flash (native)',
   };
+}
+
+/**
+ * OpenRouter route — same model, pay-as-you-go (no free-tier daily cap of 20).
+ * Uses OpenAI-compatible API at https://openrouter.ai/api/v1.
+ */
+async function ocrPageWithGeminiFlashOpenRouter(imgPath) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new PipelineError('OPENROUTER_API_KEY missing');
+  const imageData = fs.readFileSync(imgPath).toString('base64');
+
+  // OpenRouter requires a JSON schema via response_format for structured output.
+  // Simplified schema (OpenRouter passes through to Gemini).
+  const orSchema = {
+    name: 'ocr_page_output',
+    strict: true,
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        printed_numeral_system: { type: 'string', enum: ['urdu_arabic', 'arabic', 'tamil', 'sinhala', 'mixed'] },
+        language_detected: { type: 'array', items: { type: 'string' } },
+        script: { type: 'string', enum: ['nastaliq', 'naskh', 'latin', 'tamil', 'sinhala', 'mixed'] },
+        text_blocks: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              role: { type: 'string', enum: ['lesson_title', 'slo_box', 'body_paragraph', 'teacher_note_footer', 'exercise_instruction', 'header', 'caption', 'number_label', 'other'] },
+              content: { type: 'string' },
+              confidence: { type: 'number' },
+            },
+            required: ['role', 'content', 'confidence'],
+          },
+        },
+        illustrations: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              description: { type: 'string' },
+              pedagogical_role: { type: 'string', enum: ['counting_object', 'character_anchor', 'concept_illustration', 'decorative', 'teacher_guidance_avatar', 'number_tracing', 'other'] },
+              object_count: { type: ['integer', 'null'] },
+            },
+            required: ['description', 'pedagogical_role', 'object_count'],
+          },
+        },
+        exercises: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: { type: { type: 'string' }, description: { type: 'string' } },
+            required: ['type', 'description'],
+          },
+        },
+        honorifics_detected: { type: 'array', items: { type: 'string' } },
+        ocr_confidence_overall: { type: 'number' },
+      },
+      required: ['printed_numeral_system', 'language_detected', 'script', 'text_blocks', 'illustrations', 'exercises', 'honorifics_detected', 'ocr_confidence_overall'],
+    },
+  };
+
+  const body = {
+    model: 'google/gemini-2.5-flash',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: OCR_SYSTEM_PROMPT },
+          { type: 'image_url', image_url: { url: `data:image/png;base64,${imageData}` } },
+        ],
+      },
+    ],
+    response_format: { type: 'json_schema', json_schema: orSchema },
+    temperature: 0.1,
+  };
+  const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://github.com/Orenda-Project/rumi-platform',
+      'X-Title': 'rumi-pipeline',
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await resp.text();
+  if (!resp.ok) throw new PipelineError(`OpenRouter OCR HTTP ${resp.status}: ${text.substring(0, 300)}`);
+  const j = JSON.parse(text);
+  const content = j.choices?.[0]?.message?.content;
+  if (!content) throw new PipelineError(`OpenRouter OCR no content: ${text.substring(0, 300)}`);
+  return {
+    json: JSON.parse(content),
+    usage: j.usage || {},
+    model: 'google/gemini-2.5-flash (openrouter)',
+  };
+}
+
+/**
+ * Smart router: prefer OpenRouter (pay-as-you-go, no free-tier caps). Fall back
+ * to native Gemini key if OR key is missing. Retry with the OTHER route on 429.
+ */
+async function ocrPageWithGeminiFlash(imgPath) {
+  const prefer = process.env.OPENROUTER_API_KEY ? 'openrouter' : 'native';
+  try {
+    return prefer === 'openrouter' ? await ocrPageWithGeminiFlashOpenRouter(imgPath) : await ocrPageWithGeminiFlashNative(imgPath);
+  } catch (err) {
+    if (!/429|quota|rate/i.test(err.message)) throw err;
+    // Fall back to the other route on rate limit
+    const other = prefer === 'openrouter' ? 'native' : 'openrouter';
+    console.warn(`  [ocr] ${prefer} rate-limited, falling back to ${other}`);
+    return other === 'openrouter' ? await ocrPageWithGeminiFlashOpenRouter(imgPath) : await ocrPageWithGeminiFlashNative(imgPath);
+  }
 }
 
 /** Decide whether to escalate based on confidence + script. */
@@ -173,9 +290,19 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
   if (!books.length) return { status: STATUS.COMPLETE, detail: { reason: 'no books' } };
 
   const writeRow = opts.writeRow || ((row) => console.log(JSON.stringify({ stage: stageName, ...row })));
-  const pageLimit = opts.pageLimit ? parseInt(opts.pageLimit, 10) : null;   // cap pages per book (testing)
+  const pageLimit = opts.pageLimit ? parseInt(opts.pageLimit, 10) : null;
   const startPage = opts.startPage ? parseInt(opts.startPage, 10) : 1;
+  const resume = opts.resume === true || opts.resume === 'true';   // skip already-OK pages
   const results = [];
+
+  // Load already-succeeded pages if resuming
+  let alreadyOk = new Set();
+  if (resume) {
+    const { readPagesForBook } = require('../lib/page_store');
+    const existing = await readPagesForBook(opts.bookId || '');
+    for (const p of existing) if (p.ocr_confidence_overall) alreadyOk.add(`${p.textbook_id}:${p.page_number}`);
+    console.log(`[${stageName}] resume: ${alreadyOk.size} pages already OK — will skip`);
+  }
 
   for (const book of books) {
     const pdfPath = path.resolve(book.path);
@@ -190,6 +317,7 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
     const lastPage = pageLimit ? Math.min(startPage + pageLimit - 1, total) : total;
     console.log(`[${stageName}] ${book.id}: processing pages ${startPage}-${lastPage} of ${total}`);
     for (let p = startPage; p <= lastPage; p++) {
+      if (resume && alreadyOk.has(`${book.id}:${p}`)) continue;
       try {
         const out = await ocrSinglePage(pdfPath, p, provinceConfig);
         await writeRow({

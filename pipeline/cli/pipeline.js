@@ -35,7 +35,13 @@ function parseArgs(argv) {
   const args = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a.startsWith('--')) { args[a.slice(2)] = argv[i + 1]; i++; }
+    if (a.startsWith('--')) {
+      const name = a.slice(2);
+      const next = argv[i + 1];
+      // Treat as boolean flag if next token is undefined OR another --flag
+      if (next === undefined || next.startsWith('--')) { args[name] = true; }
+      else { args[name] = next; i++; }
+    }
     else args._.push(a);
   }
   return args;
@@ -104,6 +110,8 @@ async function main() {
       if (args.limit) opts.pageLimit = args.limit;
       if (args['start-page']) opts.startPage = args['start-page'];
       if (args.output) opts.output = args.output;
+      if (args.resume !== undefined) opts.resume = true;
+      if (args['segment-limit']) opts.segmentLimit = args['segment-limit'];
       await runStage(args.stage, args.province, opts);
       break;
     }

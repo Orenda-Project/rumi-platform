@@ -12,7 +12,7 @@
     "migrate": "node cli/pipeline.js migrate"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
+    "@anthropic-ai/sdk": "^0.65.0",
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^16.4.0",
     "js-yaml": "^4.1.0"
