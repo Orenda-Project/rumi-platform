@@ -29,6 +29,7 @@ Critical instructions:
 - For each illustration, describe WHAT is shown and COUNT discrete countable objects (pencils, chickens, candles, etc.). Pedagogical role matters: counting objects for Maths, character anchors for narrative, concept illustrations for text-heavy pages.
 - Identify exercise types using the canonical taxonomy: count_and_write, read_trace_and_write, jawab_dijiye, alfaaz_ki_jama, fill_in_blank_with_preposition, khushkhat_aur_imla, jumla_saazi, alphabet_train, speech_bubble_dialogue, phonics_blend, rhyme_detection, spelling_dictation, paragraph_composition, creative_writing_prompt, vocab_matching.
 - Detect honorific ligatures exactly as rendered (e.g. "صلی اللہ علیہ وآلہ وسلم" with واله, not without). Preserve provincial variations.
+- textbook_page_number: the PRINTED page number visible at the top or bottom of the page (typically in a footer band). In Urdu books, this may be Urdu numerals (۱۲ ۱۳ ۱۴). In English/Maths books, Arabic numerals. If NO printed page number is visible (e.g. a front-matter page), return null.
 - confidence per block: 0.0-1.0 honest self-assessment.
 - ocr_confidence_overall: overall confidence across all extracted content.`;
 
@@ -37,6 +38,7 @@ const RESPONSE_SCHEMA = {
   type: SchemaType.OBJECT,
   properties: {
     printed_numeral_system: { type: SchemaType.STRING, enum: ['urdu_arabic', 'arabic', 'tamil', 'sinhala', 'mixed'] },
+    textbook_page_number: { type: SchemaType.STRING, nullable: true, description: 'Printed page number visible on the page footer/header; null for unnumbered pages.' },
     language_detected: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
     script: { type: SchemaType.STRING, enum: ['nastaliq', 'naskh', 'latin', 'tamil', 'sinhala', 'mixed'] },
     text_blocks: {
@@ -79,6 +81,9 @@ const RESPONSE_SCHEMA = {
   },
   required: ['printed_numeral_system', 'language_detected', 'script', 'text_blocks', 'illustrations', 'exercises', 'ocr_confidence_overall'],
 };
+
+// Update the native Gemini schema to include textbook_page_number as optional
+RESPONSE_SCHEMA.properties.textbook_page_number = { type: SchemaType.STRING, nullable: true };
 
 /** Render a single PDF page to PNG using pdftoppm with -singlefile (no page suffix). */
 function renderPageToPng(pdfPath, pageNum, dpi = 200) {
@@ -133,6 +138,7 @@ async function ocrPageWithGeminiFlashOpenRouter(imgPath) {
       additionalProperties: false,
       properties: {
         printed_numeral_system: { type: 'string', enum: ['urdu_arabic', 'arabic', 'tamil', 'sinhala', 'mixed'] },
+        textbook_page_number: { type: ['string', 'null'] },
         language_detected: { type: 'array', items: { type: 'string' } },
         script: { type: 'string', enum: ['nastaliq', 'naskh', 'latin', 'tamil', 'sinhala', 'mixed'] },
         text_blocks: {
@@ -173,7 +179,7 @@ async function ocrPageWithGeminiFlashOpenRouter(imgPath) {
         honorifics_detected: { type: 'array', items: { type: 'string' } },
         ocr_confidence_overall: { type: 'number' },
       },
-      required: ['printed_numeral_system', 'language_detected', 'script', 'text_blocks', 'illustrations', 'exercises', 'honorifics_detected', 'ocr_confidence_overall'],
+      required: ['printed_numeral_system', 'textbook_page_number', 'language_detected', 'script', 'text_blocks', 'illustrations', 'exercises', 'honorifics_detected', 'ocr_confidence_overall'],
     },
   };
 
@@ -323,7 +329,7 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
         await writeRow({
           textbook_id: book.id,
           page_number: out.page_number,
-          textbook_page_number: out.ocr.text_blocks?.find(b => /^\d+$|^[۰-۹]+$/.test(b.content?.trim?.()))?.content,
+          textbook_page_number: out.ocr.textbook_page_number || null,
           printed_numeral_system: out.ocr.printed_numeral_system,
           language_detected: out.ocr.language_detected,
           script: out.ocr.script,
