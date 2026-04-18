@@ -1,0 +1,24 @@
+{
+  "name": "rumi-pipeline",
+  "version": "0.1.0-alpha",
+  "description": "Textbook → Lesson Plan → Voicenote machine. Provincially portable, AI-only eval, open-source from day 1.",
+  "type": "commonjs",
+  "main": "cli/pipeline.js",
+  "bin": {
+    "rumi-pipeline": "cli/pipeline.js"
+  },
+  "scripts": {
+    "run": "node cli/pipeline.js",
+    "migrate": "node cli/pipeline.js migrate"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^16.4.0",
+    "js-yaml": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "Apache-2.0"
+}

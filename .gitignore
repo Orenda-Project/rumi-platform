@@ -84,3 +84,4 @@ supabase/.temp/
 **/supabase/.temp/
 dashboard/supabase/.temp/
 .env.provisioner
+books/**/*.pdf

@@ -1,0 +1,192 @@
+# Sindh Province — Pipeline Config (Scope X)
+# First concrete province config. Locked 2026-04-18.
+
+province: sindh
+country: pakistan
+curriculum: ncp-2023
+
+scope:
+  name: scope_x
+  grades: [1, 2, 3, 4, 5]
+  subjects: [english, maths, urdu]
+  book_count: 15
+  description: "Core curriculum subjects (English, Maths, Urdu-as-subject) for primary grades."
+
+# Rendering rules for downstream enrichment + slide generation
+rendering:
+  lp_language: urdu            # Lesson plans in Urdu, even for Maths/English books
+  scientific_terms: english    # Retain English for formulas, technical terminology
+  honorifics:
+    prophet: "صلی اللہ علیہ وآلہ وسلم"
+    caliphs: "رضی اللہ تعالی عنہ"
+    include_ligature_symbol: true
+  numeral_system_by_subject:
+    urdu: urdu_arabic          # ۱۲۳
+    maths: arabic              # 123
+    english: arabic
+  script_direction: mixed
+  fonts:
+    urdu: "Noto Nastaliq Urdu"
+    english: "system-sans"
+  page_ref_format: "صفحہ {page}" # in Urdu text; becomes "page {page}" in English parts
+
+# Skill-type taxonomy — per 07_TAXONOMY_EVOLVED.md
+taxonomy:
+  english:
+    - pre_reading
+    - phonics
+    - reading_comprehension
+    - oral_communication
+    - vocabulary_grammar
+    - writing
+    - revision
+  maths:
+    - concrete
+    - pictorial_abstract
+    - word_problem
+    - retrieval
+    - revision
+  urdu:
+    - alfaaz_maani
+    - buland_khwani
+    - tafheem
+    - arkaan_saazi
+    - qawaid
+    - jumla_saazi          # NEW for Sindh (constrained sentence-making)
+    - takhleeqi_likhai
+    - duhrai
+
+# CPA rule for Maths: every new concept must start concrete
+cpa_rule:
+  enforced_for: maths
+  order: [concrete, pictorial_abstract, abstract]
+  require_concrete_first_in_new_topic: true
+
+# Diacritics / script rules
+diacritics:
+  urdu_grade_1_3: required
+  urdu_grade_4_5: optional
+
+# Models per capability (reference router.js)
+models:
+  ocr_primary: gemini-2.5-flash
+  ocr_fallback_urdu: qari-v0.2           # self-hosted GPU worker
+  ocr_escalate: gemini-2.5-pro
+  toc_extract: gemini-2.5-flash
+  slo_mapping: claude-sonnet-4-6
+  slo_mapping_fallback: claude-haiku-4-5
+  chunking: claude-haiku-4-5
+  enrichment: claude-sonnet-4-6
+  enrichment_escalate: claude-opus-4-7
+  judge_panel:
+    - claude-haiku-4-5
+    - gemini-2.5-flash
+    - claude-sonnet-4-6
+  slide_gen: nano-banana-pro              # Kie.AI, $0.09/2K per Kie pricing page
+  slide_gen_resolution: "2K"
+  visual_eval_primary: gemini-2.5-flash
+  visual_eval_second_opinion: qwen3-vl-30b-a3b
+  voice_script: claude-haiku-4-5           # Urdu voice script
+  voice_tts: elevenlabs-v3-urdu            # BLOCKED on Rawalpindi 5B
+  voice_stt_eval: soniox-v4-urdu
+  offline_regression_judge: prometheus-2-7b
+
+# Retry policy
+retry:
+  max_attempts_per_stage: 3
+  escalation_on_exhausted: human_review
+
+# Eval gates per stage
+eval_gates:
+  ingestion:
+    min_ocr_confidence: 0.85
+    suspect_confidence: 0.80           # triggers Qari fallback
+    escalate_confidence: 0.70          # triggers Pro model
+  chunking:
+    durations_range_min: [25, 40]
+    skill_type_coverage_ratio: 0.85
+  enrichment:
+    min_judge_mean_score: 4.0
+    min_dimension_score: 3
+    confidence_escalation: 0.85
+  visual:
+    min_pass_rate: 0.80
+    critical_criteria: [no_percent_leak, navigation_varies, language_metadata_matches]
+
+# Book roster (Scope X — 15 books already on disk)
+books:
+  - id: sindh_english_g1
+    subject: english
+    grade: 1
+    source: local
+    path: "books/sindh/sindh_english_1.pdf"
+  - id: sindh_english_g2
+    subject: english
+    grade: 2
+    source: local
+    path: "books/sindh/sindh_english_2.pdf"
+  - id: sindh_english_g3
+    subject: english
+    grade: 3
+    source: local
+    path: "books/sindh/sindh_english_3.pdf"
+  - id: sindh_english_g4
+    subject: english
+    grade: 4
+    source: local
+    path: "books/sindh/sindh_english_4.pdf"
+  - id: sindh_english_g5
+    subject: english
+    grade: 5
+    source: local
+    path: "books/sindh/sindh_english_5.pdf"
+  - id: sindh_maths_g1
+    subject: maths
+    grade: 1
+    source: local
+    path: "books/sindh/sindh_maths_1.pdf"
+  - id: sindh_maths_g2
+    subject: maths
+    grade: 2
+    source: local
+    path: "books/sindh/sindh_maths_2.pdf"
+  - id: sindh_maths_g3
+    subject: maths
+    grade: 3
+    source: local
+    path: "books/sindh/sindh_maths_3.pdf"
+  - id: sindh_maths_g4
+    subject: maths
+    grade: 4
+    source: local
+    path: "books/sindh/sindh_maths_4.pdf"
+  - id: sindh_maths_g5
+    subject: maths
+    grade: 5
+    source: local
+    path: "books/sindh/sindh_maths_5.pdf"
+  - id: sindh_urdu_g1
+    subject: urdu
+    grade: 1
+    source: local
+    path: "books/sindh/sindh_urdu_qaida_1.pdf"
+  - id: sindh_urdu_g2
+    subject: urdu
+    grade: 2
+    source: local
+    path: "books/sindh/sindh_urdu_2.pdf"
+  - id: sindh_urdu_g3
+    subject: urdu
+    grade: 3
+    source: local
+    path: "books/sindh/sindh_urdu_3.pdf"
+  - id: sindh_urdu_g4
+    subject: urdu
+    grade: 4
+    source: local
+    path: "books/sindh/sindh_urdu_4.pdf"
+  - id: sindh_urdu_g5
+    subject: urdu
+    grade: 5
+    source: local
+    path: "books/sindh/sindh_urdu_5.pdf"

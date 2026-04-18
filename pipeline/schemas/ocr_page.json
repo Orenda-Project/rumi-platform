@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OCR Page Output",
+  "description": "Per-page structured output from the ingestion worker. Gemini 2.5 Flash with responseSchema validated.",
+  "type": "object",
+  "required": ["printed_numeral_system", "language_detected", "script", "text_blocks", "illustrations", "exercises", "ocr_confidence_overall"],
+  "properties": {
+    "page_number": {
+      "type": "integer",
+      "description": "PDF page index (1-based)."
+    },
+    "textbook_page_number": {
+      "type": "string",
+      "description": "Printed page number as rendered on the page (could be Urdu numerals like ۱۲ or Arabic like 12)."
+    },
+    "printed_numeral_system": {
+      "type": "string",
+      "enum": ["urdu_arabic", "arabic", "tamil", "sinhala", "mixed"]
+    },
+    "language_detected": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "ISO-ish codes or names: urdu, english, sindhi, tamil, sinhala, swahili, etc."
+    },
+    "script": {
+      "type": "string",
+      "enum": ["nastaliq", "naskh", "latin", "tamil", "sinhala", "mixed"]
+    },
+    "text_blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "content", "confidence"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["lesson_title", "slo_box", "body_paragraph", "teacher_note_footer", "exercise_instruction", "header", "caption", "number_label", "other"]
+          },
+          "content": { "type": "string" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "illustrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["description", "pedagogical_role"],
+        "properties": {
+          "bbox": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 4,
+            "maxItems": 4,
+            "description": "Normalized [x1, y1, x2, y2] 0-1 space."
+          },
+          "description": { "type": "string" },
+          "pedagogical_role": {
+            "type": "string",
+            "enum": ["counting_object", "character_anchor", "concept_illustration", "decorative", "teacher_guidance_avatar", "number_tracing", "other"]
+          },
+          "object_count": {
+            "type": ["integer", "null"],
+            "description": "If countable discrete objects are visible, the count. Else null."
+          }
+        }
+      }
+    },
+    "exercises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "description"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Auto-classified exercise type: jawab_dijiye, fill_in_blank_with_preposition, khushkhat_aur_imla, jumla_saazi, count_and_write, read_trace_and_write, alphabet_train, speech_bubble_dialogue, etc."
+          },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "honorifics_detected": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Exact as-rendered honorific strings (provincial variation matters)."
+    },
+    "special_features": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ocr_confidence_overall": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  }
+}
