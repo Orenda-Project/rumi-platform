@@ -35,23 +35,24 @@ const CRITERIA = [
 ];
 
 const EVAL_PROMPT = `You are evaluating a generated lesson-plan slide image against a 12-criteria rubric.
-For each criterion: score 1 (fail) or 5 (pass). Intermediate values allowed (3 = acceptable with issues).
+For each criterion: score 1-5 (1 = fail, 5 = pass; 3 = acceptable with minor issues).
+If a criterion is NOT APPLICABLE to this slide type, score 5 (treat as passing).
 
-Criteria:
-- no_percent_leak: absence of literal "%" markers used internally as layout hints.
-- no_prompt_bleed: no prompt engineering instructions visible (e.g. "Pakistani Grade 1 giden").
-- navigation_varies: navigation-slide banners reflect THIS segment (Day N of M, not "Day 1 of 1").
-- language_metadata_matches: slide language matches what it claims to be.
-- cpa_badge_present: for Maths slides, CPA-phase label visible.
-- diacritics_rendered: for Urdu Gr1-3, short-vowel diacritics (zer/zabar/pesh) visible.
-- text_legible: text sharp, not gibberish, readable at thumbnail size.
-- rtl_ltr_correct: Urdu text RTL, English LTR, no wrong mirroring.
-- cartoon_consistency: Pakistani-appropriate attire (shalwar kameez/dupatta), classroom context.
-- cfu_present: explicit CFU prompt where expected on that template.
-- page_ref_valid: if a textbook page is referenced, it matches the source segment.
-- no_placeholder_text: no unresolved placeholders like "___" or "[topic]".
+Criteria and applicability (respect the "applicable" conditions in the metadata below):
+- no_percent_leak: ALWAYS applicable. No literal "%" markers leaked from layout hints.
+- no_prompt_bleed: ALWAYS. No prompt-engineering instructions visible (e.g. "Pakistani Grade 1 giden").
+- navigation_varies: ONLY for navigation slides. Banners reflect THIS segment (Day N of M, not "Day 1 of 1").
+- language_metadata_matches: ALWAYS. Slide language consistent with what it claims to be.
+- cpa_badge_present: ONLY for Maths AND slide_template in [navigation, i_do, you_do]. Else N/A (score 5).
+- diacritics_rendered: ONLY if lp_language=urdu AND grade in [1,2,3] AND slide has substantial Urdu body text. Else N/A (score 5).
+- text_legible: ALWAYS. Text sharp, not gibberish, readable at thumbnail size. Minor artifacts on a single word = 3; systematic garbled text = 1.
+- rtl_ltr_correct: ALWAYS. Urdu text RTL, English LTR.
+- cartoon_consistency: ALWAYS. Pakistani-appropriate attire (shalwar kameez/dupatta), classroom context.
+- cfu_present: ONLY for close slides (explicit CFU prompts). Else N/A (score 5).
+- page_ref_valid: ONLY if a textbook page is referenced on the slide. Else N/A (score 5).
+- no_placeholder_text: ALWAYS. BUT: intentional "___" fill-in-blanks in student speech bubbles are NOT placeholders. Only unresolved template vars like "[topic]", "___SLO___" or literal "Option A" count as placeholders.
 
-For each fail: emit a specific regen_guidance line that can be injected as an added constraint on the next NBPro prompt.
+For each actual fail: emit a specific regen_guidance line that can be injected as an added constraint on the next NBPro prompt.
 
 Ship if mean ≥ 4.0 AND no critical dim (no_prompt_bleed, text_legible) < 3.`;
 
@@ -79,7 +80,14 @@ const EVAL_SCHEMA = {
 
 async function evalSlide(slidePath, expectedMeta) {
   const imageData = fs.readFileSync(slidePath).toString('base64');
-  const text = `${EVAL_PROMPT}\n\nExpected metadata:\n${JSON.stringify(expectedMeta, null, 2)}\n\nJudge this slide image.`;
+  // Add applicability hints based on the expected metadata
+  const applicability = {
+    cpa_badge_applicable: expectedMeta.subject === 'maths' && ['navigation', 'i_do', 'you_do'].includes(expectedMeta.slide_template),
+    diacritics_applicable: (expectedMeta.lp_language === 'urdu' && expectedMeta.grade <= 3),
+    cfu_applicable: expectedMeta.slide_template === 'close',
+    navigation_applicable: expectedMeta.slide_template === 'navigation',
+  };
+  const text = `${EVAL_PROMPT}\n\nExpected metadata:\n${JSON.stringify({ ...expectedMeta, applicability }, null, 2)}\n\nJudge this slide image.`;
   const out = await callGeminiViaOpenRouter({
     model: 'gemini-2.5-flash',
     text,
@@ -115,6 +123,7 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
         segment_index: row.segment_index,
         subject: book.subject,
         grade: book.grade,
+        lp_language: provinceConfig.rendering?.lp_language || 'urdu',
       };
       try {
         const scores = await evalSlide(row.slide_path, expected);
