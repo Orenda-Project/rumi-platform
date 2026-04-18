@@ -51,7 +51,19 @@ async function runStage(stage, province, opts = {}) {
   const worker = WORKERS[stage];
   if (!worker) { console.error(`Unknown stage: ${stage}. Available: ${Object.keys(WORKERS).join(', ')}`); process.exit(1); }
   const provinceConfig = loadProvinceConfig(province);
-  const jobId = crypto?.randomUUID?.() || `${Date.now()}`;
+  const jobId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}`;
+
+  // If --output specified, stream JSONL to file
+  if (opts.output) {
+    const outPath = path.resolve(opts.output);
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    const stream = fs.createWriteStream(outPath, { flags: 'a' });
+    opts.writeRow = (row) => new Promise((resolve, reject) => {
+      stream.write(JSON.stringify({ stage, jobId, timestamp: new Date().toISOString(), ...row }) + '\n', (err) => err ? reject(err) : resolve());
+    });
+    console.log(`[cli] Streaming JSONL to ${outPath}`);
+  }
+
   console.log(`[cli] Running ${stage} for province=${province} jobId=${jobId}`);
   const result = await worker.handleJob(jobId, provinceConfig, opts);
   console.log(`[cli] ${stage} result: ${result.status}`);
@@ -86,9 +98,12 @@ async function main() {
       console.log('[cli] register-books: stub — books currently loaded from provincial YAML at run time');
       break;
     case 'run': {
-      if (!args.stage || !args.province) { console.error('usage: run --stage <s> --province <p>'); process.exit(1); }
+      if (!args.stage || !args.province) { console.error('usage: run --stage <s> --province <p> [--book <id>] [--start-page <n>] [--limit <n>] [--output <path>]'); process.exit(1); }
       const opts = {};
       if (args.book) opts.bookId = args.book;
+      if (args.limit) opts.pageLimit = args.limit;
+      if (args['start-page']) opts.startPage = args['start-page'];
+      if (args.output) opts.output = args.output;
       await runStage(args.stage, args.province, opts);
       break;
     }

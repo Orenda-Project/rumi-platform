@@ -85,3 +85,4 @@ supabase/.temp/
 dashboard/supabase/.temp/
 .env.provisioner
 books/**/*.pdf
+pipeline/runs/

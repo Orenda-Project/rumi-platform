@@ -80,17 +80,16 @@ const RESPONSE_SCHEMA = {
   required: ['printed_numeral_system', 'language_detected', 'script', 'text_blocks', 'illustrations', 'exercises', 'ocr_confidence_overall'],
 };
 
-/** Render a single PDF page to PNG using pdftoppm. */
+/** Render a single PDF page to PNG using pdftoppm with -singlefile (no page suffix). */
 function renderPageToPng(pdfPath, pageNum, dpi = 200) {
-  const outPrefix = path.join(process.env.TMPDIR || '/tmp', `pipeline_${path.basename(pdfPath, '.pdf')}_p${pageNum}`);
-  const result = spawnSync('pdftoppm', ['-png', '-r', String(dpi), '-f', String(pageNum), '-l', String(pageNum), pdfPath, outPrefix], { stdio: 'pipe' });
+  const outPrefix = path.join(process.env.TMPDIR || '/tmp', `pipeline_${path.basename(pdfPath, '.pdf')}_p${pageNum}_${process.pid}`);
+  const result = spawnSync('pdftoppm', ['-png', '-r', String(dpi), '-f', String(pageNum), '-l', String(pageNum), '-singlefile', pdfPath, outPrefix], { stdio: 'pipe' });
   if (result.status !== 0) {
     throw new PipelineError(`pdftoppm failed for ${pdfPath}:p${pageNum} — ${result.stderr?.toString()}`);
   }
-  const padded = String(pageNum).padStart(pdfPath.includes('100p') ? 3 : 2, '0');
-  const candidates = [`${outPrefix}-${padded}.png`, `${outPrefix}-${pageNum}.png`];
-  for (const c of candidates) if (fs.existsSync(c)) return c;
-  throw new PipelineError(`pdftoppm produced no expected output: ${candidates.join(', ')}`);
+  const outPath = `${outPrefix}.png`;
+  if (!fs.existsSync(outPath)) throw new PipelineError(`pdftoppm produced no output at ${outPath}`);
+  return outPath;
 }
 
 async function ocrPageWithGeminiFlash(imgPath) {
@@ -174,6 +173,8 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
   if (!books.length) return { status: STATUS.COMPLETE, detail: { reason: 'no books' } };
 
   const writeRow = opts.writeRow || ((row) => console.log(JSON.stringify({ stage: stageName, ...row })));
+  const pageLimit = opts.pageLimit ? parseInt(opts.pageLimit, 10) : null;   // cap pages per book (testing)
+  const startPage = opts.startPage ? parseInt(opts.startPage, 10) : 1;
   const results = [];
 
   for (const book of books) {
@@ -186,8 +187,9 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
     const pages = pageCountOut.stdout.toString().match(/Pages:\s+(\d+)/)?.[1];
     if (!pages) { results.push({ book: book.id, status: 'pdfinfo_failed' }); continue; }
     const total = parseInt(pages, 10);
-    console.log(`[${stageName}] ${book.id}: ${total} pages`);
-    for (let p = 1; p <= total; p++) {
+    const lastPage = pageLimit ? Math.min(startPage + pageLimit - 1, total) : total;
+    console.log(`[${stageName}] ${book.id}: processing pages ${startPage}-${lastPage} of ${total}`);
+    for (let p = startPage; p <= lastPage; p++) {
       try {
         const out = await ocrSinglePage(pdfPath, p, provinceConfig);
         await writeRow({
@@ -215,7 +217,7 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
         });
       }
     }
-    results.push({ book: book.id, status: 'complete', pages: total });
+    results.push({ book: book.id, status: 'complete', pages_processed: lastPage - startPage + 1, total_pages: total });
   }
 
   return { status: STATUS.COMPLETE, detail: { results } };
