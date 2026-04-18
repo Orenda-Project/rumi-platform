@@ -17,44 +17,78 @@ const { readPagesForBook, readRowsForStage } = require('../lib/page_store');
 
 const stageName = '05_chunking';
 
-// Exercise-type → skill_type mapping (taxonomy from 07_TAXONOMY_EVOLVED.md §4)
-const EXERCISE_TO_SKILL = {
-  // Urdu
-  jawab_dijiye: 'tafheem',
-  alfaaz_ki_jama: 'qawaid',
-  fill_in_blank_with_preposition: 'qawaid',
-  khushkhat_aur_imla: 'takhleeqi_likhai',
-  jumla_saazi: 'jumla_saazi',
-  buland_khwani: 'buland_khwani',
-  imla: 'takhleeqi_likhai',
-  // Maths
-  count_and_write: 'concrete',
-  read_trace_and_write: 'pictorial_abstract',
-  colour: 'pictorial_abstract',
-  word_problem: 'word_problem',
-  mental_math_fluency: 'retrieval',
-  // English
-  alphabet_train: 'pre_reading',
-  phonics_blend: 'phonics',
-  speech_bubble_dialogue: 'oral_communication',
-  rhyme_detection: 'phonics',
-  spelling_dictation: 'writing',
-  paragraph_composition: 'writing',
-  creative_writing_prompt: 'writing',
-  vocab_matching: 'vocabulary_grammar',
-  practice_following_dialogues: 'oral_communication',
+// Exercise-type → skill_type mapping (taxonomy from 07_TAXONOMY_EVOLVED.md §4).
+// Subject-aware: the same VLM exercise label means different things in
+// different subjects (e.g. "fill_in_blank" is grammar in Urdu, retrieval in
+// Maths, vocab in English).
+const PER_SUBJECT_MAP = {
+  urdu: {
+    jawab_dijiye: 'tafheem',
+    alfaaz_ki_jama: 'qawaid',
+    fill_in_blank_with_preposition: 'qawaid',
+    fill_in_blank: 'qawaid',
+    khushkhat_aur_imla: 'takhleeqi_likhai',
+    imla: 'takhleeqi_likhai',
+    spelling_dictation: 'takhleeqi_likhai',
+    jumla_saazi: 'jumla_saazi',
+    sentence_making: 'jumla_saazi',
+    buland_khwani: 'buland_khwani',
+    reading_aloud: 'buland_khwani',
+    paragraph_composition: 'takhleeqi_likhai',
+    creative_writing_prompt: 'takhleeqi_likhai',
+    vocab_matching: 'alfaaz_maani',
+    word_meaning: 'alfaaz_maani',
+  },
+  maths: {
+    count_and_write: 'concrete',
+    read_trace_and_write: 'pictorial_abstract',
+    colour: 'pictorial_abstract',
+    colouring: 'pictorial_abstract',
+    trace_and_write: 'pictorial_abstract',
+    word_problem: 'word_problem',
+    mental_math_fluency: 'retrieval',
+    mental_math: 'retrieval',
+    number_facts: 'retrieval',
+    fill_in_blank: 'retrieval',                     // Maths fill-in = number sense
+    fill_in_blank_with_preposition: 'retrieval',    // VLM misuses this label on Maths
+    vocab_matching: 'pictorial_abstract',           // matching on Maths = visual matching
+    match_numbers: 'pictorial_abstract',
+    circle_the_correct: 'pictorial_abstract',
+  },
+  english: {
+    alphabet_train: 'pre_reading',
+    letter_recognition: 'pre_reading',
+    phonics_blend: 'phonics',
+    sound_blending: 'phonics',
+    rhyme_detection: 'phonics',
+    speech_bubble_dialogue: 'oral_communication',
+    practice_following_dialogues: 'oral_communication',
+    dialogue_practice: 'oral_communication',
+    spelling_dictation: 'writing',
+    paragraph_composition: 'writing',
+    creative_writing_prompt: 'writing',
+    vocab_matching: 'vocabulary_grammar',
+    fill_in_blank: 'vocabulary_grammar',
+    fill_in_blank_with_preposition: 'vocabulary_grammar',
+    reading_comprehension_qa: 'reading_comprehension',
+    comprehension_questions: 'reading_comprehension',
+  },
 };
 
-function mapExerciseToSkill(exerciseType) { return EXERCISE_TO_SKILL[exerciseType] || null; }
+function mapExerciseToSkill(exerciseType, subject) {
+  const subjectMap = PER_SUBJECT_MAP[subject] || {};
+  return subjectMap[exerciseType] || null;
+}
 
 /**
  * Aggregate exercise types seen across a page range into skill_type votes.
+ * Subject-aware: `fill_in_blank` means different things in Urdu vs Maths.
  */
-function skillVotesFromPages(pages) {
+function skillVotesFromPages(pages, subject) {
   const votes = {};
   for (const p of pages) {
     for (const e of (p.exercises || [])) {
-      const skill = mapExerciseToSkill(e.type);
+      const skill = mapExerciseToSkill(e.type, subject);
       if (skill) votes[skill] = (votes[skill] || 0) + 1;
     }
   }
@@ -65,7 +99,7 @@ function skillVotesFromPages(pages) {
  * Heuristic chunking within a chapter: split pages into segments where the
  * dominant skill_type flips, OR every ~4 pages (grade 1-3) / ~6 pages (grade 4-5).
  */
-function heuristicSplit(pagesForChapter, grade) {
+function heuristicSplit(pagesForChapter, grade, subject) {
   if (pagesForChapter.length === 0) return [];
   const targetPagesPerSegment = grade <= 3 ? 4 : 6;
   const segments = [];
@@ -74,7 +108,7 @@ function heuristicSplit(pagesForChapter, grade) {
 
   function flushBuf() {
     if (buf.length === 0) return;
-    const votes = skillVotesFromPages(buf);
+    const votes = skillVotesFromPages(buf, subject);
     const topSkill = Object.entries(votes).sort((a, b) => b[1] - a[1])[0]?.[0] || currentSkill || 'revision';
     segments.push({
       page_start: buf[0].textbook_page_number || buf[0].page_number,
@@ -88,7 +122,7 @@ function heuristicSplit(pagesForChapter, grade) {
   }
 
   for (const p of pagesForChapter) {
-    const vs = skillVotesFromPages([p]);
+    const vs = skillVotesFromPages([p], subject);
     const topHere = Object.entries(vs).sort((a, b) => b[1] - a[1])[0]?.[0];
     if (currentSkill && topHere && topHere !== currentSkill) {
       flushBuf();
@@ -144,17 +178,31 @@ async function chunkBook(book, provinceConfig, tocRows) {
   const segments = [];
   if (chapters.length === 0) {
     // Fallback: chunk the whole book by target page count, no chapter structure
-    const allSegments = heuristicSplit(pages, book.grade);
+    const allSegments = heuristicSplit(pages, book.grade, book.subject);
     allSegments.forEach((s, i) => segments.push({ ...s, chapter_number: null, segment_index: i + 1 }));
   } else {
-    for (const ch of chapters) {
-      const chapterPages = pages.filter(p => {
-        const pn = p.textbook_page_number ? parseInt(p.textbook_page_number, 10) : p.page_number;
-        return !Number.isNaN(pn) && pn >= ch.page_start && pn <= ch.page_end;
-      });
-      const chSegs = heuristicSplit(chapterPages, book.grade);
+    // Map each PDF page to exactly ONE chapter using ToC ordering on PDF index,
+    // not printed page number (the printed-number heuristic is noisy).
+    // Order chapters by page_start ascending; partition pages by chapter boundary.
+    const orderedChapters = [...chapters].sort((a, b) => a.page_start - b.page_start);
+    // Estimate PDF-index range per chapter by proportional mapping: assume
+    // front matter uses first 1..5 PDF pages; remaining PDF pages distributed
+    // linearly across chapters weighted by (page_end - page_start + 1).
+    // Simpler fallback: treat printed-page range as PDF-page range directly +
+    // a learned offset (first-content-page PDF index minus chapter-1 page_start).
+    const firstContentPdfPage = pages.find(p => {
+      const hasTitle = (p.text_blocks||[]).some(b => b.role === 'lesson_title' || b.role === 'header');
+      return hasTitle;
+    })?.page_number || 1;
+    const offset = firstContentPdfPage - orderedChapters[0].page_start;
+
+    for (const ch of orderedChapters) {
+      const chPdfStart = ch.page_start + offset;
+      const chPdfEnd = ch.page_end + offset;
+      const chapterPages = pages.filter(p => p.page_number >= chPdfStart && p.page_number <= chPdfEnd);
+      const chSegs = heuristicSplit(chapterPages, book.grade, book.subject);
       const cpa = enforceCpaRule(chSegs, book.subject);
-      cpa.forEach((s, i) => segments.push({ ...s, chapter_number: ch.chapter_number, chapter_title: ch.title, segment_index: segments.length + 1 }));
+      cpa.forEach((s) => segments.push({ ...s, chapter_number: ch.chapter_number, chapter_title: ch.title, segment_index: segments.length + 1 }));
     }
   }
 

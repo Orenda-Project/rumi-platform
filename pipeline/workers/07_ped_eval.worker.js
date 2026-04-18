@@ -12,10 +12,10 @@
  * Replacement in that case: GPT-5 Mini via OpenRouter.
  */
 
-const Anthropic = require('@anthropic-ai/sdk');
 const { STATUS, PipelineError } = require('./_base.worker');
 const { readRowsForStage } = require('../lib/page_store');
 const { callGeminiViaOpenRouter } = require('../models/providers/gemini_client');
+const { callClaude } = require('../models/providers/anthropic_client');
 
 const stageName = '07_ped_eval';
 
@@ -118,22 +118,16 @@ Self-reported confidence: ${ec.confidence}`;
 }
 
 async function runJudgeHaiku(segText) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const resp = await client.messages.create({
+  const resp = await callClaude({
     model: 'claude-haiku-4-5',
-    max_tokens: 2048,
     system: JUDGE_PROMPT,
-    tools: [{
-      name: 'emit_scores',
-      description: 'Emit scores for this segment.',
-      input_schema: JUDGE_SCHEMA.schema,
-    }],
-    tool_choice: { type: 'tool', name: 'emit_scores' },
-    messages: [{ role: 'user', content: segText }],
+    userText: segText,
+    tools: [{ name: 'emit_scores', description: 'Emit scores for this segment.', input_schema: JUDGE_SCHEMA.schema }],
+    toolChoice: { type: 'tool', name: 'emit_scores' },
+    maxTokens: 2048,
   });
-  const toolUse = resp.content.find(b => b.type === 'tool_use');
-  if (!toolUse) throw new PipelineError('Haiku judge: no tool_use');
-  return { ...toolUse.input, judge: 'claude-haiku-4-5' };
+  if (!resp.toolInput) throw new PipelineError('Haiku judge: no tool call');
+  return { ...resp.toolInput, judge: resp.model };
 }
 
 async function runJudgeGeminiFlash(segText) {
@@ -147,22 +141,16 @@ async function runJudgeGeminiFlash(segText) {
 }
 
 async function runJudgeSonnet(segText) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const resp = await client.messages.create({
+  const resp = await callClaude({
     model: 'claude-sonnet-4-5',
-    max_tokens: 2048,
     system: JUDGE_PROMPT,
-    tools: [{
-      name: 'emit_scores',
-      description: 'Emit scores for this segment.',
-      input_schema: JUDGE_SCHEMA.schema,
-    }],
-    tool_choice: { type: 'tool', name: 'emit_scores' },
-    messages: [{ role: 'user', content: segText }],
+    userText: segText,
+    tools: [{ name: 'emit_scores', description: 'Emit scores for this segment.', input_schema: JUDGE_SCHEMA.schema }],
+    toolChoice: { type: 'tool', name: 'emit_scores' },
+    maxTokens: 2048,
   });
-  const toolUse = resp.content.find(b => b.type === 'tool_use');
-  if (!toolUse) throw new PipelineError('Sonnet judge: no tool_use');
-  return { ...toolUse.input, judge: 'claude-sonnet-4-5' };
+  if (!resp.toolInput) throw new PipelineError('Sonnet judge: no tool call');
+  return { ...resp.toolInput, judge: resp.model };
 }
 
 function pickJudges(enrichmentModel) {
