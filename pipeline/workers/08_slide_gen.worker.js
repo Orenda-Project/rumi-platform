@@ -72,29 +72,33 @@ Teacher dialogue bubble in Urdu Nastaliq. No placeholder text.`;
 }
 
 function iDoSlide(ec, seg, ctx) {
+  const asArr = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? v.split(/\n+/).filter(Boolean) : []);
+  const steps = asArr(ec.i_do_steps);
   return `${baseStyleNotes}
 
 Header: "میں کروں گی — Worked Example"
 Cartoon of female Pakistani teacher with dupatta, pointing to a chalkboard.
 Board content: "${ec.board_work}"
-Steps (numbered 1-${ec.i_do_steps.length}):
-${ec.i_do_steps.map((s, i) => `Step ${i + 1}: ${s}`).join('\n')}
+Steps (numbered 1-${steps.length}):
+${steps.map((s, i) => `Step ${i + 1}: ${s}`).join('\n')}
 Worked example: "${ec.worked_example}"
 `;
 }
 
 function weDoSlide(ec, seg, ctx) {
+  const asArr = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? v.split(/\n+/).filter(Boolean) : []);
+  const cfus = asArr(ec.cfu_checks);
   return `${baseStyleNotes}
 
 Header: "ہم مل کر کریں گے — With Your Partner"
 Two Pakistani children side-by-side (boy + girl, or two of each), speech bubbles facing each other.
 Partner A speech bubble & Partner B speech bubble derived from: "${ec.we_do_partner_activity}"
-Tip banner: "${ec.cfu_checks[0] || 'Check understanding'}"
+Tip banner: "${cfus[0] || 'Check understanding'}"
 `;
 }
 
 function youDoSlide(ec, seg, ctx) {
-  const qas = (ec.model_answers || []).slice(0, 4);
+  const qas = (Array.isArray(ec.model_answers) ? ec.model_answers : []).slice(0, 4);
   return `${baseStyleNotes}
 
 Header: "اب آپ کریں — Independent Practice"
@@ -107,14 +111,17 @@ Differentiation notes (small print): below-level: ${ec.differentiation?.below_le
 }
 
 function closeSlide(ec, seg, ctx) {
+  const asArr = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? v.split(/\n+/).filter(Boolean) : []);
+  const cfus = asArr(ec.cfu_checks);
+  const keyFacts = asArr(ec.key_facts);
   return `${baseStyleNotes}
 
 Header: "اختتام — Closing"
 Recap: "${ec.closing}"
 CFU checks list:
-${(ec.cfu_checks || []).map(c => `• ${c}`).join('\n')}
+${cfus.map(c => `• ${c}`).join('\n')}
 Key facts (amber callouts):
-${(ec.key_facts || []).map(k => `⭐ ${k}`).join('\n')}
+${keyFacts.map(k => `⭐ ${k}`).join('\n')}
 Coaching reflection for teacher: "${ec.coaching_reflection_prompt}"
 Next topic teaser: "${ec.next_topic_teaser}"
 ${ec.homework ? 'Homework: ' + ec.homework : ''}
@@ -161,11 +168,22 @@ function downloadImage(url, filePath) {
   });
 }
 
-async function generateSlideWithNBPro(prompt) {
-  const create = await httpPost('https://api.kie.ai/api/v1/jobs/createTask', {
-    model: 'nano-banana-pro',
-    input: { prompt, aspect_ratio: '3:4', resolution: '2K', output_format: 'png' },
-  });
+async function generateSlideWithNBPro(prompt, attempt = 0) {
+  let create;
+  try {
+    create = await httpPost('https://api.kie.ai/api/v1/jobs/createTask', {
+      model: 'nano-banana-pro',
+      input: { prompt, aspect_ratio: '3:4', resolution: '2K', output_format: 'png' },
+    });
+  } catch (err) {
+    // Retry on transient network errors up to 3 times with backoff
+    if (attempt < 3 && /ENOTFOUND|ECONNRESET|ETIMEDOUT|ENETUNREACH|socket hang up/.test(err.message)) {
+      console.warn(`  [nbpro] transient error "${err.message}", retry ${attempt + 1}/3 in ${(attempt + 1) * 10}s`);
+      await new Promise(r => setTimeout(r, (attempt + 1) * 10000));
+      return generateSlideWithNBPro(prompt, attempt + 1);
+    }
+    throw err;
+  }
   const taskId = create.data?.data?.taskId || create.data?.taskId;
   if (!taskId) throw new PipelineError(`NBPro no taskId: ${JSON.stringify(create.data).slice(0, 300)}`);
   const deadline = Date.now() + 180_000;
@@ -198,6 +216,7 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
   const enrichRows = await readRowsForStage('06_enrichment');
   const segmentRows = await readRowsForStage('05_chunking');
   const results = [];
+  const resume = opts.resume === true || opts.resume === 'true' || true;  // slide gen always resumes (idempotent via skipIfExists)
 
   for (const book of books) {
     const bookEnriched = enrichRows.filter(r => r.textbook_id === book.id && r.enriched_content);
