@@ -241,14 +241,14 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
       fs.mkdirSync(outDir, { recursive: true });
 
       for (const tmplName of templates) {
-        const builder = TEMPLATES[tmplName];
-        const prompt = builder(row.enriched_content, seg, ctx);
         const slideOutPath = path.join(outDir, `${tmplName}.png`);
         if (fs.existsSync(slideOutPath) && fs.statSync(slideOutPath).size > 10000) {
           console.log(`  ⏭  ${book.id}/seg${row.segment_index}/${tmplName} exists`);
           continue;
         }
         try {
+          const builder = TEMPLATES[tmplName];
+          const prompt = builder(row.enriched_content, seg, ctx);
           const url = await generateSlideWithNBPro(prompt);
           await downloadImage(url, slideOutPath);
           slideCount++;
