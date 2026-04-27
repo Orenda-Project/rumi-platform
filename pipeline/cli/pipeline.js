@@ -29,6 +29,8 @@ const WORKERS = {
   '10_voice_script':require('../workers/10_voice_script.worker'),
   '11_voice_tts':   require('../workers/11_voice_tts.worker'),
   '12_publish':     require('../workers/12_publish.worker'),
+  '06b_question_integrity': require('../workers/06b_question_integrity.worker'),
+  '06c_page_fidelity': require('../workers/06c_page_fidelity.worker'),
 };
 
 function parseArgs(argv) {
@@ -112,6 +114,8 @@ async function main() {
       if (args.output) opts.output = args.output;
       if (args.resume !== undefined) opts.resume = true;
       if (args['segment-limit']) opts.segmentLimit = args['segment-limit'];
+      if (args['segment-index']) opts.segmentIndex = args['segment-index'];
+      if (args['schema-version']) opts.schemaVersion = args['schema-version'];
       await runStage(args.stage, args.province, opts);
       break;
     }

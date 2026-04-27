@@ -1,24 +1,21 @@
 /**
  * 08_slide_gen.worker.js
  *
- * Stage 08: Generate 6-10 slides per enriched lp_segment via Kie.AI Nano Banana Pro.
+ * Stage 08: Generate 6 slides per enriched lp_segment via Kie.AI Nano Banana Pro,
+ * using Rawalpindi v7 prompt templates VERBATIM (ported from
+ * generate-lps-v3.backup.js). Sindh MVP adds an Urdu-primary language overlay
+ * for non-Urdu subjects per Q4 decision.
  *
- * Decision locked 2026-04-18 (Q2 resolved): NBPro only, no hybrid routing.
- * Cheap alternatives (Gemini 2.5 Flash Image, Seedream 4, FLUX.2 Pro) all
- * hallucinate Urdu Nastaliq. Stability beats marginal savings.
+ * 6 slide templates (Rawalpindi v7):
+ *   1. navigation         — Day X of N + journey + today + coming up + TO PREPARE
+ *   2. hook_boardwork     — warm-up + rotating-type hook + today's goal + key words + board
+ *   3. how_it_works       — IKEA 3-step procedure + teacher says + key fact + worked ex + CFU
+ *   4. guided_practice    — teacher model + partner A/B + circulate + CFU
+ *   5. independent_practice — problems + word problem + weak-learner/challenge differentiation
+ *   6. before_you_go      — key facts + exit ticket (4 choices) + homework + tomorrow + coaching CTA
  *
- * Templates — 6 core slides + up to 4 optional:
- *   1. navigation — Day X of N, journey so far, today, coming up, to prepare
- *   2. hook       — warm-up + hook story with cultural anchor
- *   3. i_do       — board work + worked example
- *   4. we_do      — partner activity (speech bubbles)
- *   5. you_do     — independent practice + model answers
- *   6. close      — CFU + coaching reflection + next topic teaser
- *  (7. extension  — above-level differentiation)
- *  (8. homework   — if homework is set)
- *
- * Output: PNG per slide, uploaded... TODO: for Day 2 we save locally to
- * pipeline/runs/slides/<book>/<segment>/slide<N>.png. R2 upload comes with Stage 12.
+ * Decision locked 2026-04-18 (Q2): NBPro only. Cheap alternatives fail Urdu.
+ * NBPro pricing verified $0.09/2K (not $1.50 as v1 research claimed).
  */
 
 const fs = require('fs');
@@ -27,119 +24,14 @@ const https = require('https');
 
 const { STATUS, PipelineError } = require('./_base.worker');
 const { readRowsForStage } = require('../lib/page_store');
+const { V7_TEMPLATES } = require('../prompts/rawalpindi_v7/slide_prompts');
 
 const stageName = '08_slide_gen';
 const SLIDES_OUT_ROOT = path.resolve(__dirname, '..', 'runs', 'slides');
 
-// ── Slide template registry ─────────────────────────────────────────────────
-// Each template is (enrichedContent, segment, context) → (prompt string).
-
-const baseStyleNotes = `
-Portrait educational poster, 3:4 aspect. Clean white background, rounded-corner sections, flat modern illustration style.
-Urdu Nastaliq text must use correct ligatures (Noto Nastaliq Urdu look). Never render gibberish.
-Pakistani cultural context: shalwar-kameez / dupatta characters; chalkboard/textbook in scenes.
-NEVER include: percentage markers, prompt echoes, "Pakistani Grade N giden", placeholder text.`;
-
-function navSlide(ec, seg, ctx) {
-  const dayOf = `Day ${ctx.dayNum} of ${ctx.totalDays}`;
-  const dots = Array.from({ length: ctx.totalDays }, (_, i) => {
-    if (i + 1 < ctx.dayNum) return 'green_check';
-    if (i + 1 === ctx.dayNum) return 'gold_star';
-    return 'empty';
-  });
-  return `${baseStyleNotes}
-
-TOP HEADER (dark navy #1a2332, 18% height): Left large yellow-orange "${dayOf}". Right small white: "Grade ${ctx.grade} ${ctx.subjectLabel} — ${ec.topic_english}". Far-right teal pill "${ec.duration_minutes} min".
-Below header: ${ctx.totalDays} progress dots — ${dots.join(', ')}. Gold star labeled "${ctx.dayNum}★".
-
-BODY (stacked sections, 6px gap):
-1. Light-green "JOURNEY SO FAR": "${ctx.journeySoFar || 'Day 1 starts today'}"
-2. Yellow-orange (#f59e0b) "TODAY: ${ec.topic_english}" with pill "${seg.skill_type}${seg.cpa_phase ? ' · ' + seg.cpa_phase : ''}"
-3. Light-grey "COMING UP": "${ctx.comingUp || 'Segment finale'}"
-4. Teal "BY END OF TODAY: ${ec.topic_urdu}"
-5. Cream "TO PREPARE:" with checkboxes: ${(ec.materials_needed || []).slice(0, 4).map(m => `☐ ${m}`).join(' · ')}
-`;
-}
-
-function hookSlide(ec, seg, ctx) {
-  return `${baseStyleNotes}
-
-Title: "آج کا ہکایه" (Today's story) / "Today's Hook"
-Illustrated scene with cultural anchor (a Pakistani classroom / market / village depending on story).
-Body: "${ec.hook_story}"
-Warm-up prompt: "${ec.warm_up}"
-Teacher dialogue bubble in Urdu Nastaliq. No placeholder text.`;
-}
-
-function iDoSlide(ec, seg, ctx) {
-  const asArr = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? v.split(/\n+/).filter(Boolean) : []);
-  const steps = asArr(ec.i_do_steps);
-  return `${baseStyleNotes}
-
-Header: "میں کروں گی — Worked Example"
-Cartoon of female Pakistani teacher with dupatta, pointing to a chalkboard.
-Board content: "${ec.board_work}"
-Steps (numbered 1-${steps.length}):
-${steps.map((s, i) => `Step ${i + 1}: ${s}`).join('\n')}
-Worked example: "${ec.worked_example}"
-`;
-}
-
-function weDoSlide(ec, seg, ctx) {
-  const asArr = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? v.split(/\n+/).filter(Boolean) : []);
-  const cfus = asArr(ec.cfu_checks);
-  return `${baseStyleNotes}
-
-Header: "ہم مل کر کریں گے — With Your Partner"
-Two Pakistani children side-by-side (boy + girl, or two of each), speech bubbles facing each other.
-Partner A speech bubble & Partner B speech bubble derived from: "${ec.we_do_partner_activity}"
-Tip banner: "${cfus[0] || 'Check understanding'}"
-`;
-}
-
-function youDoSlide(ec, seg, ctx) {
-  const qas = (Array.isArray(ec.model_answers) ? ec.model_answers : []).slice(0, 4);
-  return `${baseStyleNotes}
-
-Header: "اب آپ کریں — Independent Practice"
-Instructions: "${ec.you_do_independent_practice}"
-Exercise references: ${(ec.textbook_exercise_refs || []).join(', ') || '—'}
-Model answers table:
-${qas.map((qa, i) => `  ${i + 1}. Q: ${qa.question} → A: ${qa.answer}`).join('\n')}
-Differentiation notes (small print): below-level: ${ec.differentiation?.below_level || '—'} | above-level: ${ec.differentiation?.above_level || '—'}
-`;
-}
-
-function closeSlide(ec, seg, ctx) {
-  const asArr = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? v.split(/\n+/).filter(Boolean) : []);
-  const cfus = asArr(ec.cfu_checks);
-  const keyFacts = asArr(ec.key_facts);
-  return `${baseStyleNotes}
-
-Header: "اختتام — Closing"
-Recap: "${ec.closing}"
-CFU checks list:
-${cfus.map(c => `• ${c}`).join('\n')}
-Key facts (amber callouts):
-${keyFacts.map(k => `⭐ ${k}`).join('\n')}
-Coaching reflection for teacher: "${ec.coaching_reflection_prompt}"
-Next topic teaser: "${ec.next_topic_teaser}"
-${ec.homework ? 'Homework: ' + ec.homework : ''}
-`;
-}
-
-const TEMPLATES = {
-  navigation: navSlide,
-  hook: hookSlide,
-  i_do: iDoSlide,
-  we_do: weDoSlide,
-  you_do: youDoSlide,
-  close: closeSlide,
-};
-
 function selectTemplatesForSegment(segment) {
-  // Core 6 always. Could add extension/homework per segment later.
-  return ['navigation', 'hook', 'i_do', 'we_do', 'you_do', 'close'];
+  // Core 6 — same order as Rawalpindi v7.
+  return ['navigation', 'hook_boardwork', 'how_it_works', 'guided_practice', 'independent_practice', 'before_you_go'];
 }
 
 // ── Kie.AI client ───────────────────────────────────────────────────────────
@@ -176,7 +68,6 @@ async function generateSlideWithNBPro(prompt, attempt = 0) {
       input: { prompt, aspect_ratio: '3:4', resolution: '2K', output_format: 'png' },
     });
   } catch (err) {
-    // Retry on transient network errors up to 3 times with backoff
     if (attempt < 3 && /ENOTFOUND|ECONNRESET|ETIMEDOUT|ENETUNREACH|socket hang up/.test(err.message)) {
       console.warn(`  [nbpro] transient error "${err.message}", retry ${attempt + 1}/3 in ${(attempt + 1) * 10}s`);
       await new Promise(r => setTimeout(r, (attempt + 1) * 10000));
@@ -204,6 +95,26 @@ async function generateSlideWithNBPro(prompt, attempt = 0) {
   throw new PipelineError('NBPro timeout');
 }
 
+/**
+ * Compute chapter navigation context exactly like Rawalpindi v3.
+ * Input: current segment + all segments in the same chapter.
+ */
+function computeChapterNavigation(segment, chapterSegments) {
+  const sorted = [...chapterSegments].sort((a, b) => a.segment_index - b.segment_index);
+  const totalDays = sorted.length;
+  const currentIdx = sorted.findIndex(s => s.segment_index === segment.segment_index);
+  const dayNum = currentIdx + 1;
+  const journeySoFar = sorted.slice(0, currentIdx).map((s, i) => {
+    const pages = s.page_start === s.page_end ? `p.${s.page_start}` : `pp.${s.page_start}-${s.page_end}`;
+    return { dayNum: i + 1, topic: s.topic || s.chapter_title, pages, skillType: s.skill_type };
+  });
+  const comingUp = sorted.slice(currentIdx + 1, currentIdx + 4).map((s, i) => {
+    const pages = s.page_start === s.page_end ? `p.${s.page_start}` : `pp.${s.page_start}-${s.page_end}`;
+    return { dayNum: currentIdx + 2 + i, topic: s.topic || s.chapter_title, pages, skillType: s.skill_type };
+  });
+  return { dayNum, totalDays, journeySoFar, comingUp, allSegments: sorted };
+}
+
 async function handleJob(jobId, provinceConfig, opts = {}) {
   const books = opts.bookId
     ? provinceConfig.books.filter(b => b.id === opts.bookId)
@@ -212,11 +123,11 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
 
   const writeRow = opts.writeRow || ((row) => console.log(JSON.stringify({ stage: stageName, ...row })));
   const segmentLimit = opts.segmentLimit ? parseInt(opts.segmentLimit, 10) : null;
+  const onlySegmentIdx = opts.segmentIndex ? parseInt(opts.segmentIndex, 10) : null;
 
   const enrichRows = await readRowsForStage('06_enrichment');
   const segmentRows = await readRowsForStage('05_chunking');
   const results = [];
-  const resume = opts.resume === true || opts.resume === 'true' || true;  // slide gen always resumes (idempotent via skipIfExists)
 
   for (const book of books) {
     const bookEnriched = enrichRows.filter(r => r.textbook_id === book.id && r.enriched_content);
@@ -224,19 +135,53 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
     const limit = segmentLimit || bookEnriched.length;
     let slideCount = 0;
 
-    for (const row of bookEnriched.slice(0, limit)) {
-      const seg = segmentRows.find(s => s.textbook_id === book.id && s.segment_index === row.segment_index);
-      if (!seg) continue;
+    // Dedupe enriched rows (keep latest per segment_index)
+    const latestBySeg = new Map();
+    for (const r of bookEnriched) {
+      const prev = latestBySeg.get(r.segment_index);
+      if (!prev || new Date(r.timestamp) > new Date(prev.timestamp)) latestBySeg.set(r.segment_index, r);
+    }
+    let filtered = Array.from(latestBySeg.values()).sort((a, b) => a.segment_index - b.segment_index);
+    if (onlySegmentIdx) filtered = filtered.filter(r => r.segment_index === onlySegmentIdx);
 
-      const templates = selectTemplatesForSegment(seg);
-      const ctx = {
-        dayNum: row.segment_index,
-        totalDays: bookEnriched.length,
+    // Group by chapter for correct "Day X of N" counting
+    const byChapter = new Map();
+    for (const s of segmentRows.filter(r => r.textbook_id === book.id && r.segment_index != null)) {
+      const ch = s.chapter_number ?? 0;
+      if (!byChapter.has(ch)) byChapter.set(ch, []);
+      byChapter.get(ch).push(s);
+    }
+
+    // Load SLO mapping for this book (optional per segment)
+    const sloRows = await readRowsForStage('04_slo_mapping');
+    const bookSloMapping = sloRows.find(r => r.textbook_id === book.id);
+
+    for (const row of filtered.slice(0, limit)) {
+      const rawSeg = segmentRows.find(s => s.textbook_id === book.id && s.segment_index === row.segment_index);
+      if (!rawSeg) { console.warn(`  no segment row for seg${row.segment_index}`); continue; }
+
+      const chapterSlos = (bookSloMapping?.chapter_slos || []).find(c => c.chapter_number === rawSeg.chapter_number);
+      const sloDescriptions = (chapterSlos?.slo_codes || []).map(s => s.rationale).filter(Boolean);
+
+      // Enrich segment with book-level + enrichment-level fields the v7 prompts expect
+      const seg = {
+        ...rawSeg,
+        subject: book.subject,
         grade: book.grade,
-        subjectLabel: book.subject === 'maths' ? 'Maths' : book.subject === 'english' ? 'English' : 'Urdu',
-        journeySoFar: null,
-        comingUp: null,
+        topic: row.enriched_content?.topic || rawSeg.topic || `${rawSeg.chapter_title} — Day ${row.segment_index}`,
+        slo_descriptions: sloDescriptions,
+        blooms_target: row.enriched_content?.blooms_target || null,
       };
+
+      const chapterSegments = (byChapter.get(rawSeg.chapter_number ?? 0) || [rawSeg]).map(s => ({
+        ...s,
+        subject: book.subject,
+        grade: book.grade,
+        topic: s.topic || `${s.chapter_title} — Day ${s.segment_index}`,
+      }));
+      const nav = computeChapterNavigation(seg, chapterSegments);
+      const templates = selectTemplatesForSegment(seg);
+
       const outDir = path.join(SLIDES_OUT_ROOT, book.id, `seg${String(row.segment_index).padStart(3, '0')}`);
       fs.mkdirSync(outDir, { recursive: true });
 
@@ -247,8 +192,9 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
           continue;
         }
         try {
-          const builder = TEMPLATES[tmplName];
-          const prompt = builder(row.enriched_content, seg, ctx);
+          const builder = V7_TEMPLATES[tmplName];
+          if (!builder) throw new PipelineError(`Unknown template ${tmplName}`);
+          const prompt = builder(seg, row.enriched_content, nav, provinceConfig);
           const url = await generateSlideWithNBPro(prompt);
           await downloadImage(url, slideOutPath);
           slideCount++;
@@ -261,13 +207,13 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
           });
           console.log(`  ✓ ${book.id}/seg${row.segment_index}/${tmplName}`);
         } catch (err) {
-          console.error(`  ✗ ${book.id}/seg${row.segment_index}/${tmplName}: ${err.message}`);
+          console.error(`  ✗ ${book.id}/seg${row.segment_index}/${tmplName}: ${(err.message || '').substring(0, 250)}`);
           await writeRow({
             textbook_id: book.id,
             segment_index: row.segment_index,
             slide_template: tmplName,
             status: 'nbpro_failed',
-            error: err.message,
+            error: err.message || '(unknown)',
           });
         }
       }
@@ -278,4 +224,4 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
   return { status: STATUS.COMPLETE, detail: { results } };
 }
 
-module.exports = { stageName, handleJob, TEMPLATES, selectTemplatesForSegment };
+module.exports = { stageName, handleJob, V7_TEMPLATES, selectTemplatesForSegment, computeChapterNavigation };
