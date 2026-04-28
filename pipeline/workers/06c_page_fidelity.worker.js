@@ -105,7 +105,10 @@ function cleanupPages(pages) {
 }
 
 async function auditSegmentFidelity(book, segment, enrichedContent) {
-  const pages = renderPagesToBase64(book.path, segment.page_start, Math.min(segment.page_end, segment.page_start + 5));
+  // Use pdf_pages (PDF-index, reliable) not page_start/page_end (printed, noisy heuristic)
+  const pdfStart = segment.pdf_pages?.[0] ?? segment.page_start;
+  const pdfEnd = segment.pdf_pages?.[1] ?? segment.page_end;
+  const pages = renderPagesToBase64(book.path, pdfStart, Math.min(pdfEnd, pdfStart + 5));
   if (pages.length === 0) return { issues: [], ship: false, summary: 'no pages rendered', error: 'pdftoppm failed' };
 
   // Build text+image content. Anthropic SDK style.
@@ -114,7 +117,7 @@ async function auditSegmentFidelity(book, segment, enrichedContent) {
 Segment: ${segment.segment_index} | Subject: ${book.subject} | Grade: ${book.grade}
 Chapter: ${segment.chapter_title} (Ch ${segment.chapter_number})
 Skill type: ${segment.skill_type}
-Pages: ${segment.page_start}-${segment.page_end}
+PDF pages: ${pdfStart}-${pdfEnd} (the images below are these PDF pages — printed page numbers may differ; verify printed numbers from the page images themselves, do NOT use the segment metadata's printed-page heuristic which is unreliable)
 
 ENRICHED_CONTENT JSON:
 ${JSON.stringify(enrichedContent, null, 2).substring(0, 6000)}
@@ -199,12 +202,20 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
     let segs = Array.from(latestByIdx.values()).sort((a, b) => a.segment_index - b.segment_index);
     if (onlySegmentIdx) segs = segs.filter(r => r.segment_index === onlySegmentIdx);
 
+    // Build latest-by-timestamp segMeta map so we always use the freshest chunking row
+    // (older segments_*.jsonl files in pipeline/runs/ would otherwise dominate via .find()).
+    const latestSegMeta = new Map();
+    for (const s of segmentRows.filter(x => x.textbook_id === book.id && x.segment_index != null)) {
+      const prev = latestSegMeta.get(s.segment_index);
+      if (!prev || new Date(s.timestamp) > new Date(prev.timestamp)) latestSegMeta.set(s.segment_index, s);
+    }
+
     console.log(`[${stageName}] ${book.id}: page-fidelity audit on ${segs.length} segments`);
     let critical = 0, major = 0, ship = 0, fail = 0;
     const limit = segmentLimit || segs.length;
 
     for (const r of segs.slice(0, limit)) {
-      const segMeta = segmentRows.find(s => s.textbook_id === book.id && s.segment_index === r.segment_index);
+      const segMeta = latestSegMeta.get(r.segment_index);
       if (!segMeta) { console.warn(`  no segment meta for ${r.segment_index}`); continue; }
       try {
         const audit = await auditSegmentFidelity(book, segMeta, r.enriched_content);

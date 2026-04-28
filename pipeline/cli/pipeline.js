@@ -31,6 +31,7 @@ const WORKERS = {
   '12_publish':     require('../workers/12_publish.worker'),
   '06b_question_integrity': require('../workers/06b_question_integrity.worker'),
   '06c_page_fidelity': require('../workers/06c_page_fidelity.worker'),
+  '06d_question_autofix': require('../workers/06d_question_autofix.worker'),
 };
 
 function parseArgs(argv) {

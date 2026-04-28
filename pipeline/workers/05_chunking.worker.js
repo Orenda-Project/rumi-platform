@@ -14,8 +14,138 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const { STATUS, PipelineError } = require('./_base.worker');
 const { readPagesForBook, readRowsForStage } = require('../lib/page_store');
+const { callClaude } = require('../models/providers/anthropic_client');
 
 const stageName = '05_chunking';
+
+const SEMANTIC_CHUNKER_MODEL = 'claude-sonnet-4-5';
+
+const CHUNKER_SYSTEM_PROMPT = `You are a curriculum specialist segmenting a Pakistani Grade 1-5 textbook chapter into LP-sized teaching units (one segment = one ~25-30 minute classroom period).
+
+You will be given:
+- The chapter title and PDF page range
+- Page-by-page OCR (text_blocks, exercises, illustrations) for every page in the chapter
+
+Your job: split the chapter into segments where each segment is ONE coherent pedagogical lesson a teacher would deliver in one period.
+
+HARD RULES:
+1. NEVER split mid-exercise. If an exercise spans pages N and N+1, both pages live in the same segment.
+2. NEVER split mid-passage / mid-explanation. A continued reading passage or worked example stays whole.
+3. Use OCR \`lesson_title\`, \`header\`, and topic-changing \`body_paragraph\` blocks as the primary boundary signal — when the textbook starts a new named lesson, that begins a new segment.
+4. Each segment covers ONE pedagogical topic (e.g. "Counting backward from 9", "Concept of zero", "Ascending order"). Don't merge unrelated topics.
+5. Segment size: ~25-30 min teaching period. For G1-2 expect ~1-3 pages per segment; G3-5 ~2-5 pages. Single-page segments are OK if the page is a complete lesson.
+6. Cover EVERY PDF page in the chapter range exactly once. No gaps, no overlaps. Use inclusive PDF indices (NOT printed page numbers — those are noisy heuristics, ignore them).
+7. Skill type per segment, picked from the subject's taxonomy:
+   - maths: \`concrete\` (intro with manipulatives), \`pictorial_abstract\` (visual + symbolic), \`word_problem\`, \`retrieval\` (mental math), \`revision\`
+   - english: \`pre_reading\`, \`phonics\`, \`oral_communication\`, \`vocabulary_grammar\`, \`reading_comprehension\`, \`writing\`
+   - urdu: \`tafheem\` (comprehension), \`qawaid\` (grammar), \`takhleeqi_likhai\` (creative writing), \`jumla_saazi\` (sentence-building), \`buland_khwani\` (reading aloud), \`alfaaz_maani\` (vocabulary)
+8. CPA rule (maths only): if a chapter introduces a new concept, the FIRST segment must be \`concrete\` (manipulative-driven), then \`pictorial_abstract\` follows, then \`word_problem\`/\`retrieval\` for practice.
+
+OUTPUT via the \`emit_chapter_segments\` tool. For each segment include:
+- \`topic\`: short English-named topic the segment teaches (e.g. "Counting backward from 9 to 0")
+- \`pdf_pages\`: [start, end] inclusive PDF indices
+- \`skill_type\`: one of the subject's taxonomy values above
+- \`cpa_phase\`: maths only — \`concrete\` | \`pictorial\` | \`abstract\` | null
+- \`estimated_minutes\`: integer 20-40
+- \`lesson_title_in_book\`: the actual title text from the OCR (or "(no title)" if none)
+- \`split_rationale\`: 1 short sentence explaining why this is a separate segment from the next one ("Split before PDF 20 because new lesson title 'Ascending order' begins.")
+
+Aim for the natural number of segments the chapter contains — typically 4-10 for G1-2 maths, 6-12 for higher grades. Don't pad.`;
+
+const CHUNKER_TOOL = {
+  name: 'emit_chapter_segments',
+  description: 'Emit the semantic segmentation of one chapter.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      segments: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            topic: { type: 'string' },
+            pdf_pages: { type: 'array', items: { type: 'integer' }, minItems: 2, maxItems: 2 },
+            skill_type: { type: 'string' },
+            cpa_phase: { type: 'string' },
+            estimated_minutes: { type: 'integer' },
+            lesson_title_in_book: { type: 'string' },
+            split_rationale: { type: 'string' },
+          },
+          required: ['topic', 'pdf_pages', 'skill_type', 'estimated_minutes', 'split_rationale'],
+        },
+      },
+    },
+    required: ['segments'],
+  },
+};
+
+function buildChapterOcrBlob(chapterPages) {
+  const parts = [];
+  for (const p of chapterPages.sort((a, b) => a.page_number - b.page_number)) {
+    parts.push(`=== PDF page ${p.page_number} ===`);
+    for (const b of (p.text_blocks || [])) {
+      parts.push(`  [${b.role}] ${(b.content || '').substring(0, 400)}`);
+    }
+    for (const e of (p.exercises || [])) {
+      parts.push(`  [exercise:${e.type}] ${(e.description || '').substring(0, 200)}`);
+    }
+    for (const i of (p.illustrations || [])) {
+      parts.push(`  [illustration:${i.pedagogical_role || 'figure'}] ${(i.description || '').substring(0, 200)}`);
+    }
+  }
+  return parts.join('\n');
+}
+
+async function semanticChunkChapter(book, chapter, chapterPages, bounds) {
+  const ocrBlob = buildChapterOcrBlob(chapterPages);
+  const userText = `Segment this chapter into LP-sized teaching units.
+
+CHAPTER METADATA:
+- Subject: ${book.subject}
+- Grade: ${book.grade}
+- Chapter ${chapter.chapter_number}: ${chapter.title}
+- PDF page range: ${bounds.pdfStart}–${bounds.pdfEnd} (${chapterPages.length} pages)
+
+CHAPTER OCR:
+${ocrBlob.substring(0, 80000)}
+
+Emit segments via emit_chapter_segments. Cover every PDF page in [${bounds.pdfStart}, ${bounds.pdfEnd}] exactly once.`;
+
+  const resp = await callClaude({
+    model: SEMANTIC_CHUNKER_MODEL,
+    system: CHUNKER_SYSTEM_PROMPT,
+    userText,
+    tools: [CHUNKER_TOOL],
+    toolChoice: { type: 'tool', name: 'emit_chapter_segments' },
+    maxTokens: 8192,
+    temperature: 0.1,
+  });
+  if (!resp.toolInput || !Array.isArray(resp.toolInput.segments)) {
+    const dbg = JSON.stringify(resp).substring(0, 400);
+    throw new PipelineError(`semantic chunker returned no segments for ch${chapter.chapter_number}: ${dbg}`);
+  }
+  return { segments: resp.toolInput.segments, model: resp.model, usage: resp.usage };
+}
+
+function validateChapterCoverage(segments, bounds, chapterNumber) {
+  const issues = [];
+  const covered = new Set();
+  for (const s of segments) {
+    const [a, b] = s.pdf_pages || [];
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a > b) {
+      issues.push(`ch${chapterNumber}: invalid pdf_pages ${JSON.stringify(s.pdf_pages)} for "${s.topic}"`);
+      continue;
+    }
+    for (let p = a; p <= b; p++) {
+      if (covered.has(p)) issues.push(`ch${chapterNumber}: PDF page ${p} covered by multiple segments`);
+      covered.add(p);
+    }
+  }
+  for (let p = bounds.pdfStart; p <= bounds.pdfEnd; p++) {
+    if (!covered.has(p)) issues.push(`ch${chapterNumber}: PDF page ${p} uncovered`);
+  }
+  return issues;
+}
 
 // Exercise-type → skill_type mapping (taxonomy from 07_TAXONOMY_EVOLVED.md §4).
 // Subject-aware: the same VLM exercise label means different things in
@@ -161,6 +291,77 @@ function enforceCpaRule(segments, subject) {
   return segments;
 }
 
+/**
+ * Detect chapter PDF boundaries by scanning OCR text_blocks for the chapter
+ * title. For each chapter, find the FIRST PDF page where the title appears
+ * prominently (in a lesson_title or header text_block). The chapter ends one
+ * PDF page before the NEXT chapter's first page (or at total_pages for the
+ * last chapter).
+ *
+ * Title matching: normalise to uppercase, strip punctuation, do substring
+ * match against the first 8 words of the title. Uses jaccard-ish similarity
+ * on tokens to handle minor OCR noise.
+ */
+function detectChapterBoundariesFromOcr(pages, orderedChapters) {
+  function normalise(s) {
+    return (s || '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function tokensOf(s) { return new Set(normalise(s).split(' ').filter(Boolean)); }
+  function similarity(a, b) {
+    const A = tokensOf(a), B = tokensOf(b);
+    if (A.size === 0 || B.size === 0) return 0;
+    let inter = 0;
+    for (const t of A) if (B.has(t)) inter++;
+    return inter / Math.min(A.size, B.size);  // recall-style: how many title words appear
+  }
+
+  // For each chapter, score every PDF page on title match. Pick the first page with score >= 0.6.
+  const candidateStarts = {};
+  const sortedPages = [...pages].sort((a, b) => a.page_number - b.page_number);
+  for (const ch of orderedChapters) {
+    let bestPage = null;
+    for (const p of sortedPages) {
+      const blocks = (p.text_blocks || []).filter(b => ['lesson_title', 'header'].includes(b.role));
+      const blob = blocks.map(b => b.content || '').join(' ');
+      const sim = similarity(blob, ch.title);
+      // Require ≥60% of chapter-title tokens to appear in this page's titles/headers
+      if (sim >= 0.6) {
+        bestPage = p.page_number;
+        break;
+      }
+    }
+    candidateStarts[ch.chapter_number] = bestPage;
+  }
+
+  // For chapters where OCR detection failed, fall back to the ToC printed-page
+  // estimate using the first detected chapter as anchor.
+  const detectedNumbers = orderedChapters.filter(c => candidateStarts[c.chapter_number] != null).map(c => c.chapter_number);
+  if (detectedNumbers.length > 0) {
+    const anchor = orderedChapters.find(c => c.chapter_number === detectedNumbers[0]);
+    const anchorPdfStart = candidateStarts[anchor.chapter_number];
+    const baseOffset = anchorPdfStart - anchor.page_start;
+    for (const ch of orderedChapters) {
+      if (candidateStarts[ch.chapter_number] == null) {
+        candidateStarts[ch.chapter_number] = ch.page_start + baseOffset;
+      }
+    }
+  }
+
+  // Compute end of each chapter as one PDF page before the next chapter's start.
+  const totalPages = sortedPages[sortedPages.length - 1]?.page_number || 0;
+  const result = {};
+  for (let i = 0; i < orderedChapters.length; i++) {
+    const ch = orderedChapters[i];
+    const start = candidateStarts[ch.chapter_number];
+    if (start == null) continue;
+    const next = orderedChapters[i + 1];
+    const nextStart = next ? candidateStarts[next.chapter_number] : null;
+    const end = (nextStart != null) ? nextStart - 1 : totalPages;
+    result[ch.chapter_number] = { pdfStart: start, pdfEnd: end };
+  }
+  return result;
+}
+
 async function chunkBook(book, provinceConfig, tocRows) {
   const pages = await readPagesForBook(book.id);
   if (pages.length === 0) throw new PipelineError(`No OCR pages for ${book.id}. Run Stage 02 first.`);
@@ -181,28 +382,63 @@ async function chunkBook(book, provinceConfig, tocRows) {
     const allSegments = heuristicSplit(pages, book.grade, book.subject);
     allSegments.forEach((s, i) => segments.push({ ...s, chapter_number: null, segment_index: i + 1 }));
   } else {
-    // Map each PDF page to exactly ONE chapter using ToC ordering on PDF index,
-    // not printed page number (the printed-number heuristic is noisy).
-    // Order chapters by page_start ascending; partition pages by chapter boundary.
-    const orderedChapters = [...chapters].sort((a, b) => a.page_start - b.page_start);
-    // Estimate PDF-index range per chapter by proportional mapping: assume
-    // front matter uses first 1..5 PDF pages; remaining PDF pages distributed
-    // linearly across chapters weighted by (page_end - page_start + 1).
-    // Simpler fallback: treat printed-page range as PDF-page range directly +
-    // a learned offset (first-content-page PDF index minus chapter-1 page_start).
-    const firstContentPdfPage = pages.find(p => {
-      const hasTitle = (p.text_blocks||[]).some(b => b.role === 'lesson_title' || b.role === 'header');
-      return hasTitle;
-    })?.page_number || 1;
-    const offset = firstContentPdfPage - orderedChapters[0].page_start;
+    // Detect ACTUAL chapter→PDF boundaries by scanning OCR for chapter titles
+    // in text_blocks. ToC printed-page numbers drift from PDF indices after
+    // section breaks; this content-based detection is robust.
+    const orderedChapters = [...chapters].sort((a, b) => a.chapter_number - b.chapter_number);
+    const chapterPdfBoundaries = detectChapterBoundariesFromOcr(pages, orderedChapters);
 
-    for (const ch of orderedChapters) {
-      const chPdfStart = ch.page_start + offset;
-      const chPdfEnd = ch.page_end + offset;
-      const chapterPages = pages.filter(p => p.page_number >= chPdfStart && p.page_number <= chPdfEnd);
-      const chSegs = heuristicSplit(chapterPages, book.grade, book.subject);
-      const cpa = enforceCpaRule(chSegs, book.subject);
-      cpa.forEach((s) => segments.push({ ...s, chapter_number: ch.chapter_number, chapter_title: ch.title, segment_index: segments.length + 1 }));
+    for (let i = 0; i < orderedChapters.length; i++) {
+      const ch = orderedChapters[i];
+      const bounds = chapterPdfBoundaries[ch.chapter_number];
+      if (!bounds) {
+        console.warn(`  no PDF boundary detected for ch${ch.chapter_number} — skipping`);
+        continue;
+      }
+      const chapterPages = pages.filter(p => p.page_number >= bounds.pdfStart && p.page_number <= bounds.pdfEnd);
+      console.log(`  ch${ch.chapter_number} "${ch.title}" PDF ${bounds.pdfStart}-${bounds.pdfEnd} (${chapterPages.length} pages) → semantic chunker`);
+      let chSegs;
+      try {
+        const out = await semanticChunkChapter(book, ch, chapterPages, bounds);
+        chSegs = out.segments;
+        const coverageIssues = validateChapterCoverage(chSegs, bounds, ch.chapter_number);
+        if (coverageIssues.length > 0) {
+          console.warn(`    coverage issues:\n      ${coverageIssues.join('\n      ')}`);
+        }
+        console.log(`    ✓ ${chSegs.length} semantic segments (${out.model})`);
+      } catch (err) {
+        console.warn(`    semantic chunker failed (${err.message?.substring(0, 100)}); falling back to heuristic`);
+        chSegs = heuristicSplit(chapterPages, book.grade, book.subject);
+      }
+
+      // Normalise semantic-chunker output into the row shape downstream stages expect.
+      const normalised = chSegs.map((s) => {
+        const [pdfStart, pdfEnd] = s.pdf_pages || [s.pdf_pages_start, s.pdf_pages_end];
+        const segPages = chapterPages.filter(p => p.page_number >= pdfStart && p.page_number <= pdfEnd);
+        const votes = skillVotesFromPages(segPages, book.subject);
+        return {
+          page_start: segPages[0]?.textbook_page_number || pdfStart,
+          page_end: segPages[segPages.length - 1]?.textbook_page_number || pdfEnd,
+          pdf_pages: [pdfStart, pdfEnd],
+          skill_type: s.skill_type || Object.entries(votes).sort((a, b) => b[1] - a[1])[0]?.[0] || 'revision',
+          cpa_phase: s.cpa_phase || null,
+          page_count: pdfEnd - pdfStart + 1,
+          vote_breakdown: votes,
+          topic: s.topic,
+          lesson_title_in_book: s.lesson_title_in_book,
+          split_rationale: s.split_rationale,
+          estimated_minutes: s.estimated_minutes,
+        };
+      });
+      const cpa = enforceCpaRule(normalised, book.subject);
+      cpa.forEach((s) => segments.push({
+        ...s,
+        chapter_number: ch.chapter_number,
+        chapter_title: ch.title,
+        chapter_pdf_start: bounds.pdfStart,
+        chapter_pdf_end: bounds.pdfEnd,
+        segment_index: segments.length + 1,
+      }));
     }
   }
 
@@ -237,6 +473,10 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
           page_count: seg.page_count,
           vote_breakdown: seg.vote_breakdown,
           cpa_enforced: seg.cpa_enforced || false,
+          topic: seg.topic || null,
+          lesson_title_in_book: seg.lesson_title_in_book || null,
+          split_rationale: seg.split_rationale || null,
+          estimated_minutes: seg.estimated_minutes || null,
         });
       }
       console.log(`  ✓ ${out.segments.length} segments from ${out.chapter_count} chapters (${out.total_pages} pages)`);

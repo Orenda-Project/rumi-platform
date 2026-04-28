@@ -134,6 +134,22 @@ const ENRICH_TOOL = {
 };
 
 function buildEnrichmentUserMsg(book, segment, sloCodes, pages) {
+  // Use the most confident printed page numbers from the actual OCR rows for
+  // teacher-facing references; fall back to PDF index when the textbook number
+  // is missing/noisy. Segment-level page_start/end may be garbage from the Stage 02
+  // heuristic — IGNORE for content references; use only for chapter context.
+  const validPrintedPages = pages
+    .map(p => {
+      const pn = String(p.textbook_page_number || '').trim();
+      // Reject obvious junk: too long, contains dash, contains random chars
+      if (!pn || pn.length > 4 || /[^0-9۰-۹]/.test(pn)) return null;
+      return parseInt(pn.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)), 10);
+    })
+    .filter(n => n != null && !Number.isNaN(n) && n > 0 && n < 200);
+  const printedRangeStr = validPrintedPages.length
+    ? `printed pages ${Math.min(...validPrintedPages)}–${Math.max(...validPrintedPages)}`
+    : `(printed page numbers unreliable; use PDF indices below)`;
+
   const ocrBlocks = pages.map(p => {
     const parts = [`=== PAGE ${p.textbook_page_number || p.page_number} (PDF index ${p.page_number}) ===`];
     for (const b of (p.text_blocks || [])) parts.push(`[${b.role}] ${b.content}`);
@@ -145,9 +161,7 @@ function buildEnrichmentUserMsg(book, segment, sloCodes, pages) {
     return parts.join('\n');
   }).join('\n\n');
 
-  const pageRange = segment.page_start === segment.page_end
-    ? `page ${segment.page_start}`
-    : `pages ${segment.page_start}-${segment.page_end}`;
+  const pageRange = printedRangeStr;
   const wordCountTarget = book.grade <= 2 ? 350 : 500;
 
   return `Build a Rawalpindi-v7 lesson plan for this Sindh segment.
@@ -245,10 +259,16 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
       const sloCodes = (bookSloMapping?.chapter_slos || [])
         .find(c => c.chapter_number === seg.chapter_number)
         ?.slo_codes.map(s => s.code) || [];
-      const segPages = pages.filter(p => {
-        const pn = p.textbook_page_number ? parseInt(p.textbook_page_number, 10) : p.page_number;
-        return !Number.isNaN(pn) && pn >= seg.page_start && pn <= seg.page_end;
-      });
+      // Use PDF page indices (reliable) not printed page numbers (noisy heuristic).
+      // segment.pdf_pages is [start_pdf_idx, end_pdf_idx]. Falls back to all pages if missing.
+      const pdfStart = seg.pdf_pages?.[0];
+      const pdfEnd = seg.pdf_pages?.[1];
+      const segPages = (pdfStart != null && pdfEnd != null)
+        ? pages.filter(p => p.page_number >= pdfStart && p.page_number <= pdfEnd)
+        : pages.filter(p => {
+            const pn = p.textbook_page_number ? parseInt(p.textbook_page_number, 10) : p.page_number;
+            return !Number.isNaN(pn) && pn >= seg.page_start && pn <= seg.page_end;
+          });
       try {
         const out = await enrichSegment(book, seg, sloCodes, segPages, provinceConfig);
         await writeRow({

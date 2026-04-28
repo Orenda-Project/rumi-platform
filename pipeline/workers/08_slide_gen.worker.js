@@ -207,13 +207,15 @@ async function handleJob(jobId, provinceConfig, opts = {}) {
           });
           console.log(`  ✓ ${book.id}/seg${row.segment_index}/${tmplName}`);
         } catch (err) {
-          console.error(`  ✗ ${book.id}/seg${row.segment_index}/${tmplName}: ${(err.message || '').substring(0, 250)}`);
+          const msg = err.message || err.toString() || JSON.stringify(err) || '(unknown)';
+          console.error(`  ✗ ${book.id}/seg${row.segment_index}/${tmplName}: ${msg.substring(0, 400)}`);
+          if (err.stack) console.error('    stack:', err.stack.split('\n').slice(0, 4).join(' | '));
           await writeRow({
             textbook_id: book.id,
             segment_index: row.segment_index,
             slide_template: tmplName,
             status: 'nbpro_failed',
-            error: err.message || '(unknown)',
+            error: msg,
           });
         }
       }
