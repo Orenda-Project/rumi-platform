@@ -42,11 +42,11 @@ describe('Setup Infrastructure', () => {
       process.env.OPENROUTER_API_KEY = originalKey;
     });
 
-    test('validateEnv returns tier name', () => {
+    test('validateEnv reports presence-based features (no tier)', () => {
       const { validateEnv } = require(path.join(ROOT, 'bot/scripts/validate-env.js'));
       const result = validateEnv();
-      expect(result.tier).toBeDefined();
-      expect(typeof result.tier).toBe('string');
+      expect(Array.isArray(result.features)).toBe(true);
+      expect(result.tier).toBeUndefined(); // tiers removed — gating is presence-based
     });
   });
 
@@ -130,7 +130,6 @@ describe('Setup Infrastructure', () => {
         'PHONE_NUMBER_ID',
         'WEBHOOK_VERIFY_TOKEN',
         'WABA_ID',
-        'RUMI_TIER',
         'LLM_PROVIDER',
       ];
       for (const v of required) {
