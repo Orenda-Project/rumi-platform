@@ -1,0 +1,59 @@
+# Gitleaks configuration for the Rumi Platform OSS repo.
+# Goal: block any real secret (yours OR a contributor's) from ever being committed.
+# We extend gitleaks' default ruleset and add a few explicit key SHAPES.
+#
+# IMPORTANT: this file contains only generic key *patterns*, never any real key,
+# project ref, or phone number. The deployment-specific denylist (an operator's
+# own Supabase ref, phone numbers, etc.) is intentionally NOT here — those values
+# must never live in this public repo in the first place.
+
+title = "Rumi Platform secret scan"
+
+[extend]
+useDefault = true
+
+# --- Explicit key shapes (defense in depth over the default rules) ----------
+
+[[rules]]
+id = "openrouter-key"
+description = "OpenRouter API key"
+regex = '''sk-or-v1-[0-9a-fA-F]{32,}'''
+
+[[rules]]
+id = "anthropic-key"
+description = "Anthropic API key"
+regex = '''sk-ant-[a-zA-Z0-9_-]{24,}'''
+
+[[rules]]
+id = "supabase-access-token"
+description = "Supabase personal/access token"
+regex = '''sbp_[0-9a-fA-F]{40,}'''
+
+[[rules]]
+id = "google-api-key"
+description = "Google / Gemini API key"
+regex = '''AIza[0-9A-Za-z_\-]{35}'''
+
+[[rules]]
+id = "openai-key"
+description = "OpenAI API key"
+regex = '''sk-[A-Za-z0-9]{20}T3BlbkFJ[A-Za-z0-9]{20}'''
+
+# --- Allowlist: placeholders, tests, docs, this config ----------------------
+
+[allowlist]
+description = "Template placeholders, test fixtures, docs, and this config are not leaks"
+paths = [
+  '''\.env\.template$''',
+  '''\.env\.example$''',
+  '''(^|/)tests/''',
+  '''\.gitleaks\.toml$''',
+  '''(^|/)docs/''',
+]
+regexes = [
+  '''your-[a-z-]*-?(key|token|id|secret)''',
+  '''sk-or-v1-\.\.\.''',
+  '''(?i)CHANGEME''',
+  '''example\.com''',
+  '''your-project\.supabase\.co''',
+]
