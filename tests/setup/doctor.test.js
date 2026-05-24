@@ -26,7 +26,6 @@ const allPassProbes = {
   openrouter: async () => ({ ok: true, detail: 'HTTP 200' }),
   whatsapp: async () => ({ ok: true, detail: 'HTTP 200' }),
   redis: async () => ({ ok: true, detail: 'PONG' }),
-  chromium: async () => ({ ok: false, detail: 'none' }),
 };
 
 describe('analyzeEnv', () => {
@@ -49,12 +48,12 @@ describe('analyzeEnv', () => {
 
   it('marks an optional feature available only when all its keys are set', () => {
     const azureOff = analyzeEnv({ ...FULL_ENV, AZURE_SPEECH_KEY: 'k' }); // region missing
-    const azure = azureOff.features.find((f) => f.name.includes('Pronunciation'));
+    const azure = azureOff.features.find((f) => f.name.includes('Azure'));
     expect(azure.available).toBe(false);
     expect(azure.missingKeys).toContain('AZURE_SPEECH_REGION');
 
     const azureOn = analyzeEnv({ ...FULL_ENV, AZURE_SPEECH_KEY: 'k', AZURE_SPEECH_REGION: 'eastus' });
-    expect(azureOn.features.find((f) => f.name.includes('Pronunciation')).available).toBe(true);
+    expect(azureOn.features.find((f) => f.name.includes('Azure')).available).toBe(true);
   });
 });
 
@@ -101,9 +100,10 @@ describe('runDoctor', () => {
     expect(r.ok).toBe(false); // still not ok — REDIS_URL is a required var
   });
 
-  it('feature with a probe (Chromium) reflects the probe result, not env keys', async () => {
-    const onProbes = { ...allPassProbes, chromium: async () => ({ ok: true, detail: '/usr/bin/chromium' }) };
-    const r = await runDoctor({ env: FULL_ENV, probes: onProbes });
-    expect(r.featureResults.find((f) => f.name.includes('Chromium')).status).toBe('on');
+  it('exam-checker feature turns on by MISTRAL_API_KEY presence (not AWS Textract)', async () => {
+    const off = await runDoctor({ env: FULL_ENV, probes: allPassProbes });
+    expect(off.featureResults.find((f) => f.name.includes('Exam')).status).toBe('off');
+    const on = await runDoctor({ env: { ...FULL_ENV, MISTRAL_API_KEY: 'k' }, probes: allPassProbes });
+    expect(on.featureResults.find((f) => f.name.includes('Exam')).status).toBe('on');
   });
 });

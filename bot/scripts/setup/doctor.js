@@ -35,14 +35,16 @@ const REQUIRED_VARS = [
 ];
 
 // Optional features: each turns on automatically when its key(s) are present.
+// (Verified against the OSS bot code — the env var listed is the one the
+// feature's service actually reads.)
 const FEATURES = [
-  { name: 'Voice notes (speech-to-text)', keys: ['SONIOX_API_KEY'] },
-  { name: 'Spoken replies (text-to-speech)', keys: ['ELEVENLABS_API_KEY'] },
+  { name: 'Voice notes (speech-to-text, Soniox)', keys: ['SONIOX_API_KEY'] },
+  { name: 'Spoken replies (text-to-speech, ElevenLabs)', keys: ['ELEVENLABS_API_KEY'] },
+  { name: 'Urdu / regional voices (Uplift)', keys: ['UPLIFT_API_KEY'] },
   { name: 'Lesson-plan generation (Gamma)', keys: ['GAMMA_API_KEY'] },
-  { name: 'Pronunciation scoring (Azure)', keys: ['AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION'] },
-  { name: 'Image / pic-to-LP generation (Kie.ai)', keys: ['KIE_API_KEY'] },
-  { name: 'Exam-checker OCR (AWS Textract)', keys: ['AWS_TEXTRACT_ACCESS_KEY_ID', 'AWS_TEXTRACT_SECRET_ACCESS_KEY'] },
-  { name: 'PDF reports (Playwright/Chromium)', keys: [], probe: 'chromium' },
+  { name: 'Reading pronunciation scoring (Azure)', keys: ['AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION'] },
+  { name: 'Video generation (Kie.ai)', keys: ['KIE_API_KEY'] },
+  { name: 'Exam-checker OCR (Mistral vision)', keys: ['MISTRAL_API_KEY'] },
   { name: 'Observability (Axiom)', keys: ['AXIOM_DATASET', 'AXIOM_TOKEN'] },
 ];
 
@@ -71,23 +73,6 @@ function analyzeEnv(env) {
 // ── Default live probes (network). Each returns { ok, detail }. ──────────────
 // Implementations are intentionally dependency-light (global fetch) and never
 // throw — they translate any failure into { ok:false }.
-
-const fs = require('fs');
-
-function resolveChromiumPath(env = process.env) {
-  const candidates = [
-    env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
-    env.PUPPETEER_EXECUTABLE_PATH,
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-    '/nix/var/nix/profiles/default/bin/chromium',
-    '/usr/bin/google-chrome-stable',
-  ].filter(Boolean);
-  for (const p of candidates) {
-    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
-  }
-  return null;
-}
 
 const defaultProbes = {
   async supabase(env) {
@@ -120,10 +105,6 @@ const defaultProbes = {
     } finally {
       client.disconnect();
     }
-  },
-  async chromium(env) {
-    const p = resolveChromiumPath(env);
-    return { ok: !!p, detail: p || 'no chromium executable found' };
   },
 };
 
@@ -222,4 +203,4 @@ async function main() {
 
 if (require.main === module) main();
 
-module.exports = { analyzeEnv, runDoctor, formatReport, resolveChromiumPath, REQUIRED_VARS, FEATURES };
+module.exports = { analyzeEnv, runDoctor, formatReport, REQUIRED_VARS, FEATURES };
