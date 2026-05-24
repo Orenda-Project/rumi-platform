@@ -10,7 +10,9 @@ const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
 
-const REQUIRED_FLOWS = ['registration', 'feedback', 'lesson_plan'];
+// Derived from the single source of truth so the validator can never drift
+// from what the registrar actually registers (flow-configs.js).
+const { REQUIRED_FLOW_NAMES: REQUIRED_FLOWS } = require('./flow-configs');
 
 const DEFAULT_STATE = {
   version: '2.0.0',

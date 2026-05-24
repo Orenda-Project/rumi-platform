@@ -144,10 +144,11 @@ describe('Setup Infrastructure', () => {
       expect(template).toContain('GAMMA_API_KEY');
     });
 
-    test('contains tier explanation comments', () => {
-      expect(template).toContain('Tier 1');
-      expect(template).toContain('Tier 2');
-      expect(template).toContain('Tier 3');
+    test('explains the presence-based gating model and the required block', () => {
+      // Gating is presence-based (set a feature's keys -> it turns on), not tiers.
+      expect(template).toMatch(/PRESENCE/i);
+      expect(template).toMatch(/REQUIRED/);
+      expect(template).toMatch(/ENABLES:/); // per-feature "set these to switch it on" framing
     });
 
     test('does NOT contain real credentials', () => {

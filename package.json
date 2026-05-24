@@ -13,6 +13,7 @@
     "test:e2e": "node tests/run.js --testPathPattern=integration",
     "validate:env": "node bot/scripts/validate-env.js",
     "validate:connections": "node infrastructure/scripts/test-connections.js",
+    "doctor": "node bot/scripts/setup/doctor.js",
     "simulate": "node bot/scripts/simulate.js",
     "setup": "echo 'Use /setup in Claude Code or follow SETUP.md for manual instructions'"
   },

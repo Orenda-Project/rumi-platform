@@ -12,129 +12,68 @@
 <p align="center">
   <a href="https://hellorumi.ai">Website</a> &middot;
   <a href="https://hellorumi.ai/research">Research</a> &middot;
-  <a href="docs/agent-customization.md">Customization Guide</a> &middot;
-  <a href="SETUP.md">Setup</a>
+  <a href="docs/features/">Features</a> &middot;
+  <a href="SETUP.md">Setup</a> &middot;
+  <a href="docs/agent-customization.md">Customize</a>
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" /></a>
   <a href="https://github.com/Orenda-Project/rumi-platform/actions/workflows/ci.yml"><img src="https://github.com/Orenda-Project/rumi-platform/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg" alt="Node.js" />
-  <img src="https://img.shields.io/badge/tests-158%20passing-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/platform-WhatsApp-25D366.svg" alt="WhatsApp" />
+</p>
+
+<p align="center">
+  <img src="docs/images/features/hero.jpg" alt="A teacher and students using Rumi on WhatsApp" width="100%" />
 </p>
 
 ---
 
-Rumi is an open-source AI teaching companion that runs on WhatsApp, giving teachers 24/7 access to classroom coaching, reading assessments, lesson plan generation, and professional development — in their own language, on the device they already have.
+Rumi is an open-source AI teaching companion that runs on **WhatsApp** — giving teachers 24/7 access to classroom coaching, reading assessments, lesson-plan generation, and professional development, in their own language, on the device they already carry.
+
+It is built to be **cloned and run by anyone, anywhere**: set your own API keys, point it at your own WhatsApp number, and you have a teaching assistant for your schools — no commissioning, no vendor lock-in.
 
 ---
 
 ## Why Rumi Exists
 
-Across the developing world, **millions of teachers work in isolation** — in rural schools, multigrade classrooms, and under-resourced systems where instructional coaches simply don't exist. Traditional professional development reaches teachers once or twice a year at best. The gap between what teachers need and what the system provides is enormous.
+Across the world, **millions of teachers work in isolation** — in rural schools, multigrade classrooms, and under-resourced systems where instructional coaches simply don't exist. Traditional professional development reaches teachers once or twice a year at best. The gap between what teachers need and what the system provides is enormous.
 
 Rumi fills that gap. By meeting teachers on WhatsApp — the world's most widely used messaging app — Rumi provides:
 
 - **Instant coaching feedback** on real classroom recordings, using research-backed pedagogical frameworks
-- **Reading fluency assessments** so teachers can measure student progress with the same rigor as standardized tests
-- **Evidence-based lesson plans** generated from templates adapted to local curriculum and context
+- **Reading-fluency assessments** so teachers can measure student progress with the same rigor as standardized tests
+- **Evidence-based lesson plans** adapted to local curriculum and context
 - **Multilingual support** — teachers interact in the language they think in, not just the language of instruction
 
 The core insight: **the best time to coach a teacher is right after they teach**, and the best tool is the one already in their pocket.
+
+### Why it's open source
+
+Good teaching support shouldn't depend on which country or company you happen to work for. We open-sourced Rumi so any ministry, NGO, school network, or research team can stand up their own instance — adapt the frameworks to their curriculum, run it in their languages, keep their data in their own systems, and improve it for everyone. The whole platform is designed to be set up by a non-technical operator working alongside an AI coding agent (Claude Code, Cursor, Codex, …). See [Setup](SETUP.md).
 
 ---
 
 ## What Rumi Does
 
-| Feature | How It Works | Tier |
-|---------|-------------|------|
-| **AI Chat** | Teachers ask any teaching question via text or voice; get expert responses grounded in pedagogy | Minimal |
-| **Registration** | Automated teacher onboarding via WhatsApp — name, school, grade, language | Minimal |
-| **Classroom Coaching** | Teacher uploads classroom audio; Rumi transcribes, analyzes against a selectable pedagogical framework (OECD, HOTS, TEACH, FICO), conducts a reflective conversation, and generates a scored PDF report with an optional classroom photo analysis | Recommended |
-| **Reading Assessment** | Students read aloud into WhatsApp; Rumi measures fluency (WCPM), pronunciation accuracy, and comprehension against grade-level benchmarks | Recommended |
-| **Lesson Plans** | Teacher describes a topic and grade; Rumi generates a comprehensive 9-section lesson plan as a downloadable PDF | Full |
-| **Voice Messages** | Full voice interaction in 9 languages — teachers speak, Rumi listens, transcribes, responds in both text and voice | Full |
-| **AI Video Generation** | Teacher requests a topic; Rumi generates an educational video with narration, images, and animations | Full |
-| **Attendance** | Voice or text-based student attendance tracking via WhatsApp | Full |
-| **Exam Checker** | Teacher photographs student exam papers; Rumi grades them using OCR and AI-based assessment | Full |
+Every feature below lives on WhatsApp. Click any feature for its own page — what it is, how it works, and the one or two API keys that switch it on.
 
-### Feature Demos
+| Feature | What it does | Switches on when you set |
+|---|---|---|
+| 💬 **[AI Chat](docs/features/ai-chat.md)** | Teachers ask any teaching question by text or voice and get expert, pedagogy-grounded answers | _Always on_ (core) |
+| 📝 **[Registration](docs/features/registration.md)** | Friendly WhatsApp onboarding — name, school, grade, language | _Always on_ (core) |
+| 🎯 **[Classroom Coaching](docs/features/coaching.md)** | Teacher sends a class recording; Rumi transcribes, scores it against a pedagogical framework, has a reflective conversation, and returns a scored PDF report | `SONIOX_API_KEY` |
+| 📖 **[Reading Assessment](docs/features/reading-assessment.md)** | A student reads aloud into WhatsApp; Rumi measures fluency, accuracy, pronunciation, and comprehension against benchmarks | `SONIOX_API_KEY` |
+| 📋 **[Lesson Plans](docs/features/lesson-plans.md)** | Teacher names a topic and grade; Rumi generates a full lesson plan as a downloadable PDF | `GAMMA_API_KEY` |
+| 🗣️ **[Voice Messages](docs/features/voice.md)** | Full spoken interaction in many languages — teachers speak, Rumi listens and replies in text and voice | `SONIOX_API_KEY` + `ELEVENLABS_API_KEY` |
+| 🎬 **[Video Generation](docs/features/video.md)** | Teacher requests a topic; Rumi produces a short narrated educational video | `VIDEO_GENERATION_ENABLED` + `KIE_API_KEY` |
+| ✅ **[Attendance](docs/features/attendance.md)** | Voice- or tap-based student attendance via WhatsApp Flows | _Always on_ (core) |
+| 🧮 **[Exam Checker](docs/features/exam-checker.md)** | Teacher photographs answer sheets; Rumi grades them with vision OCR + AI | `MISTRAL_API_KEY` |
 
-#### Lesson Plan Generation
+> **No tiers, no toggles to hunt for.** Rumi turns features on by **presence**: set a feature's API key and it switches on automatically; leave it blank and that feature stays off cleanly — the bot never crashes over a missing key. Run **`npm run doctor`** anytime to see exactly which features are live for your current configuration.
 
-Teacher describes a topic and grade; Rumi generates a full lesson plan as a downloadable PDF.
-
-https://github.com/user-attachments/assets/8f7ad8cc-c169-415a-a473-ed0c686233eb
-
-#### Classroom Coaching
-
-Teacher sends classroom audio; Rumi transcribes, scores against a selectable framework (OECD / HOTS / TEACH / FICO), conducts reflective conversation, generates PDF report.
-
-https://github.com/user-attachments/assets/7f0d2756-b30b-460a-821c-e3bb6cdc4b05
-
-#### Reading Assessment
-
-Student reads aloud into WhatsApp; Rumi measures WCPM, accuracy, comprehension; compares to grade benchmarks.
-
-https://github.com/user-attachments/assets/bc6526d4-5f2a-4355-8dc5-0dd3af051585
-
-#### AI Video Generation
-
-Teacher requests a topic; Rumi generates an educational video with narration and visuals.
-
-https://github.com/user-attachments/assets/4a55db04-ee03-4f17-9ff3-ee53102a4a6b
-
-#### Attendance Tracking
-
-Teacher sets up class list, marks daily attendance via WhatsApp Flow.
-
-https://github.com/user-attachments/assets/b35a034e-20c6-458d-8b6d-91a7ab2ddc42
-
-### Classroom Coaching: How It Works
-
-1. **Teacher records** their classroom (audio or video) and sends it to Rumi on WhatsApp
-2. **Rumi transcribes** the recording using Soniox (supporting multilingual and code-switched speech)
-3. **Rumi analyzes** the transcript against the teacher's selected pedagogical framework:
-   - **OECD** — 19 criteria across 5 goals (118 marks)
-   - **HOTS** — 16 indicators across 6 areas, aligned to PESRP/PECTAA spec (48 marks)
-   - **TEACH** — World Bank classroom observation tool
-   - **FICO** — 21 indicators across 5 domains (84 marks), with photo-aware scoring
-4. **Optional classroom photo analysis** — teacher sends a photo alongside audio; Rumi uses vision AI to score photo-aware indicators (e.g. seating arrangement, materials use)
-5. **Rumi conducts a reflective conversation** — 3 voice-delivered questions prompting the teacher to reflect on specific moments from their lesson
-6. **Rumi generates a PDF report** — with scores per goal, evidence from the transcript, growth areas, actionable recommendations, and performance charts. Ends with a personalized coaching card highlighting the single highest-leverage action.
-7. **Prior feedback tracking** — each session builds on previous ones, so recommendations evolve over time
-
-The framework is selected per teacher (stored in their profile) and fully customizable. See [docs/agent-customization.md](docs/agent-customization.md#1-swap-the-coaching-framework).
-
-### Reading Assessment: How It Works
-
-1. **Teacher selects a student** and initiates an assessment
-2. **Rumi generates** an age-appropriate reading passage (adaptive difficulty based on prior results)
-3. **Student reads aloud** into WhatsApp
-4. **Rumi measures**: Words Correct Per Minute (WCPM), reading accuracy, pronunciation quality, and comprehension (via follow-up questions)
-5. **Results are compared** against grade-level benchmarks (DIBELS/EGRA-normed, L2-adjusted for non-English readers)
-6. **Teacher receives** a detailed fluency report with diagnostic feedback and recommended next steps
-
-Assessment methodology is customizable — teams can swap to **ASER**, **EGRA**, or custom benchmarks. See [docs/agent-customization.md](docs/agent-customization.md#2-change-reading-assessment-methodology).
-
-### Languages Supported
-
-Rumi supports **9 languages** for voice and text interaction:
-
-| Language | Code | Script | Voice (TTS) | Speech Recognition |
-|----------|------|--------|-------------|-------------------|
-| English | en | LTR | ElevenLabs | Soniox, Whisper |
-| Urdu | ur | RTL | ElevenLabs | Soniox |
-| Arabic | ar | RTL | ElevenLabs | Soniox |
-| Spanish | es | LTR | ElevenLabs | Soniox |
-| Balochi | bal-PK | RTL | — | Modal MMS-ASR |
-| Sindhi | sd-PK | RTL | — | Modal MMS-ASR |
-| Pashto | ps-PK | RTL | — | Modal MMS-ASR |
-| Punjabi | pa-PK | RTL | — | Modal MMS-ASR |
-| Tamil | ta-LK | LTR | — | Soniox |
-
-Adding a new language requires updates to 7 configuration files. See [docs/agent-customization.md](docs/agent-customization.md#4-add-or-change-languages).
+**→ Browse the full [feature library](docs/features/).**
 
 ---
 
@@ -148,35 +87,37 @@ cd rumi-platform
 # 2. Install dependencies
 npm install && cd bot && npm install && cd ..
 
-# 3. Set up services (see SETUP.md for details)
-#    - Create a Supabase database and run the schema SQL
-#    - Get an OpenRouter API key
-#    - Get WhatsApp Business credentials from Meta
-
-# 4. Configure environment
+# 3. Configure environment — copy the template and fill the 8 REQUIRED values
 cp .env.template .env
-# Fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENROUTER_API_KEY,
-# WHATSAPP_TOKEN, PHONE_NUMBER_ID, WABA_ID, WEBHOOK_VERIFY_TOKEN, REDIS_URL
+#    SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENROUTER_API_KEY, REDIS_URL,
+#    WHATSAPP_TOKEN, PHONE_NUMBER_ID, WABA_ID, WEBHOOK_VERIFY_TOKEN
+#    (each optional feature's keys are documented inline, grouped by feature)
 
-# 5. Deploy to Railway
-cd bot && railway up --service bot
+# 4. Check your configuration — pings every service you configured and prints
+#    a green/red matrix of which features are live
+npm run doctor
 
-# 6. Set up WhatsApp webhook pointing to your Railway URL
-# 7. Send "Hi" to your bot number!
+# 5. Set up the database (schema + seed on a fresh Supabase project)
+npm run bootstrap:db          # coming in v2 setup; see SETUP.md today
+
+# 6. Deploy (Railway, Docker, or any Node host) and point your WhatsApp
+#    webhook at your deployment. Then send "Hi" to your bot number.
 ```
 
-### What You Need
+The whole flow is designed to be driven by an **AI setup agent**: open the repo in Claude Code / Cursor / Codex and ask it to set you up — `AGENTS.md` and the bundled skills tell it exactly what to do. See **[SETUP.md](SETUP.md)** for the complete walkthrough (including getting a WhatsApp number from scratch).
 
-| Requirement | Where to Get It |
-|------------|----------------|
-| GitHub account | [github.com](https://github.com) (to fork the repo) |
-| Node.js 18+ | [nodejs.org](https://nodejs.org) |
-| Supabase account | [supabase.com](https://supabase.com) (free tier works) |
-| Railway account | [railway.app](https://railway.app) (hosting + Redis) |
-| OpenRouter API key | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| WhatsApp Business credentials | [Meta Business Manager](https://business.facebook.com) |
+### What you need
 
-See [SETUP.md](SETUP.md) for the complete step-by-step guide with screenshots and troubleshooting.
+| Requirement | Where to get it | For |
+|---|---|---|
+| GitHub account | [github.com](https://github.com) | Fork the repo |
+| Node.js 18+ | [nodejs.org](https://nodejs.org) | Run the bot |
+| Supabase project | [supabase.com](https://supabase.com) (free tier works) | Database |
+| Redis | [Railway](https://railway.app) / [Upstash](https://upstash.com) | Sessions + job queue |
+| OpenRouter key | [openrouter.ai/keys](https://openrouter.ai/keys) | All AI text |
+| WhatsApp Business | [Meta Business Manager](https://business.facebook.com) | The channel |
+
+Optional feature keys (Soniox, ElevenLabs/Uplift, Gamma, Kie.ai, Azure, Mistral) are only needed for the features that use them — each is documented in [`.env.template`](.env.template).
 
 ---
 
@@ -185,128 +126,112 @@ See [SETUP.md](SETUP.md) for the complete step-by-step guide with screenshots an
 ```
 rumi-platform/
 ├── bot/                    # WhatsApp Bot (Node.js + Express)
-│   ├── whatsapp-bot.js     # Main entry point (webhook, message routing)
+│   ├── whatsapp-bot.js     # Entry point — webhook, message routing
 │   ├── shared/
-│   │   ├── config/         # Branding, feature tiers, capabilities, languages
-│   │   ├── services/       # 39+ service modules (LLM, coaching, reading, video...)
-│   │   ├── handlers/       # Message handlers (text, voice, image, flow, exam, attendance)
+│   │   ├── config/         # Branding, capabilities, languages, regions
+│   │   ├── services/       # LLM, coaching, reading, lesson plans, video, …
+│   │   ├── handlers/       # text / voice / image / flow / exam / attendance
 │   │   └── constants/      # Scoring rubrics, media IDs
-│   ├── workers/            # 8 background workers (coaching, video, lesson plans, exams)
-│   └── scripts/            # CLI simulator, env validator, deployment helpers
-├── dashboard/              # Observability Portal — analytics, session history, system health
-├── portal/                 # Teacher Portal — React web app for coaching/reading history
+│   ├── workers/            # Background workers (coaching, video, lesson plans, …)
+│   ├── docs/flows/         # WhatsApp Flow JSON (registered to your WABA)
+│   └── scripts/setup/      # doctor, flow registration, encryption, state
+├── dashboard/              # Observability portal — analytics, health
+├── portal/                 # Teacher web portal (React)
 ├── infrastructure/
-│   ├── supabase/           # SQL schema (52+ tables), RLS policies, seed data
-│   └── railway/            # Procfile for web + worker processes
-├── tests/                  # 158 tests across 11 suites
-├── docs/                   # Architecture, customization, monitoring, cost guide
-└── .claude/                # Claude Code config + /setup skill
+│   └── supabase/           # SQL schema, RLS policies, seed data
+├── docs/                   # Architecture, features, customization, cost
+└── .claude/                # Agent config + setup skills
 ```
 
-### How Messages Flow
+### How a message flows
 
 ```
 Teacher on WhatsApp
   → Meta Cloud API → POST /webhook → Express handler
-    → User lookup (Supabase) → Language detection → Feature routing
-      → Text | Voice | Image | Flow handler
-        → LLM Service (OpenRouter) → Response generation
-        → BullMQ Queue → Background workers → Reports / media
-          → WhatsApp delivery back to teacher
+    → user lookup (Supabase) → language detection → feature routing
+      → text | voice | image | flow handler
+        → LLM (OpenRouter) → response
+        → async job queue (Redis) → background workers → reports / media
+          → delivered back to the teacher on WhatsApp
 ```
+
+See [docs/architecture.md](docs/architecture.md) for the full picture.
 
 ---
 
-## Feature Tiers
+## Customization
 
-| Tier | Features | API Keys Needed | Est. Monthly Cost |
-|------|----------|----------------|-------------------|
-| **Minimal** | AI Chat + Registration | 1 (OpenRouter) | ~$15 |
-| **Recommended** | + Coaching + Reading Assessment | 2 (+ Soniox) | ~$50 |
-| **Full** | All features (voice, video, lesson plans, attendance, exams) | 5 (+ ElevenLabs, Azure, Gamma) | ~$200+ |
+Rumi is meant to be **adapted to your context** — your curriculum, your frameworks, your languages, your brand.
 
-Cost estimates assume 50–100 teachers, ~500 messages/day. See [docs/cost-guide.md](docs/cost-guide.md).
+**Quick (environment variables):**
 
 ```env
-RUMI_TIER=minimal
+BOT_NAME=MyAssistant
+ORG_NAME=My School Network
+SUPPORT_CONTACT=help@example.org
+LLM_MODEL=anthropic/claude-sonnet-4
 ```
+
+**Deep (agent-first):** this repo is designed to be customized by AI-assisted IDEs. The [Agent Customization Guide](docs/agent-customization.md) maps each goal to exact files:
+
+| I want to… | Guide |
+|---|---|
+| Swap the coaching framework (TEACH / Danielson / custom) | [Section 1](docs/agent-customization.md#1-swap-the-coaching-framework) |
+| Use ASER / EGRA instead of DIBELS for reading | [Section 2](docs/agent-customization.md#2-change-reading-assessment-methodology) |
+| Change the lesson-plan format (5E, UbD, …) | [Section 3](docs/agent-customization.md#3-modify-lesson-plan-templates) |
+| Add a language | [Section 4](docs/agent-customization.md#4-add-or-change-languages) |
+| Switch LLM provider/model | [Section 5](docs/agent-customization.md#5-switch-llm-provider-or-model) |
+| Add a region with its own feature gating | [docs/features/](docs/features/) |
+| Rebrand the bot | [Section 11](docs/agent-customization.md#11-rebrand-the-bot) |
 
 ---
 
 ## Technology Stack
 
 | Layer | Technology | Purpose |
-|-------|-----------|---------|
+|---|---|---|
 | Runtime | Node.js 18+ | Server-side JavaScript |
-| Web Framework | Express.js | Webhook handling, API routes |
-| Messaging | WhatsApp Business Cloud API | Messages, media, interactive flows |
-| AI/LLM | OpenRouter (500+ models) | Chat, analysis, content generation |
-| Database | Supabase (PostgreSQL) | 52+ tables with Row Level Security |
-| Job Queue | BullMQ (Redis) | 7 async job types with retry and checkpointing |
-| Speech-to-Text | Soniox, Whisper, Modal MMS-ASR | 9-language transcription |
-| Text-to-Speech | ElevenLabs | Voice responses in 4+ languages |
-| PDF Generation | pdfkit, pdfmake | Coaching reports, lesson plans |
-| Video Assembly | FFmpeg, Kie.ai, DALL-E | Educational video generation |
-| OCR | AWS Textract, Surya | Exam paper scanning |
-| Deployment | Railway | Hosting with auto-scaling |
-| Monitoring | Axiom (optional) | Structured log aggregation |
-
----
-
-## Customization
-
-### Quick (Environment Variables)
-
-```env
-BOT_NAME=MyAssistant
-ORG_NAME=My School District
-SUPPORT_CONTACT=help@myschool.org
-LLM_MODEL=anthropic/claude-sonnet-4
-```
-
-### Deep (Agent-First Guide)
-
-This repo is designed to be customized by teams using **Cursor**, **Claude Code**, or similar AI-assisted IDEs. The [Agent Customization Guide](docs/agent-customization.md) maps every customization goal to exact files and step-by-step instructions:
-
-| I want to... | Guide Section |
-|-------------|---------------|
-| Swap OECD coaching for Teach / Danielson / custom framework | [Section 1](docs/agent-customization.md#1-swap-the-coaching-framework) |
-| Use ASER instead of DIBELS for reading | [Section 2](docs/agent-customization.md#2-change-reading-assessment-methodology) |
-| Change lesson plan format (5E, UbD, etc.) | [Section 3](docs/agent-customization.md#3-modify-lesson-plan-templates) |
-| Add a new language | [Section 4](docs/agent-customization.md#4-add-or-change-languages) |
-| Switch LLM provider (Claude, Gemini, local) | [Section 5](docs/agent-customization.md#5-switch-llm-provider-or-model) |
-| Add a new feature | [Section 7](docs/agent-customization.md#7-add-a-new-feature) |
-| Rebrand the entire bot | [Section 11](docs/agent-customization.md#11-rebrand-the-bot) |
+| Web | Express.js | Webhook + API routes |
+| Messaging | WhatsApp Business Cloud API | Messages, media, interactive Flows |
+| AI / LLM | OpenRouter (500+ models) | Chat, analysis, content |
+| Database | Supabase (PostgreSQL) | Tables with Row-Level Security |
+| Queue | Redis-backed async job queue | Transcription, reports, video, exams |
+| Speech-to-Text | Soniox, Whisper, Modal MMS-ASR | Multilingual transcription |
+| Text-to-Speech | ElevenLabs (+ Uplift for Urdu/regional) | Voice replies, reflective questions |
+| PDF | PDFKit / pdfmake | Coaching & reading reports |
+| Images / Video | Kie.ai (Nano Banana Pro), FFmpeg | Educational visuals & video |
+| OCR | Mistral vision (+ Chandra, Surya) | Exam-sheet scanning |
+| Pronunciation | Azure Speech (optional) | Reading-assessment scoring |
+| Hosting | Railway / Docker / any Node host | Deployment |
+| Observability | Axiom (optional, recommended) | Structured logs + tracing |
 
 ---
 
 ## Testing
 
 ```bash
-npm test              # All 158 tests (11 suites)
-npm run test:security # No hardcoded secrets
-npm run test:sprint1  # Core feature tests
-npm run test:schema   # Database schema validation
-npm run test:setup    # Setup tooling verification
-npm run test:docs     # Documentation completeness
-npm run simulate      # CLI simulator (test without WhatsApp)
-npm run validate:env  # Environment variable check
+npm test               # full suite
+npm run test:security  # secret scan — no hardcoded credentials
+npm run test:schema    # database schema validation
+npm run test:setup     # setup tooling
+npm run doctor         # live preflight: which services + features are configured
+npm run simulate       # CLI simulator (test without WhatsApp)
 ```
+
+Every push and PR is gated by CI, including an automated **secret scan** (gitleaks) so credentials can never be committed.
 
 ---
 
 ## Documentation
 
 | Doc | Description |
-|-----|-------------|
-| [SETUP.md](SETUP.md) | Manual setup guide (8 steps) |
-| [docs/architecture.md](docs/architecture.md) | System architecture and message flow |
-| [docs/agent-customization.md](docs/agent-customization.md) | Agent-first deep customization (12 sections) |
-| [docs/customization.md](docs/customization.md) | Basic customization (branding, tiers, LLM) |
-| [docs/monitoring.md](docs/monitoring.md) | Observability, dashboards, debugging |
-| [docs/cost-guide.md](docs/cost-guide.md) | Monthly cost estimates by tier |
-| [bot/docs/](bot/docs/) | 15+ detailed feature and technical guides |
-| [bot/database/SCHEMA_GUIDE.md](bot/database/SCHEMA_GUIDE.md) | Database schema explained (52+ tables) |
+|---|---|
+| [SETUP.md](SETUP.md) | Full setup, incl. WhatsApp number from scratch |
+| [docs/features/](docs/features/) | Per-feature deep dives (what / how / enable) |
+| [docs/architecture.md](docs/architecture.md) | System architecture & message flow |
+| [docs/agent-customization.md](docs/agent-customization.md) | Agent-first deep customization |
+| [docs/cost-guide.md](docs/cost-guide.md) | Monthly cost estimates by feature |
+| [docs/monitoring.md](docs/monitoring.md) | Observability & debugging |
 
 ---
 
@@ -318,12 +243,10 @@ See [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) for development setup, co
 
 ## About
 
-Rumi is built by [Taleemabad](https://taleemabad.com), Pakistan's leading EdTech company. The name comes from Jalaluddin Rumi, the 13th-century poet and teacher who believed that education is not the filling of a vessel but the kindling of a flame.
+Rumi is built by [Taleemabad](https://taleemabad.com) and shared with the world as open source. The name comes from Jalaluddin Rumi, the 13th-century poet and teacher who believed that education is not the filling of a vessel but the kindling of a flame.
 
-**Website**: [hellorumi.ai](https://hellorumi.ai) | **Research**: [hellorumi.ai/research](https://hellorumi.ai/research)
+**Website**: [hellorumi.ai](https://hellorumi.ai) · **Research**: [hellorumi.ai/research](https://hellorumi.ai/research)
 
 ## License
 
-Apache License 2.0 — See [LICENSE](LICENSE).
-
-You are free to use, modify, and distribute this software. We encourage contributing improvements back to the community.
+Apache License 2.0 — see [LICENSE](LICENSE). You are free to use, modify, and distribute this software. We encourage contributing improvements back to the community.

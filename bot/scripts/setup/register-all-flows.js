@@ -14,7 +14,6 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 const { MetaAPI } = require('./meta-api');
 const { SetupState } = require('./setup-state');
 
@@ -22,35 +21,9 @@ const { SetupState } = require('./setup-state');
 // Flow configurations
 // ---------------------------------------------------------------------------
 
-/**
- * All 3 flows to register. Each entry contains everything needed to
- * find, create, upload, configure, and publish the flow.
- */
-const FLOW_CONFIGS = [
-  {
-    name: 'Reading Assessment',
-    jsonPath: path.resolve(__dirname, '../../shared/flows/reading-assessment-flow.json'),
-    type: 'navigate',
-    envVar: 'READING_ASSESSMENT_FLOW_ID',
-    categories: ['OTHER'],
-  },
-  {
-    name: 'Attendance Setup',
-    jsonPath: path.resolve(__dirname, '../../shared/flows/attendance-setup-flow.json'),
-    type: 'endpoint',
-    endpointPath: '/flow/attendance-setup',
-    envVar: 'ATTENDANCE_SETUP_FLOW_ID',
-    categories: ['OTHER'],
-  },
-  {
-    name: 'Attendance Marking',
-    jsonPath: path.resolve(__dirname, '../../shared/flows/attendance-marking-flow.json'),
-    type: 'endpoint',
-    endpointPath: '/flow/attendance-marking',
-    envVar: 'ATTENDANCE_MARKING_FLOW_ID',
-    categories: ['OTHER'],
-  },
-];
+// Single source of truth (shared with setup-state + validate-flows). See
+// flow-configs.js. Re-exported below for backward compatibility.
+const { FLOW_CONFIGS } = require('./flow-configs');
 
 // ---------------------------------------------------------------------------
 // Single flow registration

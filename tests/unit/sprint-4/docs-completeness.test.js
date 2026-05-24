@@ -31,16 +31,16 @@ describe('Documentation Completeness', () => {
       expect(readme).toContain('git clone');
     });
 
-    test('describes feature tiers', () => {
-      expect(readme).toContain('Minimal');
-      expect(readme).toContain('Recommended');
-      expect(readme).toContain('Full');
+    test('explains the presence-based feature model', () => {
+      // Gating is presence-based (set a feature's key -> it turns on), not tiers.
+      expect(readme).toMatch(/presence/i);
+      expect(readme).toContain('doctor');
     });
 
     test('lists technology stack', () => {
       expect(readme).toContain('Node.js');
       expect(readme).toContain('Supabase');
-      expect(readme).toContain('BullMQ');
+      expect(readme).toContain('Redis');
       expect(readme).toContain('OpenRouter');
     });
 
