@@ -13,10 +13,11 @@ const { SetupState } = require('./setup-state');
 const { MetaAPI } = require('./meta-api');
 
 /**
- * The 3 required flow names that must be registered and PUBLISHED.
- * Mirrors the REQUIRED_FLOWS constant in setup-state.js.
+ * The required flow names that must be registered and PUBLISHED.
+ * Derived from flow-configs.js — the same source the registrar and
+ * setup-state.js use, so the three can never drift apart.
  */
-const REQUIRED_FLOWS = ['registration', 'feedback', 'lesson_plan'];
+const { REQUIRED_FLOW_NAMES: REQUIRED_FLOWS } = require('./flow-configs');
 
 /**
  * Validate that the setup state is complete and all flows are PUBLISHED.

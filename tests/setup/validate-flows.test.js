@@ -29,28 +29,27 @@ function buildCompleteState(overrides = {}) {
     updatedAt: now,
     encryption: { configured: true, publicKeyHash: 'sha256_abc', registeredAt: now },
     flows: {
-      registration: {
-        flowId: 'flow_reg_1',
+      'Reading Assessment': {
+        flowId: 'flow_ra_1',
         status: 'PUBLISHED',
-        envVar: 'REGISTRATION_FLOW_ID',
-        type: 'registration',
-        endpointPath: '/webhook/flow/registration',
+        envVar: 'READING_ASSESSMENT_FLOW_ID',
+        type: 'navigate',
         registeredAt: now,
       },
-      feedback: {
-        flowId: 'flow_fb_2',
+      'Attendance Setup': {
+        flowId: 'flow_as_2',
         status: 'PUBLISHED',
-        envVar: 'FEEDBACK_FLOW_ID',
-        type: 'feedback',
-        endpointPath: '/webhook/flow/feedback',
+        envVar: 'ATTENDANCE_SETUP_FLOW_ID',
+        type: 'endpoint',
+        endpointPath: '/flow/attendance-setup',
         registeredAt: now,
       },
-      lesson_plan: {
-        flowId: 'flow_lp_3',
+      'Attendance Marking': {
+        flowId: 'flow_am_3',
         status: 'PUBLISHED',
-        envVar: 'LESSON_PLAN_FLOW_ID',
-        type: 'lesson_plan',
-        endpointPath: '/webhook/flow/lesson_plan',
+        envVar: 'ATTENDANCE_MARKING_FLOW_ID',
+        type: 'endpoint',
+        endpointPath: '/flow/attendance-marking',
         registeredAt: now,
       },
     },
@@ -154,9 +153,9 @@ describe('validateSetup', () => {
       });
 
       expect(mockGetFlowDetails).toHaveBeenCalledTimes(3);
-      expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_reg_1');
-      expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_fb_2');
-      expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_lp_3');
+      expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_ra_1');
+      expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_as_2');
+      expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_am_3');
     });
   });
 
@@ -215,8 +214,8 @@ describe('validateSetup', () => {
     it('adds an issue for each missing flow', async () => {
       const state = buildCompleteState();
       // Remove two flows
-      delete state.flows.feedback;
-      delete state.flows.lesson_plan;
+      delete state.flows['Attendance Setup'];
+      delete state.flows['Attendance Marking'];
       fs.writeFileSync(statePath, JSON.stringify(state));
 
       mockGetFlowDetails.mockResolvedValue({
@@ -234,15 +233,15 @@ describe('validateSetup', () => {
       expect(result.valid).toBe(false);
       expect(result.issues).toEqual(
         expect.arrayContaining([
-          expect.stringMatching(/feedback.*not registered/i),
-          expect.stringMatching(/lesson_plan.*not registered/i),
+          expect.stringMatching(/Attendance Setup.*not registered/i),
+          expect.stringMatching(/Attendance Marking.*not registered/i),
         ]),
       );
     });
 
     it('identifies a specific missing flow by name', async () => {
       const state = buildCompleteState();
-      delete state.flows.registration;
+      delete state.flows['Reading Assessment'];
       fs.writeFileSync(statePath, JSON.stringify(state));
 
       mockGetFlowDetails.mockResolvedValue({
@@ -260,7 +259,7 @@ describe('validateSetup', () => {
       expect(result.valid).toBe(false);
       expect(result.issues).toEqual(
         expect.arrayContaining([
-          expect.stringMatching(/registration.*not registered/i),
+          expect.stringMatching(/Reading Assessment.*not registered/i),
         ]),
       );
     });
@@ -288,7 +287,7 @@ describe('validateSetup', () => {
       expect(result.valid).toBe(false);
       expect(result.issues).toEqual(
         expect.arrayContaining([
-          expect.stringMatching(/feedback.*not PUBLISHED/i),
+          expect.stringMatching(/Attendance Setup.*not PUBLISHED/i),
         ]),
       );
     });
@@ -314,7 +313,7 @@ describe('validateSetup', () => {
       expect(result.valid).toBe(false);
       expect(result.issues).toEqual(
         expect.arrayContaining([
-          expect.stringMatching(/feedback/i),
+          expect.stringMatching(/Attendance Setup/i),
         ]),
       );
     });
@@ -429,7 +428,7 @@ describe('validateSetup', () => {
       const state = buildCompleteState({
         encryption: { configured: false },
       });
-      delete state.flows.lesson_plan;
+      delete state.flows['Attendance Marking'];
       state.templates.welcome_message.status = 'REJECTED';
       fs.writeFileSync(statePath, JSON.stringify(state));
 

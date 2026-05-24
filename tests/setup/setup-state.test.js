@@ -307,8 +307,8 @@ describe('SetupState', () => {
       await ss.load();
 
       await ss.setEncryption({ configured: true, publicKeyHash: 'h', registeredAt: new Date().toISOString() });
-      await ss.setFlow('registration', { flowId: 'f1', status: 'PUBLISHED', envVar: 'E1', type: 'registration', endpointPath: '/r', registeredAt: new Date().toISOString() });
-      await ss.setFlow('feedback', { flowId: 'f2', status: 'PUBLISHED', envVar: 'E2', type: 'feedback', endpointPath: '/f', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Reading Assessment', { flowId: 'f1', status: 'PUBLISHED', envVar: 'READING_ASSESSMENT_FLOW_ID', type: 'navigate', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Setup', { flowId: 'f2', status: 'PUBLISHED', envVar: 'ATTENDANCE_SETUP_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-setup', registeredAt: new Date().toISOString() });
       // Missing third flow
 
       expect(ss.isComplete()).toBe(false);
@@ -318,9 +318,9 @@ describe('SetupState', () => {
       const ss = new SetupState(statePath);
       await ss.load();
 
-      await ss.setFlow('registration', { flowId: 'f1', status: 'PUBLISHED', envVar: 'E1', type: 'registration', endpointPath: '/r', registeredAt: new Date().toISOString() });
-      await ss.setFlow('feedback', { flowId: 'f2', status: 'PUBLISHED', envVar: 'E2', type: 'feedback', endpointPath: '/f', registeredAt: new Date().toISOString() });
-      await ss.setFlow('lesson_plan', { flowId: 'f3', status: 'PUBLISHED', envVar: 'E3', type: 'lesson_plan', endpointPath: '/l', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Reading Assessment', { flowId: 'f1', status: 'PUBLISHED', envVar: 'READING_ASSESSMENT_FLOW_ID', type: 'navigate', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Setup', { flowId: 'f2', status: 'PUBLISHED', envVar: 'ATTENDANCE_SETUP_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-setup', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Marking', { flowId: 'f3', status: 'PUBLISHED', envVar: 'ATTENDANCE_MARKING_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-marking', registeredAt: new Date().toISOString() });
       // Encryption NOT set
 
       expect(ss.isComplete()).toBe(false);
@@ -331,9 +331,9 @@ describe('SetupState', () => {
       await ss.load();
 
       await ss.setEncryption({ configured: true, publicKeyHash: 'h', registeredAt: new Date().toISOString() });
-      await ss.setFlow('registration', { flowId: 'f1', status: 'PUBLISHED', envVar: 'E1', type: 'registration', endpointPath: '/r', registeredAt: new Date().toISOString() });
-      await ss.setFlow('feedback', { flowId: 'f2', status: 'PUBLISHED', envVar: 'E2', type: 'feedback', endpointPath: '/f', registeredAt: new Date().toISOString() });
-      await ss.setFlow('lesson_plan', { flowId: 'f3', status: 'PUBLISHED', envVar: 'E3', type: 'lesson_plan', endpointPath: '/l', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Reading Assessment', { flowId: 'f1', status: 'PUBLISHED', envVar: 'READING_ASSESSMENT_FLOW_ID', type: 'navigate', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Setup', { flowId: 'f2', status: 'PUBLISHED', envVar: 'ATTENDANCE_SETUP_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-setup', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Marking', { flowId: 'f3', status: 'PUBLISHED', envVar: 'ATTENDANCE_MARKING_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-marking', registeredAt: new Date().toISOString() });
 
       // Templates are PENDING — should NOT block completion
       await ss.setTemplate('welcome', { templateId: 't1', status: 'PENDING', registeredAt: new Date().toISOString() });
@@ -346,9 +346,9 @@ describe('SetupState', () => {
       await ss.load();
 
       await ss.setEncryption({ configured: true, publicKeyHash: 'h', registeredAt: new Date().toISOString() });
-      await ss.setFlow('registration', { flowId: 'f1', status: 'PUBLISHED', envVar: 'E1', type: 'registration', endpointPath: '/r', registeredAt: new Date().toISOString() });
-      await ss.setFlow('feedback', { flowId: 'f2', status: 'PUBLISHED', envVar: 'E2', type: 'feedback', endpointPath: '/f', registeredAt: new Date().toISOString() });
-      await ss.setFlow('lesson_plan', { flowId: 'f3', status: 'PUBLISHED', envVar: 'E3', type: 'lesson_plan', endpointPath: '/l', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Reading Assessment', { flowId: 'f1', status: 'PUBLISHED', envVar: 'READING_ASSESSMENT_FLOW_ID', type: 'navigate', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Setup', { flowId: 'f2', status: 'PUBLISHED', envVar: 'ATTENDANCE_SETUP_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-setup', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Marking', { flowId: 'f3', status: 'PUBLISHED', envVar: 'ATTENDANCE_MARKING_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-marking', registeredAt: new Date().toISOString() });
 
       expect(ss.isComplete()).toBe(true);
     });
@@ -379,7 +379,7 @@ describe('SetupState', () => {
       await ss.load();
 
       await ss.setEncryption({ configured: true, publicKeyHash: 'h', registeredAt: new Date().toISOString() });
-      await ss.setFlow('registration', { flowId: 'f1', status: 'PUBLISHED', envVar: 'E1', type: 'registration', endpointPath: '/r', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Reading Assessment', { flowId: 'f1', status: 'PUBLISHED', envVar: 'READING_ASSESSMENT_FLOW_ID', type: 'navigate', registeredAt: new Date().toISOString() });
 
       expect(ss.getNextIncompleteStep()).toBe('flows');
     });
@@ -389,9 +389,9 @@ describe('SetupState', () => {
       await ss.load();
 
       await ss.setEncryption({ configured: true, publicKeyHash: 'h', registeredAt: new Date().toISOString() });
-      await ss.setFlow('registration', { flowId: 'f1', status: 'PUBLISHED', envVar: 'E1', type: 'registration', endpointPath: '/r', registeredAt: new Date().toISOString() });
-      await ss.setFlow('feedback', { flowId: 'f2', status: 'PUBLISHED', envVar: 'E2', type: 'feedback', endpointPath: '/f', registeredAt: new Date().toISOString() });
-      await ss.setFlow('lesson_plan', { flowId: 'f3', status: 'PUBLISHED', envVar: 'E3', type: 'lesson_plan', endpointPath: '/l', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Reading Assessment', { flowId: 'f1', status: 'PUBLISHED', envVar: 'READING_ASSESSMENT_FLOW_ID', type: 'navigate', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Setup', { flowId: 'f2', status: 'PUBLISHED', envVar: 'ATTENDANCE_SETUP_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-setup', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Marking', { flowId: 'f3', status: 'PUBLISHED', envVar: 'ATTENDANCE_MARKING_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-marking', registeredAt: new Date().toISOString() });
 
       expect(ss.getNextIncompleteStep()).toBe('templates');
     });
@@ -401,9 +401,9 @@ describe('SetupState', () => {
       await ss.load();
 
       await ss.setEncryption({ configured: true, publicKeyHash: 'h', registeredAt: new Date().toISOString() });
-      await ss.setFlow('registration', { flowId: 'f1', status: 'PUBLISHED', envVar: 'E1', type: 'registration', endpointPath: '/r', registeredAt: new Date().toISOString() });
-      await ss.setFlow('feedback', { flowId: 'f2', status: 'PUBLISHED', envVar: 'E2', type: 'feedback', endpointPath: '/f', registeredAt: new Date().toISOString() });
-      await ss.setFlow('lesson_plan', { flowId: 'f3', status: 'PUBLISHED', envVar: 'E3', type: 'lesson_plan', endpointPath: '/l', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Reading Assessment', { flowId: 'f1', status: 'PUBLISHED', envVar: 'READING_ASSESSMENT_FLOW_ID', type: 'navigate', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Setup', { flowId: 'f2', status: 'PUBLISHED', envVar: 'ATTENDANCE_SETUP_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-setup', registeredAt: new Date().toISOString() });
+      await ss.setFlow('Attendance Marking', { flowId: 'f3', status: 'PUBLISHED', envVar: 'ATTENDANCE_MARKING_FLOW_ID', type: 'endpoint', endpointPath: '/flow/attendance-marking', registeredAt: new Date().toISOString() });
       await ss.setTemplate('welcome', { templateId: 't1', status: 'APPROVED', registeredAt: new Date().toISOString() });
 
       expect(ss.getNextIncompleteStep()).toBeNull();
