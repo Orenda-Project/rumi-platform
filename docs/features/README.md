@@ -6,16 +6,14 @@ Run **`npm run doctor`** at any time to see which features are live for your cur
 
 | Feature | Essence | Switches on when you set |
 |---|---|---|
-| 💬 [AI Chat](ai-chat.md) | Ask any teaching question, get a pedagogy-grounded answer | _core — always on_ |
+| 💬 [AI Chat](ai-chat.md) | Ask any teaching question, get a pedagogy-grounded answer | core — powered by `OPENROUTER_API_KEY`; voice questions need `SONIOX_API_KEY` |
 | 📝 [Registration](registration.md) | Friendly WhatsApp onboarding for teachers | _core — always on_ |
 | 🎯 [Classroom Coaching](coaching.md) | Recording → framework-scored report + reflective conversation | `SONIOX_API_KEY` |
 | 📖 [Reading Assessment](reading-assessment.md) | Student reads aloud → fluency, accuracy, comprehension | `SONIOX_API_KEY` |
 | 📋 [Lesson Plans](lesson-plans.md) | Topic + grade → full lesson-plan PDF | `GAMMA_API_KEY` |
 | 🗣️ [Voice Messages](voice.md) | Full spoken interaction in many languages | `SONIOX_API_KEY` + `ELEVENLABS_API_KEY` |
 | 🎬 [Video Generation](video.md) | Topic → short narrated educational video | `VIDEO_GENERATION_ENABLED` + `KIE_API_KEY` |
-| ✅ [Attendance](attendance.md) | Voice/tap attendance via WhatsApp Flows | _core — always on_ |
-| 🧮 [Exam Checker](exam-checker.md) | Photograph answer sheets → OCR + AI grading | `AWS_TEXTRACT_*` |
-
-> The illustrations on these pages are generated with Kie.ai and kept deliberately **global** — Rumi is for teachers everywhere.
+| ✅ [Attendance](attendance.md) | Tap-based attendance via WhatsApp Flows | _core — always on_ |
+| 🧮 [Exam Checker](exam-checker.md) | Photograph answer sheets → vision OCR + AI grading | `MISTRAL_API_KEY` |
 
 For deep customization of any feature (swapping frameworks, changing benchmarks, adding languages or regions), see the [Agent Customization Guide](../agent-customization.md).
