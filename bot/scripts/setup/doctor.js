@@ -21,34 +21,8 @@
  */
 
 // ── The presence-based contract ─────────────────────────────────────────────
-
-// Hard requirements: the bot will not start without all of these.
-const REQUIRED_VARS = [
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'OPENROUTER_API_KEY',
-  'REDIS_URL',
-  'WHATSAPP_TOKEN',
-  'PHONE_NUMBER_ID',
-  'WEBHOOK_VERIFY_TOKEN',
-  'WABA_ID',
-];
-
-// Optional features: each turns on automatically when its key(s) are present.
-// (Verified against the OSS bot code — the env var listed is the one the
-// feature's service actually reads.)
-const FEATURES = [
-  { name: 'Voice notes (speech-to-text, Soniox)', keys: ['SONIOX_API_KEY'] },
-  { name: 'Spoken replies (text-to-speech, ElevenLabs)', keys: ['ELEVENLABS_API_KEY'] },
-  { name: 'Urdu / regional voices (Uplift)', keys: ['UPLIFT_API_KEY'] },
-  { name: 'Lesson-plan generation (Gamma)', keys: ['GAMMA_API_KEY'] },
-  { name: 'Reading pronunciation scoring (Azure)', keys: ['AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION'] },
-  { name: 'Video generation (Kie.ai)', keys: ['KIE_API_KEY'] },
-  { name: 'Exam-checker OCR (Mistral vision)', keys: ['MISTRAL_API_KEY'] },
-  { name: 'Observability (Axiom)', keys: ['AXIOM_DATASET', 'AXIOM_TOKEN'] },
-];
-
-const isSet = (v) => typeof v === 'string' && v.trim() !== '' && !/^CHANGEME/i.test(v.trim());
+// Single source of truth: bot/shared/config/feature-availability.js
+const { REQUIRED_VARS, FEATURES, isSet } = require('../../shared/config/feature-availability');
 
 // ── Static analysis (pure, no network) ──────────────────────────────────────
 
