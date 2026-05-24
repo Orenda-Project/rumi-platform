@@ -61,7 +61,7 @@ Every feature below lives on WhatsApp. Click any feature for its own page — wh
 
 | Feature | What it does | Switches on when you set |
 |---|---|---|
-| 💬 **[AI Chat](docs/features/ai-chat.md)** | Teachers ask any teaching question by text or voice and get expert, pedagogy-grounded answers | _Always on_ (core) |
+| 💬 **[AI Chat](docs/features/ai-chat.md)** | Teachers ask any teaching question by text or voice and get expert, pedagogy-grounded answers | core (uses `OPENROUTER_API_KEY`); voice questions need `SONIOX_API_KEY` |
 | 📝 **[Registration](docs/features/registration.md)** | Friendly WhatsApp onboarding — name, school, grade, language | _Always on_ (core) |
 | 🎯 **[Classroom Coaching](docs/features/coaching.md)** | Teacher sends a class recording; Rumi transcribes, scores it against a pedagogical framework, has a reflective conversation, and returns a scored PDF report | `SONIOX_API_KEY` |
 | 📖 **[Reading Assessment](docs/features/reading-assessment.md)** | A student reads aloud into WhatsApp; Rumi measures fluency, accuracy, pronunciation, and comprehension against benchmarks | `SONIOX_API_KEY` |
