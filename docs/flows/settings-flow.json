@@ -1,0 +1,151 @@
+{
+  "_comment": "WhatsApp Flow for User Settings — Endpoint-based (data_api_version 3.0)",
+  "_instructions": [
+    "1. Register this Flow with Meta and set its ID as SETTINGS_FLOW_ID.",
+    "2. Endpoint: POST /api/flows/settings",
+    "3. The endpoint controls navigation + provides dropdown data with pre-selected current values.",
+    "4. Screens: SETTINGS_MAIN -> SUCCESS"
+  ],
+
+  "version": "6.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "SETTINGS_MAIN": ["SUCCESS"],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "SETTINGS_MAIN",
+      "title": "Rumi Settings",
+      "data": {
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "en", "title": "English" },
+            { "id": "ur", "title": "اردو (Urdu)" },
+            { "id": "sw", "title": "Kiswahili" }
+          ]
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "oecd", "title": "OECD 5D Framework" },
+            { "id": "hots", "title": "HOTS Framework" }
+          ]
+        },
+        "current_language": {
+          "type": "string",
+          "__example__": "en"
+        },
+        "current_framework": {
+          "type": "string",
+          "__example__": "oecd"
+        },
+        "info_text": {
+          "type": "string",
+          "__example__": "Default for your region: OECD 5D Framework. You can change this anytime."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "settings_form",
+            "init-values": {
+              "language": "${data.current_language}",
+              "observation_framework": "${data.current_framework}"
+            },
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Rumi Settings"
+              },
+              {
+                "type": "TextBody",
+                "text": "Update your language and observation tool preferences."
+              },
+              {
+                "type": "Dropdown",
+                "name": "language",
+                "label": "Language",
+                "required": true,
+                "data-source": "${data.languages}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "observation_framework",
+                "label": "Observation Framework",
+                "required": true,
+                "data-source": "${data.frameworks}"
+              },
+              {
+                "type": "TextBody",
+                "text": "${data.info_text}"
+              },
+              {
+                "type": "Footer",
+                "label": "Save Settings",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "language": "${form.language}",
+                    "observation_framework": "${form.observation_framework}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Settings Saved",
+      "terminal": true,
+      "data": {
+        "confirmation_message": { "type": "string", "__example__": "Your settings have been saved." },
+        "details_message": { "type": "string", "__example__": "Language: English | Observation: OECD 5D Framework" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Settings Saved!"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.confirmation_message}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.details_message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
