@@ -47,6 +47,14 @@ class PDFReportService {
   static async generateClassroomObservationReport(reportData) {
     const startTime = Date.now();
 
+    // Framework-level branching. MEWAKA (Tanzania CPD) uses a Playwright
+    // HTML→PDF renderer because its report shape (hero focus area + 6-domain
+    // Swahili scorecard + inline SVG sparkline) doesn't fit the pdfkit-based
+    // OECD/HOTS/TEACH/FICO layout. Those frameworks are unchanged below.
+    if (reportData.framework === 'mewaka') {
+      return PDFReportService._generateMEWAKAReport(reportData, startTime);
+    }
+
     try {
       logToFile('Starting PDF report generation with perfected design', {
         teacher: reportData.teacherName,
@@ -1044,6 +1052,52 @@ class PDFReportService {
     fs.writeFileSync(filePath, pdfBuffer);
     logToFile('PDF saved to file', { filePath, sizeKB: Math.round(pdfBuffer.length / 1024) });
     return filePath;
+  }
+
+  /**
+   * MEWAKA report renderer. Uses Playwright (shared/utils/html-to-pdf.js) to
+   * render the hero focus area + 6-domain Swahili scorecard + inline SVG
+   * sparkline as HTML→PDF. Kept separate from the pdfkit path so non-MEWAKA
+   * frameworks never pull Playwright.
+   */
+  static async _generateMEWAKAReport(reportData, startTime) {
+    try {
+      logToFile('Starting MEWAKA PDF report generation (Playwright)', {
+        teacher: reportData.teacherName,
+        totalScore: reportData.totalScore,
+        maxScore: reportData.maxScore,
+        framework: reportData.framework,
+        language: reportData.language,
+      });
+
+      // Lazy-require so the pdfkit path doesn't pull Playwright dependencies.
+      const { renderMewakaReportHtml } = require('./coaching/templates/mewaka-report.template');
+      const { htmlToPdf } = require('../utils/html-to-pdf');
+
+      const html = renderMewakaReportHtml(reportData);
+      const pdfBuffer = await htmlToPdf(html, {
+        format: 'A4',
+        // Match the template's @page margins (11mm 14mm) so the 1-page layout
+        // holds — a hardcoded value here would override @page and re-overflow.
+        margin: { top: '11mm', right: '14mm', bottom: '11mm', left: '14mm' },
+        printBackground: true,
+      });
+
+      logToFile('MEWAKA PDF report generated', {
+        teacher: reportData.teacherName,
+        pdfSizeKB: Math.round(pdfBuffer.length / 1024),
+        durationMs: Date.now() - startTime,
+      });
+
+      return pdfBuffer;
+    } catch (error) {
+      logToFile('❌ Failed to generate MEWAKA PDF report', {
+        teacher: reportData.teacherName,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
   }
 }
 

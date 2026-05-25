@@ -12,12 +12,14 @@ const { transformOECDToReportData } = require('./oecd-report-transformer');
 const { transformHOTSToReportData } = require('./hots-report-transformer');
 const { transformTeachToReportData } = require('./teach-report-transformer');
 const { transformFICOToReportData } = require('./fico-report-transformer');
+const { transformMEWAKAToReportData } = require('./mewaka-report-transformer');
 
 const transformers = {
   oecd: transformOECDToReportData,
   hots: transformHOTSToReportData,
   teach: transformTeachToReportData,
   fico: transformFICOToReportData,
+  mewaka: transformMEWAKAToReportData,   // Tanzania CPD — Playwright HTML→PDF report
 };
 
 /**
