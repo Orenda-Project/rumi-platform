@@ -249,6 +249,23 @@ async function handleTextMessage(message, from, messageBody, user = null) {
   // ============================================================
   const trimmedMessage = messageBody.trim().toLowerCase();
 
+  // Student Video feedback reason capture — if the teacher tapped "Not really"
+  // on a recent video survey and is within the 10-min reason window, capture
+  // this text as the reason and short-circuit. Slash commands bypass this
+  // (handled inside consumeReasonIfPending).
+  if (user?.id && messageBody) {
+    try {
+      const StudentVideoFeedbackService = require('../services/student-video-feedback.service');
+      const consumed = await StudentVideoFeedbackService.consumeReasonIfPending(user.id, from, messageBody);
+      if (consumed) {
+        logToFile('Text consumed as Student Video feedback reason — short-circuit', { userId: user.id });
+        return;
+      }
+    } catch (svFbErr) {
+      logToFile('Student Video Feedback: consumeReasonIfPending error', { error: svFbErr.message });
+    }
+  }
+
   // When user taps ice breaker, WhatsApp sends the ice breaker text as message
   const iceBreakers = {
     'show menu - see all features i can help with': 'menu',
@@ -503,6 +520,28 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         from,
         'Sorry, I could not find your account. Please send me a message first to register.\n\nمعذرت، میں آپ کا اکاؤنٹ نہیں مل سکا۔'
       );
+      return;
+    }
+
+    // Presence-gated: when STUDENT_VIDEOS_FLOW_ID is set, /video opens the
+    // pre-made Student Video Library picker. When it is empty, /video falls
+    // through to the runtime video generator below.
+    const STUDENT_VIDEOS_FLOW_ID = process.env.STUDENT_VIDEOS_FLOW_ID || '';
+    if (STUDENT_VIDEOS_FLOW_ID) {
+      typingController.stop();
+      const flowToken = `${user?.id || 'anon'}:student-videos:${Date.now()}`;
+      await WhatsAppService.sendFlow(from, {
+        flowId: STUDENT_VIDEOS_FLOW_ID,
+        header: '🎬 Student Videos',
+        body: ({
+          ur: 'اپنی کلاس، مضمون اور موضوع چنیں — میں ویڈیو آپ کی چیٹ میں بھیج دوں گا۔',
+        })[responseLanguage] || 'Pick a class, subject and topic — I will send the video to your chat.',
+        buttonText: ({
+          ur: 'تلاش کریں',
+        })[responseLanguage] || 'Browse',
+        flowToken,
+      });
+      logToFile('🎬 Sent student videos flow (/video)', { userId: user?.id });
       return;
     }
 

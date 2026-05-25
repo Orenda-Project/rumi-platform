@@ -567,6 +567,32 @@ CREATE TABLE IF NOT EXISTS student_videos (
     PRIMARY KEY (id)
 );
 
+-- Post-delivery thumbs-up / thumbs-down micro-survey on Student Video Library
+-- deliveries. One row per (user, video) button tap; reason_text is UPDATEd on
+-- the same row when the teacher replies to the follow-up within the 10-min window.
+CREATE TABLE IF NOT EXISTS student_video_feedback (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    video_id UUID REFERENCES student_videos(id) ON DELETE SET NULL,
+    useful BOOLEAN NOT NULL,
+    reason_text TEXT,
+    reason_received_at TIMESTAMPTZ,
+    reason_language TEXT,
+    reason_polarity TEXT CHECK (reason_polarity IN ('liked', 'disliked', 'unknown')),
+    -- Snapshot of the video context so feedback stays queryable if the
+    -- student_videos row is later updated.
+    grade VARCHAR(50),
+    subject VARCHAR(100),
+    topic VARCHAR(200),
+    subtopic VARCHAR(200),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_student_video_feedback_user_time
+    ON student_video_feedback (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_student_video_feedback_useful_time
+    ON student_video_feedback (useful, created_at DESC);
+
 -- ---------------------------------------------------------------------------
 -- Attendance
 -- ---------------------------------------------------------------------------

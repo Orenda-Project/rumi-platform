@@ -1,0 +1,112 @@
+{
+  "version": "6.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "SELECT_GRADE": ["SELECT_SUBJECT"],
+    "SELECT_SUBJECT": ["SELECT_TOPIC"],
+    "SELECT_TOPIC": ["SUCCESS"],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "SELECT_GRADE",
+      "title": "Student Videos",
+      "data": {
+        "grades": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [ { "id": "NURSERY", "title": "Nursery" }, { "id": "1", "title": "Grade 1" } ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "grade_form",
+            "children": [
+              { "type": "TextHeading", "text": "Student Learning Videos" },
+              { "type": "TextBody", "text": "Free educational videos for your students. Pick a class to begin." },
+              { "type": "Dropdown", "name": "grade", "label": "Class / Grade", "required": true, "data-source": "${data.grades}" },
+              { "type": "Footer", "label": "Next", "on-click-action": { "name": "data_exchange", "payload": { "grade": "${form.grade}" } } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SELECT_SUBJECT",
+      "title": "Select Subject",
+      "data": {
+        "subjects": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [ { "id": "English", "title": "English" }, { "id": "Maths", "title": "Maths" } ]
+        },
+        "grade_value": { "type": "string", "__example__": "1" },
+        "grade_display": { "type": "string", "__example__": "Grade 1" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "subject_form",
+            "children": [
+              { "type": "TextHeading", "text": "${data.grade_display}" },
+              { "type": "TextBody", "text": "Choose a subject." },
+              { "type": "Dropdown", "name": "subject", "label": "Subject", "required": true, "data-source": "${data.subjects}" },
+              { "type": "Footer", "label": "Next", "on-click-action": { "name": "data_exchange", "payload": { "grade": "${data.grade_value}", "subject": "${form.subject}" } } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SELECT_TOPIC",
+      "title": "Pick a Video",
+      "data": {
+        "videos": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [ { "id": "row-uuid-1", "title": "Numbers · Identifying Even and Odd Numbers" } ]
+        },
+        "grade_value": { "type": "string", "__example__": "3" },
+        "subject_value": { "type": "string", "__example__": "Maths" },
+        "header_text": { "type": "string", "__example__": "Grade 3 — Maths" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "video_form",
+            "children": [
+              { "type": "TextHeading", "text": "${data.header_text}" },
+              { "type": "TextBody", "text": "Pick a video — it will land in your chat in a few seconds." },
+              { "type": "Dropdown", "name": "video", "label": "Video", "required": true, "data-source": "${data.videos}" },
+              { "type": "Footer", "label": "Send Video", "on-click-action": { "name": "data_exchange", "payload": { "grade": "${data.grade_value}", "subject": "${data.subject_value}", "video": "${form.video}" } } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Video On The Way",
+      "terminal": true,
+      "data": {
+        "message": { "type": "string", "__example__": "Your video \"Identifying Even and Odd Numbers\" (Grade 3 Maths) is on its way!" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          { "type": "TextHeading", "text": "Sent!" },
+          { "type": "TextBody", "text": "${data.message}" },
+          { "type": "TextBody", "text": "Check your chat — the video will arrive in a few seconds. You can close this form now." },
+          { "type": "Footer", "label": "Done", "on-click-action": { "name": "complete", "payload": {} } }
+        ]
+      }
+    }
+  ]
+}

@@ -26,6 +26,9 @@ const SETTINGS_FLOW_ID = process.env.SETTINGS_FLOW_ID || '';
 // WhatsApp Flow ID for the /status snapshot (empty → /status falls back to a
 // plain-text summary instead of the interactive Flow).
 const STATUS_FLOW_ID = process.env.STATUS_FLOW_ID || '';
+// WhatsApp Flow ID for the Student Video Library picker. When set, /video
+// opens the library; when empty, /video uses the runtime video generator.
+const STUDENT_VIDEOS_FLOW_ID = process.env.STUDENT_VIDEOS_FLOW_ID || '';
 
 // Pic-to-LP (photo → illustrated lesson plan)
 const KIE_API_KEY = process.env.KIE_API_KEY;
@@ -127,6 +130,7 @@ module.exports = {
   ATTENDANCE_MARKING_FLOW_ID,
   SETTINGS_FLOW_ID,
   STATUS_FLOW_ID,
+  STUDENT_VIDEOS_FLOW_ID,
 
   // Pic-to-LP
   KIE_API_KEY,

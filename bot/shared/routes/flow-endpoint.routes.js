@@ -45,6 +45,11 @@ const {
   handleStatusFlowDataExchange,
   handleStatusFlowBack
 } = require('./status-flow-endpoint');
+const {
+  handleStudentVideosInit,
+  handleStudentVideosDataExchange,
+  handleStudentVideosBack
+} = require('./student-videos-endpoint');
 
 /**
  * Handle attendance marking flow data requests
@@ -681,6 +686,43 @@ async function handleStatusFlowRequest(data) {
   if (action === 'BACK')                      return await handleStatusFlowBack(userId, screen, flow_token);
 
   logToFile('Unknown status flow action', { action });
+  return FlowEncryptionService.createErrorResponse('Unknown action');
+}
+
+// ============================================================
+// STUDENT VIDEOS FLOW ENDPOINT — browse the library + deliver to chat
+// ============================================================
+
+router.post('/student-videos', async (req, res) => {
+  try {
+    if (!FlowEncryptionService.isConfigured()) {
+      logToFile('Flow encryption not configured', { endpoint: 'student-videos' });
+      return res.status(500).json({ error: 'Flow encryption not configured' });
+    }
+    const encryptedResponse = await FlowEncryptionService.processEncryptedRequest(
+      req.body,
+      async (decryptedData) => handleStudentVideosFlow(decryptedData)
+    );
+    res.set('Content-Type', 'text/plain');
+    res.send(encryptedResponse);
+  } catch (error) {
+    logToFile('Student Videos flow endpoint error', {
+      endpoint: 'student-videos',
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function handleStudentVideosFlow(data) {
+  const { action, flow_token, screen, data: screenData } = data;
+  logToFile('Handling Student Videos flow', { action, screen, hasFlowToken: !!flow_token });
+  if (action === 'ping') return FlowEncryptionService.handlePing();
+  if (action === 'INIT' || action === 'init') return await handleStudentVideosInit(flow_token);
+  if (action === 'data_exchange')             return await handleStudentVideosDataExchange(flow_token, screen, screenData);
+  if (action === 'BACK')                      return await handleStudentVideosBack(flow_token, screen);
+  logToFile('Unknown student-videos flow action', { action });
   return FlowEncryptionService.createErrorResponse('Unknown action');
 }
 

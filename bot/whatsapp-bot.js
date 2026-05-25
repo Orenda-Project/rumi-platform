@@ -797,6 +797,10 @@ app.post('/webhook', async (req, res) => {
         } catch (err) {
           logToFile('❌ quiz intent button routing failed', { buttonId, error: err.message });
         }
+      // Student Video Library post-delivery survey (👍 Yes / 👎 Not really).
+      else if (buttonId.startsWith('student_video_feedback_yes_') || buttonId.startsWith('student_video_feedback_no_')) {
+        const StudentVideoFeedbackService = require('./shared/services/student-video-feedback.service');
+        await StudentVideoFeedbackService.handleFeedbackButton(buttonId, from);
       } else {
         logToFile('⚠️ Unknown button ID', { buttonId });
       }
