@@ -22,6 +22,8 @@ const path = require('path');
 const { getClient } = require('../llm-client');
 const { logToFile } = require('../../utils/logger');
 const { TEMP_DIR, OPENAI_API_KEY } = require('../../utils/constants');
+const { htmlToPdf } = require('../../utils/html-to-pdf');
+const renderReadingReportHtml = require('../../templates/reading-report.template');
 
 // OpenAI client for translating non-Latin text
 const openai = getClient();
@@ -103,6 +105,32 @@ class ReadingReportService {
    * @returns {Promise<Buffer>} PDF buffer
    */
   static async generateReadingAssessmentReport(reportData) {
+    // HTML→PDF via Playwright is the default — Chromium's HarfBuzz pipeline
+    // renders Urdu Nastaliq + RTL correctly. PDFKit is kept as an automatic
+    // fallback for any render failure (e.g. Chromium not installed on the host,
+    // unexpected data shape), so a deployment without Chromium still gets a report.
+    try {
+      logToFile('📄 Generating reading report via HTML→PDF', {
+        student: reportData.studentIdentifier,
+        language: reportData.language,
+      });
+      const html = renderReadingReportHtml(reportData);
+      return await htmlToPdf(html);
+    } catch (error) {
+      logToFile('⚠️ HTML→PDF render failed, falling back to PDFKit', {
+        error: error.message,
+        student: reportData.studentIdentifier,
+      });
+      return this._generateReadingReportPdfKit(reportData);
+    }
+  }
+
+  /**
+   * Status-quo PDFKit renderer. Kept as an automatic fallback for any
+   * HTML→PDF render failure (e.g. Chromium unavailable).
+   * @private
+   */
+  static async _generateReadingReportPdfKit(reportData) {
     const startTime = Date.now();
 
     try {
