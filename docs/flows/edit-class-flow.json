@@ -1,0 +1,278 @@
+{
+  "_comment": "WhatsApp Flow for Edit Class Roster — Endpoint-based",
+  "_instructions": [
+    "1. Register this Flow with Meta and set its ID as EDIT_CLASS_FLOW_ID.",
+    "2. Endpoint: POST /api/flows/edit-class",
+    "3. ROSTER_VIEW: Shows current students + actions (add/edit/remove/done)",
+    "4. ADD_STUDENT: Add new student with self-loop",
+    "5. SELECT_STUDENT_TO_EDIT: Pick a student to edit",
+    "6. EDIT_STUDENT: Pre-filled form for editing name / parent_phone",
+    "7. REMOVE_STUDENTS: CheckboxGroup to remove students",
+    "8. SUCCESS: Confirmation screen"
+  ],
+  "version": "6.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "ROSTER_VIEW": ["ADD_STUDENT", "REMOVE_STUDENTS", "SELECT_STUDENT_TO_EDIT", "SUCCESS"],
+    "ADD_STUDENT": ["SUCCESS"],
+    "REMOVE_STUDENTS": ["SUCCESS"],
+    "SELECT_STUDENT_TO_EDIT": ["EDIT_STUDENT"],
+    "EDIT_STUDENT": ["SUCCESS"],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "ROSTER_VIEW",
+      "title": "Edit Class",
+      "data": {
+        "class_info": { "type": "string", "__example__": "Grade 5 - A | 25 students" },
+        "students_list": { "type": "string", "__example__": "1. Student One\n2. Student Two\n3. Student Three" },
+        "has_students": { "type": "boolean", "__example__": true },
+        "list_id": { "type": "string", "__example__": "uuid-123" },
+        "class_display": { "type": "string", "__example__": "5 - A" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "roster_form",
+            "children": [
+              { "type": "TextHeading", "text": "Class Roster" },
+              { "type": "TextSubheading", "text": "${data.class_info}" },
+              { "type": "TextBody", "text": "${data.students_list}" },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "action",
+                "label": "What would you like to do?",
+                "required": true,
+                "data-source": [
+                  { "id": "add", "title": "Add Students" },
+                  { "id": "edit", "title": "Edit a Student" },
+                  { "id": "remove", "title": "Remove Students" },
+                  { "id": "done", "title": "Done Editing" }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": { "_action": "${form.action}", "_list_id": "${data.list_id}", "_class_display": "${data.class_display}" }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ADD_STUDENT",
+      "title": "Add Student",
+      "refresh_on_back": true,
+      "data": {
+        "list_id": { "type": "string", "__example__": "uuid-123" },
+        "class_display": { "type": "string", "__example__": "5 - A" },
+        "heading": { "type": "string", "__example__": "Add Student #26" },
+        "class_info": { "type": "string", "__example__": "Class: 5 - A | Students: 25" },
+        "students_list": { "type": "string", "__example__": "Added: 1. Student One, 2. Student Two" },
+        "form_init_values": {
+          "type": "object",
+          "properties": {
+            "first_name": { "type": "string" },
+            "last_name": { "type": "string" },
+            "parent_phone": { "type": "string" }
+          },
+          "__example__": { "first_name": "", "last_name": "", "parent_phone": "" }
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "add_form",
+            "init-values": "${data.form_init_values}",
+            "children": [
+              { "type": "TextHeading", "text": "${data.heading}" },
+              { "type": "TextBody", "text": "${data.class_info}" },
+              { "type": "TextCaption", "text": "${data.students_list}" },
+              { "type": "TextInput", "name": "first_name", "label": "First Name", "required": false, "input-type": "text" },
+              { "type": "TextInput", "name": "last_name", "label": "Last Name / Father's Name", "required": false, "input-type": "text" },
+              { "type": "TextInput", "name": "parent_phone", "label": "Parent's WhatsApp (optional)", "required": false, "input-type": "phone", "helper-text": "International format, e.g. +14155550123" },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "action",
+                "label": "What would you like to do?",
+                "required": true,
+                "data-source": [
+                  { "id": "add", "title": "Add this student & continue" },
+                  { "id": "done", "title": "Finish (no more students)" }
+                ]
+              },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "first_name": "${form.first_name}",
+                    "last_name": "${form.last_name}",
+                    "parent_phone": "${form.parent_phone}",
+                    "_action": "${form.action}",
+                    "_list_id": "${data.list_id}",
+                    "_class_display": "${data.class_display}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "REMOVE_STUDENTS",
+      "title": "Remove Students",
+      "data": {
+        "list_id": { "type": "string", "__example__": "uuid-123" },
+        "class_display": { "type": "string", "__example__": "5 - A" },
+        "class_info": { "type": "string", "__example__": "Class: 5 - A | Select students to remove" },
+        "students": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [ { "id": "student-uuid-1", "title": "1. Student One" }, { "id": "student-uuid-2", "title": "2. Student Two" } ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "remove_form",
+            "children": [
+              { "type": "TextHeading", "text": "Remove Students" },
+              { "type": "TextBody", "text": "${data.class_info}" },
+              {
+                "type": "CheckboxGroup",
+                "name": "students_to_remove",
+                "label": "Select students to remove",
+                "required": true,
+                "min-selected-items": 1,
+                "max-selected-items": 50,
+                "data-source": "${data.students}"
+              },
+              {
+                "type": "Footer",
+                "label": "Remove Selected",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": { "students_to_remove": "${form.students_to_remove}", "_list_id": "${data.list_id}", "_class_display": "${data.class_display}" }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SELECT_STUDENT_TO_EDIT",
+      "title": "Choose Student",
+      "data": {
+        "list_id": { "type": "string", "__example__": "uuid-123" },
+        "class_display": { "type": "string", "__example__": "5 - A" },
+        "students": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [ { "id": "uuid-1", "title": "1. Student One" }, { "id": "uuid-2", "title": "2. Student Two" } ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "select_form",
+            "children": [
+              { "type": "TextHeading", "text": "Which student do you want to edit?" },
+              { "type": "Dropdown", "name": "student_id", "label": "Student", "required": true, "data-source": "${data.students}" },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": { "_student_id": "${form.student_id}", "_list_id": "${data.list_id}", "_class_display": "${data.class_display}" }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "EDIT_STUDENT",
+      "title": "Edit Student",
+      "data": {
+        "list_id": { "type": "string", "__example__": "uuid-123" },
+        "student_id": { "type": "string", "__example__": "uuid-1" },
+        "class_display": { "type": "string", "__example__": "5 - A" },
+        "heading": { "type": "string", "__example__": "Editing: Student One" },
+        "form_init_values": {
+          "type": "object",
+          "properties": {
+            "first_name": { "type": "string" },
+            "last_name": { "type": "string" },
+            "parent_phone": { "type": "string" }
+          },
+          "__example__": { "first_name": "Student", "last_name": "One", "parent_phone": "+14155550123" }
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "edit_form",
+            "init-values": "${data.form_init_values}",
+            "children": [
+              { "type": "TextHeading", "text": "${data.heading}" },
+              { "type": "TextInput", "name": "first_name", "label": "First Name", "required": false, "input-type": "text" },
+              { "type": "TextInput", "name": "last_name", "label": "Last Name / Father's Name", "required": false, "input-type": "text" },
+              { "type": "TextInput", "name": "parent_phone", "label": "Parent's WhatsApp (optional)", "required": false, "input-type": "phone", "helper-text": "Leave blank to remove the existing number" },
+              {
+                "type": "Footer",
+                "label": "Save Changes",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "first_name": "${form.first_name}",
+                    "last_name": "${form.last_name}",
+                    "parent_phone": "${form.parent_phone}",
+                    "_student_id": "${data.student_id}",
+                    "_list_id": "${data.list_id}",
+                    "_class_display": "${data.class_display}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Edit Complete",
+      "terminal": true,
+      "data": {
+        "success_message": { "type": "string", "__example__": "Class 5 - A updated. 25 students." }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          { "type": "TextHeading", "text": "Class Updated!" },
+          { "type": "TextBody", "text": "${data.success_message}" },
+          { "type": "Footer", "label": "Done", "on-click-action": { "name": "complete", "payload": {} } }
+        ]
+      }
+    }
+  ]
+}

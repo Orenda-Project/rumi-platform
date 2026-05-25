@@ -546,6 +546,9 @@ CREATE TABLE IF NOT EXISTS students (
     father_name VARCHAR(200),
     student_name_urdu TEXT,
     father_name_urdu TEXT,
+    -- Optional parent/guardian contact (E.164). Used by the quiz subsystem to
+    -- deliver quizzes and by the edit-class flow's add/edit-student forms.
+    parent_phone TEXT,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),

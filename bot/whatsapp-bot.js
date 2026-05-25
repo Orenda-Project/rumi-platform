@@ -801,6 +801,36 @@ app.post('/webhook', async (req, res) => {
       else if (buttonId.startsWith('student_video_feedback_yes_') || buttonId.startsWith('student_video_feedback_no_')) {
         const StudentVideoFeedbackService = require('./shared/services/student-video-feedback.service');
         await StudentVideoFeedbackService.handleFeedbackButton(buttonId, from);
+      }
+      // Edit-class multi-class picker: open the edit-class flow for the chosen class.
+      else if (buttonId.startsWith('edit_class_')) {
+        const listId = buttonId.replace('edit_class_', '');
+        logToFile('📋 Edit class button selected', { listId, userId: user?.id, from });
+        if (!user?.id) {
+          await WhatsAppService.sendMessage(from, 'Sorry, I could not identify your account. Please try "edit class" again.');
+        } else if (!constants.EDIT_CLASS_FLOW_ID) {
+          await WhatsAppService.sendMessage(from, 'Sorry, class editing is not available right now. Please try again later.');
+        } else {
+          const { data: classRow } = await supabase
+            .from('student_lists')
+            .select('id, class_name, section')
+            .eq('id', listId)
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .single();
+          if (!classRow) {
+            await WhatsAppService.sendMessage(from, 'I could not find that class. Please say "edit class" to refresh your class list.');
+          } else {
+            const flowToken = `${user.id}:${classRow.id}`;
+            await WhatsAppService.sendFlow(from, {
+              flowId: constants.EDIT_CLASS_FLOW_ID,
+              header: '📋 Edit Class',
+              body: `Edit roster for ${classRow.section ? `${classRow.class_name} - ${classRow.section}` : classRow.class_name}`,
+              buttonText: 'Edit Class',
+              flowToken
+            });
+          }
+        }
       } else {
         logToFile('⚠️ Unknown button ID', { buttonId });
       }
