@@ -22,6 +22,19 @@ const PORT = process.env.PORT || 3000;
 const ATTENDANCE_SETUP_FLOW_ID = process.env.ATTENDANCE_SETUP_FLOW_ID || '';
 const ATTENDANCE_MARKING_FLOW_ID = process.env.ATTENDANCE_MARKING_FLOW_ID || '';
 
+// Pic-to-LP (photo → illustrated lesson plan)
+const KIE_API_KEY = process.env.KIE_API_KEY;
+// Pic-to-LP uses a dedicated Kie.ai key for rate-limit isolation; falls back
+// to the shared KIE_API_KEY when a feature-specific key isn't set.
+const KIE_API_KEY_PIC_LP = process.env.KIE_API_KEY_PIC_LP || process.env.KIE_API_KEY;
+// R2 object key for the Rumi brand mark used as the header logo in generated LPs.
+const RUMI_LOGO_R2_KEY = process.env.RUMI_LOGO_R2_KEY || 'brand/rumi-white-smile-v1.png';
+// WhatsApp Flow ID for the pic-to-LP confirmation form (empty → text fallback).
+const PIC_LP_FLOW_ID = process.env.PIC_LP_FLOW_ID || '';
+// Teacher-facing WhatsApp number shown in the lesson-plan Coaching Corner
+// (empty → the contact line is omitted from the rendered LP).
+const COACHING_WHATSAPP_NUMBER = process.env.COACHING_WHATSAPP_NUMBER || '';
+
 // Directory Paths
 const TEMP_DIR = path.join(__dirname, '../../temp');
 const LOGS_DIR = path.join(__dirname, '../../logs');
@@ -39,6 +52,8 @@ const SONIOX_V3_TIMEOUT = 180; // 3 minutes
 const SONIOX_V2_TIMEOUT = 120; // 2 minutes
 const GAMMA_MAX_ATTEMPTS = 60; // Maximum polling attempts for Gamma
 const GAMMA_POLL_INTERVAL = 5000; // 5 seconds between polls
+const KIE_MAX_ATTEMPTS = 60;    // Maximum polling attempts for Kie.ai (8s × 60 = 8 min ceiling)
+const KIE_POLL_INTERVAL = 8000; // 8 seconds between polls (matches Kie.ai recommendation)
 const MESSAGE_MAX_AGE = 23 * 60 * 60; // 23 hours in seconds
 
 // MMS-ASR Service Configuration (for regional Pakistani languages)
@@ -106,6 +121,13 @@ module.exports = {
   ATTENDANCE_SETUP_FLOW_ID,
   ATTENDANCE_MARKING_FLOW_ID,
 
+  // Pic-to-LP
+  KIE_API_KEY,
+  KIE_API_KEY_PIC_LP,
+  RUMI_LOGO_R2_KEY,
+  PIC_LP_FLOW_ID,
+  COACHING_WHATSAPP_NUMBER,
+
   // Directory Paths
   TEMP_DIR,
   LOGS_DIR,
@@ -123,6 +145,8 @@ module.exports = {
   SONIOX_V2_TIMEOUT,
   GAMMA_MAX_ATTEMPTS,
   GAMMA_POLL_INTERVAL,
+  KIE_MAX_ATTEMPTS,
+  KIE_POLL_INTERVAL,
   MESSAGE_MAX_AGE,
 
   // MMS-ASR Service
