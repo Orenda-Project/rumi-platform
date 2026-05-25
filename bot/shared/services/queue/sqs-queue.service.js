@@ -20,7 +20,7 @@
 const AWS = require('aws-sdk');
 const { logToFile } = require('../../utils/logger');
 const RedisService = require('../cache/railway-redis.service');
-const { getCurrentCorrelationId } = require('../../utils/structured-logger');
+const { getCurrentCorrelationId, logEvent } = require('../../utils/structured-logger');
 
 class SQSQueueService {
   constructor() {
@@ -34,6 +34,7 @@ class SQSQueueService {
     this.sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
     this.queueUrl = process.env.SQS_QUEUE_URL;
     this.videoQueueUrl = process.env.SQS_VIDEO_QUEUE_URL;  // Dedicated video queue
+    this.quizQueueUrl = process.env.SQS_QUIZ_QUEUE_URL;    // Dedicated quiz queue (Standard — supports per-message DelaySeconds)
     this.dlqUrl = process.env.SQS_DLQ_URL;
 
     // Redis key prefix for job idempotency
@@ -45,6 +46,9 @@ class SQSQueueService {
     }
     if (this.videoQueueUrl) {
       logToFile('✅ Dedicated video queue configured', { videoQueueUrl: this.videoQueueUrl });
+    }
+    if (this.quizQueueUrl) {
+      logToFile('✅ Dedicated quiz queue configured', { quizQueueUrl: this.quizQueueUrl });
     }
   }
 
@@ -724,6 +728,147 @@ class SQSQueueService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Enqueue a generic job (v2 envelope). The worker switch in sqs-worker.js
+   * routes by `body.jobType`.
+   *
+   * Routing:
+   * - quiz_* jobTypes → SQS_QUIZ_QUEUE_URL (Standard queue)
+   * - Everything else → SQS_QUEUE_URL (the main queue)
+   *
+   * Why a separate quiz queue: the main coaching queue is FIFO (at-most-once +
+   * dedup) but rejects per-message DelaySeconds. Quiz jobs need DelaySeconds
+   * (grace period + cascade re-queue), so they live in a dedicated Standard
+   * queue. Standard is at-least-once, but the quiz handler's report-sent Redis
+   * flag guards against duplicate report generation.
+   *
+   * @param {string} groupId   Logical entity id (quizId, sessionId, lpId)
+   * @param {string} jobType   Routes to the worker handler ('quiz_report', 'quiz_expire', …)
+   * @param {object} payload   Worker-specific payload (becomes body.payload)
+   * @param {object} opts      { delaySeconds?: 0..900, deduplicationId?: string (FIFO only) }
+   * @returns {Promise<string>} SQS MessageId
+   */
+  async queueJob(groupId, jobType, payload = {}, opts = {}) {
+    const isQuizJob = jobType && jobType.startsWith('quiz_');
+    const queueUrl = isQuizJob ? (this.quizQueueUrl || this.queueUrl) : this.queueUrl;
+    const isFifo = queueUrl && queueUrl.endsWith('.fifo');
+
+    if (!queueUrl) {
+      throw new Error('SQS Queue not configured (neither SQS_QUIZ_QUEUE_URL nor SQS_QUEUE_URL set)');
+    }
+
+    const correlationId = getCurrentCorrelationId();
+    const deduplicationId = opts.deduplicationId || `${groupId}-${jobType}-${Date.now()}`;
+
+    const messageBody = {
+      groupId,
+      jobType,
+      payload,
+      correlationId,
+      queuedAt: new Date().toISOString(),
+      version: '2.0',  // generic envelope; coaching/video are still v1.0
+    };
+
+    const params = {
+      QueueUrl: queueUrl,
+      MessageBody: JSON.stringify(messageBody),
+      MessageAttributes: {
+        jobType: { DataType: 'String', StringValue: jobType },
+        groupId: { DataType: 'String', StringValue: groupId },
+      },
+    };
+
+    if (isFifo) {
+      // FIFO requires both MessageGroupId and MessageDeduplicationId; rejects DelaySeconds.
+      params.MessageGroupId = groupId;
+      params.MessageDeduplicationId = deduplicationId;
+    } else {
+      // Standard queue: supports per-message DelaySeconds; no FIFO params.
+      if (opts.delaySeconds && opts.delaySeconds > 0) {
+        params.DelaySeconds = Math.min(900, opts.delaySeconds);  // SQS hard cap
+      }
+    }
+
+    const result = await this.sqs.sendMessage(params).promise();
+
+    logToFile('📤 Job queued (v2 generic envelope)', {
+      groupId, jobType,
+      messageId: result.MessageId,
+      queueType: isFifo ? 'fifo' : 'standard',
+      delaySeconds: params.DelaySeconds || 0,
+      deduplicationId: isFifo ? deduplicationId : undefined,
+    });
+    logEvent('sqs.job.queued', { correlationId, jobType, requestId: groupId, messageId: result.MessageId });
+
+    if (isQuizJob) {
+      logEvent('quiz.' + jobType.replace('quiz_', '') + '.queued', {
+        quizId: groupId,
+        messageId: result.MessageId,
+        delaySeconds: params.DelaySeconds || 0,
+      });
+    }
+
+    return result.MessageId;
+  }
+
+  /**
+   * Receive jobs from the dedicated quiz Standard queue. Mirrors receiveJobs /
+   * receiveVideoJobs but for the quiz queue (no FIFO MessageGroupId).
+   * @param {number} maxMessages  1..10
+   * @returns {Promise<Array>}    Job messages
+   */
+  async receiveQuizJobs(maxMessages = 1) {
+    if (!this.quizQueueUrl) return [];
+    try {
+      const result = await this.sqs.receiveMessage({
+        QueueUrl: this.quizQueueUrl,
+        MaxNumberOfMessages: Math.min(maxMessages, 10),
+        WaitTimeSeconds: 20,
+        VisibilityTimeout: 600,  // 10 min — quiz_report worst case (PDF + R2 upload)
+        MessageAttributeNames: ['All']
+      }).promise();
+
+      if (!result.Messages || result.Messages.length === 0) return [];
+
+      return result.Messages.map(msg => {
+        try {
+          return {
+            messageId: msg.MessageId,
+            receiptHandle: msg.ReceiptHandle,
+            body: JSON.parse(msg.Body),
+            attributes: msg.MessageAttributes || {},
+            receivedAt: new Date().toISOString()
+          };
+        } catch (parseErr) {
+          logToFile('❌ Failed to parse quiz SQS message', { messageId: msg.MessageId, error: parseErr.message });
+          return null;
+        }
+      }).filter(Boolean);
+    } catch (err) {
+      logToFile('❌ Failed to receive quiz jobs from SQS', { error: err.message });
+      throw err;
+    }
+  }
+
+  /** Acknowledge (delete) a completed quiz job. */
+  async completeQuizJob(receiptHandle) {
+    if (!this.quizQueueUrl) throw new Error('Quiz queue not configured');
+    await this.sqs.deleteMessage({
+      QueueUrl: this.quizQueueUrl,
+      ReceiptHandle: receiptHandle
+    }).promise();
+  }
+
+  /** Extend the visibility timeout for a long-running quiz job. */
+  async extendQuizJobTimeout(receiptHandle, additionalSeconds) {
+    if (!this.quizQueueUrl) throw new Error('Quiz queue not configured');
+    await this.sqs.changeMessageVisibility({
+      QueueUrl: this.quizQueueUrl,
+      ReceiptHandle: receiptHandle,
+      VisibilityTimeout: Math.min(additionalSeconds, 43200)
+    }).promise();
   }
 }
 

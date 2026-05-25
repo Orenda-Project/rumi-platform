@@ -749,6 +749,54 @@ app.post('/webhook', async (req, res) => {
             await PageCollector.onComplete({ sessionId, from, language: lang, trigger: 'done_clicked' });
           }
         }
+      }
+      // Quiz invite buttons (free-message path) — a parent taps "Start Quiz"
+      // or "Not now". No Rumi account required (parent isn't necessarily a user).
+      else if (buttonId === 'quiz_invite_start') {
+        const QuizSessionService = require('./shared/services/quiz/quiz-session.service');
+        logToFile('▶️ quiz_invite_start tapped', { from });
+        await QuizSessionService.startQuizFromInvite(from);
+      }
+      else if (buttonId === 'quiz_invite_skip') {
+        const QuizSessionService = require('./shared/services/quiz/quiz-session.service');
+        logToFile('⏭️ quiz_invite_skip tapped', { from });
+        const state = await QuizSessionService.getActiveState(from);
+        if (state) await QuizSessionService.endSession(from, state, 'incomplete');
+      }
+      // Quiz answer buttons: quiz_<questionId>_<A|B|C>
+      else if (/^quiz_[a-zA-Z0-9\-]+_[ABC]$/i.test(buttonId)) {
+        const QuizSessionService = require('./shared/services/quiz/quiz-session.service');
+        logToFile('🅰️ Quiz answer button tapped', { buttonId, from });
+        const state = await QuizSessionService.getActiveState(from);
+        if (state) {
+          await QuizSessionService.handleAnswer(from, buttonId, state);
+        } else {
+          logToFile('⚠️ Quiz answer tapped but no active state', { buttonId, from });
+        }
+      }
+      // Follow-up LP buttons (post-report): stash intent + ask for next topic;
+      // text-message.handler intercepts the reply and queues the LP.
+      else if (
+        buttonId.startsWith('quiz_revise_next_') ||
+        buttonId.startsWith('quiz_revise_only_') ||
+        buttonId.startsWith('quiz_extend_') ||
+        buttonId.startsWith('quiz_bridge_')
+      ) {
+        const QuizFollowUpService = require('./shared/services/quiz/quiz-follow-up.service');
+        await QuizFollowUpService.handleFollowUpButton(buttonId, user, from);
+      }
+      else if (buttonId === 'quiz_skip_followup') {
+        logToFile('⏭️ quiz_skip_followup tapped', { from, userId: user?.id });
+        // Silent skip — teacher acknowledged the report, no follow-up LP this round.
+      }
+      // Two-button confirmation on a quiz intent (send to class vs show in chat).
+      else if (buttonId === 'quiz_send_to_class' || buttonId === 'quiz_show_in_chat') {
+        try {
+          const QuizIntentRouter = require('./shared/services/quiz/quiz-intent-router.service');
+          await QuizIntentRouter.handleConfirmationButton(buttonId, user, from);
+        } catch (err) {
+          logToFile('❌ quiz intent button routing failed', { buttonId, error: err.message });
+        }
       } else {
         logToFile('⚠️ Unknown button ID', { buttonId });
       }
