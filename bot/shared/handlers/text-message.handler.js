@@ -1192,6 +1192,46 @@ async function handleTextMessage(message, from, messageBody, user = null) {
   }
 
   // ============================================================
+  // /status COMMAND: cross-feature snapshot of what's running + cancel
+  // ============================================================
+  if (/^\/status\b/i.test(trimmedMessage)) {
+    logToFile('📋 /status command detected', { userId: user?.id, phoneNumber: from });
+    if (!user) {
+      await WhatsAppService.sendMessage(from,
+        'Sorry, I could not find your account. Please send me a message first.');
+      typingController.stop();
+      return;
+    }
+    try {
+      typingController.stop();
+      const STATUS_FLOW_ID = process.env.STATUS_FLOW_ID || '';
+      if (STATUS_FLOW_ID) {
+        await WhatsAppService.sendFlow(from, {
+          flowId: STATUS_FLOW_ID,
+          flowToken: user.id,
+          header: "What's running",
+          body: "See everything you have in flight — and stop any of it.",
+          footer: 'Powered by Rumi',
+          buttonText: 'Open status'
+        });
+        logToFile('✅ Status flow sent', { userId: user.id });
+      } else {
+        // Fallback before STATUS_FLOW_ID is published — render a plain-text
+        // summary inline so the command at least answers the question.
+        const TeacherStateService = require('../services/teacher-state.service');
+        const items = await TeacherStateService.listActiveResources(user.id);
+        const summary = items.length === 0
+          ? "Nothing's running right now."
+          : `Running for you:\n${items.map(it => `• ${it.title}`).join('\n')}`;
+        await WhatsAppService.sendMessage(from, summary);
+      }
+    } catch (error) {
+      logToFile('❌ Error starting /status', { userId: user?.id, error: error.message });
+    }
+    return;
+  }
+
+  // ============================================================
   // ATTENDANCE SYSTEM INTEGRATION (bd-060)
   // ============================================================
   // Check if user is in an active attendance session
