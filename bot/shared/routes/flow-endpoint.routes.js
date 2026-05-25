@@ -35,6 +35,11 @@ const {
   handlePicLpDataExchange,
   handlePicLpBack
 } = require('./pic-lp-endpoint');
+const {
+  handleSettingsInit,
+  handleSettingsDataExchange,
+  handleSettingsBack
+} = require('./settings-endpoint');
 
 /**
  * Handle attendance marking flow data requests
@@ -565,6 +570,72 @@ async function handlePicLpRequest(data) {
   }
 
   logToFile('Unknown flow action', { action });
+  return FlowEncryptionService.createErrorResponse('Unknown action');
+}
+
+// ============================================================
+// SETTINGS FLOW ENDPOINT
+// ============================================================
+
+router.post('/settings', async (req, res) => {
+  try {
+    if (!FlowEncryptionService.isConfigured()) {
+      logToFile('Flow encryption not configured', { endpoint: 'settings' });
+      return res.status(500).json({ error: 'Flow encryption not configured' });
+    }
+
+    const encryptedResponse = await FlowEncryptionService.processEncryptedRequest(
+      req.body,
+      async (decryptedData) => {
+        return await handleSettingsRequest(decryptedData);
+      }
+    );
+
+    res.set('Content-Type', 'text/plain');
+    res.send(encryptedResponse);
+  } catch (error) {
+    logToFile('Flow endpoint error', {
+      endpoint: 'settings',
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Handle decrypted settings request
+ * @param {Object} data - Decrypted request data
+ * @returns {Object} - Response to encrypt
+ */
+async function handleSettingsRequest(data) {
+  const { action, flow_token, screen, data: screenData } = data;
+
+  logToFile('Handling settings request', {
+    action,
+    screen,
+    hasFlowToken: !!flow_token,
+    screenDataKeys: screenData ? Object.keys(screenData) : []
+  });
+
+  if (action === 'ping') {
+    return FlowEncryptionService.handlePing();
+  }
+
+  // Flow token format: "userId:settings:timestamp"
+  const userId = (flow_token || '').split(':')[0];
+
+  if (action === 'INIT' || action === 'init') {
+    return await handleSettingsInit(userId);
+  }
+  if (action === 'data_exchange') {
+    return await handleSettingsDataExchange(userId, screen, screenData, flow_token);
+  }
+  if (action === 'BACK') {
+    return await handleSettingsBack(userId, screen, flow_token);
+  }
+
+  logToFile('Unknown settings flow action', { action });
   return FlowEncryptionService.createErrorResponse('Unknown action');
 }
 

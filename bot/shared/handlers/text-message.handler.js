@@ -1146,6 +1146,52 @@ async function handleTextMessage(message, from, messageBody, user = null) {
   }
 
   // ============================================================
+  // /settings COMMAND: Open the settings flow (language + observation framework)
+  // ============================================================
+  if (messageBody === '/settings' || messageBody.toLowerCase() === '/settings') {
+    logToFile('⚙️ Settings command detected', { userId: user?.id, phoneNumber: from });
+    typingController.stop();
+
+    // Block settings change during an active coaching session
+    if (sessionId && user?.id) {
+      const sessionType = await redisService.get(`session:${sessionId}:type`);
+      if (sessionType === 'coaching' || sessionType === 'coaching_active') {
+        const blockMessage = ({
+          ur: '⚠️ آپ ابھی کوچنگ سیشن میں ہیں۔ سیشن ختم ہونے کے بعد سیٹنگز تبدیل کر سکتے ہیں۔',
+          sw: '⚠️ Uko katika kipindi cha kufundisha sasa. Unaweza kubadilisha mipangilio baada ya kipindi kukamilika.',
+        })[responseLanguage] || 'You can change settings after the coaching session completes.';
+        await WhatsAppService.sendMessage(from, blockMessage);
+        return;
+      }
+    }
+
+    const SETTINGS_FLOW_ID = process.env.SETTINGS_FLOW_ID || '';
+    if (!SETTINGS_FLOW_ID) {
+      await WhatsAppService.sendMessage(from, ({
+        ur: 'سیٹنگز ابھی دستیاب نہیں ہیں۔ بعد میں دوبارہ کوشش کریں۔',
+        sw: 'Mipangilio bado haijapatikana. Tafadhali jaribu tena baadaye.',
+      })[responseLanguage] || 'Settings are not available yet. Please try again later.');
+      return;
+    }
+
+    const flowToken = `${user?.id}:settings:${Date.now()}`;
+    await WhatsAppService.sendFlow(from, {
+      flowId: SETTINGS_FLOW_ID,
+      header: 'Rumi Settings',
+      body: ({
+        ur: 'اپنی زبان اور آبزرویشن ٹول کی ترجیحات اپ ڈیٹ کریں۔',
+        sw: 'Sasisha mapendeleo yako ya lugha na zana ya uchunguzi.',
+      })[responseLanguage] || 'Update your language and observation tool preferences.',
+      buttonText: ({
+        ur: 'سیٹنگز کھولیں',
+        sw: 'Fungua Mipangilio',
+      })[responseLanguage] || 'Open Settings',
+      flowToken
+    });
+    return;
+  }
+
+  // ============================================================
   // ATTENDANCE SYSTEM INTEGRATION (bd-060)
   // ============================================================
   // Check if user is in an active attendance session
