@@ -322,6 +322,15 @@ class SQSCoachingWorker {
         await ExamGradingWorker.process(payload);
         break;
 
+      case 'pic_lp_kieai_generation': {
+        // Pic-to-LP via Kie.ai. English ~80s typical; Urdu/Sindhi/Punjabi
+        // ~4 min typical, up to 7 min at peak. 12-min extension covers both.
+        await SQSQueueService.extendJobTimeout(receiptHandle, 720); // 12 min
+        const PicLpKieaiWorker = require('./pic-lp-kieai.worker');
+        await PicLpKieaiWorker.process(payload);
+        break;
+      }
+
       default:
         throw new Error(`Unknown job type: ${jobType}`);
     }

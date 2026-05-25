@@ -690,6 +690,65 @@ app.post('/webhook', async (req, res) => {
         } else {
           logToFile('⚠️ No user found for exam checker button', { buttonId, from });
         }
+      }
+      // Pic-to-LP buttons
+      //   pic_lp_start_/pic_explain_/pic_other_ → intent on a fresh book page
+      //   pic_more_/pic_done_ → page-collection control
+      else if (
+        buttonId.startsWith('pic_lp_start_') ||
+        buttonId.startsWith('pic_explain_')  ||
+        buttonId.startsWith('pic_other_')    ||
+        buttonId.startsWith('pic_more_')     ||
+        buttonId.startsWith('pic_done_')
+      ) {
+        if (!user) {
+          logToFile('⚠️ Pic-LP button from unregistered sender', { buttonId, from });
+        } else {
+          const { getUserLanguage } = require('./shared/utils/language-cache');
+          const { logEvent } = require('./shared/utils/structured-logger');
+          const PageCollector = require('./shared/services/pic-to-lp/page-collector.service');
+          const PicLpSession = require('./shared/services/pic-to-lp/pic-lp-session.service');
+          const lang = (await getUserLanguage(user.id)) || user.preferred_language || 'en';
+          // Session ID is the suffix after the last '_'
+          const sessionId = buttonId.slice(buttonId.lastIndexOf('_') + 1);
+
+          logToFile('📚 Pic-LP button tapped', { buttonId, sessionId, from, userId: user.id });
+
+          if (buttonId.startsWith('pic_lp_start_')) {
+            logEvent('pic_lp.intent_chosen', { sessionId, intent: 'lp' });
+            await PageCollector.startCollectingFromIntent({ sessionId, from, language: lang });
+          } else if (buttonId.startsWith('pic_explain_')) {
+            logEvent('pic_lp.intent_chosen', { sessionId, intent: 'explain' });
+            await PicLpSession.updateStatus(sessionId, 'cancelled');
+            const isUrdu = lang === 'ur';
+            await WhatsAppService.sendMessage(
+              from,
+              isUrdu
+                ? '👍 ٹھیک ہے۔ موضوع کی وضاحت کے لیے مجھے ایک اور تصویر بھیج دیں — میں اسے سمجھا دوں گی۔'
+                : "👍 Got it. Send me the page again and I'll explain the topic in detail."
+            );
+          } else if (buttonId.startsWith('pic_other_')) {
+            logEvent('pic_lp.intent_chosen', { sessionId, intent: 'other' });
+            await PicLpSession.updateStatus(sessionId, 'cancelled');
+            const isUrdu = lang === 'ur';
+            await WhatsAppService.sendMessage(
+              from,
+              isUrdu
+                ? '👍 ٹھیک ہے۔ مجھے بتائیں کہ آپ کو کیا چاہیے۔'
+                : "👍 No problem. Just tell me what you'd like help with."
+            );
+          } else if (buttonId.startsWith('pic_more_')) {
+            const isUrdu = lang === 'ur';
+            await WhatsAppService.sendMessage(
+              from,
+              isUrdu
+                ? '📚 ٹھیک ہے، اگلا صفحہ بھیج دیں۔ (زیادہ سے زیادہ 5 صفحات)'
+                : '📚 Great, please send the next page. (Maximum 5 pages)'
+            );
+          } else if (buttonId.startsWith('pic_done_')) {
+            await PageCollector.onComplete({ sessionId, from, language: lang, trigger: 'done_clicked' });
+          }
+        }
       } else {
         logToFile('⚠️ Unknown button ID', { buttonId });
       }

@@ -1,0 +1,212 @@
+{
+  "_comment": "WhatsApp Flow for Pic-to-LP — Teacher confirms grade/subject/topic/language extracted from a photographed textbook page.",
+  "_instructions": [
+    "1. Create this Flow in your WhatsApp Business Account (WABA).",
+    "2. Point its endpoint at POST /api/flows/pic-lp.",
+    "3. Single-screen form (PIC_LP_FORM) → SUCCESS.",
+    "4. Pre-filled at runtime via flow_action_payload.data — see completion-handler.service.js."
+  ],
+  "version": "6.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "PIC_LP_FORM": ["SUCCESS"],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "PIC_LP_FORM",
+      "title": "Lesson Plan Details",
+      "data": {
+        "grades": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "1", "title": "Class 1" },
+            { "id": "2", "title": "Class 2" },
+            { "id": "3", "title": "Class 3" },
+            { "id": "4", "title": "Class 4" },
+            { "id": "5", "title": "Class 5" },
+            { "id": "6", "title": "Class 6" },
+            { "id": "7", "title": "Class 7" },
+            { "id": "8", "title": "Class 8" },
+            { "id": "9", "title": "Class 9" },
+            { "id": "10", "title": "Class 10" }
+          ]
+        },
+        "subjects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "Math", "title": "Math" },
+            { "id": "English", "title": "English" },
+            { "id": "Science", "title": "Science" },
+            { "id": "Social Studies", "title": "Social Studies" },
+            { "id": "Languages", "title": "Languages" },
+            { "id": "Religious Education", "title": "Religious Education" },
+            { "id": "General Knowledge", "title": "General Knowledge" },
+            { "id": "Other", "title": "Other" }
+          ]
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "en", "title": "English" },
+            { "id": "ur", "title": "Urdu" },
+            { "id": "sd", "title": "Sindhi" },
+            { "id": "sw", "title": "Kiswahili" }
+          ]
+        },
+        "lesson_plan_formats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id":          { "type": "string" },
+              "title":       { "type": "string" },
+              "description": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "concise",  "title": "Concise",  "description": "2 pages, ~90 sec" },
+            { "id": "detailed", "title": "Detailed", "description": "7 pages, ~5 min — complete teacher guide" }
+          ]
+        },
+        "detected_grade":   { "type": "string", "__example__": "5" },
+        "detected_subject": { "type": "string", "__example__": "Math" },
+        "detected_topic":   { "type": "string", "__example__": "Addition & Subtraction" },
+        "ui_language":      { "type": "string", "__example__": "en" },
+        "default_lp_format":{ "type": "string", "__example__": "concise" },
+        "page_count":       { "type": "string", "__example__": "1" },
+        "session_id":       { "type": "string", "__example__": "00000000-0000-0000-0000-000000000000" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "pic_lp_form",
+            "init-values": {
+              "grade": "${data.detected_grade}",
+              "subject": "${data.detected_subject}",
+              "topic": "${data.detected_topic}",
+              "language": "${data.ui_language}",
+              "lesson_plan_format": "${data.default_lp_format}"
+            },
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Confirm Lesson Plan Details"
+              },
+              {
+                "type": "TextBody",
+                "text": "We've read the page(s) you sent. Please confirm or edit the details below — we'll generate your lesson plan once you tap Generate."
+              },
+              {
+                "type": "Dropdown",
+                "name": "grade",
+                "label": "Grade / Class",
+                "required": true,
+                "data-source": "${data.grades}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "subject",
+                "label": "Subject",
+                "required": true,
+                "data-source": "${data.subjects}"
+              },
+              {
+                "type": "TextInput",
+                "name": "topic",
+                "label": "Topic / Chapter",
+                "required": true,
+                "input-type": "text",
+                "helper-text": "Edit if needed"
+              },
+              {
+                "type": "Dropdown",
+                "name": "language",
+                "label": "Lesson Plan Language",
+                "required": true,
+                "data-source": "${data.languages}"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "lesson_plan_format",
+                "label": "Lesson Plan Format",
+                "required": true,
+                "data-source": "${data.lesson_plan_formats}"
+              },
+              {
+                "type": "Footer",
+                "label": "Generate Lesson Plan",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "grade": "${form.grade}",
+                    "subject": "${form.subject}",
+                    "topic": "${form.topic}",
+                    "language": "${form.language}",
+                    "lesson_plan_format": "${form.lesson_plan_format}",
+                    "session_id": "${data.session_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Generating",
+      "terminal": true,
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Generating your lesson plan — it'll arrive in this chat in 1-2 minutes."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Got it!"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -3382,3 +3382,73 @@ CREATE TABLE IF NOT EXISTS region_features (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Key/value application settings — feature flags + A/B toggles read by the bot
+-- (e.g. pic_lp_backend_ab routes the pic-to-LP backend between Kie.ai and
+-- Gamma). `value` is JSONB so a toggle can store either a scalar or a split map.
+CREATE TABLE IF NOT EXISTS app_settings (
+    key         TEXT PRIMARY KEY,
+    value       JSONB,
+    description TEXT,
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now()
+);
+
+DROP TRIGGER IF EXISTS update_app_settings_updated_at ON app_settings;
+CREATE TRIGGER update_app_settings_updated_at
+    BEFORE UPDATE ON app_settings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Pic-to-LP: tracks the multi-turn conversation when a teacher photographs
+-- textbook page(s) and asks Rumi to generate a lesson plan from them. Mirrors
+-- the coaching_sessions shape (status state machine, JSONB pages array,
+-- correlation_id threading). expires_at carries the per-status TTL invariant
+-- (set in pic-lp-session.service.js) so the stale-session sweeper can expire
+-- abandoned non-terminal rows.
+CREATE TABLE IF NOT EXISTS pic_lp_sessions (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status          TEXT NOT NULL CHECK (status IN (
+                        'awaiting_intent',
+                        'collecting_pages',
+                        'awaiting_form_submit',
+                        'generating',
+                        'handed_off',
+                        'cancelled',
+                        'timed_out',
+                        'failed'
+                    )),
+    pages           JSONB NOT NULL DEFAULT '[]'::jsonb,
+    caption         TEXT,
+    detected        JSONB,
+    flow_token      TEXT,
+    lp_request_id   UUID,
+    correlation_id  TEXT,
+    last_error      TEXT,
+    expires_at      TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Hot lookup: "does this user have an active pic-LP session?" — partial index
+-- keeps it cheap (one active row per user max while they're mid-flow).
+CREATE INDEX IF NOT EXISTS idx_pic_lp_sessions_user_active
+    ON pic_lp_sessions (user_id, created_at DESC)
+    WHERE status IN ('awaiting_intent','collecting_pages','awaiting_form_submit','generating');
+
+CREATE INDEX IF NOT EXISTS idx_pic_lp_sessions_flow_token
+    ON pic_lp_sessions (flow_token)
+    WHERE flow_token IS NOT NULL;
+
+-- Cheap "is this session past its TTL?" lookup for the stale-session worker.
+-- Partial because terminal rows never need to be visited.
+CREATE INDEX IF NOT EXISTS idx_pic_lp_sessions_expires_at_active
+    ON pic_lp_sessions (expires_at)
+    WHERE status IN ('awaiting_intent','collecting_pages','awaiting_form_submit','generating');
+
+DROP TRIGGER IF EXISTS update_pic_lp_sessions_updated_at ON pic_lp_sessions;
+CREATE TRIGGER update_pic_lp_sessions_updated_at
+    BEFORE UPDATE ON pic_lp_sessions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
