@@ -363,7 +363,13 @@ function beforeYouGoPrompt(segment, content, nav, provinceConfig) {
 
   const baseCoaching = content.coachingReflection || 'How well did students understand today\'s lesson?';
   const cleanedCoaching = baseCoaching.replace(/Record yourself.*?feedback!/gi, '').trim();
-  const coachingCTA = `${cleanedCoaching}\nWhatsApp Rumi on 0XXX XXXXXXX for personalized coaching feedback!`;
+  // Teacher-facing coaching number comes from env (see COACHING_WHATSAPP_NUMBER);
+  // the contact line is omitted when unset so the open-source default ships no
+  // hard-coded number.
+  const coachingNumber = process.env.COACHING_WHATSAPP_NUMBER || '';
+  const coachingCTA = coachingNumber
+    ? `${cleanedCoaching}\nWhatsApp Rumi on ${coachingNumber} for personalized coaching feedback!`
+    : cleanedCoaching;
 
   const nextTopicText = comingUp.length > 0
     ? `Tomorrow (${comingUp[0].pages}): ${comingUp[0].topic}`
