@@ -58,6 +58,13 @@ const PRODUCTION_TABLES = [
   'lesson_plans',
   'lesson_plan_requests',
 
+  // Curriculum Lesson Plans + region gating (Phase 4A)
+  'textbooks',
+  'textbook_pages',
+  'textbook_toc',
+  'pre_generated_lps',
+  'region_features',
+
   // Reading Assessment
   'reading_assessments',
   'lcpm_benchmarks',

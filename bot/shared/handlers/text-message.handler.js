@@ -15,6 +15,9 @@ const ReadingAssessmentService = require('../services/reading-assessment.service
 const FeatureLinkerService = require('../services/feature-linker.service');
 const FeatureIntroService = require('../services/feature-intro.service');
 const LessonPlanQueueService = require('../services/lesson-plan-queue.service');
+const handleCurriculumLessonPlan = require('./lesson-plan-v2.handler');
+const RegionFeaturesService = require('../services/region-features.service');
+const { getUserRegion } = require('../utils/region');
 const VideoOrchestrator = require('../services/video/video-orchestrator.service');
 const AttendanceDetectorService = require('../services/attendance-detector.service');
 const AttendanceConversationService = require('../services/attendance-conversation.service');
@@ -39,6 +42,34 @@ const {
 } = require('../database/bot-helpers');
 const supabase = require('../config/supabase');
 const fs = require('fs');
+
+/**
+ * Curriculum pre-gen intercept. If the teacher's region enables curriculum LPs
+ * (region_features.curriculum_lp_enabled) and the topic maps to a pre-generated
+ * chapter LP, serve it and return true. Returns false (no-op) for regions
+ * without curriculum LPs — the caller then falls through to the standard Gamma
+ * flow. region_features defaults curriculum_lp_enabled=false, so this is inert
+ * for a default deployment.
+ */
+async function tryCurriculumLessonPlanServe(from, topic, user, language) {
+  try {
+    const features = await RegionFeaturesService.getRegionFeatures(getUserRegion(user));
+    if (!features.curriculum_lp_enabled || !features.curriculum_key) return false;
+    const grade = parseInt(user && user.grade, 10) || (user && user.grade) || undefined;
+    const result = await handleCurriculumLessonPlan({
+      userId: from,
+      topic,
+      grade,
+      subject: user && user.subject,
+      curriculum: features.curriculum_key,
+      language,
+    });
+    return !!(result && result.source === 'pre_generated');
+  } catch (e) {
+    logToFile('Curriculum LP intercept failed, falling through to Gamma', { error: e.message });
+    return false;
+  }
+}
 
 /**
  * Handle text message processing
@@ -1550,6 +1581,11 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       // Clear the state
       await MenuService.clearAwaitingLessonPlanTopic(user.id);
 
+      // Curriculum pre-gen intercept (no-op unless the region enables it)
+      if (await tryCurriculumLessonPlanServe(from, messageBody, user, lessonPlanState.language)) {
+        return; // curriculum pre-generated LP served instantly
+      }
+
       // Route directly to lesson plan handler (skip intent detection)
       await handleLessonPlanRequest(from, messageBody, user, lessonPlanState.sessionId, lessonPlanState.language, typingController);
       return; // Stop further processing
@@ -1571,6 +1607,10 @@ async function handleTextMessage(message, from, messageBody, user = null) {
   }
 
   if (intent.type === 'lesson_plan') {
+    // Curriculum pre-gen intercept (no-op unless the region enables it)
+    if (await tryCurriculumLessonPlanServe(from, messageBody, user, responseLanguage)) {
+      return; // curriculum pre-generated LP served instantly
+    }
     await handleLessonPlanRequest(from, messageBody, user, sessionId, responseLanguage, typingController);
   } else if (intent.type === 'presentation') {
     await handlePresentationRequest(from, messageBody, user, sessionId, responseLanguage, typingController);

@@ -3280,3 +3280,105 @@ NOTIFY pgrst, 'reload schema';
 -- =============================================================================
 -- Schema creation complete.
 -- =============================================================================
+-- ============================================================================
+-- Curriculum Lesson Plans + Region Gating (Phase 4A)
+-- Self-contained curriculum-LP path: OCR'd textbooks -> pre-generated LPs
+-- looked up by region/grade/chapter and served from R2. Region gating is
+-- DB-driven via region_features (no hardcoded regions). The external on-demand
+-- UG_LP service is intentionally NOT part of this schema.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS textbooks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    province TEXT,
+    curriculum TEXT,
+    grade INTEGER CHECK (grade BETWEEN 1 AND 12),
+    subject TEXT,
+    filename TEXT,
+    r2_key TEXT,
+    total_pages INTEGER,
+    pdf_page_offset INTEGER DEFAULT 0,
+    ocr_status TEXT DEFAULT 'pending',
+    ocr_completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE (province, grade, subject)
+);
+
+CREATE TABLE IF NOT EXISTS textbook_pages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    textbook_id UUID NOT NULL REFERENCES textbooks(id) ON DELETE CASCADE,
+    pdf_page_index INTEGER,
+    textbook_page_number INTEGER,
+    page_content TEXT,
+    page_images JSONB DEFAULT '[]',
+    learning_outcomes JSONB DEFAULT '[]',
+    exercises JSONB DEFAULT '[]',
+    teaching_points JSONB DEFAULT '[]',
+    has_tables BOOLEAN DEFAULT false,
+    has_math BOOLEAN DEFAULT false,
+    has_urdu BOOLEAN DEFAULT false,
+    content_length INTEGER,
+    ocr_confidence DOUBLE PRECISION,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE (textbook_id, pdf_page_index)
+);
+CREATE INDEX IF NOT EXISTS idx_textbook_pages_lookup ON textbook_pages USING btree (textbook_id, textbook_page_number) WHERE page_content IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS textbook_toc (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    textbook_id UUID REFERENCES textbooks(id) ON DELETE CASCADE,
+    chapter_number INTEGER,
+    chapter_title TEXT NOT NULL,
+    page_start INTEGER,
+    page_end INTEGER,
+    topic_keywords TEXT[] DEFAULT '{}',
+    learning_outcomes TEXT[] DEFAULT '{}',
+    estimated_days INTEGER DEFAULT 5,
+    is_manual_override BOOLEAN DEFAULT false,
+    curriculum TEXT,
+    grade INTEGER,
+    subject TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_textbook_toc_keywords ON textbook_toc USING gin (topic_keywords);
+CREATE INDEX IF NOT EXISTS idx_textbook_toc_lookup ON textbook_toc USING btree (curriculum, grade, subject);
+
+CREATE TABLE IF NOT EXISTS pre_generated_lps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    textbook_id UUID REFERENCES textbooks(id) ON DELETE SET NULL,
+    chapter_title TEXT,
+    chapter_number INTEGER,
+    page_start INTEGER,
+    page_end INTEGER,
+    days INTEGER DEFAULT 5,
+    gamma_url_en TEXT,
+    gamma_url_ur TEXT,
+    pdf_r2_key_en TEXT,
+    pdf_r2_key_ur TEXT,
+    subject TEXT,
+    curriculum TEXT,
+    grade INTEGER,
+    prompt_version TEXT DEFAULT 'v1',
+    is_current BOOLEAN DEFAULT true,
+    generation_status TEXT DEFAULT 'pending' CHECK (generation_status IN ('pending','generating','completed','failed')),
+    generated_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_pregen_lps_lookup ON pre_generated_lps USING btree (curriculum, grade, chapter_number) WHERE is_current = true;
+
+-- Standardized region gating: a region's features turn on by config, not code.
+CREATE TABLE IF NOT EXISTS region_features (
+    region TEXT PRIMARY KEY,
+    curriculum_key TEXT,
+    supported_subjects TEXT[] DEFAULT '{}',
+    has_textbooks BOOLEAN DEFAULT false,
+    curriculum_lp_enabled BOOLEAN DEFAULT false,
+    pic_lp_enabled BOOLEAN DEFAULT true,
+    gamma_lp_enabled BOOLEAN DEFAULT true,
+    default_framework TEXT DEFAULT 'oecd',
+    supported_languages JSONB DEFAULT '["en"]',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
