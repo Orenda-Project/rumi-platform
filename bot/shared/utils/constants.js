@@ -32,6 +32,9 @@ const STUDENT_VIDEOS_FLOW_ID = process.env.STUDENT_VIDEOS_FLOW_ID || '';
 // WhatsApp Flow ID for the homework request flow (empty → /homework replies
 // that the feature is not configured).
 const HOMEWORK_FLOW_ID = process.env.HOMEWORK_FLOW_ID || '';
+// WhatsApp Flow ID for the edit-class roster flow (empty → "edit class" replies
+// that the feature is not available).
+const EDIT_CLASS_FLOW_ID = process.env.EDIT_CLASS_FLOW_ID || '';
 
 // Pic-to-LP (photo → illustrated lesson plan)
 const KIE_API_KEY = process.env.KIE_API_KEY;
@@ -135,6 +138,7 @@ module.exports = {
   STATUS_FLOW_ID,
   STUDENT_VIDEOS_FLOW_ID,
   HOMEWORK_FLOW_ID,
+  EDIT_CLASS_FLOW_ID,
 
   // Pic-to-LP
   KIE_API_KEY,

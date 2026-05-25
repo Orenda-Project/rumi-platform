@@ -55,6 +55,11 @@ const {
   handleHomeworkDataExchange,
   handleHomeworkBack
 } = require('./homework-request-endpoint');
+const {
+  handleEditClassInit,
+  handleEditClassDataExchange,
+  handleEditClassBack
+} = require('./edit-class-endpoint');
 
 /**
  * Handle attendance marking flow data requests
@@ -765,6 +770,40 @@ async function handleHomeworkFlow(data) {
   if (action === 'data_exchange')             return await handleHomeworkDataExchange(flow_token, screen, screenData);
   if (action === 'BACK')                      return await handleHomeworkBack(flow_token, screen);
   logToFile('Unknown homework flow action', { action });
+  return FlowEncryptionService.createErrorResponse('Unknown action');
+}
+
+// ============================================================
+// EDIT CLASS FLOW ENDPOINT — roster view / add / remove / edit students
+// ============================================================
+
+router.post('/edit-class', async (req, res) => {
+  try {
+    if (!FlowEncryptionService.isConfigured()) {
+      logToFile('Flow encryption not configured', { endpoint: 'edit-class' });
+      return res.status(500).json({ error: 'Flow encryption not configured' });
+    }
+    const encryptedResponse = await FlowEncryptionService.processEncryptedRequest(
+      req.body,
+      async (decryptedData) => await handleEditClassRequest(decryptedData)
+    );
+    res.set('Content-Type', 'text/plain');
+    res.send(encryptedResponse);
+  } catch (error) {
+    logToFile('Edit-class flow endpoint error', { endpoint: 'edit-class', error: error.message, stack: error.stack });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function handleEditClassRequest(data) {
+  const { action, flow_token, screen, data: screenData } = data;
+  logToFile('Handling edit-class request', { action, screen, hasFlowToken: !!flow_token });
+  if (action === 'ping') return FlowEncryptionService.handlePing();
+  const userId = (flow_token || '').split(':')[0];
+  if (action === 'INIT' || action === 'init') return await handleEditClassInit(userId, flow_token);
+  if (action === 'data_exchange')             return await handleEditClassDataExchange(userId, screen, screenData, flow_token);
+  if (action === 'BACK')                      return await handleEditClassBack(userId, screen, flow_token);
+  logToFile('Unknown edit-class flow action', { action });
   return FlowEncryptionService.createErrorResponse('Unknown action');
 }
 

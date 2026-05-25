@@ -81,6 +81,7 @@ async function tryCurriculumLessonPlanServe(from, topic, user, language) {
  */
 
 const { evaluateHomeworkTrigger } = require('./homework-trigger');
+const { detectEditClassIntent } = require('./edit-class-trigger');
 
 async function handleTextMessage(message, from, messageBody, user = null) {
   logToFile(`Processing TEXT message: ${messageBody}`);
@@ -1305,6 +1306,58 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       })[responseLanguage] || 'Homework is not available right now. Please try again later.');
       return;
     }
+  }
+
+  // ============================================================
+  // EDIT CLASS detection — "edit class" / "edit roster" / "remove student".
+  // Checked BEFORE attendance so roster edits don't get captured by an
+  // attendance session. Presence-gated on EDIT_CLASS_FLOW_ID.
+  // ============================================================
+  if (user?.id && detectEditClassIntent(messageBody).detected) {
+    logToFile('📋 Edit class keyword detected', { userId: user.id });
+    typingController.stop();
+
+    const EDIT_CLASS_FLOW_ID = process.env.EDIT_CLASS_FLOW_ID || '';
+    if (!EDIT_CLASS_FLOW_ID) {
+      await WhatsAppService.sendMessage(from, 'Sorry, class editing is not available yet. Please try again later.');
+      return;
+    }
+
+    const { data: classes } = await supabase
+      .from('student_lists')
+      .select('id, class_name, section')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (!classes || classes.length === 0) {
+      await WhatsAppService.sendMessage(from, "You don't have any classes yet. Say \"add class\" to create one first!");
+      return;
+    }
+
+    if (classes.length === 1) {
+      const cls = classes[0];
+      const flowToken = `${user.id}:${cls.id}`;
+      await WhatsAppService.sendFlow(from, {
+        flowId: EDIT_CLASS_FLOW_ID,
+        header: '📋 Edit Class',
+        body: `Edit roster for ${cls.section ? `${cls.class_name} - ${cls.section}` : cls.class_name}`,
+        buttonText: 'Edit Class',
+        flowToken
+      });
+    } else {
+      // Multiple classes → interactive buttons (max 3); each tap routes via
+      // the edit_class_<id> handler in whatsapp-bot.js.
+      const buttons = classes.slice(0, 3).map(cls => ({
+        id: `edit_class_${cls.id}`,
+        title: cls.section ? `${cls.class_name}-${cls.section}` : cls.class_name
+      }));
+      await WhatsAppService.sendInteractiveButtons(from, {
+        body: 'Which class would you like to edit?',
+        buttons
+      });
+    }
+    return;
   }
 
   // ============================================================
