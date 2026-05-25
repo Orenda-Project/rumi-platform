@@ -73,3 +73,19 @@ ON CONFLICT DO NOTHING;
 INSERT INTO schema_versions (version, description)
 VALUES ('2.0.0', 'Rumi Platform production-parity schema (60 tables, 38 functions)')
 ON CONFLICT (version) DO NOTHING;
+
+-- ============================================================================
+-- Region features (standardized region gating) — Phase 4A
+-- 'default': generic Gamma LP + pic-to-LP on, curriculum LP off. Every region
+-- with no explicit row inherits these defaults (fail-open). Add a row per
+-- region to enable curriculum LPs / change the coaching framework / languages.
+-- 'demo_region' is a SYNTHETIC example (fictional curriculum) showing how a
+-- curriculum-enabled region looks — safe to delete.
+-- ============================================================================
+INSERT INTO region_features (region, gamma_lp_enabled, pic_lp_enabled, curriculum_lp_enabled, default_framework, supported_languages)
+VALUES ('default', true, true, false, 'oecd', '["en"]'::jsonb)
+ON CONFLICT (region) DO NOTHING;
+
+INSERT INTO region_features (region, curriculum_key, supported_subjects, has_textbooks, curriculum_lp_enabled, default_framework, supported_languages)
+VALUES ('demo_region', 'demo_curriculum', ARRAY['maths','english'], true, true, 'hots', '["en"]'::jsonb)
+ON CONFLICT (region) DO NOTHING;
