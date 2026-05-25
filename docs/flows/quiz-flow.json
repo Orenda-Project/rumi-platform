@@ -1,0 +1,325 @@
+{
+  "_comment": "WhatsApp Flow for Quiz Manager — list active quizzes, send new, or cancel",
+  "_instructions": [
+    "1. Register via: node scripts/register-attendance-flows.js [--production]",
+    "2. Endpoint: POST /api/flows/quiz",
+    "3. MAIN: Lists active quizzes with progress + radio (new / cancel / done)",
+    "4. CONFIRM_CANCEL: Dropdown of active quizzes → confirm → cancel",
+    "5. NEW_QUIZ_CLASS: Dropdown of teacher's classes",
+    "6. NEW_QUIZ_LP: Dropdown of recent LPs (or 'New topic'); shown only if class has LPs",
+    "7. NEW_QUIZ_TOPIC: Free-text topic prompt (no LPs OR teacher chose 'New topic')",
+    "8. SUCCESS: Confirmation; quiz generation runs async after flow closes",
+    "9. CRITICAL: data_exchange MUST respond < 10s; quiz generation is kicked off async post-flow"
+  ],
+  "_changelog": [
+    "v1.0: Initial Quiz Manager flow"
+  ],
+
+  "version": "6.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "MAIN": ["CONFIRM_CANCEL", "NEW_QUIZ_CLASS", "SUCCESS"],
+    "CONFIRM_CANCEL": ["SUCCESS"],
+    "NEW_QUIZ_CLASS": ["NEW_QUIZ_LP", "NEW_QUIZ_TOPIC", "SUCCESS"],
+    "NEW_QUIZ_LP": ["NEW_QUIZ_TOPIC", "SUCCESS"],
+    "NEW_QUIZ_TOPIC": ["SUCCESS"],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "MAIN",
+      "title": "Quiz",
+      "data": {
+        "summary_heading": { "type": "string", "__example__": "You have 2 active quizzes." },
+        "summary_body": {
+          "type": "string",
+          "__example__": "• Photosynthesis (5-A) — Sent 1 · Done 0 · Pending 1\n• Fractions (9-A) — Sent 12 · Done 5 · Pending 7"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "new", "title": "Send a new quiz" },
+            { "id": "cancel", "title": "Cancel a quiz" },
+            { "id": "done", "title": "Done" }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "main_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "${data.summary_heading}"
+              },
+              {
+                "type": "TextBody",
+                "text": "${data.summary_body}"
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "action",
+                "label": "What would you like to do?",
+                "required": true,
+                "data-source": "${data.actions}"
+              },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "_action": "${form.action}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CONFIRM_CANCEL",
+      "title": "Cancel a Quiz",
+      "data": {
+        "active_quizzes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "quiz-uuid-1", "title": "Photosynthesis · 5-A · Sent 1" },
+            { "id": "quiz-uuid-2", "title": "Fractions · 9-A · Sent 12" }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "cancel_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Which quiz do you want to cancel?"
+              },
+              {
+                "type": "TextBody",
+                "text": "Cancelling stops new questions and you won't get a report. Parents already in the quiz will be told it was cancelled."
+              },
+              {
+                "type": "Dropdown",
+                "name": "quiz_id",
+                "label": "Active quiz",
+                "required": true,
+                "data-source": "${data.active_quizzes}"
+              },
+              {
+                "type": "Footer",
+                "label": "Cancel this quiz",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "_quiz_id": "${form.quiz_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NEW_QUIZ_CLASS",
+      "title": "Send a Quiz",
+      "data": {
+        "classes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "list-uuid-1", "title": "5 - A" },
+            { "id": "list-uuid-2", "title": "9 - A" }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "class_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Which class should receive this quiz?"
+              },
+              {
+                "type": "Dropdown",
+                "name": "class_id",
+                "label": "Class",
+                "required": true,
+                "data-source": "${data.classes}"
+              },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "_class_id": "${form.class_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NEW_QUIZ_LP",
+      "title": "Pick a Topic",
+      "data": {
+        "class_id": { "type": "string", "__example__": "list-uuid-1" },
+        "lp_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "lp_uuid-1", "title": "Photosynthesis (Today)" },
+            { "id": "lp_uuid-2", "title": "Cells (Yesterday)" },
+            { "id": "new", "title": "New topic (not from a lesson plan)" }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "lp_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "Pick a recent lesson plan or choose a new topic"
+              },
+              {
+                "type": "Dropdown",
+                "name": "lp_choice",
+                "label": "Topic source",
+                "required": true,
+                "data-source": "${data.lp_options}"
+              },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "_class_id": "${data.class_id}",
+                    "_lp_choice": "${form.lp_choice}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "NEW_QUIZ_TOPIC",
+      "title": "Quiz Topic",
+      "data": {
+        "class_id": { "type": "string", "__example__": "list-uuid-1" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "topic_form",
+            "children": [
+              {
+                "type": "TextHeading",
+                "text": "What topic should the quiz cover?"
+              },
+              {
+                "type": "TextInput",
+                "name": "topic",
+                "label": "Topic",
+                "required": true,
+                "input-type": "text",
+                "helper-text": "e.g., Fractions, Water Cycle, Parts of Speech"
+              },
+              {
+                "type": "Footer",
+                "label": "Generate quiz",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "_class_id": "${data.class_id}",
+                    "_topic": "${form.topic}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Done",
+      "terminal": true,
+      "data": {
+        "success_message": { "type": "string", "__example__": "Quiz cancelled. Parents have been notified." }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "All set!"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.success_message}"
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
