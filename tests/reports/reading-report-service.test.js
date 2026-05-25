@@ -9,6 +9,9 @@ let htmlToPdfMock, ReadingReportService;
 function load() {
   jest.resetModules();
   htmlToPdfMock = jest.fn().mockResolvedValue(Buffer.from('%PDF playwright'));
+  // pdfkit is a bot/-only dependency; the CI test job runs before `npm ci` in
+  // bot/, so mock it (the PDFKit renderer is spied below and never instantiated).
+  jest.doMock('pdfkit', () => class PDFDocument { on() {} end() {} }, { virtual: true });
   jest.doMock('../../bot/shared/utils/html-to-pdf', () => ({ htmlToPdf: htmlToPdfMock }));
   jest.doMock('../../bot/shared/templates/reading-report.template', () => () => '<html>report</html>');
   jest.doMock('../../bot/shared/services/llm-client', () => ({ getClient: () => ({ chat: { completions: { create: jest.fn() } } }) }));
