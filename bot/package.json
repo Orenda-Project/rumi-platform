@@ -67,6 +67,7 @@
     "pdfkit": "^0.17.2",
     "pdfmake": "^0.2.20",
     "pino": "^10.1.0",
+    "playwright-core": "^1.60.0",
     "sharp": "^0.34.4",
     "uuid": "^9.0.1",
     "wkhtmltopdf-selfcontained": "^0.1.6"
