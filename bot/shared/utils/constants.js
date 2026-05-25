@@ -23,6 +23,9 @@ const ATTENDANCE_SETUP_FLOW_ID = process.env.ATTENDANCE_SETUP_FLOW_ID || '';
 const ATTENDANCE_MARKING_FLOW_ID = process.env.ATTENDANCE_MARKING_FLOW_ID || '';
 // WhatsApp Flow ID for the user settings form (empty → /settings is disabled).
 const SETTINGS_FLOW_ID = process.env.SETTINGS_FLOW_ID || '';
+// WhatsApp Flow ID for the /status snapshot (empty → /status falls back to a
+// plain-text summary instead of the interactive Flow).
+const STATUS_FLOW_ID = process.env.STATUS_FLOW_ID || '';
 
 // Pic-to-LP (photo → illustrated lesson plan)
 const KIE_API_KEY = process.env.KIE_API_KEY;
@@ -123,6 +126,7 @@ module.exports = {
   ATTENDANCE_SETUP_FLOW_ID,
   ATTENDANCE_MARKING_FLOW_ID,
   SETTINGS_FLOW_ID,
+  STATUS_FLOW_ID,
 
   // Pic-to-LP
   KIE_API_KEY,

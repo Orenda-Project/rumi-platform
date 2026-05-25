@@ -40,6 +40,11 @@ const {
   handleSettingsDataExchange,
   handleSettingsBack
 } = require('./settings-endpoint');
+const {
+  handleStatusFlowInit,
+  handleStatusFlowDataExchange,
+  handleStatusFlowBack
+} = require('./status-flow-endpoint');
 
 /**
  * Handle attendance marking flow data requests
@@ -636,6 +641,46 @@ async function handleSettingsRequest(data) {
   }
 
   logToFile('Unknown settings flow action', { action });
+  return FlowEncryptionService.createErrorResponse('Unknown action');
+}
+
+// ============================================================
+// STATUS FLOW ENDPOINT — cross-feature snapshot + cancel
+// ============================================================
+
+router.post('/status', async (req, res) => {
+  try {
+    if (!FlowEncryptionService.isConfigured()) {
+      logToFile('Flow encryption not configured', { endpoint: 'status' });
+      return res.status(500).json({ error: 'Flow encryption not configured' });
+    }
+    const encryptedResponse = await FlowEncryptionService.processEncryptedRequest(
+      req.body,
+      async (decryptedData) => await handleStatusFlowRequest(decryptedData)
+    );
+    res.set('Content-Type', 'text/plain');
+    res.send(encryptedResponse);
+  } catch (error) {
+    logToFile('Flow endpoint error', { endpoint: 'status', error: error.message, stack: error.stack });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function handleStatusFlowRequest(data) {
+  const { action, flow_token, screen, data: screenData } = data;
+  logToFile('Handling status flow request', {
+    action, screen, hasFlowToken: !!flow_token,
+    screenDataKeys: screenData ? Object.keys(screenData) : []
+  });
+
+  if (action === 'ping') return FlowEncryptionService.handlePing();
+  const userId = (flow_token || '').split(':')[0];
+
+  if (action === 'INIT' || action === 'init') return await handleStatusFlowInit(userId, flow_token);
+  if (action === 'data_exchange')             return await handleStatusFlowDataExchange(userId, screen, screenData, flow_token);
+  if (action === 'BACK')                      return await handleStatusFlowBack(userId, screen, flow_token);
+
+  logToFile('Unknown status flow action', { action });
   return FlowEncryptionService.createErrorResponse('Unknown action');
 }
 

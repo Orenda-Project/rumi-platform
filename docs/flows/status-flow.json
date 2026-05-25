@@ -1,0 +1,153 @@
+{
+  "_comment": "WhatsApp Flow — /status — cross-feature snapshot of what's running for the teacher, with cancel",
+  "_instructions": [
+    "1. Register this Flow with Meta and set its ID as STATUS_FLOW_ID.",
+    "2. Endpoint: POST /api/flows/status",
+    "3. MAIN: Lists active resources (quizzes / coaching / LPs / video / reading / attendance) + radio + Done",
+    "4. CONFIRM_CANCEL: Confirms cancel of one resource selected from MAIN",
+    "5. SUCCESS: Acknowledgement screen",
+    "6. routing_model is forward-only (Meta rejects backward routes)",
+    "7. data_exchange MUST respond < 10s — listActiveResources is read-only and fast"
+  ],
+
+  "version": "6.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "MAIN": ["CONFIRM_CANCEL", "SUCCESS"],
+    "CONFIRM_CANCEL": ["SUCCESS"],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "MAIN",
+      "title": "What's running",
+      "data": {
+        "summary_heading": { "type": "string", "__example__": "You have 3 things running right now." },
+        "summary_body": {
+          "type": "string",
+          "__example__": "• Quiz · 5-A · Photosynthesis\n• Coaching · uploading audio\n• Lesson plan · Atomic Structures"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" }
+            }
+          },
+          "__example__": [
+            { "id": "cancel_quiz_uuid-1", "title": "Quiz · 5-A · Photosynthesis" },
+            { "id": "cancel_coaching_uuid-2", "title": "Coaching session" },
+            { "id": "done", "title": "Done — close" }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "main_form",
+            "children": [
+              { "type": "TextHeading", "text": "${data.summary_heading}" },
+              { "type": "TextBody", "text": "${data.summary_body}" },
+              {
+                "type": "RadioButtonsGroup",
+                "name": "action",
+                "label": "Want to stop one?",
+                "required": true,
+                "data-source": "${data.resources}"
+              },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": { "_action": "${form.action}" }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CONFIRM_CANCEL",
+      "title": "Confirm",
+      "data": {
+        "resource_id":    { "type": "string", "__example__": "cancel_quiz_uuid-1" },
+        "resource_label": { "type": "string", "__example__": "Quiz · 5-A · Photosynthesis" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "confirm_form",
+            "children": [
+              { "type": "TextHeading", "text": "Stop this?" },
+              { "type": "TextBody",    "text": "${data.resource_label}" },
+              {
+                "type": "Footer",
+                "label": "Yes, stop it",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "_action": "confirm_cancel",
+                    "resource_id": "${data.resource_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Done",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "success_message": { "type": "string", "__example__": "Done — your /status is up to date." },
+        "extension_message_response": {
+          "type": "object",
+          "properties": {
+            "params": {
+              "type": "object",
+              "properties": {
+                "status_action":      { "type": "string" },
+                "resource_kind":      { "type": "string" },
+                "resource_label":     { "type": "string" }
+              }
+            }
+          },
+          "__example__": {
+            "params": {
+              "status_action": "cancelled",
+              "resource_kind": "quiz",
+              "resource_label": "Quiz · 5-A · Photosynthesis"
+            }
+          }
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          { "type": "TextHeading", "text": "${data.success_message}" },
+          {
+            "type": "Footer",
+            "label": "Close",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "extension_message_response": "${data.extension_message_response}"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
