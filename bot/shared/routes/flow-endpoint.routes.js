@@ -50,6 +50,11 @@ const {
   handleStudentVideosDataExchange,
   handleStudentVideosBack
 } = require('./student-videos-endpoint');
+const {
+  handleHomeworkInit,
+  handleHomeworkDataExchange,
+  handleHomeworkBack
+} = require('./homework-request-endpoint');
 
 /**
  * Handle attendance marking flow data requests
@@ -723,6 +728,43 @@ async function handleStudentVideosFlow(data) {
   if (action === 'data_exchange')             return await handleStudentVideosDataExchange(flow_token, screen, screenData);
   if (action === 'BACK')                      return await handleStudentVideosBack(flow_token, screen);
   logToFile('Unknown student-videos flow action', { action });
+  return FlowEncryptionService.createErrorResponse('Unknown action');
+}
+
+// ============================================================
+// HOMEWORK REQUEST FLOW ENDPOINT — browse chapters + enqueue bundle jobs
+// ============================================================
+
+router.post('/homework-request', async (req, res) => {
+  try {
+    if (!FlowEncryptionService.isConfigured()) {
+      logToFile('Flow encryption not configured', { endpoint: 'homework-request' });
+      return res.status(500).json({ error: 'Flow encryption not configured' });
+    }
+    const encryptedResponse = await FlowEncryptionService.processEncryptedRequest(
+      req.body,
+      async (decryptedData) => handleHomeworkFlow(decryptedData)
+    );
+    res.set('Content-Type', 'text/plain');
+    res.send(encryptedResponse);
+  } catch (error) {
+    logToFile('Homework flow endpoint error', {
+      endpoint: 'homework-request',
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function handleHomeworkFlow(data) {
+  const { action, flow_token, screen, data: screenData } = data;
+  logToFile('Handling Homework flow', { action, screen, hasFlowToken: !!flow_token });
+  if (action === 'ping') return FlowEncryptionService.handlePing();
+  if (action === 'INIT' || action === 'init') return await handleHomeworkInit(flow_token);
+  if (action === 'data_exchange')             return await handleHomeworkDataExchange(flow_token, screen, screenData);
+  if (action === 'BACK')                      return await handleHomeworkBack(flow_token, screen);
+  logToFile('Unknown homework flow action', { action });
   return FlowEncryptionService.createErrorResponse('Unknown action');
 }
 

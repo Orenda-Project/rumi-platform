@@ -336,6 +336,15 @@ class SQSCoachingWorker {
         break;
       }
 
+      case 'homework_bundle_generation': {
+        // One job = one (grade × subject) group: R2 fetch + pdf-lib merge +
+        // WhatsApp document send. 5-min extension covers a 12-chapter bundle.
+        await SQSQueueService.extendJobTimeout(receiptHandle, 300);
+        const HomeworkBundleWorker = require('./homework-bundle.worker');
+        await HomeworkBundleWorker.process(payload);
+        break;
+      }
+
       // Quiz jobs (v2 envelope with body.groupId). Producers enqueue via
       // SQSQueueService.queueJob(); each handler in quiz-job-handler does a
       // cancel-flag check, an optional cascade re-queue (quiz_report/quiz_expire),

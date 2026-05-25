@@ -79,6 +79,9 @@ async function tryCurriculumLessonPlanServe(from, topic, user, language) {
  * @param {Object|null} user - User object from database (optional for backwards compatibility)
  * @returns {Promise<void>}
  */
+
+const { evaluateHomeworkTrigger } = require('./homework-trigger');
+
 async function handleTextMessage(message, from, messageBody, user = null) {
   logToFile(`Processing TEXT message: ${messageBody}`);
 
@@ -1271,6 +1274,40 @@ async function handleTextMessage(message, from, messageBody, user = null) {
   }
 
   // ============================================================
+  // HOMEWORK hot trigger — "homework" / "home work" / "hw" / "/homework".
+  // Anchored so it never collides with the LP trigger. Presence-gated on
+  // HOMEWORK_FLOW_ID; offers the homework request flow.
+  // ============================================================
+  {
+    const HOMEWORK_FLOW_ID = process.env.HOMEWORK_FLOW_ID || '';
+    const hwDecision = evaluateHomeworkTrigger({ messageBody, user, homeworkFlowId: HOMEWORK_FLOW_ID });
+    if (hwDecision.match) {
+      typingController.stop();
+      if (hwDecision.action === 'send_flow' && user) {
+        const flowToken = `${user.id}:homework:${Date.now()}`;
+        await WhatsAppService.sendFlow(from, {
+          flowId: HOMEWORK_FLOW_ID,
+          header: 'Homework',
+          body: ({
+            ur: 'اپنی جماعت، مضمون اور وہ ابواب منتخب کریں جو آپ پڑھا چکے ہیں۔',
+          })[responseLanguage] || 'Pick your class, subject and the chapters you have already taught.',
+          buttonText: ({
+            ur: 'ہوم ورک حاصل کریں',
+          })[responseLanguage] || 'Get Homework',
+          flowToken,
+        });
+        logToFile('📚 Homework flow offered (hot trigger)', { userId: user.id });
+        return;
+      }
+      // Guard: unregistered user or flow id not configured.
+      await WhatsAppService.sendMessage(from, ({
+        ur: 'ہوم ورک فی الحال دستیاب نہیں ہے۔ براہ کرم بعد میں دوبارہ کوشش کریں۔',
+      })[responseLanguage] || 'Homework is not available right now. Please try again later.');
+      return;
+    }
+  }
+
+  // ============================================================
   // ATTENDANCE SYSTEM INTEGRATION (bd-060)
   // ============================================================
   // Check if user is in an active attendance session
@@ -2268,5 +2305,6 @@ function parseStyleFromButtonId(buttonId) {
 
 module.exports = {
   handleTextMessage,
-  parseStyleFromButtonId
+  parseStyleFromButtonId,
+  evaluateHomeworkTrigger, // exported for trigger unit tests
 };
