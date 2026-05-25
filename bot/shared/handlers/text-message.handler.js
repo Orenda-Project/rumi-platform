@@ -87,6 +87,52 @@ async function handleTextMessage(message, from, messageBody, user = null) {
 
   try {
     // ============================================================
+    // QUIZ STATE INTERCEPT — runs BEFORE user creation so parents (who may
+    // not have a Rumi account) can answer quizzes. Post-quiz AI chat is checked
+    // FIRST (it is the most-recent state; running getActiveState first could
+    // recover a stale 'invited' session and send the wrong nudge), then an
+    // active quiz session.
+    // ============================================================
+    if (messageBody) {
+      try {
+        const QuizSessionService = require('../services/quiz/quiz-session.service');
+
+        const postQuizState = await QuizSessionService.getPostQuizState(from);
+        if (postQuizState) {
+          const lowerQ = (messageBody || '').trim().toLowerCase();
+          if (lowerQ === 'stop' || lowerQ === 'done') {
+            await QuizSessionService.endPostQuizChat(from);
+          } else {
+            await QuizSessionService.handlePostQuizChat(from, messageBody, postQuizState);
+          }
+          typingController.stop();
+          return;
+        }
+
+        const quizState = await QuizSessionService.getActiveState(from);
+        if (quizState) {
+          const trimmedQ = messageBody.trim();
+          const lowerQ = trimmedQ.toLowerCase();
+          if (/^(start quiz|start_quiz|کوئز شروع کریں)$/i.test(trimmedQ)) {
+            await QuizSessionService.startQuizFromInvite(from);
+          } else if (lowerQ === 'stop' || trimmedQ === 'روکیں') {
+            await QuizSessionService.endSession(from, quizState, 'incomplete');
+          } else if (/^[abc]$/i.test(trimmedQ) && quizState.currentQuestionId) {
+            await QuizSessionService.handleAnswer(from, trimmedQ, quizState);
+          } else {
+            await WhatsAppService.sendMessage(from,
+              '❓ Tap one of the answer buttons above, or type A, B, or C.\n\nType STOP to exit the quiz.'
+            );
+          }
+          typingController.stop();
+          return;
+        }
+      } catch (qErr) {
+        logToFile('⚠️ Quiz state intercept error (non-fatal)', { error: qErr.message });
+      }
+    }
+
+    // ============================================================
     // DATABASE INTEGRATION: Use provided user or get/create
     // ============================================================
   if (!user) {
@@ -374,6 +420,76 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     }
 
     return; // Stop further processing
+  }
+
+  // ============================================================
+  // QUIZ FOLLOW-UP: teacher tapped a follow-up button earlier ("Revise +
+  // next topic" / "Extension" / "Bridge") and we asked for the next topic.
+  // This reply is that topic — route it to the follow-up service.
+  // ============================================================
+  if (user?.id && messageBody) {
+    try {
+      const QuizFollowUpService = require('../services/quiz/quiz-follow-up.service');
+      const awaiting = await QuizFollowUpService.getAwaitingState(user.id);
+      if (awaiting) {
+        typingController.stop();
+        await QuizFollowUpService.handleNextTopicReply(user.id, from, await getUserLanguage(from) || 'en', messageBody);
+        return;
+      }
+    } catch (e) {
+      logToFile('⚠️ Quiz follow-up topic check error (non-fatal)', { error: e.message });
+    }
+  }
+
+  // ============================================================
+  // QUIZ TOPIC RESPONSE: user is replying with a quiz topic after /quiz
+  // ============================================================
+  if (user?.id) {
+    try {
+      const awaitingQuizTopic = await redis.get(`quiz:awaiting_topic:${user.id}`);
+      if (awaitingQuizTopic) {
+        const state = JSON.parse(awaitingQuizTopic);
+        await redis.del(`quiz:awaiting_topic:${user.id}`);
+        typingController.stop();
+        const QuizOrchestrator = require('../services/quiz/quiz-orchestrator.service');
+        await QuizOrchestrator.handleTopicReply(user, from, messageBody.trim(), state);
+        return;
+      }
+    } catch (error) {
+      logToFile('⚠️ Error checking quiz topic state', { userId: user?.id, error: error.message });
+    }
+  }
+
+  // ============================================================
+  // QUIZ COMMAND: /quiz [topic] — generate + send a quiz to the class.
+  // Direct path (QuizOrchestrator). A Quiz Manager Flow can be layered later
+  // via QUIZ_FLOW_ID, but the direct path needs no Meta-flow registration.
+  // ============================================================
+  if (trimmedMessage === '/quiz' || trimmedMessage.startsWith('/quiz ')) {
+    logToFile('📝 /quiz command detected', { userId: user?.id, phoneNumber: from });
+    if (!user) {
+      typingController.stop();
+      await WhatsAppService.sendMessage(
+        from,
+        'Sorry, I could not find your account. Please send me a message first to register.\n\nمعذرت، میں آپ کا اکاؤنٹ نہیں مل سکا۔'
+      );
+      return;
+    }
+    try {
+      const QuizOrchestrator = require('../services/quiz/quiz-orchestrator.service');
+      const responseLanguage = await getUserLanguage(from) || 'en';
+      const topic = trimmedMessage.replace(/^\/quiz[\s,:;\-]*/i, '').trim() || null;
+      await QuizOrchestrator.initiateQuizRequest(user, from, sessionId, responseLanguage, topic);
+      logToFile('✅ Quiz orchestration started', { userId: user.id, topic });
+    } catch (error) {
+      logToFile('❌ Error initiating quiz', { userId: user?.id, error: error.message });
+      typingController.stop();
+      await WhatsAppService.sendMessage(
+        from,
+        'Sorry, something went wrong starting the quiz. Please try again.\n\nمعذرت، کوئز شروع کرنے میں کچھ غلط ہو گیا۔'
+      );
+    }
+    return;
   }
 
   // ============================================================

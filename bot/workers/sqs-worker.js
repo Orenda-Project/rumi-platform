@@ -133,30 +133,33 @@ class SQSCoachingWorker {
    */
   async processNextBatch(maxMessages) {
     try {
-      // Poll main queue and video queue in parallel for efficiency
+      // Poll main + (optional) video + (optional) quiz queues in parallel.
       const hasVideoQueue = !!process.env.SQS_VIDEO_QUEUE_URL;
+      const hasQuizQueue = !!process.env.SQS_QUIZ_QUEUE_URL;
 
-      // Allocate slots between queues
-      // If video queue is configured, reserve 1 slot for video jobs
-      const mainQueueSlots = hasVideoQueue ? Math.max(1, maxMessages - 1) : maxMessages;
-      const videoQueueSlots = hasVideoQueue ? 1 : 0;
+      // Reserve 1 slot for each dedicated queue that's configured.
+      const dedicated = (hasVideoQueue ? 1 : 0) + (hasQuizQueue ? 1 : 0);
+      const mainQueueSlots = dedicated ? Math.max(1, maxMessages - dedicated) : maxMessages;
 
       // Poll queues in parallel
       const pollPromises = [
         SQSQueueService.receiveJobs(mainQueueSlots)
       ];
+      if (hasVideoQueue) pollPromises.push(SQSQueueService.receiveVideoJobs(1));
+      if (hasQuizQueue) pollPromises.push(SQSQueueService.receiveQuizJobs(1));
 
-      if (hasVideoQueue) {
-        pollPromises.push(SQSQueueService.receiveVideoJobs(videoQueueSlots));
-      }
-
-      const [mainJobs, videoJobs = []] = await Promise.all(pollPromises);
+      const results = await Promise.all(pollPromises);
+      const mainJobs = results[0] || [];
+      let idx = 1;
+      const videoJobs = hasVideoQueue ? (results[idx++] || []) : [];
+      const quizJobs = hasQuizQueue ? (results[idx++] || []) : [];
 
       // Mark jobs with their source queue for proper completion
       mainJobs.forEach(job => { job.sourceQueue = 'main'; });
       videoJobs.forEach(job => { job.sourceQueue = 'video'; });
+      quizJobs.forEach(job => { job.sourceQueue = 'quiz'; });
 
-      const allJobs = [...mainJobs, ...videoJobs];
+      const allJobs = [...mainJobs, ...videoJobs, ...quizJobs];
 
       if (allJobs.length === 0) {
         // No jobs available (normal - SQS long polling will wait)
@@ -209,11 +212,13 @@ class SQSCoachingWorker {
     // Create job promise wrapped with correlation context
     // All logs within the job will automatically include correlationId
     const jobPromise = runWithCorrelation(correlationId, async () => {
-      return this.executeJob(sessionId, jobType, payload, receiptHandle, sourceQueue)
+      return this.executeJob(sessionId, jobType, payload, receiptHandle, sourceQueue, body)
         .then(async () => {
           // Job succeeded - delete from queue using correct completion method
           if (sourceQueue === 'video') {
             await SQSQueueService.completeVideoJob(receiptHandle);
+          } else if (sourceQueue === 'quiz') {
+            await SQSQueueService.completeQuizJob(receiptHandle);
           } else {
             await SQSQueueService.completeJob(receiptHandle);
           }
@@ -261,7 +266,7 @@ class SQSCoachingWorker {
    * @param {string} receiptHandle - SQS receipt handle
    * @param {string} sourceQueue - Source queue ('main' or 'video')
    */
-  async executeJob(sessionId, jobType, payload, receiptHandle, sourceQueue = 'main') {
+  async executeJob(sessionId, jobType, payload, receiptHandle, sourceQueue = 'main', body = null) {
     logToFile(`🔄 Executing ${jobType} job`, {
       workerId: this.workerId,
       sessionId,
@@ -331,9 +336,54 @@ class SQSCoachingWorker {
         break;
       }
 
+      // Quiz jobs (v2 envelope with body.groupId). Producers enqueue via
+      // SQSQueueService.queueJob(); each handler in quiz-job-handler does a
+      // cancel-flag check, an optional cascade re-queue (quiz_report/quiz_expire),
+      // then the work. Returns { ok } or { skipped } — either way we ack.
+      case 'quiz_report': {
+        // PDF render + R2 upload + WhatsApp send (up to ~10 min worst case).
+        if (sourceQueue === 'quiz') {
+          await SQSQueueService.extendQuizJobTimeout(receiptHandle, 600);
+        } else {
+          await SQSQueueService.extendJobTimeout(receiptHandle, 600);
+        }
+        const QuizJobHandler = require('./quiz-job-handler');
+        await QuizJobHandler.handleQuizReport(this._buildQuizBody(body));
+        break;
+      }
+      case 'quiz_expire': {
+        const QuizJobHandler = require('./quiz-job-handler');
+        await QuizJobHandler.handleQuizExpire(this._buildQuizBody(body));
+        break;
+      }
+      case 'quiz_nudge': {
+        const QuizJobHandler = require('./quiz-job-handler');
+        await QuizJobHandler.handleQuizNudge(this._buildQuizBody(body));
+        break;
+      }
+      case 'quiz_reminder': {
+        const QuizJobHandler = require('./quiz-job-handler');
+        await QuizJobHandler.handleQuizReminder(this._buildQuizBody(body));
+        break;
+      }
+
       default:
         throw new Error(`Unknown job type: ${jobType}`);
     }
+  }
+
+  /**
+   * Build the body shape quiz-job-handler expects from either envelope.
+   * v2.0 messages have body.groupId; v1.0 (legacy coaching/video) have
+   * sessionId / videoRequestId. Aliasing here lets quiz job-types ride the
+   * same worker without touching existing producers.
+   */
+  _buildQuizBody(body) {
+    const b = body || {};
+    return {
+      groupId: b.groupId || b.sessionId || b.videoRequestId,
+      payload: b.payload || {}
+    };
   }
 
   /**
