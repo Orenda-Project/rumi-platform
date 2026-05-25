@@ -91,7 +91,7 @@ class QuizSchedulerService {
       // within the 5-min FIFO dedup window.
       const delaySeconds = Math.max(0, Math.min(900, Math.ceil((nextTime.getTime() - Date.now()) / 1000)));
       try {
-        const SQSQueueService = require('../queue/sqs-queue.service');
+        const SQSQueueService = require('../queue');
         await SQSQueueService.queueJob(
           lp.id,
           'quiz_nudge',

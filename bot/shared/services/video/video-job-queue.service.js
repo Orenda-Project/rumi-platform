@@ -15,7 +15,7 @@ class VideoJobQueueService {
    * @param {Object} metadata - Additional metadata (userId, from, topic, language)
    */
   static async queueGeneration(videoRequestId, metadata) {
-    const SQSQueueService = require('../queue/sqs-queue.service');
+    const SQSQueueService = require('../queue');
 
     try {
       // Use dedicated video queue (falls back to main queue if not configured)
@@ -54,7 +54,7 @@ class VideoJobQueueService {
    * @param {Object} metadata - Step-specific data
    */
   static async queueStep(videoRequestId, step, metadata) {
-    const SQSQueueService = require('../queue/sqs-queue.service');
+    const SQSQueueService = require('../queue');
 
     try {
       // Use dedicated video queue (falls back to main queue if not configured)
@@ -92,7 +92,7 @@ class VideoJobQueueService {
    * @returns {Promise<number>} Total queue depth (waiting + in progress + delayed)
    */
   static async getQueueDepth() {
-    const SQSQueueService = require('../queue/sqs-queue.service');
+    const SQSQueueService = require('../queue');
 
     try {
       const metrics = await SQSQueueService.getVideoQueueMetrics();

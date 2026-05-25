@@ -63,7 +63,7 @@ class CoachingJobQueueService {
    */
   static async queueJob(coachingSessionId, jobType, payload = {}) {
     try {
-      const SQSQueueService = require('../queue/sqs-queue.service');
+      const SQSQueueService = require('../queue');
 
       const messageId = await SQSQueueService.queueCoachingJob(
         coachingSessionId,

@@ -43,6 +43,7 @@
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
     "bottleneck": "^2.19.5",
+    "bullmq": "^5.67.1",
     "connect-flash": "^0.1.1",
     "csv-parser": "^3.2.0",
     "dayjs": "^1.11.19",

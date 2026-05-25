@@ -6,7 +6,7 @@ const { logEvent } = require('../../utils/structured-logger');  //  structured e
 const supabase = require('../../config/supabase');
 const WhatsAppService = require('../whatsapp.service');
 const redisService = require('../cache/railway-redis.service');
-const SQSQueueService = require('../queue/sqs-queue.service');  //  Phase 8 producer side
+const SQSQueueService = require('../queue');  //  Phase 8 producer side
 
 // Redis keys must use the same phone format the webhook delivers.
 // students.parent_phone is stored E.164 with + (e.g. +<country><number>) but Meta webhooks

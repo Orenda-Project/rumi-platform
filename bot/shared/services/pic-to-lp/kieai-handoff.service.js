@@ -10,7 +10,7 @@
  * app_settings.pic_lp_backend_ab routes to 'kieai'.
  */
 
-const SQSQueueService = require('../queue/sqs-queue.service');
+const SQSQueueService = require('../queue');
 const WhatsAppService = require('../whatsapp.service');
 const PicLpSession = require('./pic-lp-session.service');
 const PicLpLatency = require('./pic-lp-latency.service');

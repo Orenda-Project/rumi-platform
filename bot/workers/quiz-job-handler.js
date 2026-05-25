@@ -26,7 +26,7 @@ const { logToFile } = require('../shared/utils/logger');
 const { logEvent } = require('../shared/utils/structured-logger');
 const supabase = require('../shared/config/supabase');
 const RedisService = require('../shared/services/cache/railway-redis.service');
-const SQSQueueService = require('../shared/services/queue/sqs-queue.service');
+const SQSQueueService = require('../shared/services/queue');
 
 const TERMINAL_SESSION_STATES = ['completed', 'incomplete', 'expired', 'cancelled'];
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;

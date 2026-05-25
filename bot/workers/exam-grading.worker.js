@@ -286,7 +286,7 @@ async function getUser(userId) {
  * @param {string} [phase] - Starting phase
  */
 async function queueExamGradingJob(sessionId, userId, phase = 'ocr') {
-  const SQSQueueService = require('../shared/services/queue/sqs-queue.service');
+  const SQSQueueService = require('../shared/services/queue');
 
   const correlationId = generateCorrelationId();
 

@@ -10,7 +10,7 @@
 
 const { logToFile } = require('../utils/logger');
 const supabase = require('../config/supabase');
-const SQSQueueService = require('./queue/sqs-queue.service');
+const SQSQueueService = require('./queue');
 
 class LessonPlanQueueService {
   /**

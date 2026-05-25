@@ -18,7 +18,7 @@
 const supabase = require('../config/supabase');
 const { logToFile } = require('../utils/logger');
 const { logEvent } = require('../utils/structured-logger');
-const SQSQueueService = require('../services/queue/sqs-queue.service');
+const SQSQueueService = require('../services/queue');
 const HomeworkLookup = require('../services/homework-lookup.service');
 
 // Soft cap = 12 chapters/request (~36 MB) — validated client + server. Over →

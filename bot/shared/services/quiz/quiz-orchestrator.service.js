@@ -398,7 +398,7 @@ class QuizOrchestrator {
     // the handler will skip cleanly. Replaces the scheduled_jobs
     // UPDATE — Phase 8 deletes scheduled_jobs entirely.
     try {
-      const SQSQueueService = require('../queue/sqs-queue.service');
+      const SQSQueueService = require('../queue');
       await SQSQueueService.cancelByGroupId(quizId, ['quiz_report']);
       // Sibling sessions may also have quiz_expire messages keyed by sessionId
       for (const s of liveSessions) {

@@ -870,6 +870,32 @@ class SQSQueueService {
       VisibilityTimeout: Math.min(additionalSeconds, 43200)
     }).promise();
   }
+
+  /**
+   * Cancel pending jobs for a group by setting a per-jobType Redis flag.
+   *
+   * SQS cannot delete a specific already-queued message by content, so cancel is
+   * cooperative: this writes `sqs:cancel:<jobType>:<groupId>` (1h TTL) and the
+   * worker handler short-circuits any job whose flag is set (see quiz-job-handler
+   * `isCancelled`). The mechanism is pure Redis and therefore driver-agnostic —
+   * the BullMQ driver implements it identically so the cancel contract holds
+   * regardless of QUEUE_DRIVER.
+   *
+   * @param {string}   groupId  Logical entity id (quizId, sessionId, …)
+   * @param {string[]} jobTypes Job types to cancel (e.g. ['quiz_report','quiz_expire'])
+   * @returns {Promise<void>}
+   */
+  async cancelByGroupId(groupId, jobTypes = []) {
+    const CANCEL_TTL = 3600; // 1h — matches the contract documented in quiz-job-handler
+    for (const jobType of jobTypes) {
+      try {
+        await RedisService.set(`sqs:cancel:${jobType}:${groupId}`, '1', CANCEL_TTL);
+        logToFile('🛑 Cancel flag set', { groupId, jobType });
+      } catch (err) {
+        logToFile('⚠️ Failed to set cancel flag (non-fatal)', { groupId, jobType, error: err.message });
+      }
+    }
+  }
 }
 
 // Export singleton instance

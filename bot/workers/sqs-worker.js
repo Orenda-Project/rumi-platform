@@ -34,7 +34,7 @@ const { runWithCorrelation, generateCorrelationId } = require('../shared/utils/s
 require('dotenv').config();
 const supabase = require('../shared/config/supabase');
 const { logToFile } = require('../shared/utils/logger');
-const SQSQueueService = require('../shared/services/queue/sqs-queue.service');
+const SQSQueueService = require('../shared/services/queue');
 const CoachingService = require('../shared/services/coaching-orchestrator.service');
 const LessonPlanExtractionWorker = require('./lesson-plan-extraction.worker');
 const LessonPlanGenerationWorker = require('./lesson-plan-generation.worker');
