@@ -593,6 +593,25 @@ CREATE INDEX IF NOT EXISTS idx_student_video_feedback_user_time
 CREATE INDEX IF NOT EXISTS idx_student_video_feedback_useful_time
     ON student_video_feedback (useful, created_at DESC);
 
+-- Pre-rendered homework chapter PDFs (one row per grade × subject × chapter).
+-- The homework request flow looks these up and the bundle worker pdf-lib-merges
+-- the selected chapters' r2_key files into one document.
+CREATE TABLE IF NOT EXISTS homework_chapters (
+    id UUID NOT NULL DEFAULT uuid_generate_v4(),
+    grade INTEGER NOT NULL,
+    subject VARCHAR(100) NOT NULL,
+    chapter_number INTEGER NOT NULL,
+    chapter_title VARCHAR(300),
+    lang VARCHAR(20) DEFAULT 'en',
+    r2_key TEXT NOT NULL,
+    version VARCHAR(20) DEFAULT 'v7',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_homework_chapters_lookup
+    ON homework_chapters (grade, subject, version, chapter_number);
+
 -- ---------------------------------------------------------------------------
 -- Attendance
 -- ---------------------------------------------------------------------------

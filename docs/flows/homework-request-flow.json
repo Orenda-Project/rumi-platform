@@ -1,0 +1,107 @@
+{
+  "_comment": "WhatsApp Flow for Homework. Pick grade + subject, then multi-select the chapters you have already taught; the bundle worker fetch-merges per-(grade×subject) PDFs from R2 and streams them async.",
+  "_instructions": [
+    "1. Register this Flow with Meta and set its ID as HOMEWORK_FLOW_ID.",
+    "2. Endpoint: POST /api/flows/homework-request (data_api_version 3.0, data_exchange).",
+    "3. SELECT_GRADE: Grade (1-5) + Subject dropdowns.",
+    "4. SELECT_CHAPTERS: dynamic CheckboxGroup of chapters from homework_chapters; client soft cap = 12 via max-selected-items (server also enforces).",
+    "5. SUCCESS: immediate ack — files stream to chat async via the SQS bundle worker."
+  ],
+  "version": "6.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "SELECT_GRADE": ["SELECT_CHAPTERS"],
+    "SELECT_CHAPTERS": ["SUCCESS"],
+    "SUCCESS": []
+  },
+  "screens": [
+    {
+      "id": "SELECT_GRADE",
+      "title": "Homework",
+      "data": {
+        "grades": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [ { "id": "1", "title": "Grade 1" }, { "id": "2", "title": "Grade 2" } ]
+        },
+        "subjects": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [ { "id": "maths", "title": "Maths" }, { "id": "english", "title": "English" }, { "id": "urdu", "title": "Urdu" } ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "grade_form",
+            "children": [
+              { "type": "TextHeading", "text": "Homework" },
+              { "type": "TextBody", "text": "Ready-made homework. Pick your class and subject, then choose the chapters you have already taught." },
+              { "type": "Dropdown", "name": "grade", "label": "Grade", "required": true, "data-source": "${data.grades}" },
+              { "type": "Dropdown", "name": "subject", "label": "Subject", "required": true, "data-source": "${data.subjects}" },
+              { "type": "Footer", "label": "Show Chapters", "on-click-action": { "name": "data_exchange", "payload": { "grade": "${form.grade}", "subject": "${form.subject}" } } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SELECT_CHAPTERS",
+      "title": "Choose Chapters",
+      "data": {
+        "chapters": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [ { "id": "1", "title": "Ch1: Place Value" }, { "id": "2", "title": "Ch2: Addition" } ]
+        },
+        "grade_display": { "type": "string", "__example__": "Grade 2 — Maths" },
+        "grade_value": { "type": "string", "__example__": "2" },
+        "subject_value": { "type": "string", "__example__": "maths" },
+        "soft_cap": { "type": "number", "__example__": 12 },
+        "error": { "type": "object", "properties": { "message": { "type": "string" } }, "__example__": { "message": "" } }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "chapters_form",
+            "children": [
+              { "type": "TextHeading", "text": "${data.grade_display}" },
+              { "type": "TextBody", "text": "Tick the chapters you have already taught (up to 12). Send \"homework\" again any time for more." },
+              {
+                "type": "CheckboxGroup",
+                "name": "chapters",
+                "label": "Chapters",
+                "required": true,
+                "min-selected-items": 1,
+                "max-selected-items": 12,
+                "data-source": "${data.chapters}"
+              },
+              { "type": "Footer", "label": "Get Homework", "on-click-action": { "name": "data_exchange", "payload": { "grade": "${data.grade_value}", "subject": "${data.subject_value}", "chapters": "${form.chapters}" } } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUCCESS",
+      "title": "Homework On Its Way",
+      "terminal": true,
+      "data": {
+        "message": { "type": "string", "__example__": "Your homework is being prepared — it will arrive in a few moments." }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          { "type": "TextHeading", "text": "Homework On Its Way!" },
+          { "type": "TextBody", "text": "${data.message}" },
+          { "type": "TextBody", "text": "Check your chat — the file(s) will arrive in a few seconds. You can close this form now." },
+          { "type": "Footer", "label": "Done", "on-click-action": { "name": "complete", "payload": {} } }
+        ]
+      }
+    }
+  ]
+}
