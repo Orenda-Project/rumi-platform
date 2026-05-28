@@ -56,13 +56,13 @@ class WhatsAppService {
 
       const data = await response.json();
       if (!response.ok) {
-        console.error('Error sending message:', data);
+        logToFile('❌ Error sending WhatsApp message', { responseData: data });
         return false;
       }
-      console.log('Message sent successfully:', data);
+      logToFile('✅ WhatsApp message sent', { messageId: data?.messages?.[0]?.id });
       return true;
     } catch (error) {
-      console.error('Error sending WhatsApp message:', error);
+      logToFile('❌ Exception sending WhatsApp message', { error: error.message });
       return false;
     }
   }
@@ -193,7 +193,7 @@ class WhatsAppService {
 
       return mediaUrlResponse.data;
     } catch (error) {
-      console.error('Error getting WhatsApp media info:', error);
+      logToFile('❌ Error getting WhatsApp media info', { error: error.message });
       throw error;
     }
   }
@@ -219,7 +219,7 @@ class WhatsAppService {
 
       return Buffer.from(mediaResponse.data);
     } catch (error) {
-      console.error('Error downloading WhatsApp media:', error);
+      logToFile('❌ Error downloading WhatsApp media', { error: error.message });
       throw error;
     }
   }
