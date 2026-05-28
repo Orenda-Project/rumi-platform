@@ -29,6 +29,16 @@ const PDFReportService = require('../pdf-report.service');
 const FeatureLinkerService = require('../feature-linker.service');
 const { uploadVoiceDebrief, uploadReportPDF } = require('../../storage/r2');
 const { TEMP_DIR } = require('../../utils/constants');
+const { getCoachingMessage } = require('../../config/coaching-messages');
+
+/**
+ * Resolve language directly from a session row already in memory. The
+ * report-generator carries the session around (it already reads
+ * `session.users?.preferred_language`); this just packages the read.
+ */
+function _languageFromSession(session) {
+  return session?.users?.preferred_language || session?.transcript_language || 'en';
+}
 const {
   CLASSROOM_MARKS_BASE,
   CLASSROOM_MARKS_WITH_LP
@@ -91,10 +101,7 @@ class ReportGeneratorService {
         });
 
         if (!isRetry) {
-          await WhatsAppService.sendMessage(
-            from,
-            "🔄 I'm still processing your classroom analysis. I'll share your report as soon as it's ready."
-          );
+          await WhatsAppService.sendMessage(from, getCoachingMessage('reportInProgress', _languageFromSession(session)));
         }
 
         return;
@@ -109,7 +116,7 @@ class ReportGeneratorService {
 
       // Send progress update (only on first attempt)
       if (!isRetry) {
-        await WhatsAppService.sendMessage(from, "🔄 Step 4/5: Generating your comprehensive observation report with visualizations...");
+        await WhatsAppService.sendMessage(from, getCoachingMessage('step4_generatingReport', _languageFromSession(session)));
       }
 
       // Enhance analysis with teacher reflections
@@ -1190,9 +1197,9 @@ class ReportGeneratorService {
    * @returns {Promise<void>}
    * @private
    */
-  static async sendPDFReport(phoneNumber, coachingSessionId, pdfBuffer, teacherFirstName = 'Teacher', observationDate = null) {
+  static async sendPDFReport(phoneNumber, coachingSessionId, pdfBuffer, teacherFirstName = 'Teacher', observationDate = null, languageCode = 'en') {
     try {
-      await WhatsAppService.sendMessage(phoneNumber, "✅ Your Classroom Observation Report is ready! 📄");
+      await WhatsAppService.sendMessage(phoneNumber, getCoachingMessage('reportReady', languageCode));
 
       const tempPdfPath = path.join(TEMP_DIR, `report_${coachingSessionId}_${Date.now()}.pdf`);
 
@@ -1247,7 +1254,8 @@ class ReportGeneratorService {
    */
   static async generateAndSendVoiceDebrief(session, phoneNumber, coachingSessionId, enhancedAnalysis) {
     try {
-      await WhatsAppService.sendMessage(phoneNumber, "🔄 Step 5/5: Creating your personalized voice debrief...");
+      const lang = _languageFromSession(session);
+      await WhatsAppService.sendMessage(phoneNumber, getCoachingMessage('step5_voiceDebrief', lang));
 
       const outputLanguage = await CoachingHelpersService.determineOutputLanguage(
         session.user_id,
@@ -1300,7 +1308,7 @@ class ReportGeneratorService {
         .eq('id', coachingSessionId);
 
       // Send voice debrief
-      await WhatsAppService.sendMessage(phoneNumber, "🎤 Here's your personalized voice summary:");
+      await WhatsAppService.sendMessage(phoneNumber, getCoachingMessage('voiceSummaryReady', _languageFromSession(session)));
       await WhatsAppService.sendAudioFromUrl(phoneNumber, voiceUrl);
 
       logToFile('✅ Voice debrief sent successfully', { coachingSessionId });
@@ -1309,9 +1317,7 @@ class ReportGeneratorService {
         coachingSessionId,
         error: voiceError.message
       });
-      await WhatsAppService.sendMessage(phoneNumber,
-        "Note: Voice summary could not be generated, but your written report is complete! You can review it in the PDF above. 📄"
-      );
+      await WhatsAppService.sendMessage(phoneNumber, getCoachingMessage('voiceSummaryFallback', _languageFromSession(session)));
     }
   }
 

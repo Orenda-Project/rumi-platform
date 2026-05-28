@@ -23,6 +23,7 @@ const { uploadClassroomAudio } = require('../../storage/r2');
 const { TEMP_DIR, LISTENING_ANIMATION_MEDIA_ID } = require('../../utils/constants');
 const { getUserLanguage, setUserLanguage } = require('../../utils/language-cache');
 const { analyzeLanguage } = require('../../utils/language-detector');
+const { getCoachingMessage } = require('../../config/coaching-messages');
 
 class TranscriptionProcessorService {
   /**
@@ -146,13 +147,8 @@ class TranscriptionProcessorService {
           warning: 'May exceed GPT-5 mini output token limit'
         });
 
-        // Send warning to user
-        await WhatsAppService.sendMessage(
-          from,
-          "⚠️ *Long Lesson Detected*\n\n" +
-          "Your lesson transcript is quite lengthy. The analysis may take a bit longer, " +
-          "but I'll make sure to provide comprehensive feedback!"
-        );
+        // Send warning to user (uses the user's already-resolved language).
+        await WhatsAppService.sendMessage(from, getCoachingMessage('longLessonDetected', currentLanguage || 'en'));
       }
 
       // Update database with transcription data and tokens for enhanced viewer
@@ -211,9 +207,12 @@ class TranscriptionProcessorService {
 
         const priorAction = priorSessions?.[0]?.prioritized_action;
         if (priorAction?.teacher_response === 'yes' && priorAction?.action) {
-          await WhatsAppService.sendMessage(from,
-            `💡 *Quick reminder:* Last time, you committed to:\n\n_"${priorAction.action}"_\n\nLet's see how it went in this session!`
-          );
+          // Substitute {{action}} into the catalog template — keeps the
+          // string translatable 1:1 (translators see {{action}}, not ${}).
+          const reminderLang = await getUserLanguage(session.user_id) || 'en';
+          const reminder = getCoachingMessage('priorActionReminder', reminderLang)
+            .replace('{{action}}', priorAction.action);
+          await WhatsAppService.sendMessage(from, reminder);
         }
       } catch (agencyError) {
         logToFile('⚠️ Agency follow-up check failed (non-critical)', { error: agencyError.message });
@@ -318,9 +317,9 @@ class TranscriptionProcessorService {
    * @param {number} step - Current step (1-5)
    * @returns {Promise<void>}
    */
-  static async sendProgressUpdate(phoneNumber, step) {
+  static async sendProgressUpdate(phoneNumber, step, languageCode = 'en') {
     try {
-      await WhatsAppService.sendMessage(phoneNumber, `🔄 Step 1/5: Transcribing your classroom audio. This may take 30-60 seconds...hang in there!`);
+      await WhatsAppService.sendMessage(phoneNumber, getCoachingMessage('step1_transcribing', languageCode));
 
       // Send listening animation if available
       if (LISTENING_ANIMATION_MEDIA_ID) {

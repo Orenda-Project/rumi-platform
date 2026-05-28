@@ -18,6 +18,25 @@ const WhatsAppService = require('../whatsapp.service');
 const CoachingSessionService = require('./coaching-session.service');
 const CoachingJobQueueService = require('./coaching-job-queue.service');
 const { uploadLessonPlanBuffer, buildR2PublicUrl } = require('../../storage/r2');
+const { getCoachingMessage } = require('../../config/coaching-messages');
+
+/**
+ * Look up the teacher's preferred language for a coaching session.
+ * Falls back to 'en' when the session/user is missing — we'd rather
+ * ship the English message than throw mid-pipeline.
+ */
+async function _resolveSessionLanguage(coachingSessionId) {
+  try {
+    const { data } = await supabase
+      .from('coaching_sessions')
+      .select('users(preferred_language), transcript_language')
+      .eq('id', coachingSessionId)
+      .maybeSingle();
+    return data?.users?.preferred_language || data?.transcript_language || 'en';
+  } catch (_err) {
+    return 'en';
+  }
+}
 
 class LessonPlanProcessorService {
   /**
@@ -45,7 +64,8 @@ class LessonPlanProcessorService {
           })
           .eq('id', coachingSessionId);
 
-        await WhatsAppService.sendMessage(from, "No problem! I'll analyze your classroom audio without the lesson plan.");
+        const lang = await _resolveSessionLanguage(coachingSessionId);
+        await WhatsAppService.sendMessage(from, getCoachingMessage('lessonPlan_skip', lang));
 
         // Queue analysis job
         const CoachingJobQueueService = require('./coaching-job-queue.service');
@@ -60,9 +80,8 @@ class LessonPlanProcessorService {
         await CoachingJobQueueService.queueAnalysis(coachingSessionId, { from, lpUploaded: true });
       } else {
         // User said yes but no document yet - ask them to send it
-        await WhatsAppService.sendMessage(from,
-          "Great! Please send your lesson plan as a document (PDF, Word, or image).\n\nTap 📎 → Document to upload it."
-        );
+        const lang = await _resolveSessionLanguage(coachingSessionId);
+        await WhatsAppService.sendMessage(from, getCoachingMessage('lessonPlan_request', lang));
 
         // Set timeout for 24 hours with reminders
         // TODO: Implement reminder system (can be done in Phase 4)
@@ -114,9 +133,8 @@ class LessonPlanProcessorService {
         userId: session.user_id
       });
 
-      await WhatsAppService.sendMessage(from,
-        "📄 Lesson plan received! I'm processing it in the background and will weave it into your analysis."
-      );
+      const lang = await _resolveSessionLanguage(coachingSessionId);
+      await WhatsAppService.sendMessage(from, getCoachingMessage('lessonPlan_received', lang));
 
       logToFile('Lesson plan queued for extraction', {
         coachingSessionId,

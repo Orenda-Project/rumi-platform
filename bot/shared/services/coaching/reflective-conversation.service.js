@@ -21,6 +21,7 @@ const ElevenLabsService = require('../elevenlabs.service');
 const { getUserLanguage, setUserLanguage } = require('../../utils/language-cache');
 const { TEMP_DIR } = require('../../utils/constants');
 const { NUM_REFLECTIVE_QUESTIONS } = require('../../config/coaching-debrief.config');
+const { getCoachingMessage } = require('../../config/coaching-messages');
 const path = require('path');
 
 class ReflectiveConversationService {
@@ -314,18 +315,22 @@ class ReflectiveConversationService {
 
         if (sessionData) {
           const languageCode = await getUserLanguage(sessionData.user_id);
-          const thankYouMessage = "Thank you for your thoughtful reflections!";
+          // The voice path strips the trailing emoji (TTS reads ":pray:" otherwise);
+          // the text path keeps it.
+          const localised = getCoachingMessage('reflectionsThanks', languageCode);
+          const spokenForm = localised.replace(/\s*🙏\s*$/u, '');
 
           try {
-            const voiceBuffer = await ElevenLabsService.generateSpeechForLanguage(thankYouMessage, languageCode);
+            const voiceBuffer = await ElevenLabsService.generateSpeechForLanguage(spokenForm, languageCode);
             await WhatsAppService.sendAudio(from, voiceBuffer, TEMP_DIR);
           } catch (voiceError) {
             // Fallback to text if voice fails
             logToFile('⚠️  Voice generation failed for thank you message, sending text', { error: voiceError.message });
-            await WhatsAppService.sendMessage(from, "Thank you for your thoughtful reflections! 🙏");
+            await WhatsAppService.sendMessage(from, localised);
           }
         } else {
-          await WhatsAppService.sendMessage(from, "Thank you for your thoughtful reflections! 🙏");
+          // Session row missing — language unknown, default to English.
+          await WhatsAppService.sendMessage(from, getCoachingMessage('reflectionsThanks', 'en'));
         }
 
         // Queue report generation job

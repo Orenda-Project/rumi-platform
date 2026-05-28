@@ -14,6 +14,7 @@
 const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
 const WhatsAppService = require('../whatsapp.service');
+const { getCoachingMessage } = require('../../config/coaching-messages');
 
 class CoachingSessionService {
   /**
@@ -120,7 +121,18 @@ class CoachingSessionService {
           })
           .eq('id', coachingSessionId);
 
-        await WhatsAppService.sendMessage(from, "No problem! If you'd like to analyze classroom audio in the future, just send me a recording.");
+        // Resolve teacher language for the localised cancellation message.
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('preferred_language')
+          .eq('id', (await supabase
+            .from('coaching_sessions')
+            .select('user_id')
+            .eq('id', coachingSessionId)
+            .maybeSingle()).data?.user_id || '')
+          .maybeSingle();
+        const lang = userRow?.preferred_language || 'en';
+        await WhatsAppService.sendMessage(from, getCoachingMessage('exitedNoAudio', lang));
 
         return { confirmed: false, session: null };
       }

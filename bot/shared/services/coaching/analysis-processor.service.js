@@ -19,6 +19,25 @@ const WhatsAppService = require('../whatsapp.service');
 const CoachingSessionService = require('./coaching-session.service');
 const { PEDAGOGICAL_ANALYSIS_MEDIA_ID } = require('../../utils/constants');
 const { selectFramework } = require('./frameworks/framework-selector');
+const { getCoachingMessage } = require('../../config/coaching-messages');
+
+/**
+ * Look up the teacher's preferred language for a coaching session.
+ * Falls back to 'en' if the session/user can't be read — we'd rather
+ * ship the English message than throw mid-pipeline.
+ */
+async function _resolveSessionLanguage(coachingSessionId) {
+  try {
+    const { data } = await supabase
+      .from('coaching_sessions')
+      .select('users(preferred_language), transcript_language')
+      .eq('id', coachingSessionId)
+      .maybeSingle();
+    return data?.users?.preferred_language || data?.transcript_language || 'en';
+  } catch (_err) {
+    return 'en';
+  }
+}
 
 class AnalysisProcessorService {
   /**
@@ -157,7 +176,8 @@ class AnalysisProcessorService {
         .eq('id', coachingSessionId);
 
       // Send progress update - Step 3
-      await WhatsAppService.sendMessage(from, "🔄 Step 3/5: Let's reflect on your teaching together...");
+      const lang3 = await _resolveSessionLanguage(coachingSessionId);
+      await WhatsAppService.sendMessage(from, getCoachingMessage('step3_reflecting', lang3));
 
       // Brief pause before first question
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -179,9 +199,15 @@ class AnalysisProcessorService {
    * @param {number} step - Current step (1-5)
    * @returns {Promise<void>}
    */
-  static async sendProgressUpdate(phoneNumber, step) {
+  static async sendProgressUpdate(phoneNumber, step, languageCode = 'en') {
     try {
-      await WhatsAppService.sendMessage(phoneNumber, `🔄 Step ${step}/5: Analyzing your teaching using research-based pedagogical frameworks...`);
+      // Step 2 catalog string carries the canonical "2/5" — we tolerate
+      // callers passing other step numbers (e.g. legacy callers) and
+      // substitute via simple string replacement to preserve message
+      // localisation while still letting callers control the step counter.
+      const base = getCoachingMessage('step2_analyzing', languageCode);
+      const text = step === 2 ? base : base.replace('2/5', `${step}/5`);
+      await WhatsAppService.sendMessage(phoneNumber, text);
 
       // Send pedagogical analysis animation if available
       if (PEDAGOGICAL_ANALYSIS_MEDIA_ID) {
