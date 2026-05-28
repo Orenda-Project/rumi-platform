@@ -996,7 +996,7 @@ async function handleVoiceMessage(message, from, user = null) {
 
       // Clear the awaiting state
       try {
-        await supabase.from('sessions').update({ conversation_state: null }).eq('id', sessionId);
+        await supabase.from('chat_sessions').update({ conversation_state: null }).eq('id', sessionId);
       } catch (error) {
         logToFile('⚠️ Failed to clear conversation state', { error: error.message });
       }

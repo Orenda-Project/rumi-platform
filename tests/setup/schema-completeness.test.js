@@ -88,19 +88,30 @@ function extractCreateTables(sqlContent) {
 // Paths
 // ---------------------------------------------------------------------------
 
-const BOT_DIR = path.resolve(__dirname, '../../bot');
+// Directories scanned for `.from('<table>')` / `.rpc('<fn>')` references.
+// Historical note: this used to be `bot/` only, which let `.from('schools')` in
+// `dashboard/scripts/` ship undetected. The scope is now every shipped source
+// directory so the schema↔code contract is enforced across the whole repo.
+// (Scope widening + IGNORED_REFERENCES sanitization landed together.)
+const SOURCE_DIRS = ['bot', 'dashboard', 'scripts'].map((d) =>
+  path.resolve(__dirname, '../..', d)
+);
 const SCHEMA_PATH = path.resolve(
   __dirname,
   '../../infrastructure/supabase/00_complete-schema.sql',
 );
 
-// Names that appear in .from() but are not real table references
-// (e.g. test fixtures, mock data, or dynamically-constructed names)
+// Names that appear in .from() but are not real Supabase table references —
+// they are `Buffer.from(...)` / mock fixture literals matched by the same
+// regex. Every entry here MUST be verified to be a non-DB call; do NOT
+// allowlist a suspected typo. (`'sessions'` was previously here classified as
+// "alias / ambiguous"; it was actually a literal typo for `chat_sessions` and
+// the misclassification masked two production runtime crashes for months.)
 const IGNORED_REFERENCES = new Set([
-  'mock-excel',
-  'fake audio data',
-  'speech',
-  'sessions', // alias / ambiguous — not a standalone table
+  'mock-excel',          // Buffer.from('mock-excel') in tests/excel-export.test.js
+  'fake audio data',     // Buffer.from('fake audio data') in audio test fixtures
+  'speech',              // Buffer.from('speech') in bug-005-audio-document.test.js
+  'mock',                // Buffer.from('mock') in __mocks__/supabase.js
 ]);
 
 // RPC names referenced only from test code (never production) — clones don't need them.
@@ -155,10 +166,15 @@ describe('Schema Completeness', () => {
     schemaTables = extractCreateTables(schemaSQL);
     schemaFunctions = extractCreateFunctions(schemaSQL);
 
-    // Scan all bot JS files for table references; RPCs from production files only.
+    // Scan every shipped source directory for table references; RPCs from
+    // production files only. Scope widened from bot/-only in bd-1850 to catch
+    // dashboard/ and scripts/ drift (e.g. `.from('schools')` in
+    // dashboard/scripts/* that escaped the original BOT_DIR-only guard).
     codeTableRefs = new Set();
     codeRpcRefs = new Set();
-    const jsFiles = findJsFiles(BOT_DIR);
+    const jsFiles = SOURCE_DIRS.flatMap((dir) =>
+      fs.existsSync(dir) ? findJsFiles(dir) : []
+    );
 
     for (const filePath of jsFiles) {
       const content = fs.readFileSync(filePath, 'utf-8');

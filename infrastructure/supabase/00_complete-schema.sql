@@ -3645,6 +3645,13 @@ ALTER TABLE quiz_answers ADD COLUMN IF NOT EXISTS answered_at TIMESTAMPTZ DEFAUL
 -- conversations: last-touch timestamp (prod parity).
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT now();
 
+-- chat_sessions: per-turn state-machine flags (AWAITING_VIDEO_TOPIC,
+-- AWAITING_CLASSROOM_AUDIO, etc.). Read at whatsapp-bot.js / text-message and
+-- voice-message handlers; cleared at end-of-flow. Column predated the consolidated
+-- schema. (Was previously written via a typo'd `.from('sessions')` call to a
+-- nonexistent table; the handler call sites now target chat_sessions.)
+ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS conversation_state JSONB;
+
 -- =============================================================================
 -- Function reconcile (Phase 5) — RPCs the bot invokes via supabase.rpc() that the
 -- consolidated schema predated. CREATE OR REPLACE keeps it idempotent. (get_column_info
