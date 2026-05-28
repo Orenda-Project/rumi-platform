@@ -76,7 +76,7 @@ class GradingService {
           successful.push(result);
 
           // Save to database
-          await this._saveGrade(session.id, student, result);
+          await this._saveGrade(session, student, result);
         } catch (error) {
           logToFile('❌ Grading failed for student', {
             student: student.name,
@@ -366,30 +366,131 @@ Maximum Marks: ${question.marks || 1}`
   }
 
   /**
-   * Save grade to database
-   * @param {string} sessionId - Session ID
-   * @param {object} student - Student info
-   * @param {object} result - Grading result
+   * Save a graded submission to the database.
+   *
+   * The schema is normalised across two tables:
+   *   - `exam_submissions` — one row per (session, student): image references,
+   *     extracted text, status. The summary view (total marks / percentage)
+   *     is computed at read time, not stored here.
+   *   - `exam_grades` — one row per (submission, question): awarded marks,
+   *     rationale, structured Feed Up/Back/Forward. Unique-indexed on
+   *     `(submission_id, question_id)` so re-grading is idempotent.
+   *
+   * Before this fix, `_saveGrade()` upserted a per-STUDENT summary row into
+   * `exam_grades` with columns (`session_id`, `student_name`, `total_marks`,
+   * `marks_obtained`, `percentage`, `grade`, `question_breakdown`,
+   * `graded_at`) — none of which exist in the schema. Every grading run
+   * silently failed to persist.
+   *
+   * @param {object} session - Exam session (read for image_urls + ocr_results)
+   * @param {object} student - Student info (name, rollNumber, pageNumbers)
+   * @param {object} result  - Grading result from `gradeStudent()`
    */
-  static async _saveGrade(sessionId, student, result) {
-    const { error } = await supabase
-      .from('exam_grades')
-      .upsert({
-        session_id: sessionId,
-        student_name: student.name,
-        roll_number: student.rollNumber,
-        total_marks: result.totalMarks,
-        marks_obtained: result.marksAwarded,
-        percentage: result.percentage,
-        grade: result.grade,
-        question_breakdown: result.questionResults,
-        graded_at: result.gradedAt
-      }, {
-        onConflict: 'session_id,student_name'
-      });
+  static async _saveGrade(session, student, result) {
+    const sessionId = session.id;
+    const studentPages = student.pageNumbers || [];
 
-    if (error) {
-      logToFile('⚠️ Failed to save grade to DB', { error: error.message });
+    // Slice the per-student image set out of the session-level array. Page
+    // numbers are 1-indexed in the OCR layer; convert to 0-indexed for array
+    // lookup. Empty array when pageNumbers is missing — image_urls is NOT
+    // NULL on exam_submissions so we provide [] not null.
+    const allImages = session.original_images || [];
+    const studentImageUrls = studentPages.length > 0
+      ? studentPages.map(p => allImages[p - 1]).filter(Boolean)
+      : [];
+
+    // 1) Upsert the exam_submissions row. The schema has no unique
+    //    constraint on (session_id, student_name) so we look it up
+    //    explicitly and update-or-insert.
+    const { data: existing, error: lookupError } = await supabase
+      .from('exam_submissions')
+      .select('id')
+      .eq('session_id', sessionId)
+      .eq('student_name', student.name)
+      .maybeSingle();
+
+    if (lookupError) {
+      logToFile('⚠️ Failed to look up exam submission', {
+        sessionId, studentName: student.name, error: lookupError.message,
+      });
+      return;
+    }
+
+    let submissionId;
+    if (existing) {
+      submissionId = existing.id;
+      const { error: updateError } = await supabase
+        .from('exam_submissions')
+        .update({
+          image_urls: studentImageUrls,
+          page_numbers: studentPages,
+          extracted_answers: { questionResults: result.questionResults },
+          status: 'graded',
+        })
+        .eq('id', submissionId);
+      if (updateError) {
+        logToFile('⚠️ Failed to update exam submission', {
+          submissionId, error: updateError.message,
+        });
+        return;
+      }
+    } else {
+      const { data: newSubmission, error: insertError } = await supabase
+        .from('exam_submissions')
+        .insert({
+          session_id: sessionId,
+          student_name: student.name,
+          image_urls: studentImageUrls,
+          page_numbers: studentPages,
+          extracted_answers: { questionResults: result.questionResults },
+          status: 'graded',
+        })
+        .select('id')
+        .single();
+      if (insertError || !newSubmission) {
+        logToFile('⚠️ Failed to insert exam submission', {
+          sessionId, studentName: student.name,
+          error: insertError ? insertError.message : 'no row returned',
+        });
+        return;
+      }
+      submissionId = newSubmission.id;
+    }
+
+    // 2) Upsert per-question grade rows. The (submission_id, question_id)
+    //    unique index makes re-grading idempotent — a second run replaces
+    //    prior grades rather than duplicating them.
+    const gradeRows = result.questionResults.map((qr) => {
+      const max = qr.maxMarks ?? 0;
+      const awarded = qr.marksAwarded ?? 0;
+      const isCorrect = max > 0 ? awarded >= max : null;
+      const isPartial = max > 0 ? awarded > 0 && awarded < max : false;
+      return {
+        submission_id: submissionId,
+        question_id: qr.questionId,
+        question_type: qr.questionType || 'unknown',
+        max_marks: max,
+        awarded_marks: awarded,
+        is_correct: isCorrect,
+        is_partial: isPartial,
+        grading_rationale: qr.feedback || null,
+        confidence: qr.confidence ?? null,
+        feedback_up: qr.structuredFeedback?.feedUp || null,
+        feedback_back: qr.structuredFeedback?.feedBack || null,
+        feedback_forward: qr.structuredFeedback?.feedForward || null,
+      };
+    });
+
+    if (gradeRows.length === 0) return;
+
+    const { error: gradesError } = await supabase
+      .from('exam_grades')
+      .upsert(gradeRows, { onConflict: 'submission_id,question_id' });
+
+    if (gradesError) {
+      logToFile('⚠️ Failed to upsert exam_grades rows', {
+        submissionId, count: gradeRows.length, error: gradesError.message,
+      });
     }
   }
 }

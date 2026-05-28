@@ -28,11 +28,14 @@ const BOT_DIR = path.resolve(__dirname, '../../bot');
 // Adding a column here is a deliberate, reviewed decision — prefer fixing the
 // schema (add the column) or the code (stop referencing it).
 const ALLOWLIST = {
-  // Pre-existing PROD inconsistency, faithfully mirrored: the OSS exam_grades is
-  // the per-QUESTION table (identical to prod's 015_exam_checker.sql). grading.service
-  // _saveGrade writes a per-STUDENT summary shape — this mismatch exists in prod too
-  // and is out of scope for OSS schema parity (the schema correctly mirrors prod).
-  exam_grades: ['grade', 'graded_at', 'marks_obtained', 'percentage', 'question_breakdown', 'roll_number', 'session_id', 'student_name', 'total_marks'],
+  // (exam_grades formerly held a per-STUDENT shape that didn't exist on the
+  // per-QUESTION schema; resolved by rewriting `_saveGrade()` to insert into
+  // `exam_submissions` then `exam_grades` keyed on (submission_id, question_id))
+  // `onconflict` is the Supabase `{ onConflict: '...' }` upsert OPTION, not a
+  // column. The parser picks it up because the rows argument is a variable
+  // (`.upsert(gradeRows, { onConflict: 'submission_id,question_id' })`) so the
+  // first object literal it sees after `.upsert(` is the options object.
+  exam_grades: ['onconflict'],
   // conversation_state is a coaching_sessions column mis-attributed to conversations
   // by chain proximity (parser artifact). (The stale context_data write was removed —
   // comprehension state lives in Redis, see redis-comprehension.service.)

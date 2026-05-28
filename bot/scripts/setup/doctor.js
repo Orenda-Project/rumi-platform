@@ -87,10 +87,28 @@ function analyzeEnv(env) {
   const missingRequired = REQUIRED_VARS.filter((k) => !isSet(env[k]));
 
   const features = FEATURES.map((f) => {
+    // Features may declare keys two ways:
+    //   - `keys`     → ALL required (the default, conjunctive)
+    //   - `keysAny`  → ANY one suffices (e.g. exam-checker OCR: Mistral OR Chandra)
     // A feature with no env keys (e.g. Chromium) is keyed off its probe, not env.
-    const missingKeys = f.keys.filter((k) => !isSet(env[k]));
-    const available = f.keys.length > 0 ? missingKeys.length === 0 : null; // null = "ask the probe"
-    return { name: f.name, requiredKeys: f.keys, missingKeys, available, probe: f.probe || null, notes: f.notes || null };
+    if (Array.isArray(f.keysAny)) {
+      const presentKeys = f.keysAny.filter((k) => isSet(env[k]));
+      const missingKeys = presentKeys.length > 0 ? [] : [...f.keysAny];
+      const available = presentKeys.length > 0;
+      return {
+        name: f.name,
+        requiredKeys: f.keysAny,
+        missingKeys,
+        available,
+        probe: f.probe || null,
+        notes: f.notes || null,
+        anyOf: true,
+      };
+    }
+    const keys = f.keys || [];
+    const missingKeys = keys.filter((k) => !isSet(env[k]));
+    const available = keys.length > 0 ? missingKeys.length === 0 : null; // null = "ask the probe"
+    return { name: f.name, requiredKeys: keys, missingKeys, available, probe: f.probe || null, notes: f.notes || null };
   });
 
   return { requiredPresent, missingRequired, features };

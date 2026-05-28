@@ -39,9 +39,25 @@ describe('feature-availability (presence-based gating)', () => {
     expect(fa.isFeatureAvailable(azure, { ...FULL_ENV, AZURE_SPEECH_KEY: 'k', AZURE_SPEECH_REGION: 'eastus' })).toBe(true);
   });
 
-  it('exam-checker keys on MISTRAL_API_KEY (verified against code), not AWS Textract', () => {
+  it('exam-checker gate is the disjunction of Mistral OR Chandra (matches OCR code)', () => {
+    // The OCR service tries Mistral first (MISTRAL_API_KEY), then falls
+    // back to Chandra (CHANDRA_API_KEY). The gate must reflect that: the
+    // feature is available iff EITHER key is configured.
     const exam = fa.FEATURES.find((f) => f.name.includes('Exam'));
-    expect(exam.keys).toEqual(['MISTRAL_API_KEY']);
+    expect(exam.keysAny).toEqual(['MISTRAL_API_KEY', 'CHANDRA_API_KEY']);
+    expect(exam.keys).toBeUndefined();
+  });
+
+  it('isFeatureAvailable honours `keysAny` (any-of) semantics', () => {
+    const exam = fa.FEATURES.find((f) => f.name.includes('Exam'));
+    // Neither key set — feature OFF
+    expect(fa.isFeatureAvailable(exam, FULL_ENV)).toBe(false);
+    // Mistral only — feature ON
+    expect(fa.isFeatureAvailable(exam, { ...FULL_ENV, MISTRAL_API_KEY: 'k' })).toBe(true);
+    // Chandra only — feature ON
+    expect(fa.isFeatureAvailable(exam, { ...FULL_ENV, CHANDRA_API_KEY: 'k' })).toBe(true);
+    // Both set — feature ON
+    expect(fa.isFeatureAvailable(exam, { ...FULL_ENV, MISTRAL_API_KEY: 'k', CHANDRA_API_KEY: 'k' })).toBe(true);
   });
 
   it('availableFeatures reflects exactly the keys provided', () => {

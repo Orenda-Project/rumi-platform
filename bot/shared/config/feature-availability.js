@@ -37,7 +37,15 @@ const FEATURES = [
   // gate — adding it would mark the feature OFF whenever the env var is unset,
   // which is the wrong semantics (you can set the key and gate it independently).
   { name: 'Video generation (Kie.ai)', keys: ['KIE_API_KEY'], notes: 'Also requires VIDEO_GENERATION_ENABLED=true at runtime.' },
-  { name: 'Exam-checker OCR (Mistral vision)', keys: ['MISTRAL_API_KEY'] },
+  // Exam-checker OCR has TWO supported backends — Mistral Vision (primary)
+  // and Chandra / Datalab (fallback). The OCR service tries Mistral when
+  // MISTRAL_API_KEY is set, falls back to Chandra when CHANDRA_API_KEY is
+  // set. The feature is therefore available iff EITHER key is present;
+  // `keysAny` carries that disjunction semantics (vs `keys` which is AND).
+  {
+    name: 'Exam-checker OCR (Mistral or Chandra)',
+    keysAny: ['MISTRAL_API_KEY', 'CHANDRA_API_KEY'],
+  },
   { name: 'Observability (Axiom)', keys: ['AXIOM_DATASET', 'AXIOM_TOKEN'] },
 ];
 
@@ -52,9 +60,18 @@ function missingRequired(env = process.env) {
   return REQUIRED_VARS.filter((k) => !isSet(env[k]));
 }
 
-/** Is a single feature (by display name or its keys array) available? */
+/**
+ * Is a single feature (by display name, entry object, or keys array)
+ * available? An entry with `keys` requires ALL listed env vars; an entry
+ * with `keysAny` requires AT LEAST ONE (e.g. exam-checker OCR works with
+ * Mistral OR Chandra). Passing a bare array of strings keeps the legacy
+ * AND-semantics call shape that downstream code relies on.
+ */
 function isFeatureAvailable(feature, env = process.env) {
   const entry = typeof feature === 'string' ? FEATURES.find((f) => f.name === feature) : feature;
+  if (entry && Array.isArray(entry.keysAny)) {
+    return entry.keysAny.some((k) => isSet(env[k]));
+  }
   const keys = entry && entry.keys ? entry.keys : Array.isArray(feature) ? feature : null;
   if (!keys) return false;
   return keys.every((k) => isSet(env[k]));
