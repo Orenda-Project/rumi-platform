@@ -20,7 +20,7 @@ describe('doctor — honest wording', () => {
   beforeEach(() => { originalEnv = { ...process.env }; jest.resetModules(); });
   afterEach(() => { process.env = originalEnv; });
 
-  it('missing-required line no longer says "the bot will not start"', () => {
+  it('missing-required line tells the truth: the bot REFUSES TO START', () => {
     // Force at least one REQUIRED_VAR to be absent.
     delete process.env.SUPABASE_URL;
     delete process.env.WHATSAPP_TOKEN;
@@ -37,10 +37,13 @@ describe('doctor — honest wording', () => {
     };
     const out = formatReport(result);
 
-    expect(out).not.toMatch(/the bot will not start/i);
     expect(out).toMatch(/MISSING REQUIRED variables/);
-    // The new copy promises "features needing these will be OFF" — the truth.
-    expect(out).toMatch(/will be OFF/i);
+    // The doctor must tell the truth: missing REQUIRED vars cause the bot to
+    // refuse to start (bot/shared/config/supabase.js exits 78 with a friendly
+    // box). The previous copy promised "features will be OFF" — incorrect for
+    // required keys; that wording is now reserved for OPTIONAL features.
+    expect(out).toMatch(/REFUSE TO START/i);
+    expect(out).not.toMatch(/the bot will boot.*will be OFF/i);
   });
 
   it('Video feature carries a "VIDEO_GENERATION_ENABLED" note', () => {

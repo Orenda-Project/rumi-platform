@@ -217,7 +217,7 @@ function formatReport(result) {
   lines.push('Rumi doctor — deployment preflight');
   lines.push('');
   if (result.missingRequired.length) {
-    lines.push('❌ MISSING REQUIRED variables — the bot will boot but features needing these will be OFF until you set them:');
+    lines.push('❌ MISSING REQUIRED variables — the bot will REFUSE TO START until you set these:');
     for (const v of result.missingRequired) {
       const src = keySource(v);
       lines.push(`   - ${v}${src ? `  → get it: ${src}` : ''}`);

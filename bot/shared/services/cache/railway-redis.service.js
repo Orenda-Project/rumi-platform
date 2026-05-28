@@ -28,10 +28,32 @@ class RailwayRedisService {
       return;
     }
 
+    // Reconnect cap. If REDIS_URL points at an unreachable host (e.g. a
+    // cloner accidentally left `redis://localhost:6379` from the .env.template
+    // default), ioredis would otherwise reconnect indefinitely — the bot
+    // "boots" but spams `🔄 Reconnecting…` forever with no clear signal that
+    // the operator needs to fix the URL. After this many failed attempts
+    // (~80s of total wait given the linear backoff up to 2s), we stop and let
+    // the caller treat Redis as unavailable.
+    const MAX_RECONNECT_ATTEMPTS = 60;
+    this._redisGaveUp = false;
+
     try {
       this.redis = new Redis(process.env.REDIS_URL, {
-        // Retry strategy: exponential backoff up to 2 seconds
+        // Retry strategy: exponential backoff up to 2 seconds, capped at
+        // MAX_RECONNECT_ATTEMPTS total attempts before giving up.
         retryStrategy: (times) => {
+          if (times >= MAX_RECONNECT_ATTEMPTS) {
+            if (!this._redisGaveUp) {
+              this._redisGaveUp = true;
+              logToFile(
+                `❌ Redis unreachable after ${times} attempts — giving up. ` +
+                'Check REDIS_URL or unset it to disable Redis features.',
+                { url: process.env.REDIS_URL.replace(/:[^:@]*@/, ':***@'), level: 'error' }
+              );
+            }
+            return null; // ioredis stops reconnecting when retryStrategy returns null
+          }
           const delay = Math.min(times * 50, 2000);
           logToFile('Redis retrying connection', { attempt: times, delayMs: delay });
           return delay;
