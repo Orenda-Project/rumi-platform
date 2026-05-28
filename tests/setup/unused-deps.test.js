@@ -43,6 +43,12 @@ const ALLOWLIST = new Set([
   // built); their presence in the lockfile is intentional.
   'canvas',
   'chartjs-node-canvas',
+  // Declared as an optionalDependency so npm 22 on Linux includes the
+  // chart.js peer of chartjs-node-canvas in the lockfile (without it, the
+  // bot-side `npm ci` fails EUSAGE — "Missing chart.js from lock"). Loaded
+  // transitively at runtime by chartjs-node-canvas when charts are built;
+  // no source-level require.
+  'chart.js',
   // Test runner — Jest loads itself; no source-level require.
   'jest',
   // Express view engine — loaded by name via app.set('view engine', 'ejs').
