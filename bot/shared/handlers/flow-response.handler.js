@@ -1,12 +1,36 @@
 /**
  * WhatsApp Flow Response Handler
- * Handles responses from WhatsApp Flow templates
  *
- * Current Flows:
- * 1. Registration Flow (handled in registration.service.js)
- * 2. Reading Assessment Flow (ID: 819028084215847) - handled here
- * 3. Attendance Setup Flow - class setup for first-time users
- * 4. Attendance Marking Flow - tap-to-mark absent students
+ * Routes the WhatsApp NFM_REPLY payload (the message Meta sends to the bot
+ * when a teacher submits a Flow) to the right per-flow processor — or,
+ * for endpoint-data-exchange flows, recognises the completion and logs it
+ * for telemetry. Flow IDs are read from env vars; the canonical mapping
+ * lives in `bot/scripts/setup/flow-configs.js`.
+ *
+ * ─── Endpoint flows vs navigate flows ───────────────────────────────
+ * Endpoint flows (data_exchange) — the teacher's screen-by-screen input
+ *   round-trips through a server endpoint mounted under `/api/flows/...`
+ *   (registered in `bot/shared/routes/flow-endpoint.routes.js`). By the
+ *   time Meta sends the NFM_REPLY, the data has ALREADY been persisted
+ *   by the endpoint; the NFM_REPLY is a delivery acknowledgement, not a
+ *   data carrier. Examples: Settings, Status, Homework Request, Edit
+ *   Class, Student Videos, Pic-to-LP Confirm, Quiz Manager, Registration.
+ *   The attendance flows are the exception (see below).
+ *
+ * Navigate flows — no server endpoint; the entire form is rendered
+ *   client-side and the data arrives ONLY in the NFM_REPLY response_json.
+ *   The handler must parse it and do the work. Example: Reading
+ *   Assessment.
+ *
+ * Attendance Setup / Marking are endpoint flows whose NFM_REPLY ALSO
+ *   carries the final committed state because some downstream actions
+ *   (success ack message, class-roster delivery) live on the NFM side
+ *   rather than in the endpoint route. They are routed explicitly below.
+ *
+ * For the remaining endpoint flows, this handler logs the completion
+ * (so a debugger trying to confirm a teacher actually submitted has a
+ * trail) but does NOT re-process the payload — that would double-write
+ * the data the endpoint already saved.
  *
  * Flow Response Structure:
  * {
@@ -30,14 +54,38 @@ const AttendanceFlowHandler = require('./attendance-flow.handler');
 const AttendanceDeliveryService = require('../services/attendance-delivery.service');
 const { logToFile } = require('../utils/logger');
 
-// Flow IDs - configure via environment variables
+// Flow IDs - configure via environment variables. Canonical list lives in
+// `bot/scripts/setup/flow-configs.js`; this file only reads the IDs that
+// either dispatch to a NFM-handler function or warrant explicit completion
+// logging.
+
+// Navigate flow (no server endpoint — NFM_REPLY carries the entire payload).
 const READING_ASSESSMENT_FLOW_ID = process.env.READING_ASSESSMENT_FLOW_ID || '';
 
-// Attendance Flow IDs
+// Endpoint flows whose NFM_REPLY drives downstream side effects (ack message,
+// roster delivery). The endpoint route persists the data; this handler
+// continues from there.
 const ATTENDANCE_SETUP_FLOW_ID = process.env.ATTENDANCE_SETUP_FLOW_ID || '';
 const ATTENDANCE_MARKING_FLOW_ID = process.env.ATTENDANCE_MARKING_FLOW_ID || '';
 
-// Registration Flow ID
+// Endpoint flows whose NFM_REPLY is purely a delivery acknowledgement —
+// data is already persisted by the corresponding `/api/flows/<path>` route.
+// Tracked here so completion is observable in logs (vs the previous
+// "Unknown flow ID" warning that read like a routing bug).
+const ENDPOINT_ONLY_FLOWS = [
+  { name: 'Registration',      envVar: 'REGISTRATION_FLOW_ID',      endpoint: '/api/flows/registration' },
+  { name: 'Settings',          envVar: 'SETTINGS_FLOW_ID',          endpoint: '/api/flows/settings' },
+  { name: 'Status',            envVar: 'STATUS_FLOW_ID',            endpoint: '/api/flows/status' },
+  { name: 'Homework Request',  envVar: 'HOMEWORK_FLOW_ID',          endpoint: '/api/flows/homework-request' },
+  { name: 'Edit Class',        envVar: 'EDIT_CLASS_FLOW_ID',        endpoint: '/api/flows/edit-class' },
+  { name: 'Student Videos',    envVar: 'STUDENT_VIDEOS_FLOW_ID',    endpoint: '/api/flows/student-videos' },
+  { name: 'Pic-to-LP Confirm', envVar: 'PIC_LP_FLOW_ID',            endpoint: '/api/flows/pic-lp' },
+  { name: 'Quiz Manager',      envVar: 'QUIZ_FLOW_ID',              endpoint: '/api/flows/quiz' },
+];
+
+// Legacy reference — keep the symbol exported so any downstream import
+// of this module continues to resolve. The endpoint-only routing block
+// below handles the lookup.
 const REGISTRATION_FLOW_ID = process.env.REGISTRATION_FLOW_ID || '';
 
 /**
@@ -60,18 +108,39 @@ async function handleFlowResponse(message, phoneNumber, userId) {
       flowId
     });
 
-    // Route to appropriate handler based on flow ID
-    if (flowId === READING_ASSESSMENT_FLOW_ID) {
+    // Navigate flow — Reading Assessment carries the entire submission in
+    // NFM_REPLY; we extract + persist here.
+    if (flowId && flowId === READING_ASSESSMENT_FLOW_ID) {
       return await handleReadingAssessmentFlow(message, phoneNumber, userId);
     }
 
-    // Attendance flows
-    if (flowId === ATTENDANCE_SETUP_FLOW_ID && ATTENDANCE_SETUP_FLOW_ID) {
+    // Attendance flows are endpoint flows whose NFM_REPLY ALSO triggers
+    // downstream side effects (success ack message + roster delivery).
+    if (flowId && flowId === ATTENDANCE_SETUP_FLOW_ID) {
       return await handleAttendanceSetupFlow(message, phoneNumber, userId);
     }
-
-    if (flowId === ATTENDANCE_MARKING_FLOW_ID && ATTENDANCE_MARKING_FLOW_ID) {
+    if (flowId && flowId === ATTENDANCE_MARKING_FLOW_ID) {
       return await handleAttendanceMarkingFlow(message, phoneNumber, userId);
+    }
+
+    // Endpoint-only flows: the corresponding `/api/flows/<path>` route has
+    // ALREADY persisted the teacher's input by the time we see NFM_REPLY.
+    // We log completion (useful when debugging "did the teacher actually
+    // submit?") and return true — re-processing the payload here would
+    // double-write the data.
+    for (const flow of ENDPOINT_ONLY_FLOWS) {
+      const configuredId = process.env[flow.envVar] || '';
+      if (configuredId && flowId === configuredId) {
+        logToFile('📋 Endpoint-flow NFM completion received', {
+          flowName: flow.name,
+          flowId,
+          endpoint: flow.endpoint,
+          phoneNumber,
+          userId,
+          note: 'Data was persisted by the endpoint route; NFM is delivery ack only',
+        });
+        return true;
+      }
     }
 
     logToFile('⚠️ Unknown flow ID', { flowId, flowName });
