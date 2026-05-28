@@ -38,11 +38,16 @@ jobs:
 
       - name: Verify no hardcoded credentials
         run: |
-          # Check for common credential patterns in source files
+          # Check for common credential patterns in source files. The `!` in
+          # front of the grep inverts the exit code: grep returns 0 on a hit
+          # (which means the credential leaked), and the `!` flips that to a
+          # non-zero exit so the step fails. The trailing `|| true` was a
+          # defensive mistake that silently masked any hit; removed so a
+          # real leak now actually fails CI.
           ! grep -rn 'EAAUmy\|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.' \
             --include='*.js' --include='*.ts' --include='*.json' \
             --exclude-dir=node_modules --exclude-dir=.git \
-            bot/shared/ dashboard/ portal/ || true
+            bot/shared/ dashboard/ portal/ scripts/ infrastructure/
 
   lint:
     runs-on: ubuntu-latest

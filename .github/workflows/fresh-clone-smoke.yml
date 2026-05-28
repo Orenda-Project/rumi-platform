@@ -1,0 +1,82 @@
+# Fresh-clone smoke test — verifies that someone running `git clone && npm
+# install && npm test` against the latest main gets a working repo. Runs:
+#
+#   - Weekly (Mondays 06:00 UTC) — catches passive rot in deps / npm / Node
+#   - Manual dispatch — re-verify on demand without pushing a commit
+#
+# The smoke is structured to exercise the path a NEW user takes:
+#   1. Fresh checkout (no prior installs)
+#   2. `npm install` at root + `npm ci` in bot/ (the documented install path)
+#   3. `node tests/run.js` (1280+ tests, ~15s)
+#   4. Cold-boot probe with EMPTY env — must show the friendly boot-fail
+#      box and exit cleanly with code 78, NOT a Node stack trace.
+#
+# Failures here surface as a notification to repo maintainers; a passing run
+# is silent (the green check is the signal).
+
+name: Fresh-clone smoke
+
+on:
+  schedule:
+    # Mondays 06:00 UTC. Late enough for npm registry to have processed any
+    # weekend point-release; early enough that maintainers see breakages
+    # before the work-week starts.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Fresh-clone smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (clean)
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root deps
+        run: npm install --no-audit --no-fund
+
+      - name: Install bot/ deps (npm ci — lockfile authoritative)
+        working-directory: bot
+        run: npm ci --no-audit --no-fund
+
+      - name: Run full test suite
+        run: node tests/run.js
+
+      - name: Cold-boot probe — bot must friendly-exit on missing required env
+        run: |
+          # Run with an empty env (only PATH + Node basics). Bot should print
+          # the friendly box and exit cleanly with code 78 — NOT a Node stack.
+          set +e
+          OUTPUT=$(env -i PATH=/usr/local/bin:/usr/bin:/bin NODE_PATH=node_modules \
+            node bot/whatsapp-bot.js 2>&1)
+          EXIT_CODE=$?
+          set -e
+          echo "Exit code: $EXIT_CODE"
+          echo "Output (first 30 lines):"
+          echo "$OUTPUT" | head -30
+
+          # Assert: exit code is 78 (sysexits EX_CONFIG).
+          if [ "$EXIT_CODE" -ne 78 ]; then
+            echo "::error::cold-boot exit code was $EXIT_CODE (expected 78). The bot should fail cleanly with a friendly box on missing required env, not crash with a Node stack."
+            exit 1
+          fi
+
+          # Assert: the friendly box header is present.
+          if ! echo "$OUTPUT" | grep -q "Rumi bot — boot aborted"; then
+            echo "::error::cold-boot stderr did not contain the friendly box header. The bot may be crashing instead of failing cleanly."
+            exit 1
+          fi
+
+          # Assert: NO Node stack trace.
+          if echo "$OUTPUT" | grep -q "at Module._compile\|node:internal/modules"; then
+            echo "::error::cold-boot stderr contained a Node stack trace. The friendly box should have replaced it."
+            exit 1
+          fi
+
+          echo "✓ Cold-boot probe passed — friendly box, exit 78, no Node stack."

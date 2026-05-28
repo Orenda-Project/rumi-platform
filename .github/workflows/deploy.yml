@@ -58,4 +58,4 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           echo "Checking deployment status..."
-          railway status || true
+          railway status
