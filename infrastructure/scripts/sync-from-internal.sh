@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Generates a unified diff patch from the internal repo to the public monorepo,
 # respecting the path mappings, exclusions, and publicOnly rules defined in
-# .sync-manifest.json at the monorepo root.
+# infrastructure/sync/manifest.json.
 #
 # Usage:
 #   ./infrastructure/scripts/sync-from-internal.sh \
@@ -27,7 +27,7 @@ DRY_RUN=false
 OUTPUT_FILE=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MONOREPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-MANIFEST="$MONOREPO_ROOT/.sync-manifest.json"
+MANIFEST="$MONOREPO_ROOT/infrastructure/sync/manifest.json"
 TODAY="$(date +%Y-%m-%d)"
 TEMP_DIR=""
 
@@ -128,7 +128,7 @@ fi
 
 if [[ ! -f "$MANIFEST" ]]; then
   error "Sync manifest not found at: $MANIFEST"
-  error "Expected .sync-manifest.json at the monorepo root ($MONOREPO_ROOT)"
+  error "Expected infrastructure/sync/manifest.json under the monorepo root ($MONOREPO_ROOT)"
   exit 1
 fi
 

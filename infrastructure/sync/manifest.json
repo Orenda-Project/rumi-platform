@@ -95,8 +95,9 @@
     "SETUP.md",
     "LICENSE",
     "README.md",
-    ".sync-manifest.json",
-    ".sync-exclude"
+    "infrastructure/sync/manifest.json",
+    "infrastructure/sync/exclude.txt",
+    "infrastructure/sync/README.md"
   ],
   "translationRules": []
 }

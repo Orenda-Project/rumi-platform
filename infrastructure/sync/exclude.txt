@@ -1,5 +1,11 @@
-# Files and directories to NEVER sync from internal to public repo
-# Used by infrastructure/scripts/sync-from-internal.sh
+# Files and directories to NEVER sync from internal to public repo.
+#
+# This file is a HUMAN-readable companion to the canonical exclude list
+# in infrastructure/sync/manifest.json. The sync script only consumes
+# the JSON; this file exists so a reviewer can read the intent quickly
+# (groupings + comments are preserved here that JSON can't carry).
+#
+# When updating the exclude list, edit BOTH files in the same commit.
 
 # QA / Testing infrastructure (internal only)
 bugbuster/

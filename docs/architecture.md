@@ -64,7 +64,44 @@ Meta WhatsApp API
 
 - **PostgreSQL via Supabase** with Row Level Security (RLS)
 - Schema: `infrastructure/supabase/00_complete-schema.sql`
-- 25+ tables covering users, conversations, coaching, reading, exams, attendance
+- **73 tables** today, grouped by domain below. The schema is fed by a
+  consolidated dump rather than per-feature migrations, so a few tables are
+  declared but not yet wired to code — those are called out explicitly so
+  cloners don't waste time wondering whether they're missing a feature.
+
+### Schema reference — tables by domain
+
+| Domain | Tables | Status |
+|---|---|---|
+| **Users + identity** | `users`, `access_scopes`, `dashboard_users`, `dashboard_audit_log` | active |
+| **Conversation state** | `conversations`, `chat_sessions`, `chat_starts`, `cta_clicks`, `feature_suggestions`, `user_feature_first_use` | active |
+| **Configuration** | `app_settings`, `region_features` | active |
+| **Coaching** | `coaching_sessions`, `coaching_quality_metrics`, `audio_sessions` | active |
+| **Lesson plans** | `lesson_plans`, `lesson_plan_requests`, `pre_generated_lps`, `pic_lp_sessions` (read via the `TABLE` constant in `pic-lp-session.service.js`) | active |
+| **Reading assessment** | `reading_assessments`, `student_lists`, `students` | active |
+| **Quizzes** | `quizzes`, `quiz_sessions`, `quiz_questions`, `quiz_answers` | active |
+| **Exam checker** | `exam_check_sessions`, `exam_submissions`, `exam_grades`, `image_analysis_requests` | active |
+| **Video generation** | `video_requests`, `video_tasks`, `student_videos`, `student_video_feedback` | active |
+| **Attendance** | `attendance_sessions`, `attendance_records` | active |
+| **Homework + content** | `homework_chapters`, `textbook_toc` | active |
+| **BYOF (bring-your-own-flow)** | `byof_plans`, `byof_sessions`, `byof_messages`, `byof_approval_log` | active |
+| **Broadcasts** | `broadcast_logs`, `broadcast_messages`, `website_visits`, `release_notes` | active |
+| **A/B testing** | `ab_tests`, `ab_test_variants`, `ab_test_events` | active |
+| **Logging + telemetry** | `api_usage_log` | active |
+| *Internal-only* | `qa_analyst_proposals`, `qa_bug_patterns`, `qa_test_runs`, `ama_conversations`, `ama_messages`, `ama_query_audit` | declared, no OSS-side code — internal QA + Ask-Me-Anything tools that ship with the schema dump but aren't part of the OSS feature surface. Safe to ignore. |
+| *Declared, not wired* | `coaching_jobs`, `coaching_processing_queue`, `exam_templates`, `failed_operations`, `feature_permissions`, `grade_audit_log`, `invitations`, `lcpm_benchmarks`, `migration_test`, `portal_organizations`, `schema_versions`, `teacher_facts`, `teacher_progress`, `textbook_pages`, `textbooks`, `videos`, `wcpm_percentiles` | declared in the schema but not referenced from any `bot/` or `dashboard/` `.from()` call — either historical, planned, or used only by external SQL views. They occupy no runtime budget; leave them in place unless you're sure no analyst tool reads them. |
+
+### Schema integrity guards
+
+Three `tests/setup/*` ratchets keep the schema honest:
+
+- `schema-completeness.test.js` — every table the code writes to MUST exist
+  in `00_complete-schema.sql`.
+- `column-completeness.test.js` — every column the code writes (insert /
+  update / upsert top-level keys) or reads (select / eq / order / …) MUST
+  exist on its table.
+- `flow-config-conformance.test.js` — every WhatsApp Flow declared in
+  `flow-configs.js` has a corresponding route mounted under `/api/flows`.
 
 ## Job Queue
 
