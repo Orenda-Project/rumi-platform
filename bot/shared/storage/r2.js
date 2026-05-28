@@ -7,16 +7,20 @@ const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = re
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const fs = require('fs');
 const path = require('path');
+const { lazyClient } = require('../utils/lazy-client');
 
-// Initialize R2 client
-const r2Client = new S3Client({
+// R2 client is lazy-initialised. The bot can boot without R2 credentials set —
+// every R2 helper below calls getR2Client() at the moment the actual S3-API
+// command is sent. If R2 isn't configured, the upload throws a structured
+// "missing env" error that the caller can catch (or surface to the user).
+const getR2Client = lazyClient(S3Client, ['R2_ENDPOINT', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY'], (env) => ({
   region: 'auto',
-  endpoint: process.env.R2_ENDPOINT,
+  endpoint: env.R2_ENDPOINT,
   credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
   },
-});
+}));
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
@@ -43,7 +47,7 @@ async function uploadAudio(filePath, userId, messageId) {
       ContentType: getContentType(fileExt),
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
 
     // Construct public URL
     const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
@@ -98,7 +102,7 @@ async function uploadLessonPlanBuffer({ buffer, userId, sessionId, fileType = 'p
     }
   });
 
-  await r2Client.send(command);
+  await getR2Client().send(command);
   console.log(`✅ Lesson plan buffer uploaded to R2: ${key}`);
   return key;
 }
@@ -121,7 +125,7 @@ async function deleteAudio(url) {
       Key: key,
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
     console.log(`✅ Audio deleted from R2: ${key}`);
     return true;
   } catch (error) {
@@ -166,7 +170,7 @@ async function uploadClassroomAudio(filePath, userId, sessionId, metadata = {}) 
       }
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
 
     // Construct public URL
     const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
@@ -206,7 +210,7 @@ async function uploadLessonPlan(filePath, userId, sessionId) {
       }
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
 
     const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
 
@@ -244,7 +248,7 @@ async function uploadVoiceDebrief(audioBuffer, userId, sessionId, language) {
       }
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
 
     const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
 
@@ -280,7 +284,7 @@ async function uploadReportPDF(pdfBuffer, userId, sessionId) {
       }
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
 
     const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
 
@@ -311,7 +315,7 @@ async function uploadImageBuffer(imageBuffer, key) {
       }
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
     console.log(`✅ Vocabulary image uploaded to R2: ${key}`);
     return key;
   } catch (error) {
@@ -346,7 +350,7 @@ async function uploadFeatureVideo(filePath, featureName) {
       }
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
 
     const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
 
@@ -370,7 +374,7 @@ async function downloadFromR2(key) {
       Key: key,
     });
 
-    const response = await r2Client.send(command);
+    const response = await getR2Client().send(command);
 
     // Convert stream to buffer
     const chunks = [];
@@ -481,7 +485,7 @@ async function uploadVideoAsset(filePathOrBuffer, videoRequestId, filename) {
         }
       });
 
-      await r2Client.send(command);
+      await getR2Client().send(command);
 
       const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
       logToFile('Video asset uploaded to R2', {
@@ -585,7 +589,7 @@ async function getPresignedUrl(r2Url, expiresIn = 3600) {
       Key: key,
     });
 
-    const presignedUrl = await getSignedUrl(r2Client, command, { expiresIn });
+    const presignedUrl = await getSignedUrl(getR2Client(), command, { expiresIn });
 
     console.log(`✅ Generated presigned URL for ${key}:`);
     console.log(`   Original: ${r2Url.substring(0, 80)}...`);
@@ -657,7 +661,7 @@ async function uploadImageWithRetry(imageBuffer, userId, imageId, mimeType) {
         },
       });
 
-      await r2Client.send(command);
+      await getR2Client().send(command);
 
       const publicUrl = buildR2PublicUrl(key);
 
@@ -708,7 +712,7 @@ async function uploadBuffer(buffer, key, contentType = 'application/octet-stream
       }
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
     const publicUrl = buildR2PublicUrl(key);
 
     console.log(`✅ Buffer uploaded to R2: ${key} (${buffer.length} bytes)`);

@@ -18,9 +18,13 @@
 
 const OpenAI = require('openai');
 const { logToFile } = require('../../utils/logger');
-const { OPENAI_API_KEY } = require('../../utils/constants');
+const { lazyClient } = require('../../utils/lazy-client');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+// Lazy-initialised so the bot can boot without OPENAI_API_KEY set; the
+// classifier only needs it when an image actually arrives.
+const getOpenAI = lazyClient(OpenAI, ['OPENAI_API_KEY'], (env) => ({
+  apiKey: env.OPENAI_API_KEY,
+}));
 
 const VALID_TYPES = ['BOOK_PAGE', 'CLASSROOM', 'STUDENT_WORK', 'EXAM', 'OTHER'];
 const MODEL = process.env.PIC_LP_CLASSIFIER_MODEL || 'gpt-4o-mini';
@@ -56,7 +60,7 @@ async function classifyImageType(imageBuffer, mimeType, caption = '') {
       ? `Caption from sender: "${caption.substring(0, 200)}"`
       : '(No caption)';
 
-    const completion = await openai.chat.completions.create(
+    const completion = await getOpenAI().chat.completions.create(
       {
         model: MODEL,
         messages: [

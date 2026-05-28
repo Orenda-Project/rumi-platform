@@ -9,7 +9,7 @@
 const OpenAI = require('openai');
 const axios = require('axios');
 const { logToFile } = require('../../utils/logger');
-const { OPENAI_API_KEY } = require('../../utils/constants');
+const { lazyClient } = require('../../utils/lazy-client');
 // Presign R2 URLs before passing to OpenAI vision. The R2 bucket is private —
 // raw URLs return 400 from OpenAI's image download. Without the presign the
 // metadata extractor silently fails (the form just opens with blank pre-fills
@@ -18,7 +18,11 @@ const { getPresignedUrl } = require('../../storage/r2');
 
 const { extractFromCaption, mergeWithCaption } = require('./caption-prefill');
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+// Lazy: the bot can boot without OPENAI_API_KEY; only invoking the extractor
+// (i.e. a teacher sending a textbook page) needs the key.
+const getOpenAI = lazyClient(OpenAI, ['OPENAI_API_KEY'], (env) => ({
+  apiKey: env.OPENAI_API_KEY,
+}));
 const MODEL = process.env.PIC_LP_EXTRACTOR_MODEL || 'gpt-4o-mini';
 const TIMEOUT_MS = 45000;
 
@@ -127,7 +131,7 @@ async function extract(pages, caption = '', userContext = null) {
       `Number of pages: ${pages.length}`,
     ].join('\n');
 
-    const completion = await openai.chat.completions.create(
+    const completion = await getOpenAI().chat.completions.create(
       {
         model: MODEL,
         messages: [

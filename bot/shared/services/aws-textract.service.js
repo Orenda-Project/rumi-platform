@@ -1,19 +1,46 @@
 const { TextractClient, AnalyzeDocumentCommand } = require('@aws-sdk/client-textract');
 const { logToFile } = require('../utils/logger');
+const { lazyClient } = require('../utils/lazy-client');
 
+// AWS Textract is the optional exam-checker OCR fallback (the primary is
+// Mistral). Lazy-initialised: the bot can boot without AWS Textract
+// credentials; the only call path that needs them is `extractText` itself.
+//
+// Supports the standard AWS env-var names; falls back to the dedicated
+// `AWS_TEXTRACT_*` names if a deployment wants to isolate Textract credentials
+// from other AWS-SDK consumers.
 const textractRegion = process.env.AWS_REGION_TEXTRACT
   || process.env.AWS_REGION
   || 'us-east-1';
 
-const textractCredentials = {
-  accessKeyId: process.env.AWS_TEXTRACT_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_TEXTRACT_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY,
-};
+const getTextractClient = lazyClient(
+  TextractClient,
+  // We accept EITHER pair (AWS_TEXTRACT_* or generic AWS_*) — the lazyClient
+  // helper checks each listed env var as required. To allow EITHER, normalise
+  // first: copy the generic-AWS values into the AWS_TEXTRACT_ slots before
+  // calling the SDK constructor.
+  [], // checked manually below to support the OR-pair semantics
+  () => ({
+    region: textractRegion,
+    credentials: {
+      accessKeyId: process.env.AWS_TEXTRACT_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_TEXTRACT_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  })
+);
 
-const textractClient = new TextractClient({
-  region: textractRegion,
-  credentials: textractCredentials,
-});
+function assertTextractCredentialsPresent() {
+  const hasKey = process.env.AWS_TEXTRACT_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const hasSecret = process.env.AWS_TEXTRACT_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+  if (!hasKey || !hasSecret) {
+    throw new Error(
+      'AWS Textract cannot be invoked — missing credentials. Set either ' +
+      '`AWS_TEXTRACT_ACCESS_KEY_ID`+`AWS_TEXTRACT_SECRET_ACCESS_KEY` OR the ' +
+      'generic `AWS_ACCESS_KEY_ID`+`AWS_SECRET_ACCESS_KEY` in .env, or use ' +
+      'the Mistral OCR primary instead.'
+    );
+  }
+}
 
 class AWSTextractService {
   static async extractText(buffer) {
@@ -27,7 +54,8 @@ class AWSTextractService {
           FeatureTypes: ['TABLES', 'FORMS'],
         });
 
-        const response = await textractClient.send(command);
+        assertTextractCredentialsPresent();
+        const response = await getTextractClient().send(command);
 
         let extractedText = '';
         let totalConfidence = 0;

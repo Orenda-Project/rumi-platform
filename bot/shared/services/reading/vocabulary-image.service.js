@@ -16,9 +16,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { uploadImageBuffer, buildR2PublicUrl } = require('../../storage/r2');
 const { logToFile } = require('../../utils/logger');
+const { lazyClient } = require('../../utils/lazy-client');
 
-// Initialize Gemini client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Lazy-initialised: vocabulary image generation only runs when a reading
+// assessment exercises this branch. GEMINI_API_KEY is optional at boot time.
+const getGenAI = lazyClient(GoogleGenerativeAI, ['GEMINI_API_KEY'], (env) => env.GEMINI_API_KEY);
 
 class VocabularyImageService {
   /**
@@ -73,7 +75,7 @@ STRICT REQUIREMENTS:
 - Child-friendly colorful cartoon style suitable for ages 5-8
 - Make each object clearly recognizable`;
 
-      const model = genAI.getGenerativeModel({
+      const model = getGenAI().getGenerativeModel({
         model: 'gemini-2.0-flash-exp-image-generation',  // Tested & verified Nov 30, 2025
         generationConfig: {
           responseModalities: ['Text', 'Image']

@@ -5,12 +5,15 @@
 
 let Classifier;
 let createImpl;
+const ORIGINAL_OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 function load() {
   jest.resetModules();
   createImpl = jest.fn();
+  // The classifier reads OPENAI_API_KEY from process.env via the lazy-client
+  // helper; set it here so lazyClient construction succeeds.
+  process.env.OPENAI_API_KEY = 'test-openai-key';
   jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
-  jest.doMock('../../bot/shared/utils/constants', () => ({ OPENAI_API_KEY: 'test-openai-key' }));
   jest.doMock('openai', () => {
     return jest.fn().mockImplementation(() => ({
       chat: { completions: { create: createImpl } },
@@ -19,7 +22,11 @@ function load() {
   Classifier = require('../../bot/shared/services/pic-to-lp/classifier.service');
 }
 
-afterEach(() => jest.resetModules());
+afterEach(() => {
+  jest.resetModules();
+  if (ORIGINAL_OPENAI_KEY === undefined) delete process.env.OPENAI_API_KEY;
+  else process.env.OPENAI_API_KEY = ORIGINAL_OPENAI_KEY;
+});
 
 const buf = Buffer.from('fake-image-bytes');
 

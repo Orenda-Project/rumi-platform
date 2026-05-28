@@ -16,11 +16,13 @@
 const OpenAI = require('openai');
 const { logToFile } = require('../../utils/logger');
 const { logEvent } = require('../../utils/structured-logger');
+const { lazyClient } = require('../../utils/lazy-client');
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Lazy-initialised: the enhancer only runs when a coaching transcript is being
+// post-processed. Setting OPENAI_API_KEY is optional at boot time.
+const getOpenAI = lazyClient(OpenAI, ['OPENAI_API_KEY'], (env) => ({
+  apiKey: env.OPENAI_API_KEY,
+}));
 
 /**
  * Phonetic Urdu → English Dictionary
@@ -638,7 +640,7 @@ class TranscriptEnhancerService {
       const prompt = this.buildPromptWithFewShot(segments, enhancementOptions);
 
       // Call GPT-4o
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: 'gpt-4o',
         messages: [
           {

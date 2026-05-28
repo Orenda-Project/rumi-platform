@@ -42,6 +42,7 @@
 
 const OpenAI = require('openai');
 const { logToFile } = require('../../../utils/logger');
+const { lazyClient } = require('../../../utils/lazy-client');
 
 // Default per-attempt deadline. Sized for the corpus call's ~2-3k-token output on a
 // throughput-sorted provider (≥30 tok/s → ≤~100s), with headroom; well short of the SDK's
@@ -53,11 +54,14 @@ const PROVIDER_ROUTING = { sort: 'throughput', allow_fallbacks: true };
 
 // Single OpenRouter client. maxRetries:0 — our ladder owns retries (don't let the SDK
 // stack its own retries on top, which would multiply latency on a bad provider).
-const openrouter = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
+// Lazy-initialised: OPENROUTER_API_KEY is in REQUIRED_VARS so the bot won't pass
+// `doctor` without it, but we don't want module-load to crash before doctor's
+// friendly missing-key matrix runs.
+const getOpenRouter = lazyClient(OpenAI, ['OPENROUTER_API_KEY'], (env) => ({
+  apiKey: env.OPENROUTER_API_KEY,
   baseURL: 'https://openrouter.ai/api/v1',
   maxRetries: 0,
-});
+}));
 
 const PRIMARY_MODEL = 'deepseek/deepseek-v3.2';
 const FALLBACK_MODEL = 'openai/gpt-5.4';
@@ -80,7 +84,7 @@ const isOurTimeout = (e) =>
  */
 async function callReflective(messages, { maxTokens = 2000, temperature = 0.7, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   const attempt = (model, extra = {}) =>
-    openrouter.chat.completions.create(
+    getOpenRouter().chat.completions.create(
       {
         model,
         messages,
