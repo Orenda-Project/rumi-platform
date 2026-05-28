@@ -9,6 +9,15 @@
 # 2. Add a new secret called RAILWAY_TOKEN
 # 3. Paste the deploy token from your provisioning response
 # 4. Push to main branch - auto-deploys!
+#
+# Why the gate lives at STEP level, not JOB level:
+# A workflow whose ALL jobs are skipped by a job-level `if:` is reported by
+# GitHub Actions as a FAILED run (and triggers a "Run failed: No jobs were
+# run" notification). This used to mean every merge to main on a fork without
+# RAILWAY_TOKEN set sent a spurious failure email. By gating at step level,
+# the job ALWAYS runs and ALWAYS succeeds — it just skips the deploy steps
+# and emits a friendly `::notice::` annotation when the token is unset.
+# (Locked by tests/setup/ci-workflow-jobs-always-runnable.test.js.)
 
 name: Deploy to Railway
 
@@ -29,22 +38,36 @@ jobs:
   deploy:
     name: Deploy Bot to Railway
     runs-on: ubuntu-latest
-    # Skip if RAILWAY_TOKEN is not configured (e.g., on the upstream template repo)
-    if: ${{ secrets.RAILWAY_TOKEN != '' }}
-
     steps:
+      - name: Check deployment configuration
+        id: gate
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::notice::RAILWAY_TOKEN secret not set — auto-deploy skipped. This is expected on the upstream template repo. Set RAILWAY_TOKEN in repo Settings → Secrets and variables → Actions to enable Railway auto-deploys on your fork."
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "RAILWAY_TOKEN detected — proceeding with deployment."
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout code
+        if: steps.gate.outputs.should_deploy == 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        if: steps.gate.outputs.should_deploy == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install Railway CLI
+        if: steps.gate.outputs.should_deploy == 'true'
         run: npm install -g @railway/cli
 
       - name: Deploy to Railway
+        if: steps.gate.outputs.should_deploy == 'true'
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
@@ -54,6 +77,7 @@ jobs:
           echo "Deployment complete!"
 
       - name: Verify deployment
+        if: steps.gate.outputs.should_deploy == 'true'
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
