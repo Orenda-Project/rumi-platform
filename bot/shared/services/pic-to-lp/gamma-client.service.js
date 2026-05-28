@@ -59,6 +59,25 @@ async function generate({ prompt, title, language = 'en' }) {
   const lang = SUPPORTED_LANGUAGES.includes(language) ? language : 'en';
   const { gammaLang, extraInstructions } = buildLanguageOverrides(lang);
 
+  // Header/footer assets are optional. LOGO_URL and WEBSITE_URL each control a
+  // single visual element; if either is unset, that element is simply omitted
+  // and Gamma renders a clean page without a placeholder logo or fake URL.
+  const branding = require('../../config/branding');
+  const logo = branding.logoUrl();
+  const website = branding.websiteUrl();
+
+  const headerFooter = {
+    topRight: { type: 'text', value: title },
+    bottomCenter: { type: 'cardNumber' },
+  };
+  if (logo) {
+    headerFooter.topLeft = { type: 'image', source: 'custom', src: logo, size: 'sm' };
+  }
+  if (website) {
+    const host = website.replace(/^https?:\/\//, '');
+    headerFooter.bottomRight = { type: 'text', value: `generate your lesson plan at ${host}` };
+  }
+
   const requestBody = {
     inputText: prompt,
     format: 'document',
@@ -72,12 +91,7 @@ async function generate({ prompt, title, language = 'en' }) {
     cardSplit: 'inputTextBreaks',
     additionalInstructions: BASE_INSTRUCTIONS + extraInstructions,
     cardOptions: {
-      headerFooter: {
-        topLeft: { type: 'image', source: 'custom', src: 'https://hellorumi.ai/rumi-logo-transparent.png', size: 'sm' },
-        topRight: { type: 'text', value: title },
-        bottomCenter: { type: 'cardNumber' },
-        bottomRight: { type: 'text', value: 'generate your lesson plan at hellorumi.ai' },
-      },
+      headerFooter,
     },
     textOptions: {
       language: gammaLang,

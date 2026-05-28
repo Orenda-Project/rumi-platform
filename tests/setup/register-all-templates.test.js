@@ -428,23 +428,29 @@ describe('registerAllTemplates(options)', () => {
     expect(result.skipped).toHaveLength(0);
   });
 
-  it('defaults assetBaseUrl to https://hellorumi.ai/assets', async () => {
+  it('defaults assetBaseUrl to process.env.ASSET_BASE_URL', async () => {
     const api = createMockApi();
+    const prev = process.env.ASSET_BASE_URL;
+    process.env.ASSET_BASE_URL = 'https://cdn.example.test/assets';
+    try {
+      await registerAllTemplates({
+        wabaId: 'waba_test',
+        accessToken: 'tok_test',
+        phoneNumberId: 'phone_test',
+        _mockApi: api,
+        _mockState: createMockState(),
+      });
+    } finally {
+      if (prev === undefined) delete process.env.ASSET_BASE_URL;
+      else process.env.ASSET_BASE_URL = prev;
+    }
 
-    await registerAllTemplates({
-      wabaId: 'waba_test',
-      accessToken: 'tok_test',
-      phoneNumberId: 'phone_test',
-      _mockApi: api,
-      _mockState: createMockState(),
-    });
-
-    // Verify the payloads were built with the default base URL
+    // Verify the payloads were built with the env-configured base URL
     const calls = api.createTemplate.mock.calls;
     expect(calls.length).toBe(2);
     for (const [payload] of calls) {
       const json = JSON.stringify(payload);
-      expect(json).toContain('hellorumi.ai/assets');
+      expect(json).toContain('cdn.example.test/assets');
     }
   });
 

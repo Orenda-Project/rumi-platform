@@ -49,8 +49,17 @@ class PortalInviteService {
         throw updateError;
       }
 
-      // Build portal URL
-      const portalUrl = `${process.env.PORTAL_URL || 'https://your-portal-domain.com'}/portal/setup/${token}`;
+      // Build portal URL. If PORTAL_URL is unset, the feature degrades
+      // gracefully — we don't send the invite (no clickable link to send).
+      const portalBase = require('../config/branding').portalUrl();
+      if (!portalBase) {
+        logToFile('⚠️ PORTAL_URL not configured — skipping portal invite', { userId });
+        return {
+          success: false,
+          error: 'PORTAL_URL not configured on this deployment',
+        };
+      }
+      const portalUrl = `${portalBase}/portal/setup/${token}`;
 
       // Multilingual invitation messages
       const messages = {
@@ -315,7 +324,21 @@ Este enlace expira en 7 días. Haz clic en él para crear tu contraseña e inici
    * @returns {string} Combined registration success + portal activation message
    */
   static getRegistrationSuccessWithPortalMessage(firstName, portalSetupToken, language = 'en') {
-    const portalUrl = `${process.env.PORTAL_URL || 'https://your-portal-domain.com'}/portal/setup/${portalSetupToken}`;
+    const portalBase = require('../config/branding').portalUrl();
+
+    // No portal configured → fall back to a portal-free welcome so we never
+    // ship a placeholder URL to the teacher.
+    if (!portalBase) {
+      const noPortal = {
+        en: `Thank you, ${firstName}! Your registration is successful. What would you like to work on next?`,
+        ur: `شکریہ، ${firstName}! آپ کی رجسٹریشن کامیاب ہو گئی ہے۔ آگے آپ کس چیز پر کام کرنا چاہیں گے؟`,
+        ar: `شكراً، ${firstName}! تم تسجيلك بنجاح. ماذا تريد أن تعمل عليه بعد ذلك؟`,
+        es: `¡Gracias, ${firstName}! Tu registro fue exitoso. ¿En qué te gustaría trabajar a continuación?`,
+      };
+      return noPortal[language] || noPortal.en;
+    }
+
+    const portalUrl = `${portalBase}/portal/setup/${portalSetupToken}`;
 
     const messages = {
       en: `Thank you, ${firstName}! Your registration is successful. I've also activated your Rumi portal.

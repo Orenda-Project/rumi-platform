@@ -95,7 +95,12 @@ async function generateTestTokens() {
         continue;
       }
 
-      const setupUrl = `${process.env.PORTAL_URL || 'https://your-portal-domain.com'}/setup/${token}`;
+      const portalBase = process.env.PORTAL_URL;
+      if (!portalBase) {
+        console.error('❌ PORTAL_URL not set — cannot build a setup URL. Set PORTAL_URL in your .env first.');
+        process.exit(78); // EX_CONFIG
+      }
+      const setupUrl = `${portalBase.replace(/\/$/, '')}/setup/${token}`;
       const localUrl = `http://localhost:5173/portal/setup/${token}`;
 
       results.push({

@@ -38,8 +38,15 @@ class EmailService {
    */
   async sendInvitation(toEmail, inviteToken, invitedByName, role) {
     try {
-      // Use Teacher Portal frontend URL for setup (not backend dashboard URL)
-      const portalBaseUrl = process.env.PORTAL_URL || 'https://your-portal-domain.com';
+      // Use Teacher Portal frontend URL for setup (not backend dashboard URL).
+      // Refuse to send if PORTAL_URL isn't set — the email is useless without
+      // a working setup link.
+      const portalBaseUrl = (process.env.PORTAL_URL || '').replace(/\/$/, '');
+      if (!portalBaseUrl) {
+        const err = new Error('PORTAL_URL not configured — cannot send invitation email');
+        err.code = 'EX_CONFIG';
+        throw err;
+      }
       const setupUrl = `${portalBaseUrl}/portal/setup/${inviteToken}`;
 
       const mailOptions = {

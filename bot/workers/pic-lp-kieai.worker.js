@@ -5,8 +5,9 @@
  *   1. Loads the pic_lp_sessions row
  *   2. Builds the page-1 + page-2 prompts via kieai-prompt-builder
  *   3. Renders both pages in parallel via kieai-client.service.js
- *   4. Downloads PNGs, assembles a 2-page PDF (pdf-lib + sharp), stamps
- *      the hellorumi.ai footer
+ *   4. Downloads PNGs, assembles a 2-page PDF (pdf-lib + sharp), and stamps
+ *      a "Generate via <WEBSITE_URL host>" footer if WEBSITE_URL is configured
+ *      (omitted entirely if not, so clones don't ship a placeholder URL).
  *   5. Delivers via WhatsAppService.sendDocument (canonical path)
  *   6. INSERTs a lesson_plans row with source='pic_to_lp_kieai',
  *      cost_usd, delivery_time_ms, pic_lp_session_id, textbook_metadata
@@ -56,8 +57,8 @@ function downloadToBuffer(url) {
 }
 
 /**
- * Assemble the 2-page PDF: page1 + page2 + a discreet
- * "Generate via www.hellorumi.ai" footer at the bottom of each page.
+ * Assemble the 2-page PDF: page1 + page2 + (when WEBSITE_URL is configured)
+ * a discreet "Generate via <host>" footer at the bottom of each page.
  *
  * @param {Object} args
  * @param {string} args.page1Url
@@ -80,8 +81,16 @@ async function assemblePDF({ page1Url, page2Url, outPath }) {
   const pdf = await PDFDocument.create();
   const helv = await pdf.embedFont(StandardFonts.Helvetica);
 
+  // Footer is optional. When WEBSITE_URL is unset, drawFooter is a no-op so
+  // we don't render a "Generate via <example-host>" placeholder.
+  const websiteHost = (() => {
+    const url = require('../shared/config/branding').websiteUrl();
+    if (!url) return null;
+    return url.replace(/^https?:\/\//, '').replace(/^www\./, '');
+  })();
   const drawFooter = (page) => {
-    const text = 'Generate via www.hellorumi.ai';
+    if (!websiteHost) return;
+    const text = `Generate via www.${websiteHost}`;
     const sz = Math.max(10, Math.round(W * 0.011));
     const fw = helv.widthOfTextAtSize(text, sz);
     page.drawText(text, {

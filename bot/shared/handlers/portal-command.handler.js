@@ -13,8 +13,7 @@
 
 const PortalInviteService = require('../services/portal-invite.service');
 const { logToFile } = require('../utils/logger');
-
-const PORTAL_URL = process.env.PORTAL_URL || 'https://your-portal-domain.com';
+const { portalUrl: getPortalUrl } = require('../config/branding');
 
 /**
  * Handle /portal command
@@ -33,18 +32,25 @@ async function handlePortalCommand(user, phoneNumber) {
     });
 
     const language = user.preferred_language || 'en';
+    const portalBase = getPortalUrl();
 
     // Multilingual messages
     const messages = {
-      // Already activated messages
-      alreadyActivated: {
-        en: `Your Rumi portal is already active!\n\n🔗 *Log in here:*\n${PORTAL_URL}/portal/login\n\nUse your phone number and the password you created.`,
+      // Already activated messages — portal link is omitted entirely if
+      // PORTAL_URL is unset, so cloners don't ship a broken placeholder URL.
+      alreadyActivated: portalBase ? {
+        en: `Your Rumi portal is already active!\n\n🔗 *Log in here:*\n${portalBase}/portal/login\n\nUse your phone number and the password you created.`,
 
-        ur: `آپ کا Rumi پورٹل پہلے سے فعال ہے!\n\n🔗 *یہاں لاگ ان کریں:*\n${PORTAL_URL}/portal/login\n\nاپنا فون نمبر اور پاسورڈ استعمال کریں۔`,
+        ur: `آپ کا Rumi پورٹل پہلے سے فعال ہے!\n\n🔗 *یہاں لاگ ان کریں:*\n${portalBase}/portal/login\n\nاپنا فون نمبر اور پاسورڈ استعمال کریں۔`,
 
-        ar: `بوابة Rumi الخاصة بك نشطة بالفعل!\n\n🔗 *سجل الدخول هنا:*\n${PORTAL_URL}/portal/login\n\nاستخدم رقم هاتفك وكلمة المرور التي أنشأتها.`,
+        ar: `بوابة Rumi الخاصة بك نشطة بالفعل!\n\n🔗 *سجل الدخول هنا:*\n${portalBase}/portal/login\n\nاستخدم رقم هاتفك وكلمة المرور التي أنشأتها.`,
 
-        es: `¡Tu portal de Rumi ya está activo!\n\n🔗 *Inicia sesión aquí:*\n${PORTAL_URL}/portal/login\n\nUsa tu número de teléfono y la contraseña que creaste.`
+        es: `¡Tu portal de Rumi ya está activo!\n\n🔗 *Inicia sesión aquí:*\n${portalBase}/portal/login\n\nUsa tu número de teléfono y la contraseña que creaste.`
+      } : {
+        en: 'Your account is already active. Ask your administrator for the portal URL.',
+        ur: 'آپ کا اکاؤنٹ پہلے سے فعال ہے۔ پورٹل کے لیے اپنے ایڈمنسٹریٹر سے رابطہ کریں۔',
+        ar: 'حسابك نشط بالفعل. اطلب من المسؤول لديك عنوان البوابة.',
+        es: 'Tu cuenta ya está activa. Pide la URL del portal a tu administrador.'
       },
 
       // Error sending invitation

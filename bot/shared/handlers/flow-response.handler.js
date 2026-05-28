@@ -709,14 +709,22 @@ async function handleRegistrationFlow(message, phoneNumber, userId) {
       throw updateError;
     }
 
-    // Send portal link as WhatsApp message (clickable)
-    const portalUrl = `https://portal.hellorumi.ai/portal/setup/${portalToken}`;
+    // Send portal link as WhatsApp message (clickable). Degrades gracefully:
+    // if PORTAL_URL is unset, the message omits the link rather than shipping
+    // a broken placeholder. See bot/shared/config/branding.js.
+    const portalBase = require('../config/branding').portalUrl();
+    const portalUrl = portalBase ? `${portalBase}/portal/setup/${portalToken}` : null;
     const userLang = country === 'PK' ? 'ur' : 'en';
 
-    const confirmMessages = {
+    const confirmMessagesWithPortal = {
       en: `Thank you for registering, ${firstName}! You're all set to use Rumi.\n\n🔗 *Set up your Rumi Portal:*\n${portalUrl}\n\nThis link expires in 7 days. What would you like to work on?`,
       ur: `رجسٹریشن کا شکریہ، ${firstName}! آپ اب Rumi استعمال کر سکتے ہیں۔\n\n🔗 *اپنا Rumi پورٹل سیٹ اپ کریں:*\n${portalUrl}\n\nیہ لنک 7 دنوں میں ختم ہو جائے گی۔ آپ کس پر کام کرنا چاہیں گے؟`
     };
+    const confirmMessagesNoPortal = {
+      en: `Thank you for registering, ${firstName}! You're all set. What would you like to work on?`,
+      ur: `رجسٹریشن کا شکریہ، ${firstName}! آپ اب تیار ہیں۔ آپ کس پر کام کرنا چاہیں گے؟`
+    };
+    const confirmMessages = portalUrl ? confirmMessagesWithPortal : confirmMessagesNoPortal;
 
     await WhatsAppService.sendMessage(phoneNumber, confirmMessages[userLang] || confirmMessages.en);
 
@@ -726,7 +734,7 @@ async function handleRegistrationFlow(message, phoneNumber, userId) {
       country,
       region,
       organization: resolvedOrg,
-      portalUrl: portalUrl.substring(0, 50) + '...'
+      portalUrl: portalUrl ? portalUrl.substring(0, 50) + '...' : '(PORTAL_URL not configured)'
     });
 
     return true;

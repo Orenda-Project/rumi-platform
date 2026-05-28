@@ -136,10 +136,13 @@ class QuizReportService {
       fs.writeFileSync(tempPath, pdfBuffer);
       try {
         const filename = `Quiz_${(quiz.topic || 'report').replace(/[^a-z0-9]+/gi, '_')}.pdf`;
-        const portalLink =
-          '\n\n📊 Open it in your portal for trends across classes:\n' +
-          'portal.hellorumi.ai/quizzes\n' +
-          '🔐 Same login as before.';
+        // Append the portal trends link only when PORTAL_URL is configured.
+        const portalBase = require('../../config/branding').portalUrl();
+        const portalLink = portalBase
+          ? '\n\n📊 Open it in your portal for trends across classes:\n' +
+            `${portalBase.replace(/^https?:\/\//, '')}/quizzes\n` +
+            '🔐 Same login as before.'
+          : '';
         await WhatsAppService.sendDocument(
           teacherPhone,
           tempPath,

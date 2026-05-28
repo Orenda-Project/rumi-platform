@@ -253,14 +253,16 @@ class FeatureRegistrationService {
         throw updateError;
       }
 
-      // Send confirmation with portal link
-      const portalUrl = `${process.env.PORTAL_URL || 'https://your-portal-domain.com'}/portal/setup/${token}`;
+      // Send confirmation. portalUrl is null if PORTAL_URL is unset, in
+      // which case sendConfirmation omits the link from the message.
+      const portalBase = require('../config/branding').portalUrl();
+      const portalUrl = portalBase ? `${portalBase}/portal/setup/${token}` : null;
       await this.sendConfirmation(firstName, portalUrl, phoneNumber, language, format);
 
       logToFile('Registration completed successfully', {
         userId,
         firstName,
-        portalUrl: portalUrl.substring(0, 50) + '...'
+        portalUrl: portalUrl ? portalUrl.substring(0, 50) + '...' : '(PORTAL_URL not configured)'
       });
 
       return { success: true, firstName };
@@ -331,6 +333,25 @@ class FeatureRegistrationService {
    * @param {string} format - 'text' | 'voice'
    */
   static async sendConfirmation(firstName, portalUrl, phoneNumber, language = 'en', format = 'text') {
+    // When PORTAL_URL isn't configured, portalUrl is null. Fall back to a
+    // portal-free welcome so cloners don't ship a broken placeholder link.
+    if (!portalUrl) {
+      const noPortal = {
+        en: `Nice to meet you, ${firstName}! What would you like to work on next?`,
+        ur: `آپ سے مل کر خوشی ہوئی، ${firstName}! آگے آپ کس پر کام کرنا چاہیں گے؟`,
+        ar: `سعيد بلقائك، ${firstName}! ماذا تريد أن تعمل عليه بعد ذلك؟`,
+        es: `¡Mucho gusto, ${firstName}! ¿En qué te gustaría trabajar a continuación?`,
+        'bal-PK': `توارا گُڈ چاتین، ${firstName}!`,
+        'sd-PK': `توهان سان ملي خوشي ٿي، ${firstName}!`,
+        'ps-PK': `ستاسو سره په لیدو خوشحاله شوم، ${firstName}!`,
+        'pa-PK': `تہانوں مل کے خوشی ہوئی، ${firstName}!`,
+        'ta-LK': `சந்திப்பதில் மகிழ்ச்சி, ${firstName}!`,
+      };
+      const message = noPortal[language] || noPortal.en;
+      await WhatsAppService.sendMessage(phoneNumber, message);
+      logToFile('Confirmation sent (no portal)', { phoneNumber, firstName });
+      return;
+    }
     const messages = {
       en: `Nice to meet you, ${firstName}! I've also set up your personal Rumi portal where you can track your growth and access all your lesson plans, coaching reports, and more.
 

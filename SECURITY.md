@@ -6,7 +6,9 @@ If you discover a security vulnerability in Rumi, please report it responsibly.
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email: **security@taleemabad.com**
+Preferred channel: open a private report via [GitHub Security Advisories](https://github.com/Orenda-Project/rumi-platform/security/advisories/new). The maintainer team is notified automatically.
+
+Forks: replace this section with your own intake (private email or your fork's GitHub Security Advisories tab) before publishing this repository to a user-facing audience.
 
 Include:
 - Description of the vulnerability

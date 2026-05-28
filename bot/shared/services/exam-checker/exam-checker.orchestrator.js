@@ -367,10 +367,15 @@ class ExamCheckerOrchestrator {
       await ExamSessionService.updateStatus(session.id, SESSION_STATES.COMPLETED);
 
       const studentCount = session.confirmed_students?.length || 0;
-      const portalUrl = `${process.env.PORTAL_URL || 'https://your-portal-domain.com'}/portal/exams/${session.id}`;
+      const portalBase = require('../../config/branding').portalUrl();
+      // Omit the portal line entirely when unset — grading still completes;
+      // we just don't dangle a placeholder URL at the teacher.
+      const portalLine = portalBase
+        ? `\n\n📱 View details and edit grades:\n${portalBase}/portal/exams/${session.id}`
+        : '';
 
       return {
-        text: `✅ Done! Graded ${studentCount} exam${studentCount !== 1 ? 's' : ''}.\n\n📱 View details and edit grades:\n${portalUrl}`
+        text: `✅ Done! Graded ${studentCount} exam${studentCount !== 1 ? 's' : ''}.${portalLine}`
       };
     } catch (error) {
       logToFile('❌ Delivery failed', { sessionId: session.id, error: error.message });

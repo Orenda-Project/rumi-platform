@@ -5,7 +5,9 @@ const { WHATSAPP_TOKEN, PHONE_NUMBER_ID } = require('../utils/constants');
 const { logToFile } = require('../utils/logger');
 const { downloadFromR2, extractKeyFromUrl } = require('../storage/r2');
 
-const ASSETS_BASE_URL = process.env.ASSETS_BASE_URL || 'https://your-domain.com/assets';
+// Prefer ASSET_BASE_URL; fall back to legacy ASSETS_BASE_URL. Empty when
+// neither is set — the carousel template builder below guards against that.
+const ASSETS_BASE_URL = (process.env.ASSET_BASE_URL || process.env.ASSETS_BASE_URL || '').replace(/\/$/, '');
 const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v21.0';
 const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
@@ -1450,7 +1452,14 @@ class WhatsAppService {
    * @returns {Object} WhatsApp template message payload
    */
   static buildFeatureMenuCarouselPayload(to) {
-    // v3: 4 cards - Lesson Plans, Video Generation, Coaching, Reading
+    // v3: 4 cards - Lesson Plans, Video Generation, Coaching, Reading.
+    // Video previews require an ASSET_BASE_URL (or legacy ASSETS_BASE_URL).
+    // If neither is configured, the carousel still ships but with the video
+    // preview URLs deliberately empty — Meta rejects the send rather than
+    // letting a broken example-host URL go out.
+    if (!ASSETS_BASE_URL) {
+      logToFile('⚠️ ASSET_BASE_URL not configured — feature menu carousel videos will be empty', { to });
+    }
     return {
       messaging_product: 'whatsapp',
       to: to,

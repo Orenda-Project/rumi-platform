@@ -237,7 +237,7 @@ if (!sessionStore) {
 app.use(session({
   store: sessionStore, // Redis store if available, otherwise MemoryStore
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
-  name: 'rumi.sid', // Custom name (hide that it's express-session)
+  name: process.env.SESSION_COOKIE_NAME || 'app.sid', // Custom name (hide that it's express-session)
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -304,14 +304,20 @@ const portalDataLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// CORS configuration for tracking endpoints
-const WEBSITE_URL = process.env.WEBSITE_URL || 'https://your-website-domain.com';
-const PORTAL_URL = process.env.PORTAL_URL || 'https://your-portal-domain.com';
+// CORS configuration for tracking endpoints. Each env var contributes its
+// own origin to the allow-list; if unset, we just skip that origin rather
+// than dangling a placeholder hostname that nobody will ever request from.
+const WEBSITE_URL = (process.env.WEBSITE_URL || '').replace(/\/$/, '');
+const PORTAL_URL = (process.env.PORTAL_URL || '').replace(/\/$/, '');
+
+const _websiteOrigins = WEBSITE_URL
+  ? [WEBSITE_URL, WEBSITE_URL.replace('https://www.', 'https://')]
+  : [];
+const _portalOrigins = PORTAL_URL ? [PORTAL_URL] : [];
 
 const trackingCorsOptions = {
   origin: [
-    WEBSITE_URL,
-    WEBSITE_URL.replace('https://www.', 'https://'),
+    ..._websiteOrigins,
     'http://localhost:3000', // For local testing
     'http://127.0.0.1:3000'
   ],
@@ -324,9 +330,8 @@ const trackingCorsOptions = {
 // CORS configuration for teacher portal endpoints
 const portalCorsOptions = {
   origin: [
-    PORTAL_URL,
-    WEBSITE_URL, // Allow main website too (for navigation link)
-    WEBSITE_URL.replace('https://www.', 'https://'),
+    ..._portalOrigins,
+    ..._websiteOrigins, // Allow main website too (for navigation link)
     'http://localhost:5173', // Vite dev server default port
     'http://localhost:3000',
     'http://127.0.0.1:5173',

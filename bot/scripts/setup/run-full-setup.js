@@ -25,7 +25,7 @@
  *   --token            Access token (required)
  *   --phone-number-id  Phone Number ID (required)
  *   --endpoint-base    Base URL for flow endpoints (required for attendance flows)
- *   --asset-base-url   Base URL for template assets (default: https://hellorumi.ai/assets)
+ *   --asset-base-url   Base URL for template assets (defaults to ASSET_BASE_URL env var)
  *   --key-output-dir   Directory to save encryption keys (default: bot/keys)
  *   --state-path       Path to .setup-state.json (default: project root)
  *   --skip-encryption  Skip encryption setup
@@ -107,7 +107,7 @@ async function runFullSetup(options) {
   console.log(`\n  WABA ID:          ${wabaId}`);
   console.log(`  Phone Number ID:  ${phoneNumberId}`);
   console.log(`  Endpoint Base:    ${endpointBase || '(not provided — attendance flows will be skipped)'}`);
-  console.log(`  Asset Base URL:   ${assetBaseUrl || 'https://hellorumi.ai/assets (default)'}`);
+  console.log(`  Asset Base URL:   ${assetBaseUrl || '(not provided — video templates will be skipped)'}`);
   console.log('');
 
   // ── Step 1: Encryption ──

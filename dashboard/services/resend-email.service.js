@@ -8,7 +8,10 @@ const { Resend } = require('resend');
 class ResendEmailService {
   constructor() {
     this.resend = new Resend(process.env.RESEND_API_KEY);
-    this.fromEmail = process.env.EMAIL_FROM || 'Rumi <noreply@your-domain.com>';
+    // EMAIL_FROM should be a deliverable from address you control. There is
+    // no safe default — if unset, send attempts surface an explicit error so
+    // a misconfigured clone fails loudly instead of silently spamming.
+    this.fromEmail = process.env.EMAIL_FROM || null;
     this.dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:4000';
   }
 

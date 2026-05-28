@@ -11,7 +11,7 @@
  *     wabaId: 'your_waba_id',
  *     accessToken: 'your_token',
  *     phoneNumberId: 'your_phone_id',
- *     assetBaseUrl: 'https://hellorumi.ai/assets',  // optional
+ *     assetBaseUrl: process.env.ASSET_BASE_URL,  // optional — public asset CDN
  *     statePath: '/path/to/.setup-state.json',       // optional
  *   });
  *
@@ -281,7 +281,7 @@ async function registerTemplate(api, state, templateConfig, assetBaseUrl) {
  * @param {string}  options.wabaId         WhatsApp Business Account ID
  * @param {string}  options.accessToken    Meta Graph API access token
  * @param {string}  options.phoneNumberId  Phone number ID
- * @param {string} [options.assetBaseUrl]  Base URL for assets (default: 'https://hellorumi.ai/assets')
+ * @param {string} [options.assetBaseUrl]  Base URL for assets (defaults to process.env.ASSET_BASE_URL; required if any template has a video header)
  * @param {string} [options.statePath]     Path to .setup-state.json
  * @param {object} [options._mockApi]      (testing) Injected MetaAPI mock
  * @param {object} [options._mockState]    (testing) Injected SetupState mock
@@ -292,7 +292,10 @@ async function registerAllTemplates(options = {}) {
     wabaId,
     accessToken,
     phoneNumberId,
-    assetBaseUrl = 'https://hellorumi.ai/assets',
+    // Asset base URL: prefer explicit option, else env ASSET_BASE_URL /
+    // ASSETS_BASE_URL. Stays undefined if nothing is configured; the per-
+    // template config decides whether that's fatal (video templates) or fine.
+    assetBaseUrl = process.env.ASSET_BASE_URL || process.env.ASSETS_BASE_URL,
     statePath,
     _mockApi,
     _mockState,

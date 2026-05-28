@@ -17,7 +17,9 @@ const PDFDocument = require('pdfkit');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 
-const PORTAL_URL = process.env.PORTAL_URL || 'https://your-portal-domain.com';
+// Resolved lazily inside handlers so a missing PORTAL_URL skips the
+// portal-prompt step rather than rendering a placeholder URL.
+const { portalUrl: getPortalUrl } = require('../../config/branding');
 
 class VideoAssemblyService {
 
@@ -171,25 +173,30 @@ class VideoAssemblyService {
       // Issue #7: Send portal prompt after video delivery (using user's preferred language)
       const userPreferredLanguage = userId ? await getUserLanguage(userId) : language;
 
-      // Portal prompts in all 9 supported languages
-      const portalPrompts = {
-        en: `📚 Your videos are also available on the Rumi Portal!\n\n👉 ${PORTAL_URL}\n\nYou can view and download all your videos and slides there.`,
-        ur: `📚 آپ کی ویڈیوز Rumi Portal پر بھی دستیاب ہیں!\n\n👉 ${PORTAL_URL}\n\nوہاں آپ اپنی تمام ویڈیوز اور سلائیڈز دیکھ سکتے ہیں۔`,
-        ar: `📚 فيديوهاتك متاحة أيضاً على بوابة رومي!\n\n👉 ${PORTAL_URL}\n\nيمكنك مشاهدة وتحميل جميع فيديوهاتك وشرائحك هناك.`,
-        es: `📚 ¡Tus videos también están disponibles en el Portal Rumi!\n\n👉 ${PORTAL_URL}\n\nPuedes ver y descargar todos tus videos y diapositivas allí.`,
-        'ps-PK': `📚 ستاسو ویډیوګانې په رومي پورټل کې هم شتون لري!\n\n👉 ${PORTAL_URL}\n\nتاسو کولی شئ هلته خپل ټول ویډیوګانې او سلایډونه وګورئ او ډاونلوډ کړئ.`,
-        'pa-PK': `📚 تہاڈیاں ویڈیوز رومی پورٹل تے وی دستیاب نیں!\n\n👉 ${PORTAL_URL}\n\nاوتھے تسی اپنیاں ساریاں ویڈیوز تے سلائیڈز ویکھ تے ڈاؤنلوڈ کر سکدے او۔`,
-        'sd-PK': `📚 توهان جون وڊيوز رومي پورٽل تي پڻ موجود آهن!\n\n👉 ${PORTAL_URL}\n\nاتي توهان پنهنجون سڀ وڊيوز ۽ سلائيڊون ڏسي ۽ ڊائونلوڊ ڪري سگهو ٿا.`,
-        'bal-PK': `📚 شمی ویڈیوز رومی پورٹل ءَ ہم داب انت!\n\n👉 ${PORTAL_URL}\n\nادان شما تمام ویڈیوز و سلائڈز گندگ و ڈاؤنلوڈ کن اِت۔`,
-        'ta-LK': `📚 உங்கள் வீடியோக்கள் ரூமி போர்ட்டலிலும் கிடைக்கின்றன!\n\n👉 ${PORTAL_URL}\n\nஅங்கு உங்கள் அனைத்து வீடியோக்களையும் ஸ்லைடுகளையும் பார்க்கலாம் மற்றும் பதிவிறக்கலாம்.`
-      };
+      const portalBase = getPortalUrl();
+      if (portalBase) {
+        // Portal prompts in all 9 supported languages
+        const portalPrompts = {
+          en: `📚 Your videos are also available on the Rumi Portal!\n\n👉 ${portalBase}\n\nYou can view and download all your videos and slides there.`,
+          ur: `📚 آپ کی ویڈیوز Rumi Portal پر بھی دستیاب ہیں!\n\n👉 ${portalBase}\n\nوہاں آپ اپنی تمام ویڈیوز اور سلائیڈز دیکھ سکتے ہیں۔`,
+          ar: `📚 فيديوهاتك متاحة أيضاً على بوابة رومي!\n\n👉 ${portalBase}\n\nيمكنك مشاهدة وتحميل جميع فيديوهاتك وشرائحك هناك.`,
+          es: `📚 ¡Tus videos también están disponibles en el Portal Rumi!\n\n👉 ${portalBase}\n\nPuedes ver y descargar todos tus videos y diapositivas allí.`,
+          'ps-PK': `📚 ستاسو ویډیوګانې په رومي پورټل کې هم شتون لري!\n\n👉 ${portalBase}\n\nتاسو کولی شئ هلته خپل ټول ویډیوګانې او سلایډونه وګورئ او ډاونلوډ کړئ.`,
+          'pa-PK': `📚 تہاڈیاں ویڈیوز رومی پورٹل تے وی دستیاب نیں!\n\n👉 ${portalBase}\n\nاوتھے تسی اپنیاں ساریاں ویڈیوز تے سلائیڈز ویکھ تے ڈاؤنلوڈ کر سکدے او۔`,
+          'sd-PK': `📚 توهان جون وڊيوز رومي پورٽل تي پڻ موجود آهن!\n\n👉 ${portalBase}\n\nاتي توهان پنهنجون سڀ وڊيوز ۽ سلائيڊون ڏسي ۽ ڊائونلوڊ ڪري سگهو ٿا.`,
+          'bal-PK': `📚 شمی ویڈیوز رومی پورٹل ءَ ہم داب انت!\n\n👉 ${portalBase}\n\nادان شما تمام ویڈیوز و سلائڈز گندگ و ڈاؤنلوڈ کن اِت۔`,
+          'ta-LK': `📚 உங்கள் வீடியோக்கள் ரூமி போர்ட்டலிலும் கிடைக்கின்றன!\n\n👉 ${portalBase}\n\nஅங்கு உங்கள் அனைத்து வீடியோக்களையும் ஸ்லைடுகளையும் பார்க்கலாம் மற்றும் பதிவிறக்கலாம்.`
+        };
 
-      const portalPrompt = portalPrompts[userPreferredLanguage] || portalPrompts.en;
+        const portalPrompt = portalPrompts[userPreferredLanguage] || portalPrompts.en;
 
-      // Small delay before portal prompt
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await WhatsAppService.sendMessage(from, portalPrompt);
-      logToFile('Portal prompt sent after video delivery', { videoRequestId, from, userPreferredLanguage });
+        // Small delay before portal prompt
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await WhatsAppService.sendMessage(from, portalPrompt);
+        logToFile('Portal prompt sent after video delivery', { videoRequestId, from, userPreferredLanguage });
+      } else {
+        logToFile('PORTAL_URL not configured — skipping portal prompt', { videoRequestId, from });
+      }
 
       // Step 6: Update database with R2 video URL
       // NOTE: pdf_url was already stored by worker after image generation

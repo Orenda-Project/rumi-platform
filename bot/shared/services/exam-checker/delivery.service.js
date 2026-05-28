@@ -147,11 +147,19 @@ class DeliveryService {
   }
 
   /**
-   * Send portal link for detailed view
+   * Send portal link for detailed view. No-op when PORTAL_URL isn't
+   * configured — the grades + annotated PDF have already been delivered;
+   * this is just the optional follow-up.
    */
   static async _sendPortalLink(phoneNumber, session) {
-    const portalUrl = process.env.PORTAL_URL || 'https://your-portal-domain.com';
-    const examUrl = `${portalUrl}/portal/exams/${session.id}`;
+    const portalBase = require('../../config/branding').portalUrl();
+    if (!portalBase) {
+      logToFile('⚠️ PORTAL_URL not configured — skipping portal-link follow-up', {
+        sessionId: session.id,
+      });
+      return;
+    }
+    const examUrl = `${portalBase}/portal/exams/${session.id}`;
 
     const message = `🔗 *View & Edit Results*\n\n` +
       `See detailed grades, edit marks, and download reports:\n${examUrl}\n\n` +

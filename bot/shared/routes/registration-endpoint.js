@@ -46,6 +46,20 @@ const REDIS_PREFIX = 'reg_flow:';
 const REDIS_TTL = 3600; // 1 hour
 
 /**
+ * Build the "Your portal is ready at <host>" line for the SUCCESS screen.
+ * Returns just the welcome line if PORTAL_URL is unset, so cloners running
+ * without a portal don't render a broken example-host string.
+ */
+function _buildPortalReadyMessage() {
+  const { portalUrl } = require('../config/branding');
+  const portal = portalUrl();
+  if (!portal) return 'Your portal will be available soon.';
+  // Strip protocol for readability in the WhatsApp Flow success card.
+  const host = portal.replace(/^https?:\/\//, '');
+  return `Your portal is ready at ${host}`;
+}
+
+/**
  * Handle INIT action - return PERSONAL_INFO screen with country dropdown only
  * Region is now on a separate screen, not included in INIT
  */
@@ -236,7 +250,7 @@ async function handleProfessionalInfoSubmit(userId, screenData, flowToken) {
         }
       },
       welcome_message: `Welcome, ${allData.full_name || 'Teacher'}! Your registration is complete.`,
-      portal_message: 'Your portal is ready at portal.hellorumi.ai'
+      portal_message: _buildPortalReadyMessage()
     }
   };
 
@@ -280,7 +294,7 @@ async function handleOrgDetailsSubmit(userId, screenData, flowToken) {
         }
       },
       welcome_message: `Welcome, ${stored.full_name || 'Teacher'}! Your registration is complete.`,
-      portal_message: 'Your portal is ready at portal.hellorumi.ai'
+      portal_message: _buildPortalReadyMessage()
     }
   };
 

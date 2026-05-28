@@ -64,9 +64,11 @@ describe('Branding Configuration', () => {
       });
     });
 
-    test('exports supportContact with a default value', () => {
-      expect(branding.supportContact).toBeDefined();
-      expect(typeof branding.supportContact).toBe('string');
+    test('exports supportContact as null when SUPPORT_CONTACT is unset', () => {
+      // Brand contacts have no safe default in the OSS: a missing env var
+      // makes the contact info undefined for downstream consumers, who
+      // omit the "contact support" line rather than ship a placeholder.
+      expect(branding.supportContact).toBeNull();
     });
 
     test('exports defaultLanguage as "en"', () => {
