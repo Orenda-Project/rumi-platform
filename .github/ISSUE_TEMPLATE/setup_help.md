@@ -26,8 +26,8 @@ Paste any error messages here
 ## Environment
 - **OS**: macOS / Linux / Windows
 - **Node.js version**:
-- **Tier**: Minimal / Recommended / Full
 - **Using /setup skill**: Yes / No (manual setup)
+- **Features enabled** (from `npm run doctor`):
 
 ## .setup-state.json
 If available, paste the contents of your `.setup-state.json`:

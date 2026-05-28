@@ -21,10 +21,10 @@ What you expected to happen.
 What actually happened.
 
 ## Environment
-- **Tier**: Minimal / Recommended / Full
 - **Node.js version**:
 - **Deployment**: Railway / Local / Other
 - **Feature**: Chat / Coaching / Reading Assessment / Other
+- **Features enabled** (from `npm run doctor`):
 
 ## Logs
 ```

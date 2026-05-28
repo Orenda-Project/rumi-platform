@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2026-04-03
 
+**BREAKING (vs v1.0.0):** The three-tier feature system (Minimal / Recommended /
+Full) is removed. Features are now **presence-gated**: a feature is ON iff its
+required env var(s) are set. There is no `RUMI_TIER` env var; `feature-availability.js`
+is the single source of truth. `npm run doctor` shows a per-feature ON/OFF matrix
+based on the keys you've provided.
+
 ### Added
 - **Multi-framework coaching system** — OECD, HOTS, TEACH, and FICO frameworks selectable per teacher
 - **HOTS framework** — aligned to PESRP/PECTAA official spec (16 indicators, 48 marks, 6 areas)
@@ -23,8 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 25 new coaching test scenarios across framework registry, HOTS, FICO, OECD, TEACH, report transformers, and coaching card generation (753 total tests, up from 728)
 
 ### Fixed
-- HOTS report: empty PDF when no lesson plan linked (BUG-053) — now uses raw analysis as fallback
-- HOTS evidence: was English-only; now infers subject/topic from transcript context (BUG-009)
+- HOTS report: empty PDF when no lesson plan linked — now uses raw analysis as fallback
+- HOTS evidence: was English-only; now infers subject/topic from transcript context
 - HOTS framework selector: wrong DB column used when reading user preference
 - Coaching photo flow: state mismatch, missing `photo_yes` button handler, 2-minute timeout
 

@@ -26,7 +26,7 @@ npm run simulate  # Test without WhatsApp
 - Node.js CommonJS (require/module.exports)
 - No TypeScript in bot/ (portal/ uses TypeScript)
 - Use branding.js for customizable strings
-- Use feature-tiers.js for feature gating
+- Use `bot/shared/config/feature-availability.js` for presence-based feature gating
 - Use llm-client.js for all AI calls
 
 ## Testing

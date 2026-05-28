@@ -533,7 +533,6 @@ Open `bot/shared/config/reading-benchmarks.js` and replace the threshold numbers
 | `bot/shared/services/pdf-report.service.js` | Default (PDFKit) renderer — the shared OECD/HOTS/TEACH/FICO PDF layout |
 | `bot/shared/services/coaching/templates/mewaka-report.template.js` | MEWAKA's HTML template, rendered to PDF via Playwright (`shared/utils/html-to-pdf.js`) |
 | `bot/shared/services/coaching/report-generator.service.js` | Orchestrates report generation (transform analysis → `reportData`, call the renderer, upload + send the PDF) |
-| `bot/shared/services/chart.service.js` | Chart.js chart generation (bar charts, radar charts) |
 
 ### How report design is pluggable
 
@@ -566,14 +565,21 @@ const renderers = {
 };
 ```
 
-### Adding a Radar Chart
+### Adding charts (radar, bar, etc.)
 
-1. In `chart.service.js`, add a radar chart method:
-   ```javascript
-   static async generateRadarChart(labels, scores, maxScores) { ... }
-   ```
+Chart generation is **inlined into the report templates** (HTML
+renderers can use Chart.js via a CDN tag; the PDFKit renderer draws bars
+directly with `doc.rect()`). To add a new chart to a framework's report:
 
-2. In `report-generator.service.js`, call it during report generation and embed the chart image in the PDF.
+1. For an **HTML renderer** (e.g. MEWAKA, the hero report): edit the template
+   file (`*-report.template.js`) and include the chart markup inline.
+   Chart.js can be loaded from a CDN inside the HTML — the Playwright
+   renderer at `shared/utils/html-to-pdf.js` waits for `networkidle` so
+   the chart finishes drawing before the PDF is captured.
+2. For the **PDFKit renderer** (`pdf-report.service.js`): add a draw helper
+   that uses PDFKit's primitives (`doc.rect()`, `doc.path()`) to render the
+   chart shapes directly. PDFKit doesn't support `<canvas>`, so a third-party
+   library is not required.
 
 ---
 

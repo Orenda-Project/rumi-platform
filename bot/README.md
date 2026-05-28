@@ -43,8 +43,8 @@ bot/
 | Service | File | Description |
 |---------|------|-------------|
 | LLM Client | `shared/services/llm-client.js` | OpenRouter/OpenAI integration |
-| Queue | `shared/services/queue/sqs-queue.service.js` | AWS SQS job queue |
-| Coaching | `shared/services/coaching.service.js` | OECD coaching analysis |
+| Queue | `shared/services/queue/index.js` | Pluggable via `QUEUE_DRIVER` (sqs \| bullmq) |
+| Coaching | `shared/services/coaching.service.js` | Multi-framework classroom observation (OECD, HOTS, TEACH, FICO, MEWAKA) |
 | Reading | `shared/services/reading-assessment.service.js` | Fluency assessment |
 | WhatsApp | `shared/services/whatsapp.service.js` | Message send/receive |
 

@@ -1,10 +1,13 @@
 /**
  * Register All WhatsApp Flows
  *
- * Registers all 3 WhatsApp Flows with Meta's Graph API:
- *   1. Reading Assessment  (navigate type, no endpoint)
- *   2. Attendance Setup    (endpoint type, encrypted)
- *   3. Attendance Marking  (endpoint type, encrypted)
+ * Registers all WhatsApp Flows configured in flow-configs.js with Meta's Graph
+ * API. The set of flows registered is the set in flow-configs.js (currently 9:
+ * Reading Assessment, Attendance Setup, Attendance Marking, Settings, Status,
+ * Homework Request, Edit Class, Student Videos, Pic-to-LP Confirm). Adding a
+ * new flow = adding one entry to flow-configs.js — this script picks it up
+ * automatically. Every entry is registered idempotently (flows that already
+ * exist in Meta are skipped via findFlowByName).
  *
  * Uses MetaAPI for Graph API calls and SetupState for tracking
  * registration progress. Designed for idempotency — skips flows
