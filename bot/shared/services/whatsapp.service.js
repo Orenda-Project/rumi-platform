@@ -651,6 +651,18 @@ class WhatsAppService {
       const isFilePath = mediaIdOrPath.includes('/') || mediaIdOrPath.includes('\\');
 
       if (isFilePath) {
+        // Stickers are optional. The repo ships `bot/marketing/` with a README
+        // but no binary assets — the cloner brings their own (or skips the
+        // feature). If the file isn't there, log once and return false so the
+        // caller can move on without crashing the bot.
+        if (!fs.existsSync(mediaIdOrPath)) {
+          logToFile('Sticker file not found — skipping sticker send (cosmetic)', {
+            path: mediaIdOrPath,
+            hint: 'Add a WebP sticker at this path, or set LOADING_STICKER_MEDIA_ID in .env to use a pre-uploaded Meta media ID.',
+          });
+          return false;
+        }
+
         // Upload WebP sticker to WhatsApp
         logToFile('Uploading sticker from file', { path: mediaIdOrPath });
         const formData = new FormData();

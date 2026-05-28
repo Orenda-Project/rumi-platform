@@ -54,9 +54,14 @@ const COACHING_WHATSAPP_NUMBER = process.env.COACHING_WHATSAPP_NUMBER || '';
 // Directory Paths
 const TEMP_DIR = path.join(__dirname, '../../temp');
 const LOGS_DIR = path.join(__dirname, '../../logs');
-const LOADING_STICKER_PATH = path.join(__dirname, '../../marketing/new rumi blinking.webp');
-const REGISTRATION_SUCCESS_STICKER_PATH = path.join(__dirname, '../../marketing/Registration Succesful.webp');
-const REGISTRATION_VIDEO_PATH = path.join(__dirname, '../../marketing/registrationvideo.mp4');
+
+// Loading sticker shown while a long-running feature is processing.
+// The file is OPTIONAL — `bot/marketing/` ships with a README but no binary
+// assets; the cloner brings their own WebP. WhatsAppService.sendSticker
+// existsSync-guards this path and skips the send (cosmetic, not blocking)
+// when the file isn't there. Set LOADING_STICKER_MEDIA_ID in .env to use a
+// pre-uploaded Meta media ID instead of a local file.
+const LOADING_STICKER_PATH = path.join(__dirname, '../../marketing/loading-sticker.webp');
 const REGISTRATION_VIDEO_MEDIA_ID = process.env.REGISTRATION_VIDEO_MEDIA_ID;
 
 // Test Data (for validation)
@@ -154,8 +159,6 @@ module.exports = {
   TEMP_DIR,
   LOGS_DIR,
   LOADING_STICKER_PATH,
-  REGISTRATION_SUCCESS_STICKER_PATH,
-  REGISTRATION_VIDEO_PATH,
   REGISTRATION_VIDEO_MEDIA_ID,
 
   // Test Data
