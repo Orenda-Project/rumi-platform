@@ -14,7 +14,7 @@
 
 require('dotenv').config();
 const { v4: uuidv4 } = require('uuid');
-const supabase = require('../shared/config/supabase');
+const supabase = require('../../shared/config/supabase');
 
 const TEST_ACCOUNTS = [
   {

@@ -221,6 +221,12 @@ function discoverEntries() {
   const scripts = path.join(ROOT, 'scripts');
   if (fs.existsSync(scripts)) for (const f of walkJs(scripts)) eps.add(f);
 
+  // Bot admin / deployment / setup scripts (run via `node bot/scripts/...`).
+  // Previously NOT graphed, so a broken require in one of them (e.g. a moved
+  // file whose relative path wasn't updated) was invisible to this guard.
+  const botScripts = path.join(BOT_ROOT, 'scripts');
+  if (fs.existsSync(botScripts)) for (const f of walkJs(botScripts)) eps.add(f);
+
   // ALL test files (root tests/ + bot/tests/)
   for (const t of [path.join(ROOT, 'tests'), path.join(BOT_ROOT, 'tests')]) {
     if (!fs.existsSync(t)) continue;
