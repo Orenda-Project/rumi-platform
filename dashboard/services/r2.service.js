@@ -8,15 +8,23 @@ const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 require('dotenv').config();
 
-// Initialize R2 client
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: process.env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-});
+// Lazy R2 client — resolved on first use, not at module load, so requiring
+// this service (e.g. transitively from dashboard/index.js) never depends on
+// R2 env vars being set. Mirrors the bot's lazy-client pattern + the
+// no-eager-sdk-construction guard contract.
+let _r2Client = null;
+function getR2Client() {
+  if (_r2Client) return _r2Client;
+  _r2Client = new S3Client({
+    region: 'auto',
+    endpoint: process.env.R2_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
+  });
+  return _r2Client;
+}
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
@@ -33,7 +41,7 @@ async function downloadFromR2(key) {
       Key: key,
     });
 
-    const response = await r2Client.send(command);
+    const response = await getR2Client().send(command);
 
     // Convert stream to buffer
     const chunks = [];
@@ -63,7 +71,7 @@ async function streamFromR2(key) {
       Key: key,
     });
 
-    const response = await r2Client.send(command);
+    const response = await getR2Client().send(command);
     console.log(`✅ Streaming from R2: ${key} (${response.ContentLength} bytes)`);
 
     return {
@@ -150,7 +158,7 @@ async function generatePresignedUrl(r2Url, expiresIn = 3600) {
       Key: key,
     });
 
-    const presignedUrl = await getSignedUrl(r2Client, command, { expiresIn });
+    const presignedUrl = await getSignedUrl(getR2Client(), command, { expiresIn });
     console.log(`✅ Generated presigned URL for: ${key} (expires in ${expiresIn}s)`);
     return presignedUrl;
   } catch (error) {

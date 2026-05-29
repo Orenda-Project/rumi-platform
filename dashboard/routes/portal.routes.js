@@ -32,16 +32,23 @@ const supabase = require('../config/supabase');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { generatePresignedUrl, generatePresignedUrls, isValidR2Url } = require('../services/r2.service');
 
-// Configure R2 S3 client for private PDF access
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: process.env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-  forcePathStyle: true, // Required for CloudFlare R2 (uses path-style URLs)
-});
+// Configure R2 S3 client for private PDF access. Lazy — resolved on first
+// use, not at module load, so mounting these routes never depends on R2 env
+// vars being set (mirrors the no-eager-sdk-construction guard contract).
+let _r2Client = null;
+function getR2Client() {
+  if (_r2Client) return _r2Client;
+  _r2Client = new S3Client({
+    region: 'auto',
+    endpoint: process.env.R2_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
+    forcePathStyle: true, // Required for CloudFlare R2 (uses path-style URLs)
+  });
+  return _r2Client;
+}
 
 // ============================================================================
 // RATE LIMITING (SECURITY)
@@ -1653,7 +1660,7 @@ router.get('/reading-assessment/:id/pdf', requirePortalAuth, async (req, res) =>
       Key: key,
     });
 
-    const response = await r2Client.send(command);
+    const response = await getR2Client().send(command);
 
     // Generate filename from assessment data
     const dateStr = new Date(assessment.created_at).toISOString().split('T')[0];

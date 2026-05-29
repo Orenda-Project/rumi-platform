@@ -12,9 +12,24 @@ require('dotenv').config();
 const OpenAI = require('openai');
 const { withCache } = require('./gpt-cache.service');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Lazy OpenAI client. The openai SDK (v4) THROWS at construction when
+// apiKey is undefined, so constructing at module load crashed the entire
+// dashboard at boot for any clone that hadn't set OPENAI_API_KEY (and this
+// module is statically required at the top of dashboard/index.js). Resolve
+// the client on first use instead, surfacing a friendly EX_CONFIG error only
+// if transcript processing is actually invoked without a key.
+let _openai = null;
+function getOpenAI() {
+  if (_openai) return _openai;
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    const err = new Error('OPENAI_API_KEY not configured — transcript processing is unavailable');
+    err.code = 'EX_CONFIG';
+    throw err;
+  }
+  _openai = new OpenAI({ apiKey });
+  return _openai;
+}
 
 /**
  * System prompt for transcript processing
@@ -617,7 +632,7 @@ REMEMBER:
       'transcript',
       cacheContent,
       async () => {
-        const response = await openai.chat.completions.create({
+        const response = await getOpenAI().chat.completions.create({
           model: 'gpt-4o-mini-2024-07-18', // Specific model version supporting Structured Outputs
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
@@ -1021,7 +1036,7 @@ Your JSON response MUST include these top-level fields:
 }`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: 'gpt-4o-2024-11-20', // Use latest GPT-4o (GPT-5 class model)
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },

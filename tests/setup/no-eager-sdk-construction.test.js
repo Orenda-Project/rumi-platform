@@ -6,10 +6,10 @@
  * isn't set, even if NO code path that requires the SDK is ever invoked.
  *
  * This guard locks the lazy-init contract: every SDK constructor in shipped
- * `bot/shared/` and `bot/workers/` must be wrapped in a function (so that
- * cred-missing errors fire at call time, not at require time), via the
- * `lazyClient()` helper or an equivalent inline pattern (static getter,
- * function-scoped `new`, etc.).
+ * `bot/shared/`, `bot/workers/`, and `dashboard/` must be wrapped in a
+ * function (so that cred-missing errors fire at call time, not at require
+ * time), via the `lazyClient()` helper or an equivalent inline pattern
+ * (static getter, function-scoped `new`, etc.).
  *
  * Detection is regex-based against the column-0 anti-pattern:
  *
@@ -23,7 +23,9 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '../..');
-const SCAN_DIRS = ['bot/shared', 'bot/workers'].map((d) => path.join(ROOT, d));
+// Includes dashboard/ — it is part of the OSS distribution and was crashing
+// at cold-boot on an unset OPENAI_API_KEY (Wave 6 bd-1878).
+const SCAN_DIRS = ['bot/shared', 'bot/workers', 'dashboard'].map((d) => path.join(ROOT, d));
 
 // SDK classes whose eager construction at module-load is the bug pattern.
 // Add new SDKs here when the bot starts using them.
@@ -62,7 +64,7 @@ function findJsFiles(dir) {
 }
 
 describe('No eager SDK construction at module-load', () => {
-  it('every SDK client in bot/shared and bot/workers is lazy-initialised', () => {
+  it('every SDK client in bot/shared, bot/workers, and dashboard is lazy-initialised', () => {
     const offenders = [];
     const files = SCAN_DIRS.flatMap(findJsFiles);
 
