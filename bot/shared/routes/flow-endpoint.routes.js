@@ -64,6 +64,11 @@ const {
   handleQuizFlowDataExchange,
   handleQuizFlowBack
 } = require('./quiz-flow-endpoint');
+const {
+  handleExamConfirmInit,
+  handleExamConfirmDataExchange,
+  handleExamConfirmBack
+} = require('./exam-confirm-endpoint');
 
 /**
  * Handle attendance marking flow data requests
@@ -848,6 +853,40 @@ async function handleEditClassRequest(data) {
   if (action === 'data_exchange')             return await handleEditClassDataExchange(userId, screen, screenData, flow_token);
   if (action === 'BACK')                      return await handleEditClassBack(userId, screen, flow_token);
   logToFile('Unknown edit-class flow action', { action });
+  return FlowEncryptionService.createErrorResponse('Unknown action');
+}
+
+// ============================================================
+// EXAM-CHECKER "CONFIRM STUDENTS" FLOW ENDPOINT
+// flow_token IS the exam session id (set by the orchestrator at launch).
+// ============================================================
+
+router.post('/exam-confirm-students', async (req, res) => {
+  try {
+    if (!FlowEncryptionService.isConfigured()) {
+      logToFile('Flow encryption not configured', { endpoint: 'exam-confirm-students' });
+      return res.status(500).json({ error: 'Flow encryption not configured' });
+    }
+    const encryptedResponse = await FlowEncryptionService.processEncryptedRequest(
+      req.body,
+      async (decryptedData) => await handleExamConfirmRequest(decryptedData)
+    );
+    res.set('Content-Type', 'text/plain');
+    res.send(encryptedResponse);
+  } catch (error) {
+    logToFile('Exam-confirm flow endpoint error', { endpoint: 'exam-confirm-students', error: error.message, stack: error.stack });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function handleExamConfirmRequest(data) {
+  const { action, flow_token, screen, data: screenData } = data;
+  logToFile('Handling exam-confirm request', { action, screen, hasFlowToken: !!flow_token });
+  if (action === 'ping') return FlowEncryptionService.handlePing();
+  if (action === 'INIT' || action === 'init') return await handleExamConfirmInit(flow_token);
+  if (action === 'data_exchange')             return await handleExamConfirmDataExchange(flow_token, screen, screenData);
+  if (action === 'BACK')                      return await handleExamConfirmBack(flow_token);
+  logToFile('Unknown exam-confirm flow action', { action });
   return FlowEncryptionService.createErrorResponse('Unknown action');
 }
 

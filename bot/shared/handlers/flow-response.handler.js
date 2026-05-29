@@ -123,6 +123,24 @@ async function handleFlowResponse(message, phoneNumber, userId) {
       return await handleAttendanceMarkingFlow(message, phoneNumber, userId);
     }
 
+    // Exam-checker "confirm students" — an endpoint flow whose NFM completion
+    // must DRIVE the orchestrator forward (confirm → detect questions → grade),
+    // not just ack. The endpoint put the confirmed student objects into the
+    // completion payload; parse them and hand to the exam handler.
+    const EXAM_CONFIRM_FLOW_ID = process.env.EXAM_CHECKER_STUDENTS_FLOW_ID || '';
+    if (flowId && EXAM_CONFIRM_FLOW_ID && flowId === EXAM_CONFIRM_FLOW_ID) {
+      const ExamCheckerHandler = require('./exam-checker.handler');
+      let flowResponse = {};
+      try {
+        flowResponse = JSON.parse(message.interactive?.nfm_reply?.response_json || '{}');
+      } catch (parseErr) {
+        logToFile('⚠️ exam-confirm response_json parse failed', { flowId, error: parseErr.message });
+      }
+      // handleExamFlow only reads user.id, so a minimal shape avoids a DB round-trip.
+      const result = await ExamCheckerHandler.handleExamFlow(flowId, flowResponse, phoneNumber, { id: userId });
+      return result?.handled !== false;
+    }
+
     // Endpoint-only flows: the corresponding `/api/flows/<path>` route has
     // ALREADY persisted the teacher's input by the time we see NFM_REPLY.
     // We log completion (useful when debugging "did the teacher actually

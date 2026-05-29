@@ -93,9 +93,9 @@ describe('register-all-flows', () => {
   // FLOW_CONFIGS
   // -----------------------------------------------------------------------
   describe('FLOW_CONFIGS', () => {
-    it('exports an array of all 11 registerable flow configurations', () => {
+    it('exports an array of all 12 registerable flow configurations', () => {
       expect(Array.isArray(FLOW_CONFIGS)).toBe(true);
-      expect(FLOW_CONFIGS).toHaveLength(11);
+      expect(FLOW_CONFIGS).toHaveLength(12);
     });
 
     it('includes Reading Assessment as a navigate type with no endpointPath', () => {
@@ -361,10 +361,10 @@ describe('register-all-flows', () => {
       expect(Array.isArray(result.errors)).toBe(true);
     });
 
-    it('registers all 11 flows when none exist and endpointBase is provided', async () => {
+    it('registers all flows when none exist and endpointBase is provided', async () => {
       const result = await registerAllFlows(DEFAULT_OPTS);
 
-      expect(result.registered).toHaveLength(11);
+      expect(result.registered).toHaveLength(FLOW_CONFIGS.length);
       expect(result.skipped).toHaveLength(0);
       expect(result.errors).toHaveLength(0);
     });
@@ -406,7 +406,7 @@ describe('register-all-flows', () => {
 
       expect(result.skipped).toHaveLength(1);
       expect(result.skipped[0].name).toBe('Reading Assessment');
-      expect(result.registered).toHaveLength(10);
+      expect(result.registered).toHaveLength(FLOW_CONFIGS.length - 1);
     });
 
     it('skips all flows when all already exist', async () => {
@@ -417,7 +417,7 @@ describe('register-all-flows', () => {
 
       const result = await registerAllFlows(DEFAULT_OPTS);
 
-      expect(result.skipped).toHaveLength(11);
+      expect(result.skipped).toHaveLength(FLOW_CONFIGS.length);
       expect(result.registered).toHaveLength(0);
       expect(result.errors).toHaveLength(0);
     });
@@ -449,7 +449,7 @@ describe('register-all-flows', () => {
       // Reading Assessment should register, attendance flows should be skipped
       expect(result.registered).toHaveLength(1);
       expect(result.registered[0].name).toBe('Reading Assessment');
-      expect(result.skipped).toHaveLength(10);
+      expect(result.skipped).toHaveLength(FLOW_CONFIGS.length - 1);
       expect(result.skipped.map((s) => s.name)).toContain('Attendance Setup');
       expect(result.skipped.map((s) => s.name)).toContain('Attendance Marking');
     });
@@ -479,7 +479,7 @@ describe('register-all-flows', () => {
 
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0].name).toBe('Reading Assessment');
-      expect(result.registered).toHaveLength(10);
+      expect(result.registered).toHaveLength(FLOW_CONFIGS.length - 1);
     });
 
     it('collects errors with flow name and error message', async () => {
@@ -491,7 +491,7 @@ describe('register-all-flows', () => {
 
       const result = await registerAllFlows(DEFAULT_OPTS);
 
-      expect(result.errors).toHaveLength(11);
+      expect(result.errors).toHaveLength(FLOW_CONFIGS.length);
       for (const err of result.errors) {
         expect(err).toHaveProperty('name');
         expect(err).toHaveProperty('error');
@@ -504,7 +504,7 @@ describe('register-all-flows', () => {
     it('calls state.setFlow for each successfully registered flow', async () => {
       await registerAllFlows(DEFAULT_OPTS);
 
-      expect(mockState.setFlow).toHaveBeenCalledTimes(11);
+      expect(mockState.setFlow).toHaveBeenCalledTimes(FLOW_CONFIGS.length);
     });
 
     it('calls state.setFlow for skipped (existing) flows too', async () => {
@@ -515,7 +515,7 @@ describe('register-all-flows', () => {
 
       await registerAllFlows(DEFAULT_OPTS);
 
-      expect(mockState.setFlow).toHaveBeenCalledTimes(11);
+      expect(mockState.setFlow).toHaveBeenCalledTimes(FLOW_CONFIGS.length);
     });
 
     it('does not call state.setFlow for errored flows', async () => {

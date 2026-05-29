@@ -185,21 +185,32 @@ class ExamCheckerOrchestrator {
         questionsFound: questions.length
       });
 
-      // Launch WhatsApp Flow for student confirmation
-      return {
-        text: `✅ Found ${students.length} student${students.length !== 1 ? 's' : ''} in your exams!`,
-        flow: {
-          id: process.env.EXAM_CHECKER_STUDENTS_FLOW_ID || 'exam_checker_confirm_students',
-          data: {
-            students: students.map((s, i) => ({
-              id: i,
-              name: s.name,
-              pages: s.pageNumbers?.length || 1,
-              confidence: s.confidence
-            }))
-          }
-        }
-      };
+      // Launch the "confirm students" WhatsApp Flow when it's registered.
+      // It's a data_exchange flow — the endpoint (/api/flows/exam-confirm-students)
+      // serves the detected-student list on INIT keyed off the flow_token, which
+      // IS the session id. We pass NO inline data; just the token.
+      const confirmFlowId = process.env.EXAM_CHECKER_STUDENTS_FLOW_ID;
+      if (confirmFlowId) {
+        return {
+          flow: {
+            id: confirmFlowId,
+            flowToken: session.id,
+            header: 'Confirm Students',
+            body: `✅ I found ${students.length} student${students.length !== 1 ? 's' : ''} in your exams. Tap below to confirm the names before I grade them.`,
+            buttonText: 'Confirm Students',
+          },
+        };
+      }
+
+      // Graceful degrade: the confirm Flow isn't registered on this deployment
+      // (EXAM_CHECKER_STUDENTS_FLOW_ID unset). Rather than dead-end the teacher,
+      // auto-confirm every detected student and proceed straight to grading.
+      logToFile('ℹ️ EXAM_CHECKER_STUDENTS_FLOW_ID unset — auto-confirming detected students', {
+        sessionId: session.id, count: students.length,
+      });
+      await ExamSessionService.update(session.id, { confirmed_students: students });
+      await ExamSessionService.updateStatus(session.id, SESSION_STATES.DETECTING_QUESTIONS);
+      return this.handleQuestionDetection(session, userId);
     } catch (error) {
       logToFile('❌ OCR processing failed', { sessionId: session.id, error: error.message });
       await ExamSessionService.updateStatus(session.id, SESSION_STATES.ERROR, { error_message: error.message });
@@ -214,7 +225,25 @@ class ExamCheckerOrchestrator {
     const ExamSessionService = require('./exam-session.service');
 
     if (message.flowResponse) {
-      const confirmedStudents = message.flowResponse.confirmed_students;
+      const raw = message.flowResponse.confirmed_students || [];
+      const detected = session.detected_students || [];
+
+      // The confirm Flow returns the selected option ids (stringified
+      // detected-student indices — see exam-confirm-endpoint). Map them back
+      // to the full detected-student objects the grader needs. Be defensive:
+      // accept already-mapped objects too, and if nothing resolves (e.g. an
+      // unexpected payload shape) fall back to confirming all detected
+      // students rather than losing the session.
+      let confirmedStudents;
+      if (raw.length && typeof raw[0] === 'object') {
+        confirmedStudents = raw;
+      } else {
+        confirmedStudents = raw.map((id) => detected[Number(id)]).filter(Boolean);
+      }
+      if (confirmedStudents.length === 0) {
+        confirmedStudents = detected;
+      }
+
       await ExamSessionService.update(session.id, { confirmed_students: confirmedStudents });
       await ExamSessionService.updateStatus(session.id, SESSION_STATES.DETECTING_QUESTIONS);
 

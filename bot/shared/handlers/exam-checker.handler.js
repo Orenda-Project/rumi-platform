@@ -112,7 +112,16 @@ async function handleExamText(message, from, user) {
       if (response.interactive) {
         await WhatsAppService.sendInteractiveMessage(from, response.interactive);
       } else if (response.flow) {
-        await WhatsAppService.sendFlowMessage(from, response.flow.id, response.flow.data);
+        // data_exchange flow — pass the flow_token; the endpoint serves the
+        // screen data on INIT. (Previously called a method that did not exist.)
+        await WhatsAppService.sendFlow(from, {
+          flowId: response.flow.id,
+          flowToken: response.flow.flowToken,
+          header: response.flow.header,
+          body: response.flow.body,
+          buttonText: response.flow.buttonText || 'Open',
+          footer: 'Powered by Rumi',
+        });
       } else {
         await WhatsAppService.sendMessage(from, response.text);
       }
@@ -240,7 +249,16 @@ async function handleExamButton(buttonId, from, user) {
       if (response.interactive) {
         await WhatsAppService.sendInteractiveMessage(from, response.interactive);
       } else if (response.flow) {
-        await WhatsAppService.sendFlowMessage(from, response.flow.id, response.flow.data);
+        // data_exchange flow — pass the flow_token; the endpoint serves the
+        // screen data on INIT. (Previously called a method that did not exist.)
+        await WhatsAppService.sendFlow(from, {
+          flowId: response.flow.id,
+          flowToken: response.flow.flowToken,
+          header: response.flow.header,
+          body: response.flow.body,
+          buttonText: response.flow.buttonText || 'Open',
+          footer: 'Powered by Rumi',
+        });
       } else {
         await WhatsAppService.sendMessage(from, response.text);
       }
@@ -303,7 +321,16 @@ async function handleExamFlow(flowId, flowResponse, from, user) {
       if (response.interactive) {
         await WhatsAppService.sendInteractiveMessage(from, response.interactive);
       } else if (response.flow) {
-        await WhatsAppService.sendFlowMessage(from, response.flow.id, response.flow.data);
+        // data_exchange flow — pass the flow_token; the endpoint serves the
+        // screen data on INIT. (Previously called a method that did not exist.)
+        await WhatsAppService.sendFlow(from, {
+          flowId: response.flow.id,
+          flowToken: response.flow.flowToken,
+          header: response.flow.header,
+          body: response.flow.body,
+          buttonText: response.flow.buttonText || 'Open',
+          footer: 'Powered by Rumi',
+        });
       } else {
         await WhatsAppService.sendMessage(from, response.text);
       }

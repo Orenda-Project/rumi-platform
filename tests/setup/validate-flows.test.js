@@ -84,6 +84,10 @@ function buildCompleteState(overrides = {}) {
         flowId: 'flow_reg_11', status: 'PUBLISHED', envVar: 'REGISTRATION_FLOW_ID',
         type: 'endpoint', endpointPath: '/api/flows/registration', registeredAt: now,
       },
+      'Exam Checker Confirm Students': {
+        flowId: 'flow_exam_12', status: 'PUBLISHED', envVar: 'EXAM_CHECKER_STUDENTS_FLOW_ID',
+        type: 'endpoint', endpointPath: '/api/flows/exam-confirm-students', registeredAt: now,
+      },
     },
     templates: {
       welcome_message: { templateId: 'tpl_1', status: 'APPROVED', registeredAt: now },
@@ -150,7 +154,7 @@ describe('validateSetup', () => {
   // Valid setup — all flows PUBLISHED, encryption configured
   // -----------------------------------------------------------------------
   describe('valid setup', () => {
-    it('returns valid=true when all 3 flows are PUBLISHED and encryption is configured', async () => {
+    it('returns valid=true when all flows are PUBLISHED and encryption is configured', async () => {
       fs.writeFileSync(statePath, JSON.stringify(buildCompleteState()));
 
       mockGetFlowDetails.mockResolvedValue({
@@ -184,7 +188,7 @@ describe('validateSetup', () => {
         statePath,
       });
 
-      expect(mockGetFlowDetails).toHaveBeenCalledTimes(11);
+      expect(mockGetFlowDetails).toHaveBeenCalledTimes(Object.keys(buildCompleteState().flows).length);
       expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_ra_1');
       expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_as_2');
       expect(mockGetFlowDetails).toHaveBeenCalledWith('flow_am_3');
