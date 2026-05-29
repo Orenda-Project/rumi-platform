@@ -504,15 +504,18 @@ async function approvePlan(planId, approverId, notes = '') {
       return updateResult;
     }
 
-    // Log the approval
-    await supabase
+    // Log the approval. Schema columns are (plan_id, action, performed_by,
+    // reason) — NOT (user_id, notes). Check the error so a future drift fails
+    // loud instead of silently dropping the audit row.
+    const { error: logError } = await supabase
       .from('byof_approval_log')
       .insert({
         plan_id: planId,
         action: 'approved',
-        user_id: approverId,
-        notes
+        performed_by: approverId,
+        reason: notes
       });
+    if (logError) console.error('⚠️ byof approval log insert failed (approve):', logError.message);
 
     return { success: true, plan: updateResult.plan };
   } catch (err) {
@@ -540,15 +543,17 @@ async function rejectPlan(planId, rejecterId, reason) {
       return updateResult;
     }
 
-    // Log the rejection
-    await supabase
+    // Log the rejection. Schema columns are (plan_id, action, performed_by,
+    // reason) — NOT (user_id, notes).
+    const { error: logError } = await supabase
       .from('byof_approval_log')
       .insert({
         plan_id: planId,
         action: 'rejected',
-        user_id: rejecterId,
-        notes: reason
+        performed_by: rejecterId,
+        reason: reason
       });
+    if (logError) console.error('⚠️ byof approval log insert failed (reject):', logError.message);
 
     return { success: true, plan: updateResult.plan };
   } catch (err) {
@@ -1014,7 +1019,7 @@ async function getRecentActivity(limit = 10) {
     const { data: approvals, error: approvalsError } = await supabase
       .from('byof_approval_log')
       .select(`
-        id, action, notes, created_at,
+        id, action, reason, created_at,
         user:dashboard_users(id, username),
         plan:byof_plans(id, summary)
       `)

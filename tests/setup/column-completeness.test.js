@@ -21,7 +21,12 @@ const fs = require('fs');
 const path = require('path');
 
 const SCHEMA_PATH = path.resolve(__dirname, '../../infrastructure/supabase/00_complete-schema.sql');
-const BOT_DIR = path.resolve(__dirname, '../../bot');
+// Scan both the bot and the dashboard — the dashboard is part of the OSS
+// distribution and grew its own schema↔code drift unguarded (Wave 6 bd-1876/1877).
+const SCAN_DIRS = [
+  path.resolve(__dirname, '../../bot'),
+  path.resolve(__dirname, '../../dashboard'),
+];
 
 // ── Reviewed allowlist ───────────────────────────────────────────────────────
 // (table -> columns) that the guard should NOT flag, each with a verified reason.
@@ -55,6 +60,16 @@ const ALLOWLIST = {
   // Nested keys inside the users.preferences / screen-data objects (parser artifact);
   // users stores language in preferred_language + preferences, grade in grades_taught.
   users: ['grade', 'language'],
+  // ── dashboard/ parser artifacts (verified Wave 6 bd-1876/1877) ──────────────
+  // `grade_level` is a real column on reading_assessments (and is selected there:
+  // queries.js:1365, portal.routes.js:1443) — chain-attributed to lesson_plans by
+  // proximity. `lessonplans` is the `lessonPlans` result var (portal.routes.js:844/857)
+  // lowercased. `limit`/`page` are `parseInt(req.query.{limit,page})` pagination vars
+  // feeding `.range(offset, offset+limit-1)`, not columns.
+  lesson_plans: ['grade_level', 'lessonplans', 'limit', 'page'],
+  // `videoswithpresignedurls` is a result var; `limit`/`page` are pagination vars
+  // (portal.routes.js video listing) — parser artifacts, not columns.
+  video_requests: ['limit', 'page', 'videoswithpresignedurls'],
 };
 
 // ── Parser ───────────────────────────────────────────────────────────────────
@@ -143,7 +158,7 @@ describe('Column Completeness', () => {
     const refs = {}; // table -> Set(col)
     const add = (t, c) => { (refs[t] = refs[t] || new Set()).add(c); };
 
-    for (const file of findJsFiles(BOT_DIR)) {
+    for (const file of SCAN_DIRS.flatMap(findJsFiles)) {
       const c = fs.readFileSync(file, 'utf-8');
       let m;
       const iu = /\.(insert|update|upsert)\s*\(/g;

@@ -751,11 +751,13 @@ async function getStatsForDateRange(startDate, endDate) {
       .gte('created_at', startISO)
       .lte('created_at', endISO),
 
-    // Users with completed registration in period
+    // Users with completed registration in period.
+    // Column is `registration_completed` (BOOLEAN) — there is no
+    // `registration_status` text column on `users`.
     supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
-      .eq('registration_status', 'completed')
+      .eq('registration_completed', true)
       .gte('created_at', startISO)
       .lte('created_at', endISO),
 

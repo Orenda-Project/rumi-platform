@@ -20,6 +20,18 @@ async function getOrCreateUser(phoneNumber) {
       .single();
 
     if (existingUser) {
+      // Stamp the user's most-recent INBOUND message time on every message.
+      // This feeds the WhatsApp 24-hour customer-service-window check used by
+      // dashboard broadcasts (isWithinServiceWindow). Best-effort + isolated in
+      // its own try/catch so a transient failure neither blocks message handling
+      // nor falls through to the create path below.
+      const nowIso = new Date().toISOString();
+      try {
+        await supabase.from('users').update({ last_message_at: nowIso }).eq('id', existingUser.id);
+        existingUser.last_message_at = nowIso;
+      } catch (stampErr) {
+        console.error('last_message_at update failed:', stampErr.message);
+      }
       return existingUser;
     }
 
@@ -30,6 +42,7 @@ async function getOrCreateUser(phoneNumber) {
         phone_number: phoneNumber,
         registration_completed: false,
         created_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -51,6 +64,7 @@ async function getOrCreateUser(phoneNumber) {
           phone_number: phoneNumber,
           registration_completed: false,
           created_at: new Date().toISOString(),
+          last_message_at: new Date().toISOString(),
         })
         .select()
         .single();

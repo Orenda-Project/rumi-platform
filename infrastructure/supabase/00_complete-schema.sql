@@ -3652,6 +3652,33 @@ ALTER TABLE conversations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT 
 -- nonexistent table; the handler call sites now target chat_sessions.)
 ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS conversation_state JSONB;
 
+-- byof_plans: the BYOF approval workflow (dashboard/services/byof.service.js)
+-- updates plans on every state transition (.update({ status, updated_at })) and
+-- orders plan lists by updated_at. The column predated the consolidated schema
+-- (byof_sessions had updated_at + a trigger; byof_plans did not), so every
+-- approve/reject/markStaging/markComplete/linkPR bailed on a "column does not
+-- exist" error.
+ALTER TABLE byof_plans ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+DROP TRIGGER IF EXISTS byof_plans_updated_at ON byof_plans;
+CREATE TRIGGER byof_plans_updated_at
+    BEFORE UPDATE ON byof_plans
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- dashboard_users: byof.service.getApproversForNotification() selects
+-- phone_number to WhatsApp-notify approvers; the column was never defined, so
+-- the approver-notification fetch errored.
+ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20);
+
+-- users.last_message_at: timestamp of the user's most recent INBOUND message.
+-- Feeds the WhatsApp 24-hour customer-service-window check
+-- (dashboard/services/whatsapp-broadcast.service.js isWithinServiceWindow) that
+-- decides free-form vs template broadcast sends. No existing column carried this
+-- meaning (first_message_at is the opposite end; updated_at changes on any
+-- profile edit). The broadcast user-fetch SELECTed it and threw on the missing
+-- column. Populated on every inbound by bot-helpers.getOrCreateUser.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ;
+
 -- =============================================================================
 -- Function reconcile (Phase 5) — RPCs the bot invokes via supabase.rpc() that the
 -- consolidated schema predated. CREATE OR REPLACE keeps it idempotent. (get_column_info
