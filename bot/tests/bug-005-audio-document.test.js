@@ -28,7 +28,6 @@ jest.mock('../shared/config/supabase', () => ({
 jest.mock('../shared/services/whatsapp.service', () => ({
   sendMessage: jest.fn(),
   downloadMedia: jest.fn().mockResolvedValue(Buffer.from('fake audio data')),
-  getMediaUrl: jest.fn().mockResolvedValue('https://example.com/audio.ogg'),
   startContinuousTypingIndicator: jest.fn().mockReturnValue({ stop: jest.fn() }),
   sendAudio: jest.fn().mockResolvedValue(true)
 }));

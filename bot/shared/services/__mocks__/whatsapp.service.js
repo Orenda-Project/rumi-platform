@@ -16,6 +16,7 @@ const WhatsAppService = {
   sendMessage: jest.fn().mockResolvedValue({ success: true, messageId: 'mock_msg_id' }),
   sendVoiceMessage: jest.fn().mockResolvedValue({ success: true }),
   sendImage: jest.fn().mockResolvedValue({ success: true }),
+  sendImageFromUrl: jest.fn().mockResolvedValue(true),
   sendDocument: jest.fn().mockResolvedValue({ success: true }),
   sendVideo: jest.fn().mockResolvedValue({ success: true }),
   sendSticker: jest.fn().mockResolvedValue({ success: true }),
@@ -39,7 +40,6 @@ const WhatsAppService = {
   // Media handling
   downloadMedia: jest.fn().mockResolvedValue(Buffer.from('mock audio data')),
   uploadMedia: jest.fn().mockResolvedValue({ id: 'mock_media_id' }),
-  getMediaUrl: jest.fn().mockResolvedValue('https://mock-url.com/media'),
 
   // Message marking
   markAsRead: jest.fn().mockResolvedValue({ success: true }),

@@ -72,8 +72,7 @@ async function handleVoiceMessage(message, from, user = null) {
           const userLanguage = user.preferred_language || 'en';
 
           // Download and transcribe the audio to get the name
-          const audioUrl = await WhatsAppService.getMediaUrl(audioId);
-          const audioBuffer = await WhatsAppService.downloadMedia(audioUrl);
+          const audioBuffer = await WhatsAppService.downloadMedia(audioId);
 
           // Transcribe with OpenAI Whisper
           const transcriptText = await AudioService.transcribeAudio(audioBuffer, userLanguage);
@@ -126,8 +125,7 @@ async function handleVoiceMessage(message, from, user = null) {
           logToFile('📋 Attendance voice input detected', { userId: user.id, sessionState: attendanceState.state });
 
           // Download the audio
-          const audioUrl = await WhatsAppService.getMediaUrl(audioId);
-          const audioBuffer = await WhatsAppService.downloadMedia(audioUrl);
+          const audioBuffer = await WhatsAppService.downloadMedia(audioId);
 
           // Save to temp file for processing
           const tempAudioPath = path.join(TEMP_DIR, `attendance_${user.id}_${Date.now()}.ogg`);

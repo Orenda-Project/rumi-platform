@@ -446,6 +446,110 @@ class WhatsAppService {
   }
 
   /**
+   * Send an image from a (typically R2) URL via WhatsApp.
+   * R2 URLs are private — WhatsApp can't fetch them directly (see the R2 note
+   * in sendImageWithButtons) — so we download the bytes and hand the temp file
+   * to sendImage, which uploads it to the Media API. Mirrors sendDocumentFromUrl
+   * and sendAudioFromUrl.
+   * @param {string} to - Recipient phone number
+   * @param {string} imageUrl - URL of the image in R2 storage
+   * @param {string} caption - Optional caption
+   * @returns {Promise<boolean>}
+   */
+  static async sendImageFromUrl(to, imageUrl, caption = '') {
+    const path = require('path');
+    const tempDir = path.join(__dirname, '../../temp');
+
+    try {
+      // Extract R2 key from URL and download using R2 client
+      logToFile('Downloading image from R2', { imageUrl });
+      const key = extractKeyFromUrl(imageUrl);
+      const imageBuffer = await downloadFromR2(key);
+
+      // Save to temp file
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      const tempFilePath = path.join(tempDir, `img_${Date.now()}.png`);
+      fs.writeFileSync(tempFilePath, imageBuffer);
+
+      logToFile('Image downloaded from R2, sending to WhatsApp', { tempFilePath, size: imageBuffer.length });
+
+      // tempFilePath contains '/' so sendImage takes the upload-file branch.
+      const result = await this.sendImage(to, tempFilePath, caption);
+
+      // Clean up temp file
+      if (fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
+      }
+
+      return result;
+    } catch (error) {
+      logToFile('❌ Error sending image from URL', {
+        error: error.message,
+        imageUrl,
+        stack: error.stack
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Send an approved WhatsApp template message.
+   * Used for paid utility/marketing sends outside the 24h customer-service
+   * window (e.g. the quiz invite to cold parents). The template must already be
+   * approved in the WABA — a clone without it registered gets a clear Meta
+   * "template not found" error logged here and a false return (the caller
+   * continues); it is a deployment-config gap, not a code bug.
+   * @param {string} to - Recipient phone number
+   * @param {string} templateName - Approved template name
+   * @param {string} languageCode - Template language code (e.g. 'en', 'ur')
+   * @param {Array} components - Template components (header/body/button params)
+   * @returns {Promise<boolean>}
+   */
+  static async sendTemplate(to, templateName, languageCode, components = []) {
+    try {
+      const payload = {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          ...(components && components.length ? { components } : {}),
+        },
+      };
+
+      const response = await axios.post(
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      logToFile('✅ Template message sent', {
+        to: to.slice(-4),
+        templateName,
+        languageCode,
+        response: response.data,
+      });
+      return true;
+    } catch (error) {
+      logToFile('❌ Error sending template message', {
+        error: error.message,
+        errorDetails: error.response?.data,
+        templateName,
+        languageCode,
+      });
+      return false;
+    }
+  }
+
+  /**
    * Send a video message via WhatsApp
    * @param {string} to - Recipient phone number
    * @param {Buffer} videoBuffer - Video file buffer
