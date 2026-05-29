@@ -10,9 +10,11 @@
  *
  * Detection: scan the actively-maintained coaching/ subdirectory for
  * `WhatsAppService.sendMessage(..., 'literal English string')`. The
- * legacy `coaching.service.js` monolith is allowlisted with an explicit
- * "to be removed in a follow-up cleanup" note — its strings duplicate
- * those already migrated to the catalog and the file is on its way out.
+ * allowlist is now EMPTY — the legacy `coaching.service.js` monolith that
+ * used to hold un-catalogued English was deleted (it was dead code: its
+ * only consumer, the never-started `coaching-processor.js` worker, was
+ * removed in the same change). The i18n contract is therefore fully
+ * closed on the live coaching path (orchestrator → split services).
  *
  * Pragmatic regex: we flag a string-literal second argument to
  * `WhatsAppService.sendMessage(` only when it starts with a capital
@@ -30,17 +32,10 @@ const ROOT = path.resolve(__dirname, '../..');
 const COACHING_DIR = path.join(ROOT, 'bot/shared/services/coaching');
 
 // Files we deliberately do NOT scan in this guard.
-// (Allowlist intent: empty by default. Add an entry only with a justifying
-// comment + a follow-up bd to remove the entry.)
-const ALLOWLIST = new Map([
-  // Legacy monolith — every string here is duplicated in one of the
-  // newer files (transcription-processor / analysis-processor /
-  // report-generator / coaching-session / reflective-conversation /
-  // lesson-plan-processor). The newer files are the path forward; the
-  // monolith stays until the coaching-processor worker dispatches to
-  // the split services directly. Tracked separately as follow-up.
-  [path.join(ROOT, 'bot/shared/services/coaching.service.js'), 'legacy monolith, duplicate strings'],
-]);
+// EMPTY by default — and it must stay empty. The legacy monolith allowlist
+// entry was removed when the monolith itself was deleted (dead code). Add an
+// entry only with a justifying comment + a follow-up bd to remove it.
+const ALLOWLIST = new Map([]);
 
 // Patterns for "user-facing English prose": starts with a capital letter or
 // a leading emoji / step symbol. Excludes short tags like 'json', 'png', etc.

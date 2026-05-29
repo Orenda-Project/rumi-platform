@@ -1,8 +1,8 @@
 /**
  * Reflective-conversation v12 wiring (Wave 3 PR δ).
  *
- * Locks: the live reflective-conversation flow (both `coaching.service.js` and
- * the standalone `reflective-conversation.service.js`) now reads
+ * Locks: the live reflective-conversation flow (`reflective-conversation.service.js`,
+ * reached via coaching-orchestrator.service.js) reads
  * `analysis_data.reflective_corpus` (from bd-1842) and calls
  * `_generateReflectiveQuestionV12` with the corpus + adapted chain history,
  * NOT the legacy single-shot `generateReflectiveQuestion`.
@@ -31,9 +31,12 @@ describe('Reflective-conversation v12 wiring — source-level guard', () => {
   const path = require('path');
   const ROOT = path.resolve(__dirname, '../..');
 
+  // Only the split service remains — the legacy `coaching.service.js`
+  // monolith (a second consumer this guard used to cover) was deleted as
+  // dead code in Wave 6 (bd-1873). The live reflective path is the split
+  // service, reached via coaching-orchestrator.service.js.
   const CONSUMER_FILES = [
     'bot/shared/services/coaching/reflective-conversation.service.js',
-    'bot/shared/services/coaching.service.js',
   ];
 
   for (const file of CONSUMER_FILES) {
