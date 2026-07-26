@@ -93,6 +93,16 @@ const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'cgSgspJ2msm6clMC
 const ELEVENLABS_SPANISH_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_ES || 'vYui54mlc1I9tFZBBz4i'; // Cony Iglesias (Spanish)
 const ELEVENLABS_ARABIC_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_AR || '4wf10lgibMnboGJGCLrP'; // Farah (Arabic)
 
+// India-market voice IDs (eleven_v3 is multilingual). These default to the shared
+// multilingual voice; set a native-verified per-language voice via env before the
+// India launch. OpenAI tts-1 is the automatic fallback (see elevenlabs.service.js).
+const ELEVENLABS_HINDI_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_HI || ELEVENLABS_VOICE_ID;
+const ELEVENLABS_BENGALI_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_BN || ELEVENLABS_VOICE_ID;
+const ELEVENLABS_MARATHI_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_MR || ELEVENLABS_VOICE_ID;
+const ELEVENLABS_TELUGU_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_TE || ELEVENLABS_VOICE_ID;
+const ELEVENLABS_TAMIL_IN_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_TA_IN || ELEVENLABS_VOICE_ID;
+const ELEVENLABS_KANNADA_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_KN || ELEVENLABS_VOICE_ID;
+
 // Voice Model Routing Configuration
 // Tier 1: Full support (coaching + reading assessment)
 // Tier 2: Coaching only (no reading assessment)
@@ -108,7 +118,16 @@ const VOICE_MODELS = {
   'ps-PK': { provider: 'elevenlabs', voiceId: ELEVENLABS_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Pakistani Pashto
   'sd-PK': { provider: 'uplift', voiceId: UPLIFT_SINDHI_VOICE_ID, supportsEmotionTags: false, tier: 2 }, // Sindhi
   'bal-PK': { provider: 'uplift', voiceId: UPLIFT_BALOCHI_VOICE_ID, supportsEmotionTags: false, tier: 2 }, // Balochi
-  'ta-LK': { provider: 'elevenlabs', voiceId: ELEVENLABS_VOICE_ID, supportsEmotionTags: true, tier: 2 } // Sri Lankan Tamil
+  'ta-LK': { provider: 'elevenlabs', voiceId: ELEVENLABS_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Sri Lankan Tamil
+
+  // India (conversation only) — eleven_v3 multilingual; OpenAI tts-1 auto-fallback.
+  // Voice quality for bn/mr/te/kn MUST be verified before launch (see India expansion plan).
+  hi: { provider: 'elevenlabs', voiceId: ELEVENLABS_HINDI_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Hindi
+  bn: { provider: 'elevenlabs', voiceId: ELEVENLABS_BENGALI_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Bengali
+  mr: { provider: 'elevenlabs', voiceId: ELEVENLABS_MARATHI_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Marathi
+  te: { provider: 'elevenlabs', voiceId: ELEVENLABS_TELUGU_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Telugu
+  'ta-IN': { provider: 'elevenlabs', voiceId: ELEVENLABS_TAMIL_IN_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Indian Tamil
+  kn: { provider: 'elevenlabs', voiceId: ELEVENLABS_KANNADA_VOICE_ID, supportsEmotionTags: true, tier: 2 } // Kannada
 };
 
 // Message Limits

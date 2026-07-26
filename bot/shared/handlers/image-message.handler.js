@@ -394,13 +394,11 @@ async function runImageAnalysis({ user, from, imageId, mimeType, caption, typing
     ? `The teacher sent this image with the following context: "${caption}". Analyze the image and provide helpful feedback.`
     : 'Analyze this classroom-related image. It could be student work, a worksheet, whiteboard content, or classroom setup. Provide constructive feedback.';
 
-  // Add language instruction
-  if (userLanguage === 'ur') {
-    analysisPrompt += '\n\nPlease respond in Urdu (اردو) with some English technical terms where appropriate.';
-  } else if (userLanguage === 'ar') {
-    analysisPrompt += '\n\nPlease respond in Arabic (العربية).';
-  } else if (userLanguage === 'es') {
-    analysisPrompt += '\n\nPlease respond in Spanish (Español).';
+  // Add language instruction — respond in the user's language for any non-English.
+  // Covers Urdu, Arabic, Spanish, the PK regional set, and the India-market set.
+  if (userLanguage && userLanguage !== 'en') {
+    const { getEnglishName } = require('../config/supported-languages');
+    analysisPrompt += `\n\nPlease respond in ${getEnglishName(userLanguage)} with some English technical terms where appropriate.`;
   }
 
   // Analyze with vision service - always use buffer (service handles base64 conversion)

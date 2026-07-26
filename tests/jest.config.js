@@ -24,6 +24,7 @@ module.exports = {
     // bot-only optional/native packages — use lightweight mocks for OSS test suite
     '^pino$': '<rootDir>/tests/__mocks__/pino.js',
     '^canvas$': '<rootDir>/tests/__mocks__/canvas.js',
+    '^dotenv$': '<rootDir>/tests/__mocks__/dotenv.js',
   },
   setupFiles: ['<rootDir>/tests/setup.js'],
   testEnvironment: 'node',

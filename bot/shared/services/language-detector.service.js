@@ -1,14 +1,16 @@
 const { logToFile } = require('../utils/logger');
 const { getClient } = require('./llm-client');
+const { SUPPORTED_LANGUAGES } = require('../config/supported-languages');
 
 // Initialize OpenAI client
 const openai = getClient();
 
-// Valid language codes (must match VALID_LANGUAGES in language-cache.js)
-const VALID_LANGUAGE_CODES = ['en', 'es', 'ur', 'ar', 'pa-PK', 'ps-PK', 'sd-PK', 'bal-PK', 'ta-LK'];
+// Valid language codes — single source of truth is config/supported-languages.js.
+const VALID_LANGUAGE_CODES = SUPPORTED_LANGUAGES;
 
-// Languages that Soniox handles well - trust these directly
-const SONIOX_TRUSTED_LANGUAGES = ['en', 'es', 'ar', 'ta'];
+// Languages that Soniox handles well - trust these directly (no GPT confirmation).
+// Indian languages use distinct Brahmic scripts, so Soniox identification is reliable.
+const SONIOX_TRUSTED_LANGUAGES = ['en', 'es', 'ar', 'ta', 'hi', 'bn', 'mr', 'te', 'kn'];
 
 /**
  * Language Detector Service
@@ -42,6 +44,24 @@ class LanguageDetectorService {
 
     if (totalChars === 0) {
       return 'en'; // Default to English if no characters
+    }
+
+    // Indian (Brahmic) scripts — unambiguous by Unicode block, checked first.
+    // Devanagari is shared by Hindi and Marathi; default to Hindi (larger market).
+    // A locked Marathi/Tamil-SL user is unaffected (detection only runs in auto mode).
+    const indicScripts = [
+      { code: 'hi', re: /[ऀ-ॿ]/g },     // Devanagari (Hindi/Marathi)
+      { code: 'bn', re: /[ঀ-৿]/g },     // Bengali
+      { code: 'ta-IN', re: /[஀-௿]/g },  // Tamil
+      { code: 'te', re: /[ఀ-౿]/g },     // Telugu
+      { code: 'kn', re: /[ಀ-೿]/g },     // Kannada
+    ];
+    for (const { code, re } of indicScripts) {
+      const ratio = (text.match(re) || []).length / totalChars;
+      if (ratio > 0.2) {
+        logToFile('Language detected: Indic script', { code, ratio: ratio.toFixed(2) });
+        return code;
+      }
     }
 
     // Calculate percentages

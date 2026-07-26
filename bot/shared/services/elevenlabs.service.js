@@ -241,9 +241,15 @@ class ElevenLabsService {
         'bal-PK': 'shimmer', // Balochi
         'ta-LK': 'nova',     // Sri Lankan Tamil
 
-        // Common Tier 3 languages (direct OpenAI TTS)
+        // India-market languages (OpenAI tts-1 fallback when ElevenLabs fails)
         hi: 'shimmer',   // Hindi
         bn: 'shimmer',   // Bengali
+        mr: 'shimmer',   // Marathi
+        te: 'shimmer',   // Telugu
+        'ta-IN': 'nova', // Indian Tamil
+        kn: 'shimmer',   // Kannada
+
+        // Common Tier 3 languages (direct OpenAI TTS)
         fr: 'nova',      // French
         de: 'onyx',      // German
         pt: 'nova',      // Portuguese

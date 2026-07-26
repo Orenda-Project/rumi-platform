@@ -206,10 +206,55 @@ EMOTION TAGS (use naturally in your speech):
         presentation: '"நான் உங்களுக்காக [topic] பற்றிய கல்வி விளக்கக்காட்சியை தயாரிக்கிறேன். தயவுசெய்து சிறிது நேரம் காத்திருங்கள்..."',
         coaching: '"உங்கள் வகுப்பறை பதிவை கேட்டு பின்னூட்டம் தர முடியும். ஒலி அல்லது வீடியோ அனுப்புங்கள்!"',
         reading: '"நான் வாசிப்பு மதிப்பீடு செய்யலாம்! /reading test என்று தட்டச்சு செய்யுங்கள்."'
+      },
+
+      // ── India market ──
+      'hi': {
+        lessonPlan: '"मैं आपके लिए [topic] पर एक विस्तृत पाँच-चरण lesson plan बना रही हूँ। कृपया थोड़ा इंतज़ार करें..."',
+        presentation: '"मैं आपके लिए [topic] पर एक शैक्षिक presentation तैयार कर रही हूँ। कृपया थोड़ा इंतज़ार करें..."',
+        coaching: '"मैं आपकी classroom recording सुनकर feedback दे सकती हूँ। बस audio या video भेज दें!"',
+        reading: '"मैं reading test कर सकती हूँ! /reading test टाइप करें।"'
+      },
+      'bn': {
+        lessonPlan: '"আমি আপনার জন্য [topic]-এর উপর একটি বিস্তারিত পাঁচ-ধাপের lesson plan তৈরি করছি। একটু অপেক্ষা করুন..."',
+        presentation: '"আমি আপনার জন্য [topic]-এর উপর একটি শিক্ষামূলক presentation তৈরি করছি। একটু অপেক্ষা করুন..."',
+        coaching: '"আমি আপনার classroom recording শুনে feedback দিতে পারি। শুধু audio বা video পাঠান!"',
+        reading: '"আমি reading test করতে পারি! /reading test টাইপ করুন।"'
+      },
+      'mr': {
+        lessonPlan: '"मी तुमच्यासाठी [topic] वर एक सविस्तर पाच-टप्प्यांचा lesson plan तयार करत आहे. कृपया थोडा वेळ थांबा..."',
+        presentation: '"मी तुमच्यासाठी [topic] वर एक शैक्षणिक presentation तयार करत आहे. कृपया थोडा वेळ थांबा..."',
+        coaching: '"मी तुमची classroom recording ऐकून feedback देऊ शकते. फक्त audio किंवा video पाठवा!"',
+        reading: '"मी reading test करू शकते! /reading test टाइप करा."'
+      },
+      'te': {
+        lessonPlan: '"నేను మీ కోసం [topic] పై ఒక వివరమైన ఐదు-దశల lesson plan తయారు చేస్తున్నాను. దయచేసి కొద్దిసేపు వేచి ఉండండి..."',
+        presentation: '"నేను మీ కోసం [topic] పై ఒక విద్యా presentation తయారు చేస్తున్నాను. దయచేసి కొద్దిసేపు వేచి ఉండండి..."',
+        coaching: '"నేను మీ classroom recording విని feedback ఇవ్వగలను. audio లేదా video పంపండి!"',
+        reading: '"నేను reading test చేయగలను! /reading test టైప్ చేయండి."'
+      },
+      'ta-IN': {
+        lessonPlan: '"நான் உங்களுக்காக [topic] குறித்த விரிவான ஐந்து-படி lesson plan-ஐ உருவாக்குகிறேன். சிறிது நேரம் காத்திருங்கள்..."',
+        presentation: '"நான் உங்களுக்காக [topic] குறித்த கல்வி presentation-ஐ தயாரிக்கிறேன். சிறிது நேரம் காத்திருங்கள்..."',
+        coaching: '"உங்கள் classroom recording-ஐ கேட்டு feedback தர முடியும். audio அல்லது video அனுப்புங்கள்!"',
+        reading: '"நான் reading test செய்யலாம்! /reading test என்று டைப் செய்யுங்கள்."'
+      },
+      'kn': {
+        lessonPlan: '"ನಾನು ನಿಮಗಾಗಿ [topic] ಕುರಿತು ವಿವರವಾದ ಐದು-ಹಂತದ lesson plan ರಚಿಸುತ್ತಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಕಾಯಿರಿ..."',
+        presentation: '"ನಾನು ನಿಮಗಾಗಿ [topic] ಕುರಿತು ಶೈಕ್ಷಣಿಕ presentation ತಯಾರಿಸುತ್ತಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಕಾಯಿರಿ..."',
+        coaching: '"ನಿಮ್ಮ classroom recording ಕೇಳಿ feedback ನೀಡಬಲ್ಲೆ. audio ಅಥವಾ video ಕಳುಹಿಸಿ!"',
+        reading: '"ನಾನು reading test ಮಾಡಬಲ್ಲೆ! /reading test ಟೈಪ್ ಮಾಡಿ."'
+      },
+      'en': {
+        lessonPlan: '"I am creating a detailed five-step lesson plan on [topic] for you. Please wait a moment..."',
+        presentation: '"I am preparing an educational presentation on [topic] for you. Please wait a moment..."',
+        coaching: '"I can listen to your classroom recording and give feedback. Just send an audio or video!"',
+        reading: '"I can run a reading test! Type /reading test."'
       }
     };
 
-    const responses = capabilityResponses[language] || capabilityResponses['ur'];
+    // Fall back to English (neutral) rather than Urdu for any unconfigured language.
+    const responses = capabilityResponses[language] || capabilityResponses['en'];
     const warmly = useEmotionTags ? '[warmly] ' : '';
     const enthusiastically = useEmotionTags ? '[enthusiastically] ' : '';
     const encouragingly = useEmotionTags ? '[encouragingly] ' : '';

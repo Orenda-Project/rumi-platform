@@ -1215,9 +1215,45 @@ class WhatsAppService {
    * @param {string} currentLanguage - User's current language for bilingual header
    * @returns {Promise<boolean>}
    */
-  static async sendLanguageSelectionList(to, currentLanguage = 'en') {
+  static async sendLanguageSelectionList(to, currentLanguage = 'en', region = null) {
     try {
-      logToFile('Sending language selection list', { to, currentLanguage });
+      logToFile('Sending language selection list', { to, currentLanguage, region });
+
+      const { LANGUAGES, SUPPORTED_LANGUAGES } = require('../config/supported-languages');
+
+      // Resolve which languages to offer from the region's config (fail-open).
+      // Single-deployment/per-user-region: India users see Indian languages,
+      // everyone else sees the default set. WhatsApp interactive lists allow at
+      // most 10 rows total; we reserve one for Auto-detect, so cap codes at 9.
+      const DEFAULT_PICKER_CODES = ['en', 'ur', 'pa-PK', 'sd-PK', 'ps-PK', 'bal-PK', 'ta-LK', 'ar', 'es'];
+      let codes = DEFAULT_PICKER_CODES;
+      try {
+        const RegionFeaturesService = require('./region-features.service');
+        const feats = await RegionFeaturesService.getRegionFeatures(region);
+        const fromRegion = Array.isArray(feats.supported_languages)
+          ? feats.supported_languages.filter((c) => SUPPORTED_LANGUAGES.includes(c))
+          : [];
+        // Use the region's list only if it is more specific than the trivial
+        // ['en'] fail-open default; otherwise keep the full default picker set.
+        if (fromRegion.length > 1) codes = fromRegion;
+      } catch (e) {
+        logToFile('Language picker: region lookup failed, using default set', { error: e.message });
+      }
+
+      const MAX_LANG_ROWS = 9; // 10 total minus the Auto-detect row
+      if (codes.length > MAX_LANG_ROWS) {
+        logToFile('Language picker: truncating to WhatsApp 10-row limit', { region, shown: MAX_LANG_ROWS, total: codes.length });
+        codes = codes.slice(0, MAX_LANG_ROWS);
+      }
+
+      const languageRows = [
+        { id: 'lang_auto', title: 'Auto-detect', description: 'Let me detect your language automatically' },
+        ...codes.map((code) => ({
+          id: `lang_${code}`,
+          title: (LANGUAGES[code]?.native || code).slice(0, 24),
+          description: `${LANGUAGES[code]?.english || code} language`.slice(0, 72),
+        })),
+      ];
 
       const response = await fetch(
         `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
@@ -1236,10 +1272,10 @@ class WhatsAppService {
               type: 'list',
               header: {
                 type: 'text',
-                text: 'Select Language / زبان منتخب کریں'
+                text: 'Select Language'
               },
               body: {
-                text: 'Choose your preferred language. I will respond in this language for all conversations.\n\nاپنی پسندیدہ زبان منتخب کریں۔'
+                text: 'Choose your preferred language. I will respond in this language for all conversations.'
               },
               footer: {
                 text: 'You can change this anytime by typing /language'
@@ -1249,18 +1285,7 @@ class WhatsAppService {
                 sections: [
                   {
                     title: 'Available Languages',
-                    rows: [
-                      { id: 'lang_auto', title: 'Auto-detect', description: 'Let me detect your language automatically' },
-                      { id: 'lang_en', title: 'English', description: 'English language' },
-                      { id: 'lang_ur', title: 'اردو', description: 'Urdu language' },
-                      { id: 'lang_pa-PK', title: 'پنجابی', description: 'Punjabi (Shahmukhi)' },
-                      { id: 'lang_sd-PK', title: 'سنڌي', description: 'Sindhi' },
-                      { id: 'lang_ps-PK', title: 'پښتو', description: 'Pashto (Pakistani)' },
-                      { id: 'lang_bal-PK', title: 'بلوچی', description: 'Balochi' },
-                      { id: 'lang_ta-LK', title: 'தமிழ்', description: 'Tamil (Sri Lankan)' },
-                      { id: 'lang_ar', title: 'العربية', description: 'Arabic' },
-                      { id: 'lang_es', title: 'Español', description: 'Spanish' }
-                    ]
+                    rows: languageRows
                   }
                 ]
               }

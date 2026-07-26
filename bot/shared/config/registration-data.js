@@ -77,13 +77,37 @@ const COUNTRIES_DROPDOWN = COUNTRY_CODES.map(code => ({
 })).sort((a, b) => a.title.localeCompare(b.title));
 
 const REGIONS_DROPDOWN = [
+  // Pakistan
   { id: 'federal', title: 'Federal' },
   { id: 'punjab', title: 'Punjab' },
   { id: 'sindh', title: 'Sindh' },
   { id: 'kpk', title: 'KPK' },
   { id: 'balochistan', title: 'Balochistan' },
   { id: 'kashmir', title: 'Kashmir' },
-  { id: 'gilgit_baltistan', title: 'Gilgit-Baltistan' }
+  { id: 'gilgit_baltistan', title: 'Gilgit-Baltistan' },
+  // India — states/UTs (ids prefixed 'in_' to avoid colliding with PK regions)
+  { id: 'in_andhra_pradesh', title: 'Andhra Pradesh' },
+  { id: 'in_assam', title: 'Assam' },
+  { id: 'in_bihar', title: 'Bihar' },
+  { id: 'in_chhattisgarh', title: 'Chhattisgarh' },
+  { id: 'in_delhi', title: 'Delhi' },
+  { id: 'in_gujarat', title: 'Gujarat' },
+  { id: 'in_haryana', title: 'Haryana' },
+  { id: 'in_himachal_pradesh', title: 'Himachal Pradesh' },
+  { id: 'in_jharkhand', title: 'Jharkhand' },
+  { id: 'in_karnataka', title: 'Karnataka' },
+  { id: 'in_kerala', title: 'Kerala' },
+  { id: 'in_madhya_pradesh', title: 'Madhya Pradesh' },
+  { id: 'in_maharashtra', title: 'Maharashtra' },
+  { id: 'in_odisha', title: 'Odisha' },
+  { id: 'in_punjab', title: 'Punjab (India)' },
+  { id: 'in_rajasthan', title: 'Rajasthan' },
+  { id: 'in_tamil_nadu', title: 'Tamil Nadu' },
+  { id: 'in_telangana', title: 'Telangana' },
+  { id: 'in_uttar_pradesh', title: 'Uttar Pradesh' },
+  { id: 'in_uttarakhand', title: 'Uttarakhand' },
+  { id: 'in_west_bengal', title: 'West Bengal' },
+  { id: 'in_jammu_kashmir', title: 'Jammu & Kashmir (India)' }
 ];
 
 const ORGANIZATIONS_DROPDOWN = [
@@ -126,12 +150,15 @@ const SUBJECTS_DROPDOWN = [
   { id: 'maths', title: 'Maths' },
   { id: 'english', title: 'English' },
   { id: 'urdu', title: 'Urdu' },
+  { id: 'hindi', title: 'Hindi' },
   { id: 'islamiat', title: 'Islamiat' },
   { id: 'science', title: 'Science' },
+  { id: 'evs', title: 'Environmental Studies (EVS)' },
   { id: 'physics', title: 'Physics' },
   { id: 'chemistry', title: 'Chemistry' },
   { id: 'biology', title: 'Biology' },
-  { id: 'social_studies', title: 'Social Studies / Pak St.' },
+  { id: 'social_studies', title: 'Social Studies' },
+  { id: 'social_science', title: 'Social Science' },
   { id: 'computer_science', title: 'Computer Science' },
   { id: 'other', title: 'Other' }
 ];

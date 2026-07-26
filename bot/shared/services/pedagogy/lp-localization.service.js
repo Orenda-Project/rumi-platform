@@ -29,6 +29,20 @@ function characterCastFor(language) {
     case 'pa':
       // Urdu / Sindhi / Punjabi are Pakistani languages — language-implied cast.
       return { region: 'Pakistani', boy: 'Ali', girl: 'Sara', girlDress: 'white dupatta' };
+    // India-market languages — regionally-appropriate cast, Indian school uniform.
+    case 'hi':
+      return { region: 'Indian', boy: 'Aarav', girl: 'Diya', girlDress: 'school uniform' };
+    case 'bn':
+      return { region: 'Indian (Bengali)', boy: 'Rohan', girl: 'Ananya', girlDress: 'school uniform' };
+    case 'mr':
+      return { region: 'Indian (Maharashtra)', boy: 'Sarthak', girl: 'Aarya', girlDress: 'school uniform' };
+    case 'te':
+      return { region: 'Indian (Telugu)', boy: 'Arjun', girl: 'Sneha', girlDress: 'school uniform' };
+    case 'ta-IN':
+    case 'ta':
+      return { region: 'Indian (Tamil Nadu)', boy: 'Karthik', girl: 'Divya', girlDress: 'school uniform' };
+    case 'kn':
+      return { region: 'Indian (Karnataka)', boy: 'Vikram', girl: 'Ananya', girlDress: 'school uniform' };
     default:
       // en (script-ambiguous) — a neutral, region-free classroom cast.
       return { region: 'local primary-school', boy: 'Sam', girl: 'Mia', girlDress: 'school uniform' };
@@ -37,10 +51,14 @@ function characterCastFor(language) {
 
 // Cultural context per language. Kept language-keyed (not region-keyed) so no
 // single country is hardcoded as a global default.
+// India-market language codes (share Indian cultural context + INR currency).
+const INDIA_LANGUAGES = ['hi', 'bn', 'mr', 'te', 'ta-IN', 'ta', 'kn'];
+
 function classroomContextFor(language) {
   if (language === 'sw') return 'East African (Kenya/Tanzania/Uganda)';
   if (language === 'ar') return 'MENA region';
   if (language === 'ur' || language === 'sd' || language === 'pa') return 'Pakistani';
+  if (INDIA_LANGUAGES.includes(language)) return 'Indian';
   return 'local'; // en — script-ambiguous, region-neutral
 }
 
@@ -49,6 +67,7 @@ function currencyFor(language) {
   if (language === 'sw') return 'Tanzanian Shilling (TSh)';
   if (language === 'ar') return 'local currency (e.g. dirham/riyal as appropriate)';
   if (language === 'ur' || language === 'sd' || language === 'pa') return 'Pakistani Rupee (PKR)';
+  if (INDIA_LANGUAGES.includes(language)) return 'Indian Rupee (₹)';
   return 'the local currency'; // en — region-neutral
 }
 
@@ -80,7 +99,9 @@ function buildRegionContextLine(language) {
     ? 'local market/duka'
     : language === 'ar'
       ? 'local market/souq'
-      : 'local market';
+      : INDIA_LANGUAGES.includes(language)
+        ? 'local market/bazaar'
+        : 'local market';
   return `CULTURAL CONTEXT: Ground every example, name, and word problem in a ${context} classroom. Use ${currency} for money problems and the ${marketWord} for shopping/measurement contexts. Name the two recurring students "${cast.boy}" and "${cast.girl}". Use locally familiar foods, places, and situations — never foreign or out-of-region references.`;
 }
 

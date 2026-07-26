@@ -89,3 +89,12 @@ ON CONFLICT (region) DO NOTHING;
 INSERT INTO region_features (region, curriculum_key, supported_subjects, has_textbooks, curriculum_lp_enabled, default_framework, supported_languages)
 VALUES ('demo_region', 'demo_curriculum', ARRAY['maths','english'], true, true, 'hots', '["en"]'::jsonb)
 ON CONFLICT (region) DO NOTHING;
+
+-- 'india': India-market region (per-user region). Conversation-core launch:
+-- generic Gamma LP + pic-to-LP on, curriculum LP off (no India curriculum yet).
+-- supported_languages drives the region-filtered /language picker (English +
+-- the six Indian languages; reading-assessment norms are en/ur only for now).
+-- Override the coaching framework per deployment via REGION_FRAMEWORK_MAP env.
+INSERT INTO region_features (region, gamma_lp_enabled, pic_lp_enabled, curriculum_lp_enabled, default_framework, supported_languages)
+VALUES ('india', true, true, false, 'oecd', '["en","hi","bn","mr","te","ta-IN","kn"]'::jsonb)
+ON CONFLICT (region) DO NOTHING;

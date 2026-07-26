@@ -17,12 +17,12 @@
 const redisService = require('../services/cache/railway-redis.service');
 const supabase = require('../config/supabase');
 const { logToFile } = require('./logger');
+const { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } = require('../config/supported-languages');
 
-// Supported language codes
-// Tier 1: en, ur (full support including reading assessment)
-// Tier 2: es, ar, pa-PK, ps-PK, sd-PK, bal-PK, ta-LK (coaching only)
-const VALID_LANGUAGES = ['en', 'es', 'ur', 'ar', 'pa-PK', 'ps-PK', 'sd-PK', 'bal-PK', 'ta-LK'];
-const DEFAULT_LANGUAGE = 'en';
+// Supported language codes — single source of truth is config/supported-languages.js.
+// Full support (conversation + reading assessment): en, ur.
+// Conversation only: every other code (incl. the Indian set hi, bn, mr, te, ta-IN, kn).
+const VALID_LANGUAGES = SUPPORTED_LANGUAGES;
 const CACHE_TTL = 86400; // 24 hours
 
 /**

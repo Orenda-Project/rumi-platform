@@ -67,6 +67,58 @@ const TTS_VOICES = {
     dialectNote: 'May have slight Indian Tamil accent - acceptable if intelligible',
     criticalWords: ['பாடசாலை (SL: school)', 'ஆகாரம் (SL: food)'],
     scriptGuidance: 'Use Tamil script with English terms in ASCII'
+  },
+
+  // ── India market (conversation only) ──
+  // eleven_v3 is multilingual; OpenAI tts-1 is the automatic fallback. Hindi and
+  // Indian Tamil have the strongest ElevenLabs coverage; the others carry a
+  // verify-before-launch warning.
+  'hi': {
+    provider: 'elevenlabs',
+    voice: 'hindi-female',
+    notes: 'ElevenLabs eleven_v3 supports Hindi well. Supports emotion tags.',
+    testPhrases: ['नमस्ते', 'कैसे हैं आप', 'lesson plan बनाइए'],
+    scriptGuidance: 'Use Devanagari script with English terms in ASCII, Western numerals'
+  },
+  'bn': {
+    provider: 'elevenlabs',
+    voice: 'bengali-female',
+    notes: 'ElevenLabs coverage for Bengali is partial.',
+    testPhrases: ['নমস্কার', 'কেমন আছেন', 'lesson plan তৈরি করুন'],
+    warning: 'Verify Bengali voice quality before launch; fall back to OpenAI tts-1 if poor.',
+    scriptGuidance: 'Use Bengali script with English terms in ASCII'
+  },
+  'mr': {
+    provider: 'elevenlabs',
+    voice: 'marathi-female',
+    notes: 'Marathi shares Devanagari with Hindi but has distinct phonology.',
+    testPhrases: ['नमस्कार', 'कसे आहात', 'धडा तयार करा'],
+    warning: 'Verify Marathi voice quality before launch; fall back to OpenAI tts-1 if poor.',
+    scriptGuidance: 'Use Devanagari script; do not substitute Hindi pronunciation'
+  },
+  'te': {
+    provider: 'elevenlabs',
+    voice: 'telugu-female',
+    notes: 'Telugu (Dravidian). ElevenLabs coverage is partial.',
+    testPhrases: ['నమస్కారం', 'ఎలా ఉన్నారు', 'పాఠ్య ప్రణాళిక'],
+    warning: 'Verify Telugu voice quality before launch; fall back to OpenAI tts-1 if poor.',
+    scriptGuidance: 'Use Telugu script with English terms in ASCII'
+  },
+  'ta-IN': {
+    provider: 'elevenlabs',
+    voice: 'tamil-female',
+    notes: 'Indian Tamil. ElevenLabs Tamil support is good. Supports emotion tags.',
+    testPhrases: ['வணக்கம்', 'எப்படி இருக்கிறீர்கள்', 'பாடத் திட்டம்'],
+    dialectNote: 'Indian (not Sri Lankan) Tamil pronunciation preferred',
+    scriptGuidance: 'Use Tamil script with English terms in ASCII'
+  },
+  'kn': {
+    provider: 'elevenlabs',
+    voice: 'kannada-female',
+    notes: 'Kannada (Dravidian). ElevenLabs coverage is partial.',
+    testPhrases: ['ನಮಸ್ಕಾರ', 'ಹೇಗಿದ್ದೀರಾ', 'ಪಾಠ ಯೋಜನೆ'],
+    warning: 'Verify Kannada voice quality before launch; fall back to OpenAI tts-1 if poor.',
+    scriptGuidance: 'Use Kannada script with English terms in ASCII'
   }
 };
 

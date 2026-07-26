@@ -17,7 +17,7 @@ const FeatureIntroService = require('../services/feature-intro.service');
 const LessonPlanQueueService = require('../services/lesson-plan-queue.service');
 const handleCurriculumLessonPlan = require('./lesson-plan-v2.handler');
 const RegionFeaturesService = require('../services/region-features.service');
-const { getUserRegion } = require('../utils/region');
+const { getUserRegion, getUserLanguageRegion } = require('../utils/region');
 const VideoOrchestrator = require('../services/video/video-orchestrator.service');
 const AttendanceDetectorService = require('../services/attendance-detector.service');
 const AttendanceConversationService = require('../services/attendance-conversation.service');
@@ -1183,8 +1183,9 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       }
     }
 
-    // Send language selection interactive list
-    await WhatsAppService.sendLanguageSelectionList(from, responseLanguage);
+    // Send language selection interactive list (region-filtered: India users see
+    // Indian languages, others see the default set — WhatsApp caps lists at 10 rows).
+    await WhatsAppService.sendLanguageSelectionList(from, responseLanguage, getUserLanguageRegion(user));
     return; // Exit early
   }
 

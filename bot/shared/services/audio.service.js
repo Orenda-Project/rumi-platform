@@ -34,7 +34,10 @@ ffmpeg.setFfprobePath(ffprobePath);
  * MMS-ASR: 3 regional languages (bal-PK, sd-PK, ps-PK)
  * - Balochi, Sindhi, Pashto - not supported by Soniox
  */
-const SONIOX_LANGUAGES = ['en', 'ur', 'ar', 'es', 'ta', 'ta-LK', 'pa', 'pa-PK'];
+// Soniox-supported languages (ISO 639-1, region-stripped before sending).
+// Indian languages (hi/bn/mr/te/ta/kn) are supported by Soniox and route here
+// automatically since they are absent from MMS_LANGUAGES below.
+const SONIOX_LANGUAGES = ['en', 'ur', 'ar', 'es', 'ta', 'ta-LK', 'pa', 'pa-PK', 'hi', 'bn', 'mr', 'te', 'kn'];
 const MMS_LANGUAGES = {
   'bal-PK': 'bcc-script_arabic',  // Southern Balochi with Arabic script
   'sd-PK': 'snd',                  // Sindhi
@@ -103,7 +106,11 @@ class AudioService {
       // IMPORTANT: Soniox expects ISO 639-1 codes (e.g., 'pa'), NOT locale codes (e.g., 'pa-PK')
       // Strip region suffix before sending to Soniox
       const normalizedLanguage = language ? language.split('-')[0] : null;
-      const languageHints = normalizedLanguage ? [normalizedLanguage] : ['en', 'ur', 'es', 'ar', 'pa', 'ta'];
+      // Multi-language auto-detect hints (used when no specific language is set,
+      // e.g. coaching audio). Covers PK + India scripts for a shared deployment.
+      const languageHints = normalizedLanguage
+        ? [normalizedLanguage]
+        : ['en', 'ur', 'es', 'ar', 'pa', 'ta', 'hi', 'bn', 'mr', 'te', 'kn'];
 
       const requestBody = {
         file_id: fileId,
@@ -419,13 +426,20 @@ class AudioService {
         textLength: transcription.text.length
       });
 
-      // Map Whisper language codes to our system's codes
-      let mappedLanguage = transcription.language;
-      if (transcription.language === 'urdu') {
-        mappedLanguage = 'ur';
-      } else if (transcription.language === 'english') {
-        mappedLanguage = 'en';
-      }
+      // Map Whisper language names to our system's codes.
+      // Whisper returns full English names (e.g. 'urdu', 'hindi'). Tamil is left
+      // unmapped because Whisper cannot distinguish Indian (ta-IN) from Sri
+      // Lankan (ta-LK) Tamil — the user's preferred_language settles that.
+      const WHISPER_NAME_TO_CODE = {
+        urdu: 'ur',
+        english: 'en',
+        hindi: 'hi',
+        bengali: 'bn',
+        marathi: 'mr',
+        telugu: 'te',
+        kannada: 'kn',
+      };
+      const mappedLanguage = WHISPER_NAME_TO_CODE[transcription.language] || transcription.language;
 
       // Format segments if available (for future speaker diarization)
       let formattedText = transcription.text;
