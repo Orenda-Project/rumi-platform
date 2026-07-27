@@ -170,7 +170,7 @@ function* walkJs(dir) {
   }
   for (const e of entries) {
     const full = path.join(dir, e.name);
-    if (full.includes('/node_modules/')) continue;
+    if (full.includes(`${path.sep}node_modules${path.sep}`)) continue;
     if (e.isDirectory()) {
       yield* walkJs(full);
     } else if (e.isFile() && e.name.endsWith('.js')) {
@@ -383,7 +383,9 @@ function auditedFiles() {
   for (const d of AUDITED_DIRS) {
     if (!fs.existsSync(d)) continue;
     for (const f of walkJs(d)) {
-      if (f.includes('/__mocks__/') || f.includes('/__tests__/')) continue;
+      // path.sep, not '/': walkJs returns OS-separated paths, so a literal
+      // '/' would skip this exclusion on Windows and flag every mock as orphan.
+      if (f.includes(`${path.sep}__mocks__${path.sep}`) || f.includes(`${path.sep}__tests__${path.sep}`)) continue;
       out.push(path.resolve(f));
     }
   }
