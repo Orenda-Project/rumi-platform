@@ -67,7 +67,7 @@ describe('WhatsAppService.sendImageFromUrl', () => {
     // The whole point: sendImage receives a temp file path, not the URL.
     expect(pathArg).not.toBe(R2_URL);
     expect(pathArg).not.toMatch(/^https?:/);
-    expect(pathArg).toContain('/'); // a path → sendImage takes its upload-file branch
+    expect(pathArg).toMatch(/[\\/]/); // a path (POSIX `/` or Windows `\`) → sendImage takes its upload-file branch
   });
 
   it('cleans up the temp file after sending', async () => {
