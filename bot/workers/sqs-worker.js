@@ -365,6 +365,37 @@ class SQSCoachingWorker {
         await QuizJobHandler.handleQuizExpire(this._buildQuizBody(body));
         break;
       }
+      // Video-quiz class report. `quiz_video_report` is distinct from
+      // 'quiz_report' on purpose — sharing a dedup key with the parent quiz
+      // report would let one silently swallow the other. Keyed on the share
+      // code, not the quiz: one quiz can be shared by many teachers, and each
+      // gets her own class's results. The `quiz_` prefix routes it to the
+      // STANDARD quiz queue, which honours DelaySeconds; the FIFO main queue
+      // silently drops delays and the "next morning" report would fire
+      // immediately. The legacy name is still consumed for in-flight messages.
+      case 'quiz_video_report':
+      case 'video_quiz_report': {
+        const VideoQuizReport = require('../shared/services/quiz/video-quiz-report.service');
+        // v2 envelope: the scheduler's fields live under body.payload, NOT at
+        // the top level. Reading body.targetAt is what made the cascade a no-op.
+        const jobPayload = (body && body.payload) ? body.payload : (payload || {});
+        const shareCodeId = jobPayload.shareCodeId || body.referenceId || body.groupId;
+        const targetAt = jobPayload.targetAt ? new Date(jobPayload.targetAt) : null;
+        if (targetAt && targetAt > new Date()) {
+          // Not morning yet. SQS DelaySeconds caps at 900s, so cascade —
+          // the same pattern quiz_report uses to walk out to 12h.
+          const wait = Math.min(900, Math.max(60,
+            Math.floor((targetAt - Date.now()) / 1000)));
+          await SQSQueueService.queueJob(shareCodeId, 'quiz_video_report',
+            { shareCodeId, targetAt: jobPayload.targetAt }, {
+              delaySeconds: wait,
+              deduplicationId: `${shareCodeId}-quiz_video_report-${Date.now()}`,
+            });
+          break;
+        }
+        await VideoQuizReport.generate(shareCodeId, { reason: 'scheduled' });
+        break;
+      }
       case 'quiz_nudge': {
         const QuizJobHandler = require('./quiz-job-handler');
         await QuizJobHandler.handleQuizNudge(this._buildQuizBody(body));

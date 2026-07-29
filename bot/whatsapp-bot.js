@@ -803,6 +803,24 @@ app.post('/webhook', async (req, res) => {
         const StudentVideoFeedbackService = require('./shared/services/student-video-feedback.service');
         await StudentVideoFeedbackService.handleFeedbackButton(buttonId, from);
       }
+      // Video quizzes — the offer after a video, an answer tap, and the
+      // share-with-class offer. All three use the `vq_` prefix so they can
+      // never collide with the parent-quiz `quiz_` ids handled elsewhere.
+      else if (buttonId.startsWith('vq_')) {
+        const VideoQuizService = require('./shared/services/quiz/video-quiz.service');
+        const VideoQuizShare = require('./shared/services/quiz/video-quiz-share.service');
+        // Invite-a-friend offer. handleAnswer stays LAST: it treats anything
+        // left as an answer id, so a new offer button placed after it would be
+        // swallowed as a wrong answer.
+        const VideoQuizInvite = require('./shared/services/quiz/video-quiz-invite.service');
+        const handled = await VideoQuizService.handleOfferButton(buttonId, from)
+          || await VideoQuizShare.handleShareButton(buttonId, from)
+          || await VideoQuizInvite.handleInviteButton(buttonId, from)
+          || await VideoQuizService.handleAnswer(from, buttonId);
+        if (!handled) {
+          logToFile('⚠️ unrouted vq_ button', { buttonId, from });
+        }
+      }
       // Edit-class multi-class picker: open the edit-class flow for the chosen class.
       else if (buttonId.startsWith('edit_class_')) {
         const listId = buttonId.replace('edit_class_', '');
@@ -921,6 +939,45 @@ app.post('/webhook', async (req, res) => {
         responseJson = JSON.parse(message.interactive?.nfm_reply?.response_json || '{}');
       } catch (error) {
         logToFile('❌ Failed to parse flow response_json', { from, error: error.message });
+      }
+
+      // Video-quiz Flow submissions are routed on the FLOW TOKEN, not on the
+      // response shape — detectFlowType keys on field names, and a generic
+      // {screen_0_..: "2"} payload would be guessed at. The token is ours by
+      // construction, so there is nothing to infer.
+      const vqToken = responseJson.flow_token || message.interactive?.nfm_reply?.flow_token || '';
+
+      // A new student's name + class, submitted in one Flow screen. Routed on
+      // our own token, because {student_name, student_class} is a shape any
+      // form could send.
+      if (typeof vqToken === 'string' && vqToken.startsWith('vqjoin:')) {
+        try {
+          const VideoQuizShare = require('./shared/services/quiz/video-quiz-share.service');
+          const handled = await VideoQuizShare.handleJoinFlowReply(from, vqToken, responseJson);
+          if (handled) return;
+        } catch (joinErr) {
+          logToFile('❌ student join Flow reply routing failed', { error: joinErr.message });
+        }
+      }
+
+      // A picture-question answer comes back as a Flow submission.
+      if (typeof vqToken === 'string' && vqToken.startsWith('vq:')) {
+        try {
+          const [, , questionId] = vqToken.split(':');
+          // The Flow returns the option id we put in `options[].id` — its index.
+          const picked = Object.entries(responseJson)
+            .filter(([k]) => k !== 'flow_token')
+            .map(([, v]) => v)
+            .find((v) => /^\d+$/.test(String(v)));
+          if (questionId && picked !== undefined) {
+            const VideoQuizService = require('./shared/services/quiz/video-quiz.service');
+            await VideoQuizService.handleAnswer(from, `vq_${questionId}_${picked}`);
+            return;
+          }
+          logToFile('⚠️ video-quiz Flow reply had no option index', { vqToken, responseJson });
+        } catch (vqFlowErr) {
+          logToFile('❌ video-quiz Flow reply routing failed', { error: vqFlowErr.message });
+        }
       }
 
       // Use centralized flow type detection (fixes registration→attendance misrouting)
@@ -1049,6 +1106,15 @@ app.post('/webhook', async (req, res) => {
       const listReply = message.interactive.list_reply;
       const listId = listReply.id;
       logToFile('📋 Interactive list item selected', { listId, from });
+
+      // Video-quiz answers arrive as list_reply whenever the question has 4
+      // options or a title too long for a 20-char button. Same `vq_` ids as
+      // the button path — routed here too, or a four-option question would
+      // accept no answer at all.
+      if (listId.startsWith('vq_')) {
+        const VideoQuizService = require('./shared/services/quiz/video-quiz.service');
+        if (await VideoQuizService.handleAnswer(from, listId)) return;
+      }
 
       // CRITICAL: Get the CURRENT session first, then query conversations in THAT session
       const { getOrCreateSession } = require('./shared/database/bot-helpers');
@@ -1707,6 +1773,15 @@ ${'='.repeat(70)}
 
   console.log(startupMessage);
   logToFile('🚀 Bot server started', { port: constants.PORT, logsDir: LOGS_DIR });
+
+  // Boot-time Flow inventory check: every configured *_FLOW_ID must resolve,
+  // sit on this deployment's WABA, and be PUBLISHED. Unset vars are skipped.
+  // Logs flow_id.drift_detected per failure; does NOT crash the bot — the
+  // existing if (!FLOW_ID) graceful-empty handlers already degrade safely.
+  const { validateFlowIdsOnBoot } = require('./shared/services/flow-id-validator.service');
+  validateFlowIdsOnBoot().catch((err) => {
+    logToFile('flow_id.validator.crashed', { error: err.message, severity: 'warn' });
+  });
 
   // Non-blocking startup checks (delayed to not slow boot)
   setTimeout(() => {

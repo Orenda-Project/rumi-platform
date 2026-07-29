@@ -93,9 +93,9 @@ describe('register-all-flows', () => {
   // FLOW_CONFIGS
   // -----------------------------------------------------------------------
   describe('FLOW_CONFIGS', () => {
-    it('exports an array of all 12 registerable flow configurations', () => {
+    it('exports an array of all 14 registerable flow configurations', () => {
       expect(Array.isArray(FLOW_CONFIGS)).toBe(true);
-      expect(FLOW_CONFIGS).toHaveLength(12);
+      expect(FLOW_CONFIGS).toHaveLength(14);
     });
 
     it('includes Reading Assessment as a navigate type with no endpointPath', () => {
@@ -446,10 +446,13 @@ describe('register-all-flows', () => {
 
       const result = await registerAllFlows(optsNoEndpoint);
 
-      // Reading Assessment should register, attendance flows should be skipped
-      expect(result.registered).toHaveLength(1);
-      expect(result.registered[0].name).toBe('Reading Assessment');
-      expect(result.skipped).toHaveLength(FLOW_CONFIGS.length - 1);
+      // Navigate flows (Reading Assessment, Video Quiz, Student Join) should
+      // register; endpoint flows should be skipped without an endpointBase.
+      expect(result.registered).toHaveLength(3);
+      expect(result.registered.map((r) => r.name)).toEqual(
+        expect.arrayContaining(['Reading Assessment', 'Video Quiz', 'Student Join'])
+      );
+      expect(result.skipped).toHaveLength(FLOW_CONFIGS.length - 3);
       expect(result.skipped.map((s) => s.name)).toContain('Attendance Setup');
       expect(result.skipped.map((s) => s.name)).toContain('Attendance Marking');
     });

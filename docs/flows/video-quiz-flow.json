@@ -1,0 +1,83 @@
+{
+  "version": "7.0",
+  "screens": [
+    {
+      "id": "ASK",
+      "title": "Quiz",
+      "terminal": true,
+      "data": {
+        "question": {
+          "type": "string",
+          "__example__": "Which picture shows a circle?"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "Picture 1",
+              "image": "",
+              "alt-text": "Picture 1"
+            },
+            {
+              "id": "1",
+              "title": "Picture 2",
+              "image": "",
+              "alt-text": "Picture 2"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.question}"
+          },
+          {
+            "type": "Form",
+            "name": "quiz_form",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "name": "answer",
+                "label": "Tap the picture",
+                "required": true,
+                "media-size": "large",
+                "data-source": "${data.options}"
+              },
+              {
+                "type": "Footer",
+                "label": "Send answer",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "answer": "${form.answer}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

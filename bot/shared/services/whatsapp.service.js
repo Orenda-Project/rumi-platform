@@ -70,6 +70,91 @@ class WhatsAppService {
   }
 
   /**
+   * Send text and RETURN THE MESSAGE ID, optionally as a quoted reply.
+   *
+   * Every other send helper here returns a boolean, which is fine when nothing
+   * needs to refer back to the message. The video quiz does: an audio option's
+   * label is sent as a quoted reply to the clip it names (Meta:
+   * context.message_id), because otherwise a column of near-identical voice
+   * notes and a column of labels are related only by luck — a child cannot tell
+   * which "Sound 2" belongs to which recording. That needs the id of the
+   * message we just sent.
+   *
+   * Additive: no existing caller is affected.
+   *
+   * @param {string} to
+   * @param {string} message
+   * @param {Object} [opts] { contextMessageId }
+   * @returns {Promise<string|null>} the sent message's id, or null on failure
+   */
+  static async sendTextReturningId(to, message, opts = {}) {
+    try {
+      const cleanMessage = this._removeEmotionTags(message);
+      const payload = {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'text',
+        text: { body: cleanMessage },
+      };
+      if (opts.contextMessageId) {
+        payload.context = { message_id: opts.contextMessageId };
+      }
+      const response = await fetch(
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        logToFile('❌ Error sending WhatsApp message (returning id)', { responseData: data });
+        return null;
+      }
+      return data?.messages?.[0]?.id || null;
+    } catch (error) {
+      logToFile('❌ Exception sending WhatsApp message (returning id)', { error: error.message });
+      return null;
+    }
+  }
+
+  /**
+   * Send audio from a URL and return the message id.
+   * Same reason as sendTextReturningId: the option label must quote this clip.
+   */
+  static async sendAudioFromUrlReturningId(to, audioUrl) {
+    try {
+      const response = await fetch(
+        `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp', to, type: 'audio',
+            audio: { link: audioUrl },
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        logToFile('❌ Error sending WhatsApp audio (returning id)', { responseData: data });
+        return null;
+      }
+      return data?.messages?.[0]?.id || null;
+    } catch (error) {
+      logToFile('❌ Exception sending WhatsApp audio (returning id)', { error: error.message });
+      return null;
+    }
+  }
+
+  /**
    * Send a reaction to a message
    * @param {string} to - Recipient phone number
    * @param {string} messageId - Message ID to react to

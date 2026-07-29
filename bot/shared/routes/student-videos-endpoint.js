@@ -1,17 +1,20 @@
 /**
- * Student Videos Flow Endpoint
+ * Student Videos Flow Endpoint — v2.0
  *
  * Screens: SELECT_GRADE → SELECT_SUBJECT → SELECT_TOPIC → SUCCESS
  *
- * Lets a teacher browse the student_videos library by grade → subject →
- * video, then delivers the chosen video to their chat and schedules a
- * post-delivery 👍/👎 survey.
- *
- * The video list is labelled by `subtopic` (falling back to `topic`), grouped
- * by `topic`; the chapter prefix is shown only when ≥ 2 videos share a topic.
- * SELECT_TOPIC's payload carries the video row id directly (no fragile text
- * re-resolution). A "Sending your video…" ack is dispatched before the async
- * upload so the teacher sees instant acknowledgement during the upload window.
+ * v2.0 changes (vs v1):
+ * - Dropped the SELECT_CHAPTER screen (76% of original "chapters" were
+ *   singletons — the screen was mostly a wasted click).
+ * - The Topic dropdown lists every video for the (grade, subject), labelled
+ *   by `clean_title`, prefixed with `clean_chapter · ` ONLY when a chapter
+ *   actually groups ≥ 2 videos (singleton chapters render the title alone).
+ * - SELECT_TOPIC's payload now carries the video row id directly (no more
+ *   resolving by (chapter, subtopic) text — eliminates a class of mapping bugs).
+ * - Pre-send chat confirmation: a "Sending your video…" message is dispatched
+ *   *before* the async R2 → WhatsApp upload so the teacher sees instant
+ *   acknowledgement during the 5-15s media-upload window.
+ * - Caption uses `clean_title` verbatim (no more fragmented "Numbers · X — Y").
  */
 
 const supabase = require('../config/supabase');
@@ -32,21 +35,23 @@ const gradeTitle = (g) => {
   return `Grade ${s}`;
 };
 
-// The per-video display label: the specific subtopic when present, else the topic.
-const videoTitle = (r) => (r.subtopic && r.subtopic.trim()) ? r.subtopic : (r.topic || 'Untitled');
-
-async function fetchVideos(filter = {}) {
+async function fetchDone(filter = {}) {
+  // hide duplicates. 85 videos were identified as re-uploads of
+  // another row and marked with `superseded_by` during the title cleanup, but
+  // nothing filtered on it — so both copies stayed in the teacher's picker,
+  // with near-identical titles. Marked is not hidden.
   let q = supabase
     .from('student_videos')
-    .select('id,grade,subject,topic,subtopic,video_url');
+    .select('id,grade,subject,clean_chapter,clean_title,r2_url')
+    .eq('migration_status', 'done')
+    .is('superseded_by', null);
   for (const [k, v] of Object.entries(filter)) q = q.eq(k, v);
   const { data, error } = await q;
   if (error) {
     logToFile('Student Videos: supabase error', { error: error.message, filter });
     return [];
   }
-  // Only rows with a playable URL are deliverable.
-  return (data || []).filter((r) => r.video_url);
+  return data || [];
 }
 
 function distinct(rows, key) {
@@ -66,7 +71,7 @@ async function getPhoneForUser(userId) {
 // ---------- INIT ----------
 async function handleStudentVideosInit(flowToken) {
   logToFile('Student Videos Flow INIT', { flowToken });
-  const rows = await fetchVideos();
+  const rows = await fetchDone();
   const grades = distinct(rows, 'grade')
     .sort((a, b) => gradeRank(a) - gradeRank(b))
     .map((g) => ({ id: String(g), title: gradeTitle(g) }));
@@ -90,7 +95,7 @@ async function handleStudentVideosDataExchange(flowToken, screen, screenData) {
 async function selectGrade(screenData) {
   const grade = screenData && screenData.grade;
   if (!grade) return { data: { error: { message: 'Please select a class.' } } };
-  const rows = await fetchVideos({ grade });
+  const rows = await fetchDone({ grade });
   const subjects = distinct(rows, 'subject')
     .sort()
     .map((s) => ({ id: s, title: s }));
@@ -103,42 +108,42 @@ async function selectGrade(screenData) {
   };
 }
 
-// SELECT_SUBJECT → SELECT_TOPIC (single combined list, topic as inline prefix)
+// SELECT_SUBJECT → SELECT_TOPIC (single combined list, chapter as inline prefix)
 async function selectSubject(screenData) {
   const grade = screenData && screenData.grade;
   const subject = screenData && screenData.subject;
   if (!grade || !subject) return { data: { error: { message: 'Please select a subject.' } } };
-  const rows = await fetchVideos({ grade, subject });
+  const rows = await fetchDone({ grade, subject });
   if (rows.length === 0) {
     return { data: { error: { message: `No ${subject} videos for ${gradeTitle(grade)} yet.` } } };
   }
 
-  // Count topic sizes so we know whether to render the topic prefix.
-  // Prefix shown ONLY when ≥ 2 videos share the topic (otherwise it's noise).
-  const topicCount = new Map();
+  // Count chapter sizes so we know whether to render the chapter prefix.
+  // Prefix shown ONLY when ≥ 2 videos share the chapter (otherwise it's noise).
+  const chapterCount = new Map();
   for (const r of rows) {
-    const t = r.topic || '';
-    topicCount.set(t, (topicCount.get(t) || 0) + 1);
+    const ch = r.clean_chapter || '';
+    chapterCount.set(ch, (chapterCount.get(ch) || 0) + 1);
   }
 
-  // Sort by (topic, title) so grouped videos cluster visually.
+  // Sort by (chapter, title) so grouped videos cluster visually.
   rows.sort((a, b) => {
-    const at = (a.topic || '').toLowerCase();
-    const bt = (b.topic || '').toLowerCase();
-    if (at !== bt) return at < bt ? -1 : 1;
-    const al = videoTitle(a).toLowerCase();
-    const bl = videoTitle(b).toLowerCase();
-    return al < bl ? -1 : al > bl ? 1 : 0;
+    const ac = (a.clean_chapter || '').toLowerCase();
+    const bc = (b.clean_chapter || '').toLowerCase();
+    if (ac !== bc) return ac < bc ? -1 : 1;
+    const at = (a.clean_title || '').toLowerCase();
+    const bt = (b.clean_title || '').toLowerCase();
+    return at < bt ? -1 : at > bt ? 1 : 0;
   });
 
   const videos = rows.map((r) => {
-    const title = videoTitle(r);
-    const topic = r.topic;
-    const show_prefix = topic && topic.toLowerCase() !== title.toLowerCase() &&
-      (topicCount.get(topic) || 0) >= 2;
+    const title = r.clean_title || 'Untitled';
+    const ch = r.clean_chapter;
+    const show_prefix = ch && ch.toLowerCase() !== title.toLowerCase() &&
+      (chapterCount.get(ch) || 0) >= 2;
     return {
       id: r.id, // pass the row id directly — no fragile text re-resolution.
-      title: show_prefix ? `${topic} · ${title}` : title,
+      title: show_prefix ? `${ch} · ${title}` : title,
     };
   });
 
@@ -163,10 +168,10 @@ async function selectTopic(flowToken, screenData) {
   }
   const { data: row, error } = await supabase
     .from('student_videos')
-    .select('id,grade,subject,topic,subtopic,video_url')
+    .select('id,grade,subject,clean_chapter,clean_title,r2_url,migration_status')
     .eq('id', videoId)
     .single();
-  if (error || !row || !row.video_url) {
+  if (error || !row || row.migration_status !== 'done' || !row.r2_url) {
     logToFile('Student Videos: row lookup failed', { videoId, error: error?.message });
     return { data: { error: { message: 'That video is not available right now.' } } };
   }
@@ -177,12 +182,14 @@ async function selectTopic(flowToken, screenData) {
   return {
     screen: 'SUCCESS',
     data: {
-      message: `Your video "${videoTitle(row)}" (${gradeTitle(row.grade)} ${row.subject}) is on its way!`,
+      message: `Your video "${row.clean_title}" (${gradeTitle(row.grade)} ${row.subject}) is on its way!`,
     },
   };
 }
 
-// Immediate chat ack so the teacher sees feedback during the upload window.
+// Immediate chat ack so the teacher sees feedback during the 5-15s upload.
+// Awaited (not fire-and-forget) so it lands BEFORE the SUCCESS screen renders;
+// tiny sendMessage call, well under Meta's 10s data_exchange budget.
 async function sendPreDeliveryAck(flowToken, row) {
   const userId = (flowToken || '').split(':')[0];
   try {
@@ -190,16 +197,17 @@ async function sendPreDeliveryAck(flowToken, row) {
     if (!phone) return;
     await WhatsAppService.sendMessage(
       phone,
-      `🎬 Sending your video: ${gradeTitle(row.grade)} ${row.subject} — ${videoTitle(row)} …`
+      `🎬 Sending your video: ${gradeTitle(row.grade)} ${row.subject} — ${row.clean_title} …`
     );
   } catch (err) {
     logToFile('Student Videos: pre-delivery ack failed', { error: err.message });
   }
 }
 
-// Fire-and-forget upload. Schedules the 30s post-delivery survey ONLY when the
-// upload succeeds — a failed upload should not ask the teacher to rate a video
-// they never received.
+// Fire-and-forget R2 → WhatsApp upload (5-15s on the wire). Schedules the
+// 30s post-delivery thumbs-up/thumbs-down survey when (and only when) the
+// upload succeeds — a failed upload should not produce a feedback prompt
+// asking the teacher to rate a video they never received.
 function deliverVideoAsync(flowToken, row) {
   const userId = (flowToken || '').split(':')[0];
   (async () => {
@@ -210,21 +218,24 @@ function deliverVideoAsync(flowToken, row) {
         logToFile('Student Videos: no phone for user', { userId });
         return;
       }
-      const caption = `📚 ${gradeTitle(row.grade)} · ${row.subject}\n${videoTitle(row)}`;
-      await WhatsAppService.sendVideoFromUrl(phone, row.video_url, caption);
+      const caption =
+        `📚 ${gradeTitle(row.grade)} · ${row.subject}\n${row.clean_title}`;
+      await WhatsAppService.sendVideoFromUrl(phone, row.r2_url, caption);
       logEvent('student_videos.delivered', {
         userId,
         videoId: row.id,
         grade: row.grade,
         subject: row.subject,
-        topic: row.topic,
-        subtopic: row.subtopic,
+        chapter: row.clean_chapter,
+        title: row.clean_title,
       });
     } catch (err) {
       logToFile('Student Videos: delivery failed', { userId, videoId: row.id, error: err.message });
       return; // don't schedule feedback for a delivery that failed
     }
-    // Post-delivery survey — 30s after upload completes.
+    // Post-delivery survey — 30s after upload completes. Language defaults
+    // to the teacher's preferred_language; missing user → service falls
+    // back to English.
     try {
       const { data: userRow } = await supabase
         .from('users')
@@ -232,20 +243,57 @@ function deliverVideoAsync(flowToken, row) {
         .eq('id', userId)
         .maybeSingle();
       const language = userRow?.preferred_language || 'en';
-      StudentVideoFeedbackService.scheduleFeedbackPrompt({
-        videoId: row.id,
-        userId,
-        phone,
-        context: {
-          grade: row.grade,
-          subject: row.subject,
-          topic: row.topic,
-          subtopic: row.subtopic,
-          language,
-        },
+
+      // record the delivery so we can measure how popular the feature
+      // is — videos sent, quizzes offered, quizzes taken — without inferring it
+      // from logs. Non-fatal: a tracking failure must never cost the teacher
+      // their quiz.
+      let deliveryId = null;
+      try {
+        const { data: del } = await supabase
+          .from('video_quiz_deliveries')
+          .insert({
+            user_id: userId, video_id: row.id, phone, status: 'sent',
+            grade: row.grade, subject: row.subject, title: row.clean_title,
+          })
+          .select('id')
+          .single();
+        deliveryId = del?.id || null;
+      } catch (delErr) {
+        logToFile('Student Videos: delivery row insert failed', { error: delErr.message });
+      }
+
+      // offer the video's quiz 3 s after delivery.
+      //
+      // SURVEY SUPPRESSION — the important bit. When a quiz is offered, the
+      // standalone 30 s 👍/👎 survey does NOT fire. It is replaced by a survey
+      // that covers whatever the teacher actually received: video-only if she
+      // declines, video AND quiz if she takes it. Firing both would ask her
+      // about the same video twice, 30 seconds apart, before she has even
+      // answered the offer.
+      const VideoQuizService = require('../services/quiz/video-quiz.service');
+      const offered = await VideoQuizService.offerAfterVideo({
+        userId, phone, video: row, language, deliveryId,
       });
+
+      if (!offered) {
+        StudentVideoFeedbackService.scheduleFeedbackPrompt({
+          videoId: row.id,
+          userId,
+          phone,
+          context: {
+            grade: row.grade,
+            subject: row.subject,
+            chapter: row.clean_chapter,
+            title: row.clean_title,
+            language,
+            scope: 'video',
+            deliveryId,
+          },
+        });
+      }
     } catch (err) {
-      logToFile('Student Videos: scheduleFeedbackPrompt threw', { userId, videoId: row.id, error: err.message });
+      logToFile('Student Videos: post-delivery hook threw', { userId, videoId: row.id, error: err.message });
     }
   })();
 }
@@ -262,5 +310,4 @@ module.exports = {
   // exported for tests
   gradeTitle,
   gradeRank,
-  videoTitle,
 };

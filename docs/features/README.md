@@ -14,6 +14,7 @@ Run **`npm run doctor`** at any time to see which features are live for your cur
 | 📸 [Pic-to-LP](pic-to-lp.md) | Photo of a textbook page → illustrated 2-page LP | `KIE_API_KEY` |
 | 📚 [Homework](homework.md) | Pick class + chapters → curriculum homework bundle PDF | `HOMEWORK_FLOW_ID` |
 | 🧠 [Quiz](quiz.md) | Teacher sends a topic quiz to a class → students answer, teacher gets results | _core — powered by `OPENROUTER_API_KEY`_ |
+| 🎬🎓 [Video Quizzes](video-quizzes.md) | Curriculum video → its quiz 3 s later; class share links + next-morning reteach report. Ships with the open Taleemabad content library (890 videos / 10,929 questions) | import script + `DEFAULT_REGION=pakistan` |
 | 🗣️ [Voice Messages](voice.md) | Full spoken interaction in many languages | `SONIOX_API_KEY` + `ELEVENLABS_API_KEY` |
 | 🎬 [Video Generation](video.md) | Topic → short narrated educational video | `VIDEO_GENERATION_ENABLED` + `KIE_API_KEY` |
 | ✅ [Attendance](attendance.md) | Tap-based attendance via WhatsApp Flows | _core — always on_ |

@@ -15,5 +15,8 @@ process.env.OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || 'sk-or-test-k
 process.env.REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 process.env.PORT = process.env.PORT || '3000';
 process.env.LLM_PROVIDER = process.env.LLM_PROVIDER || 'openrouter';
+// Video-quiz share links: a neutral test number so wa.me link tests are
+// deterministic (the service has NO fallback by design — see botNumber()).
+process.env.WHATSAPP_BOT_NUMBER = process.env.WHATSAPP_BOT_NUMBER || '15550100000';
 
 // Console suppression is done in jest.config.js via silent option if needed

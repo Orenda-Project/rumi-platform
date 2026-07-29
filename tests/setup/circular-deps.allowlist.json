@@ -11,6 +11,14 @@
       "bot/shared/services/elevenlabs.service.js",
       "bot/shared/services/audio.service.js"
     ],
-    "reason": "Pre-existing cross-dependency between the TTS service and the audio-processing service. Both lazy-require each other inside their respective methods (audio.service.js does it 4× for different TTS variants). Works at runtime."
+    "reason": "Pre-existing cross-dependency between the TTS service and the audio-processing service. Both lazy-require each other inside their respective methods (audio.service.js does it 4\u00d7 for different TTS variants). Works at runtime."
+  },
+  {
+    "cycle": [
+      "bot/shared/services/quiz/video-quiz.service.js",
+      "bot/shared/services/quiz/video-quiz-invite.service.js",
+      "bot/shared/services/quiz/video-quiz-share.service.js"
+    ],
+    "reason": "Offer/share/invite are one feature split by concern; each edge is a lazy require() inside a function body, resolved at call time, so module load order never deadlocks."
   }
 ]

@@ -549,11 +549,31 @@ CREATE TABLE IF NOT EXISTS students (
     -- Optional parent/guardian contact (E.164). Used by the quiz subsystem to
     -- deliver quizzes and by the edit-class flow's add/edit-student forms.
     parent_phone TEXT,
+    -- Video-quiz child identity: the WhatsApp number this child takes quizzes
+    -- on, digits only. Distinct from parent_phone (roster data a TEACHER
+    -- typed); this is what the child themself arrived on. Not unique —
+    -- siblings legitimately share one handset.
+    phone TEXT,
+    -- The class a child typed for themself ("Grade 4", "1-B"). Rostered
+    -- students get their class from student_lists.class_name instead.
+    self_reported_class TEXT,
+    -- The teacher whose shared quiz first brought this child in. Set once on
+    -- first sight and never rewritten — a friend's invite into another
+    -- teacher's quiz does not move the child. NULL for roster students, who
+    -- reach their teacher through list_id instead.
+    enrolled_by_user_id UUID,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (id)
 );
+
+-- "Who is on this handset?" — run once per quiz join. Partial: rostered
+-- students have phone NULL and are never scanned this way.
+CREATE INDEX IF NOT EXISTS idx_students_phone
+    ON students (phone) WHERE phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_students_enrolled_by
+    ON students (enrolled_by_user_id) WHERE enrolled_by_user_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS student_videos (
     id UUID NOT NULL DEFAULT uuid_generate_v4(),
@@ -564,6 +584,18 @@ CREATE TABLE IF NOT EXISTS student_videos (
     video_url TEXT NOT NULL,
     original_filename TEXT,
     notes TEXT,
+    -- v2 library columns (what the browse Flow actually renders): a cleaned
+    -- parent chapter + display title, and the delivery URL. The seed importer
+    -- (bot/scripts/maintenance/import-video-quiz-corpus.js) populates these
+    -- from the public content-library manifest.
+    clean_chapter VARCHAR(200),
+    clean_title VARCHAR(300),
+    r2_url TEXT,
+    -- 'done' = playable and listed in the picker.
+    migration_status VARCHAR(20) DEFAULT 'done',
+    -- Set when this row is a duplicate re-upload of another video; the picker
+    -- hides superseded rows (marked is not hidden unless filtered on).
+    superseded_by UUID REFERENCES student_videos(id),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     search_vector TSVECTOR,
@@ -588,8 +620,27 @@ CREATE TABLE IF NOT EXISTS student_video_feedback (
     subject VARCHAR(100),
     topic VARCHAR(200),
     subtopic VARCHAR(200),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    -- Quiz-scope columns: what this survey asked about — the video alone, or
+    -- the video AND the quiz that followed it.
+    --   video-only feedback   -> WHERE scope = 'video'
+    --   video + quiz feedback -> WHERE scope = 'video_and_quiz'
+    scope text NOT NULL DEFAULT 'video' CHECK (scope IN ('video', 'video_and_quiz')),
+    -- The quiz half of a combined survey. NULL when scope = 'video'.
+    quiz_useful boolean,
+    -- FKs added after quiz_sessions / video_quiz_deliveries are created below.
+    quiz_session_id uuid,
+    delivery_id uuid,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- A combined survey MUST carry the quiz rating; a video-only survey must not.
+    CONSTRAINT svf_scope_quiz_useful_consistent CHECK (
+        (scope = 'video'          AND quiz_useful IS NULL)
+     OR (scope = 'video_and_quiz' AND quiz_useful IS NOT NULL)
+    )
 );
+
+CREATE INDEX IF NOT EXISTS idx_svf_scope    ON student_video_feedback (scope, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_svf_delivery ON student_video_feedback (delivery_id)
+    WHERE delivery_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_student_video_feedback_user_time
     ON student_video_feedback (user_id, created_at DESC);
@@ -3427,6 +3478,9 @@ CREATE TABLE IF NOT EXISTS region_features (
     gamma_lp_enabled BOOLEAN DEFAULT true,
     default_framework TEXT DEFAULT 'oecd',
     supported_languages JSONB DEFAULT '["en"]',
+    -- Video quizzes ride on the bundled Pakistani-curriculum student video
+    -- library; OFF by default, seeded ON for region='pakistan'.
+    video_quizzes_enabled BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -3518,9 +3572,14 @@ CREATE TRIGGER update_pic_lp_sessions_updated_at
 -- 1. quizzes — master quiz record per class
 CREATE TABLE IF NOT EXISTS quizzes (
     id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    teacher_id               UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    -- A video quiz is LIBRARY content: it exists before any teacher asks for
+    -- it, so teacher_id cannot be mandatory. Attribution for a shared attempt
+    -- lives on the session and the share code, not on the bank quiz.
+    teacher_id               UUID REFERENCES users(id) ON DELETE CASCADE,
     lesson_plan_id           UUID REFERENCES lesson_plans(id) ON DELETE SET NULL,
     list_id                  UUID REFERENCES student_lists(id) ON DELETE SET NULL,
+    -- The video this quiz belongs to (quiz_source='video' rows only).
+    video_id                 UUID REFERENCES student_videos(id) ON DELETE CASCADE,
     quiz_source              TEXT NOT NULL DEFAULT 'lesson_plan',
     topic                    TEXT NOT NULL,
     grade                    TEXT,
@@ -3538,6 +3597,10 @@ CREATE TABLE IF NOT EXISTS quizzes (
 
 CREATE INDEX IF NOT EXISTS idx_quizzes_teacher_id ON quizzes(teacher_id);
 CREATE INDEX IF NOT EXISTS idx_quizzes_status ON quizzes(status);
+-- One bank quiz per video. Partial-unique so ordinary /quiz rows (video_id
+-- NULL) are unaffected.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_quizzes_video_id
+    ON quizzes(video_id) WHERE video_id IS NOT NULL;
 
 -- 2. quiz_questions — MCQ bank per quiz
 CREATE TABLE IF NOT EXISTS quiz_questions (
@@ -3546,8 +3609,25 @@ CREATE TABLE IF NOT EXISTS quiz_questions (
     question_text             TEXT NOT NULL,
     option_a                  TEXT NOT NULL,
     option_b                  TEXT NOT NULL,
-    option_c                  TEXT NOT NULL,
-    correct_option            TEXT NOT NULL CHECK (correct_option IN ('A', 'B', 'C')),
+    -- Nullable: the legacy video-quiz bank has 2-option (True/False) items.
+    option_c                  TEXT,
+    option_d                  TEXT,
+    -- A-D, or a comma list for multi-answer items ("A,C").
+    correct_option            TEXT NOT NULL CHECK (correct_option ~ '^[A-D](,[A-D])*$'),
+    -- media: the assets this question sends, keyed by slot, e.g.
+    --   {"question_audio":[...], "stimulus_audio":"...", "question_image":"...",
+    --    "option_images":[...], "option_audio":[...], "explanation_image":"...",
+    --    "explanation_audio":"...", "grid":"..."}
+    -- JSONB rather than 8 columns: the slot set is defined by the render
+    -- contract, and a new pattern must not need a migration.
+    media                     JSONB,
+    -- option_feedback: {"correct":"...", "wrong":{"1":"...","2":"..."}}
+    option_feedback           JSONB,
+    -- render_pattern: P1/P2/P3/P4/P5/P6a/P6b/P8/P9 — which send sequence to use.
+    render_pattern            TEXT,
+    -- The corpus id (e.g. "leg:Grade1English...:4") — makes the importer
+    -- idempotent and lets a question be traced back to its corpus row.
+    external_id               TEXT,
     explanation               TEXT,
     misconception_feedback    TEXT,
     distractor_misconceptions JSONB
@@ -3564,15 +3644,74 @@ CREATE TABLE IF NOT EXISTS quiz_questions (
 
 CREATE INDEX IF NOT EXISTS idx_quiz_questions_quiz_id ON quiz_questions(quiz_id);
 CREATE INDEX IF NOT EXISTS idx_quiz_questions_difficulty ON quiz_questions(quiz_id, difficulty_level);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_quiz_questions_external_id
+    ON quiz_questions(external_id) WHERE external_id IS NOT NULL;
+
+-- 2b. quiz_share_codes — the forward-to-class loop
+-- Forwarding the QUESTIONS into a group cannot work: forwarding strips
+-- interactivity, so taps never reach our webhook, and the Groups API prohibits
+-- interactive messages regardless. What forwards perfectly is a LINK. The
+-- teacher forwards one wa.me link carrying a code; each child taps it, lands
+-- in their own 1:1 chat with the bot, and takes the quiz with full media and
+-- full storage. Every session created from her code is attributed back to her.
+CREATE TABLE IF NOT EXISTS quiz_share_codes (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code            TEXT NOT NULL UNIQUE,
+    quiz_id         UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+    teacher_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    video_id        UUID REFERENCES student_videos(id) ON DELETE SET NULL,
+    -- Frozen at mint time so the child's greeting can name the teacher and the
+    -- topic without a join, and still reads correctly if either later changes.
+    teacher_name    TEXT,
+    topic           TEXT,
+    language        TEXT NOT NULL DEFAULT 'en',
+    active          BOOLEAN NOT NULL DEFAULT TRUE,
+    uses_count      INTEGER NOT NULL DEFAULT 0,
+    -- When the teacher was sent the class report. NULL = not yet sent. The
+    -- guard that stops a second report going out for the same shared quiz.
+    report_sent_at  TIMESTAMPTZ,
+    -- Friend invites: the child who minted this invite (NULL = teacher-minted)
+    -- and the teacher share code it descends from. Sessions started through an
+    -- invite are recorded against the PARENT, so the class report is unchanged.
+    invited_by_student_id UUID REFERENCES students(id),
+    parent_share_code_id  UUID REFERENCES quiz_share_codes(id),
+    expires_at      TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_quiz_share_codes_teacher ON quiz_share_codes(teacher_user_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_share_codes_quiz    ON quiz_share_codes(quiz_id);
+-- The morning job looks up codes that have not been reported on yet. Partial
+-- because the answered case (already sent) is never the one we scan for.
+CREATE INDEX IF NOT EXISTS idx_quiz_share_codes_report_pending
+    ON quiz_share_codes (created_at) WHERE report_sent_at IS NULL;
 
 -- 3. quiz_sessions — one per student per quiz delivery
 CREATE TABLE IF NOT EXISTS quiz_sessions (
     id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     quiz_id                  UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
-    student_id               UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    -- Nullable: a teacher previewing her own video quiz, or a child arriving
+    -- via a share link, has no roster row — and inventing roster rows for
+    -- them would pollute real class lists.
+    student_id               UUID REFERENCES students(id) ON DELETE CASCADE,
+    -- Video-quiz identity columns: the registered user taking a solo run, or
+    -- the self-declared name/class from the share-link flow.
+    user_id                  UUID REFERENCES users(id) ON DELETE SET NULL,
+    student_name             TEXT,
+    student_class            TEXT,
+    share_code_id            UUID REFERENCES quiz_share_codes(id) ON DELETE SET NULL,
+    -- Set when this child came via a friend's invite. On completion the
+    -- inviter is told how their friend did — first name and score only.
+    invited_by_student_id    UUID REFERENCES students(id),
+    source                   TEXT NOT NULL DEFAULT 'roster'
+                             CHECK (source IN ('roster', 'video_solo', 'share_link')),
     parent_phone             TEXT NOT NULL,
     status                   TEXT NOT NULL DEFAULT 'invited'
-                             CHECK (status IN ('invited', 'active', 'completed', 'incomplete', 'expired', 'cancelled')),
+                             CHECK (status IN ('invited', 'active', 'in_progress', 'completed', 'incomplete', 'expired', 'cancelled')),
+    -- Every session must be attributable to SOMEONE: a roster student, a
+    -- registered user, or a self-declared name from a share link.
+    CONSTRAINT quiz_sessions_has_identity
+      CHECK (student_id IS NOT NULL OR user_id IS NOT NULL OR student_name IS NOT NULL),
     current_difficulty       INTEGER DEFAULT 3 CHECK (current_difficulty BETWEEN 1 AND 5),
     total_questions_answered INTEGER DEFAULT 0,
     correct_answers          INTEGER DEFAULT 0,
@@ -3586,13 +3725,20 @@ CREATE TABLE IF NOT EXISTS quiz_sessions (
 CREATE INDEX IF NOT EXISTS idx_quiz_sessions_quiz_id ON quiz_sessions(quiz_id);
 CREATE INDEX IF NOT EXISTS idx_quiz_sessions_parent_phone ON quiz_sessions(parent_phone);
 CREATE INDEX IF NOT EXISTS idx_quiz_sessions_status ON quiz_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_user_id
+    ON quiz_sessions(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_share_code
+    ON quiz_sessions(share_code_id) WHERE share_code_id IS NOT NULL;
+-- "Did anyone I invited finish?" — the only query this serves.
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_invited_by
+    ON quiz_sessions (invited_by_student_id) WHERE invited_by_student_id IS NOT NULL;
 
 -- 4. quiz_answers — individual student answers
 CREATE TABLE IF NOT EXISTS quiz_answers (
     id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id            UUID NOT NULL REFERENCES quiz_sessions(id) ON DELETE CASCADE,
     question_id           UUID NOT NULL REFERENCES quiz_questions(id) ON DELETE CASCADE,
-    selected_option       TEXT NOT NULL CHECK (selected_option IN ('A', 'B', 'C')),
+    selected_option       TEXT NOT NULL CHECK (selected_option ~ '^[A-D](,[A-D])*$'),
     is_correct            BOOLEAN NOT NULL,
     difficulty_at_time    INTEGER,
     response_time_seconds INTEGER,
@@ -3601,6 +3747,82 @@ CREATE TABLE IF NOT EXISTS quiz_answers (
 );
 
 CREATE INDEX IF NOT EXISTS idx_quiz_answers_session_id ON quiz_answers(session_id);
+
+-- 5. video_quiz_deliveries — one row per student-video send, carrying the
+-- whole quiz funnel (sent -> offered -> accepted/shared/declined/ignored ->
+-- completed). The grain for all video/quiz popularity reporting; follows the
+-- one-row-per-send delivery-tracking pattern used elsewhere in this schema.
+CREATE TABLE IF NOT EXISTS video_quiz_deliveries (
+    id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id           uuid REFERENCES users(id),
+    video_id          uuid REFERENCES student_videos(id),
+    phone             varchar(20),
+    status            text NOT NULL DEFAULT 'sent'
+                          CHECK (status IN ('sent', 'failed')),
+    -- denormalised for reporting without a join
+    grade             varchar(20),
+    subject           varchar(50),
+    title             text,
+    correlation_id    text,
+    delivered_at      timestamptz NOT NULL DEFAULT now(),
+
+    -- the quiz funnel for THIS video send.
+    -- accepted = tapped Start; shared = sent it to the class without taking
+    -- it; declined = No thanks; ignored = offer sent, no answer.
+    quiz_offered_at   timestamptz,
+    quiz_response     text CHECK (quiz_response IN ('accepted', 'shared', 'declined', 'ignored')),
+    quiz_responded_at timestamptz,
+    quiz_session_id   uuid REFERENCES quiz_sessions(id),
+
+    created_at        timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_vqd_user       ON video_quiz_deliveries (user_id, delivered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vqd_video      ON video_quiz_deliveries (video_id);
+CREATE INDEX IF NOT EXISTS idx_vqd_delivered  ON video_quiz_deliveries (delivered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vqd_response   ON video_quiz_deliveries (quiz_response)
+    WHERE quiz_response IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_vqd_session    ON video_quiz_deliveries (quiz_session_id)
+    WHERE quiz_session_id IS NOT NULL;
+
+-- 6. student_video_feedback quiz-link FKs: the columns live on the base table
+-- definition (see the Student Videos section above); the referenced tables are
+-- only created here, so the constraints attach now.
+ALTER TABLE student_video_feedback
+    DROP CONSTRAINT IF EXISTS svf_quiz_session_fk;
+ALTER TABLE student_video_feedback
+    ADD CONSTRAINT svf_quiz_session_fk FOREIGN KEY (quiz_session_id) REFERENCES quiz_sessions(id);
+ALTER TABLE student_video_feedback
+    DROP CONSTRAINT IF EXISTS svf_delivery_fk;
+ALTER TABLE student_video_feedback
+    ADD CONSTRAINT svf_delivery_fk FOREIGN KEY (delivery_id) REFERENCES video_quiz_deliveries(id);
+
+-- 6b. Share-code use counter (called by the share service when a child joins).
+CREATE OR REPLACE FUNCTION increment_share_code_uses(code_id UUID)
+RETURNS void AS $$
+BEGIN
+    UPDATE quiz_share_codes SET uses_count = uses_count + 1 WHERE id = code_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 7. Popularity as ONE query rather than a stored/duplicated metric.
+CREATE OR REPLACE VIEW v_video_quiz_popularity AS
+SELECT
+    date_trunc('day', d.delivered_at)::date            AS day,
+    d.grade,
+    d.subject,
+    count(*)                                            AS videos_sent,
+    count(*) FILTER (WHERE d.quiz_offered_at IS NOT NULL)        AS quizzes_offered,
+    count(*) FILTER (WHERE d.quiz_response = 'accepted')         AS quizzes_started,
+    count(*) FILTER (WHERE s.status = 'completed')               AS quizzes_completed,
+    count(*) FILTER (WHERE d.quiz_response = 'declined')         AS quizzes_declined,
+    count(*) FILTER (WHERE d.quiz_response = 'ignored')          AS offers_ignored,
+    round(100.0 * count(*) FILTER (WHERE d.quiz_response = 'accepted')
+          / nullif(count(*) FILTER (WHERE d.quiz_offered_at IS NOT NULL), 0), 1)
+                                                        AS accept_rate_pct
+FROM video_quiz_deliveries d
+LEFT JOIN quiz_sessions s ON s.id = d.quiz_session_id
+GROUP BY 1, 2, 3;
 
 -- =============================================================================
 -- Column reconcile (Phase 5) — columns the bot code writes/reads that the base

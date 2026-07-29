@@ -30,6 +30,10 @@ const DEFAULT_REGION_FEATURES = {
   gamma_lp_enabled: true,
   default_framework: 'oecd',
   supported_languages: ['en'],
+  // Video quizzes ride on the bundled Pakistani-curriculum student video
+  // library (English + Urdu). OFF by default; the seed data enables it for
+  // region='pakistan'. See docs/features/video-quizzes.md.
+  video_quizzes_enabled: false,
 };
 
 const _cache = new Map(); // region -> { row, ts }
@@ -72,6 +76,17 @@ async function isPicLpEnabled(region) {
   return (await getRegionFeatures(region)).pic_lp_enabled !== false;
 }
 
+/**
+ * Region gate for the video-quiz feature (offer-after-video, share codes,
+ * friend invites). The quiz corpus is built from the bundled student video
+ * library — Pakistani national curriculum content — so it is enabled only for
+ * region='pakistan' in the seed data. Other regions: flip the flag in your
+ * region_features row once you have a corpus for your own library.
+ */
+async function isVideoQuizzesEnabled(region) {
+  return !!(await getRegionFeatures(region)).video_quizzes_enabled;
+}
+
 function _clearCache() {
   _cache.clear();
 }
@@ -80,6 +95,7 @@ module.exports = {
   getRegionFeatures,
   isCurriculumLpEnabled,
   isPicLpEnabled,
+  isVideoQuizzesEnabled,
   DEFAULT_REGION_FEATURES,
   _clearCache,
 };

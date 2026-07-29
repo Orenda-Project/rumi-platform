@@ -253,6 +253,32 @@ async function handleTextMessage(message, from, messageBody, user = null) {
   // ============================================================
   const trimmedMessage = messageBody.trim().toLowerCase();
 
+  // Video-quiz share links.
+  //
+  // Deliberately BEFORE every other consumer: a child arriving from a
+  // forwarded wa.me link may have no users row at all, and their first
+  // message is the auto-filled "QUIZ-ABC123". Routing that through normal
+  // onboarding would answer a code with a menu.
+  //
+  // Two steps, both short-circuiting:
+  //   1. the code itself -> greet, naming the teacher and the topic
+  //   2. the join replies -> the child's name and class
+  if (messageBody) {
+    try {
+      const VideoQuizShare = require('../services/quiz/video-quiz-share.service');
+      const code = VideoQuizShare.parseShareCode(messageBody);
+      if (code) {
+        if (await VideoQuizShare.beginFromCode(from, code)) return;
+      }
+      if (await VideoQuizShare.consumeJoinReply(from, messageBody)) {
+        logToFile('Text consumed as video-quiz join detail — short-circuit', { from });
+        return;
+      }
+    } catch (vqErr) {
+      logToFile('Video Quiz share: routing error', { error: vqErr.message });
+    }
+  }
+
   // Student Video feedback reason capture — if the teacher tapped "Not really"
   // on a recent video survey and is within the 10-min reason window, capture
   // this text as the reason and short-circuit. Slash commands bypass this
