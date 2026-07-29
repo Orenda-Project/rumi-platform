@@ -133,6 +133,31 @@ const FLOW_CONFIGS = [
     envVar: 'EXAM_CHECKER_STUDENTS_FLOW_ID',
     categories: ['OTHER'],
   },
+  {
+    // Video-quiz picture picker: the options ARE the pictures
+    // (RadioButtonsGroup, per-option base64 image, media-size: large).
+    // Terminates on the client (`complete` action) — the bot reads the answer
+    // from the nfm_reply, routed on the vq: flow token. Deliberately NOT
+    // data_exchange: that would need a Flow endpoint, and the nfm_reply only
+    // fires for a complete action. Optional: without it, picture questions
+    // fall back to a numbered grid + list picker.
+    name: 'Video Quiz',
+    jsonPath: path.join(FLOWS_DIR, 'video-quiz-flow.json'),
+    type: 'navigate',
+    envVar: 'VIDEO_QUIZ_FLOW_ID',
+    categories: ['OTHER'],
+  },
+  {
+    // One-screen name + class form a new student fills once, on their first
+    // shared-quiz join. Same complete/nfm_reply contract as Video Quiz,
+    // routed on the vqjoin: flow token. Optional: without it, the child is
+    // asked for name and class as two chat messages instead.
+    name: 'Student Join',
+    jsonPath: path.join(FLOWS_DIR, 'student-join-flow.json'),
+    type: 'navigate',
+    envVar: 'STUDENT_JOIN_FLOW_ID',
+    categories: ['OTHER'],
+  },
 ];
 
 /** The flow names that a complete setup must have registered. */

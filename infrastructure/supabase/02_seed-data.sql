@@ -98,3 +98,13 @@ ON CONFLICT (region) DO NOTHING;
 INSERT INTO region_features (region, gamma_lp_enabled, pic_lp_enabled, curriculum_lp_enabled, default_framework, supported_languages)
 VALUES ('india', true, true, false, 'oecd', '["en","hi","bn","mr","te","ta-IN","kn"]'::jsonb)
 ON CONFLICT (region) DO NOTHING;
+
+-- 'pakistan': the region the bundled content library belongs to. Video quizzes
+-- (the 890-video Pakistani-curriculum student library + its quiz corpus) are
+-- enabled HERE and nowhere else — the questions were authored against these
+-- exact videos, in English and Urdu. A deployment serving Pakistani teachers
+-- sets DEFAULT_REGION=pakistan in .env and gets the feature; other regions
+-- flip video_quizzes_enabled on their own row once they have their own corpus.
+INSERT INTO region_features (region, gamma_lp_enabled, pic_lp_enabled, curriculum_lp_enabled, default_framework, supported_languages, video_quizzes_enabled)
+VALUES ('pakistan', true, true, false, 'oecd', '["en","ur"]'::jsonb, true)
+ON CONFLICT (region) DO UPDATE SET video_quizzes_enabled = EXCLUDED.video_quizzes_enabled;

@@ -62,6 +62,7 @@ Every feature lives on WhatsApp. Click any feature for its own page — what it 
 | 📸 **[Pic-to-LP](docs/features/pic-to-lp.md)** | A photo of a textbook page → an illustrated 2-page lesson plan | `KIE_API_KEY` |
 | 📚 **[Homework](docs/features/homework.md)** | Pick a class + chapters → a curriculum homework bundle PDF | `HOMEWORK_FLOW_ID` |
 | 🧠 **[Quiz](docs/features/quiz.md)** | Teacher sends a topic quiz to a class; students answer on their parents' WhatsApp, teacher gets a results report | _core (uses `OPENROUTER_API_KEY`)_ |
+| 🎬🎓 **[Video Quizzes](docs/features/video-quizzes.md)** | A curriculum video → its quiz, 3 s later — pictures, voice notes, class share links, and a next-morning reteach report. Ships with the open **Taleemabad content library** ([see below ↓](#-the-taleemabad-content-library)) | one import script + `DEFAULT_REGION=pakistan` |
 | 🗣️ **[Voice Messages](docs/features/voice.md)** | Full spoken interaction in many languages | `SONIOX_API_KEY` + `ELEVENLABS_API_KEY` |
 | 🎬 **[Video Generation](docs/features/video.md)** | A topic → a short narrated educational video | `VIDEO_GENERATION_ENABLED` + `KIE_API_KEY` |
 | ✅ **[Attendance](docs/features/attendance.md)** | Voice- or tap-based attendance via WhatsApp Flows | _always on (core)_ |
@@ -80,6 +81,30 @@ Rumi meets teachers in their own language — for **text chat, voice-note transc
 > **🇮🇳 हिन्दी Hindi · বাংলা Bengali · मराठी Marathi · తెలుగు Telugu · தமிழ் Tamil · ಕನ್ನಡ Kannada**
 
 Every one works end to end — teachers can chat and send voice notes in their language, get spoken and written replies back, and generate **lesson plans localized to Indian classrooms** (₹ money problems, locally familiar names and contexts). Pick a language anytime with **`/language`**, or just message Rumi in your own script. Which languages appear is driven per-region by config (`region_features`), so a deployment shows only what it serves.
+
+---
+
+## 📚 The Taleemabad Content Library
+
+<p align="center">
+  <img src="docs/images/features/video-quiz-library.png" alt="The Taleemabad content library — 890 videos, 10,929 certified questions, 15,557 voice clips, 3,217 illustrations" width="100%" />
+</p>
+
+Rumi now ships with a **real, complete content library — free and openly hosted**. Between 2015 and 2021, [Taleemabad](https://taleemabad.com)'s content team hand-wrote question banks, hand-drew the artwork, and studio-recorded voice clips for the Taleemabad Student App, used by hundreds of thousands of Pakistani children. That entire archive has been rescued, matched to its **890 curriculum videos** (Nursery–Grade 6, English + Urdu), QA-certified question by question, and rebuilt for WhatsApp:
+
+<p align="center">
+  <img src="docs/images/features/video-quiz-phones.png" alt="Video quizzes on WhatsApp: tap-the-picture Flow, Urdu phonics by voice note, score card" width="100%" />
+</p>
+
+- A teacher sends **`/video`**, browses grade → subject → topic, and the video lands in her chat. Three seconds later she's offered its **quiz** — 15 questions with per-answer feedback, picture options she can actually tap, and phonics questions asked by voice note.
+- She can forward **one link** to her class WhatsApp group; every child plays in their own 1:1 chat, and she gets a **next-morning PDF** naming exactly what to reteach and why the class got it wrong.
+- **All media is served from a public CDN** — the videos, all 3,217 illustrations, and all 15,557 voice clips — so your clone needs *zero* content hosting. One command imports the whole library:
+
+```bash
+node bot/scripts/setup/import-video-quiz-library.js --apply
+```
+
+The library is Pakistani national-curriculum content, so the quiz feature is **region-gated to `pakistan`** out of the box (`DEFAULT_REGION=pakistan` in `.env` switches it on — the seed data does the rest). If you serve another curriculum, the gate is one row of config, and the full pipeline for building your own corpus is documented in **[docs/features/video-quizzes.md](docs/features/video-quizzes.md)**.
 
 ---
 

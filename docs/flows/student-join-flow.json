@@ -1,0 +1,66 @@
+{
+  "version": "7.0",
+  "screens": [
+    {
+      "id": "WHO",
+      "title": "Before we start",
+      "terminal": true,
+      "data": {
+        "teacher": {
+          "type": "string",
+          "__example__": "Miss Ayesha"
+        },
+        "topic": {
+          "type": "string",
+          "__example__": "A Balanced Diet"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.teacher} has sent you a quiz"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.topic}"
+          },
+          {
+            "type": "Form",
+            "name": "who",
+            "children": [
+              {
+                "type": "TextInput",
+                "name": "student_name",
+                "label": "Your name",
+                "input-type": "text",
+                "required": true,
+                "helper-text": "So your teacher can see how you did"
+              },
+              {
+                "type": "TextInput",
+                "name": "student_class",
+                "label": "Your class",
+                "input-type": "text",
+                "required": true,
+                "helper-text": "For example: Grade 4, or 1-B"
+              },
+              {
+                "type": "Footer",
+                "label": "Start the quiz",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "student_name": "${form.student_name}",
+                    "student_class": "${form.student_class}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

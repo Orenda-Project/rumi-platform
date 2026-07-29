@@ -162,3 +162,9 @@ CREATE POLICY "service_role_release_notes" ON release_notes FOR ALL USING (auth.
 CREATE POLICY "service_role_schema_versions" ON schema_versions FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "service_role_website_visits" ON website_visits FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "service_role_migration_test" ON migration_test FOR ALL USING (auth.role() = 'service_role');
+
+-- Video quizzes
+ALTER TABLE quiz_share_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE video_quiz_deliveries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_role_quiz_share_codes" ON quiz_share_codes FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "service_role_video_quiz_deliveries" ON video_quiz_deliveries FOR ALL USING (auth.role() = 'service_role');

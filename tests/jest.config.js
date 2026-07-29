@@ -22,6 +22,8 @@ module.exports = {
     '^axios$': '<rootDir>/tests/__mocks__/axios.js',
     '^form-data$': '<rootDir>/tests/__mocks__/form-data.js',
     // bot-only optional/native packages — use lightweight mocks for OSS test suite
+    '^@aws-sdk/client-s3$': '<rootDir>/tests/__mocks__/aws-sdk-client-s3.js',
+    '^@aws-sdk/s3-request-presigner$': '<rootDir>/tests/__mocks__/aws-sdk-s3-request-presigner.js',
     '^pino$': '<rootDir>/tests/__mocks__/pino.js',
     '^canvas$': '<rootDir>/tests/__mocks__/canvas.js',
     '^dotenv$': '<rootDir>/tests/__mocks__/dotenv.js',

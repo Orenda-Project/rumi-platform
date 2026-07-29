@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-29
+
+### Added
+- **Video Quizzes + the Taleemabad Content Library** — the biggest content drop
+  the platform has shipped. A teacher pulls a curriculum video with `/video`
+  and is offered its quiz 3 s later: 15 questions one at a time with per-answer
+  feedback, picture options served as a tappable WhatsApp Flow
+  (`RadioButtonsGroup`, `media-size: large`) with a numbered-grid fallback,
+  phonics questions asked by voice note (labels quoted-replied to the clip they
+  name), a forwardable `wa.me` class link (each child plays 1:1, is remembered
+  between quizzes, and can invite a friend), and a next-morning designed PDF
+  report that names what to reteach and the wrong answer the class agreed on.
+  Ships with the openly-hosted library: **890 curriculum videos, 858 with a
+  quiz, 10,929 QA-certified questions, 15,557 studio voice clips, 3,217
+  hand-drawn illustrations** (Pakistani national curriculum, English + Urdu),
+  all served from a public CDN bucket — one import script
+  (`bot/scripts/setup/import-video-quiz-library.js`) and zero media hosting.
+  Region-gated via `region_features.video_quizzes_enabled` (seeded ON for
+  `pakistan`). New services under `bot/shared/services/quiz/video-quiz-*.js`,
+  student-videos endpoint v2 (clean titles, duplicate-hiding), two new Flows
+  (`video-quiz-flow.json`, `student-join-flow.json`) in the registrar, a
+  boot-time Flow-ID validator, and schema: `quiz_share_codes`,
+  `video_quiz_deliveries`, `v_video_quiz_popularity`, plus media/feedback/
+  render-pattern columns on `quiz_questions` and identity columns on
+  `quiz_sessions`/`students`.
+
+### Fixed
+- `quiz_sessions.status` CHECK now includes `in_progress` (the value the
+  session service actually writes — previously every start UPDATE failed
+  silently).
+
 ## [1.1.0] - 2026-04-03
 
 **BREAKING (vs v1.0.0):** The three-tier feature system (Minimal / Recommended /

@@ -41,6 +41,11 @@ const ALLOWLIST = {
   // (`.upsert(gradeRows, { onConflict: 'submission_id,question_id' })`) so the
   // first object literal it sees after `.upsert(` is the options object.
   exam_grades: ['onconflict'],
+  // Same parser artifact in import-video-quiz-library.js: the rows argument is
+  // a variable, so the first object literal after `.upsert(` is the options.
+  student_videos: ['onconflict'],
+  quizzes: ['onconflict'],
+  quiz_questions: ['onconflict'],
   // conversation_state is a coaching_sessions column mis-attributed to conversations
   // by chain proximity (parser artifact). (The stale context_data write was removed —
   // comprehension state lives in Redis, see redis-comprehension.service.)

@@ -88,6 +88,14 @@ function buildCompleteState(overrides = {}) {
         flowId: 'flow_exam_12', status: 'PUBLISHED', envVar: 'EXAM_CHECKER_STUDENTS_FLOW_ID',
         type: 'endpoint', endpointPath: '/api/flows/exam-confirm-students', registeredAt: now,
       },
+      'Video Quiz': {
+        flowId: 'flow_vq_13', status: 'PUBLISHED', envVar: 'VIDEO_QUIZ_FLOW_ID',
+        type: 'navigate', registeredAt: now,
+      },
+      'Student Join': {
+        flowId: 'flow_sj_14', status: 'PUBLISHED', envVar: 'STUDENT_JOIN_FLOW_ID',
+        type: 'navigate', registeredAt: now,
+      },
     },
     templates: {
       welcome_message: { templateId: 'tpl_1', status: 'APPROVED', registeredAt: now },

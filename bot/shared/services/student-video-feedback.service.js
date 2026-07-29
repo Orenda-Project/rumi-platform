@@ -1,8 +1,8 @@
 /**
  * Student Video Feedback Service
  *
- * Post-delivery thumbs-up / thumbs-down micro-survey for the Student Video
- * Library:
+ * Mirrors lp-feedback.service.js so the post-delivery survey lifecycle is
+ * identical across LP and Student Video Library:
  *
  *  1. scheduleFeedbackPrompt(...) — called from student-videos-endpoint
  *     deliverVideoAsync(...) AFTER the video is sent successfully.
@@ -12,17 +12,18 @@
  *     student_video_feedback_yes_* / student_video_feedback_no_* button ids.
  *     - Inserts a row into student_video_feedback (or no-ops on duplicate).
  *     - On "no": sets Redis flag student_video_feedback_pending:{userId} and
- *       sends a "What didn't work?" follow-up.
+ *       sends "What didn't work?" follow-up.
  *  4. consumeReasonIfPending(...) — called from text-message.handler BEFORE
  *     any routing; if the Redis flag is set, captures the next inbound text
  *     as the reason and returns true so the handler short-circuits.
  *
- * Design tradeoffs:
+ * Design tradeoffs (same as lp-feedback):
  *  - Detached setTimeout for the 30s delay (lost on bot restart; acceptable
- *    at low-volume scale — upgrade to a delayed queue message if loss > 5%).
+ *    at expected scale — single-digit deliveries / minute during pilot.
+ *    Upgrade to SQS delayed message if loss > 5%.).
  *  - Redis flag with TTL = 600s = 10-min reason-capture window.
- *  - Single row per (user, video) — duplicate taps update `useful` and re-arm
- *    the Redis flag if the user toggles their answer.
+ *  - Single row per (user, video) — duplicate taps update `useful` and
+ *    re-arm the Redis flag if the user toggles their answer.
  */
 
 const supabase = require('../config/supabase');
@@ -31,12 +32,19 @@ const WhatsAppService = require('./whatsapp.service');
 const { logEvent } = require('../utils/structured-logger');
 const { logToFile } = require('../utils/logger');
 
-// 30s after video delivery.
+// 30s after video delivery (mirrors lp-feedback FEEDBACK_DELAY_MS).
 const FEEDBACK_DELAY_MS = 30 * 1000;
 const REASON_WINDOW_SECS = 600;                // 10-min reason-capture window
 const REDIS_REASON_KEY = (userId) => `student_video_feedback_pending:${userId}`;
 
-const BUTTON_RX = /^student_video_feedback_(yes|no)_([0-9a-f-]{36})$/;
+// the optional `__vq` suffix marks a survey that covered the video AND
+// the quiz. It rides in the id because a bot restart between the prompt and the
+// tap would lose any in-memory context, and the row's `scope` must be right.
+const BUTTON_RX = /^student_video_feedback_(yes|no)_([0-9a-f-]{36})(__vq)?$/;
+
+// Links a pending prompt to the delivery and quiz session it is about, so the
+// stored feedback is findable by video, by delivery, or by quiz session.
+const REDIS_SCOPE_KEY = (userId, videoId) => `student_video_feedback_scope:${userId}:${videoId}`;
 
 function gradeTitle(g) {
   const s = String(g || '');
@@ -76,7 +84,7 @@ async function _localizedFinalAck(userId, reasonLanguage) {
  * @param {string} opts.videoId - UUID of the student_videos row delivered
  * @param {string} opts.userId  - Teacher's user_id (UUID)
  * @param {string} opts.phone   - Teacher's phone (for sendInteractiveButtons)
- * @param {Object} opts.context - { grade, subject, topic, subtopic, language }
+ * @param {Object} opts.context - { grade, subject, chapter, title, language }
  * @param {number} [opts.delayMs=30000] - Delay before sending prompt
  */
 function scheduleFeedbackPrompt(opts) {
@@ -99,27 +107,49 @@ function scheduleFeedbackPrompt(opts) {
  * Send the 2-button "Did you like the video?" message.
  */
 async function sendFeedbackPrompt({ videoId, userId, phone, context }) {
-  const language = (context && context.language) || 'en';
+  const language = context.language || 'en';
   const isUrduLike = language === 'ur' || language === 'sd' || language === 'pa';
 
+  // the survey asks about whatever the teacher actually RECEIVED.
+  // scope='video_and_quiz' when she took the quiz, 'video' when she declined
+  // it or the video had none. Asking "did you like that video?" after she has
+  // just worked through 15 questions ignores most of what we sent her.
+  const bothScope = context.scope === 'video_and_quiz';
+
+  // Body — single line per language.
   let body;
   if (language === 'ur') {
-    body = 'کیا آپ کو یہ ویڈیو پسند آئی؟';
+    body = bothScope ? 'کیا ویڈیو اور کوئز مفید رہے؟' : 'کیا آپ کو یہ ویڈیو پسند آئی؟';
   } else if (language === 'sd') {
-    body = 'ڇا توھان کي اھا وڊيو پسند آئي؟';
+    body = bothScope ? 'ڇا وڊيو ۽ ڪوئز مفيد رهيا؟' : 'ڇا توھان کي اھا وڊيو پسند آئي؟';
   } else if (language === 'pa') {
-    body = 'کیہہ تہانوں ایہ ویڈیو پسند آئی؟';
+    body = bothScope ? 'کیہہ ویڈیو تے کوئز فائدہ مند سن؟' : 'کیہہ تہانوں ایہ ویڈیو پسند آئی؟';
   } else {
-    body = 'Did you like that video?';
+    body = bothScope ? 'Were the video and the quiz useful?' : 'Did you like that video?';
   }
 
   // 20-char button cap; emoji counts as 2.
   const buttonYes = isUrduLike ? '👍 ہاں' : '👍 Yes';
   const buttonNo  = isUrduLike ? '👎 نہیں' : '👎 Not really';
+  // The scope travels in the button id so the tap knows what was asked, even
+  // after a bot restart has cleared any in-memory context.
+  const suffix = bothScope ? `${videoId}__vq` : videoId;
   const buttons = [
-    { id: `student_video_feedback_yes_${videoId}`, title: buttonYes },
-    { id: `student_video_feedback_no_${videoId}`,  title: buttonNo  },
+    { id: `student_video_feedback_yes_${suffix}`, title: buttonYes },
+    { id: `student_video_feedback_no_${suffix}`,  title: buttonNo  },
   ];
+
+  // Park the linking ids so the tap can write them onto the row. TTL matches
+  // the reason window plus slack.
+  if (context.deliveryId || context.quizSessionId) {
+    try {
+      await redisService.set(REDIS_SCOPE_KEY(userId, videoId), {
+        scope: bothScope ? 'video_and_quiz' : 'video',
+        deliveryId: context.deliveryId || null,
+        quizSessionId: context.quizSessionId || null,
+      }, 24 * 60 * 60);
+    } catch (e) { /* non-fatal: the row still records scope from the button id */ }
+  }
 
   const ok = await WhatsAppService.sendInteractiveButtons(phone, { body, buttons });
 
@@ -142,11 +172,12 @@ async function handleFeedbackButton(buttonId, phone) {
 
   const useful = match[1] === 'yes';
   const videoId = match[2];
+  const coveredQuiz = !!match[3];
 
   // Look up the video row + the user (resolve user_id from phone)
   const { data: video, error: videoError } = await supabase
     .from('student_videos')
-    .select('id, grade, subject, topic, subtopic')
+    .select('id, grade, subject, clean_chapter, clean_title')
     .eq('id', videoId)
     .maybeSingle();
   if (videoError || !video) {
@@ -196,6 +227,17 @@ async function handleFeedbackButton(buttonId, phone) {
     return true;
   }
 
+  // link the row to the delivery and the quiz session so this feedback
+  // is findable three ways — by video, by delivery, and by quiz attempt.
+  let link = null;
+  try { link = await redisService.get(REDIS_SCOPE_KEY(userId, videoId)); } catch (_) { /* optional */ }
+
+  // The CHECK constraint svf_scope_quiz_useful_consistent requires quiz_useful
+  // to be NULL for scope='video' and NOT NULL for 'video_and_quiz'. One tap
+  // covers both surfaces, so both carry the same verdict; the discrimination
+  // comes from the free-text reason on a 👎.
+  const scope = coveredQuiz ? 'video_and_quiz' : 'video';
+
   // Insert the feedback row
   const { data: inserted, error: insertError } = await supabase
     .from('student_video_feedback')
@@ -203,10 +245,14 @@ async function handleFeedbackButton(buttonId, phone) {
       user_id: userId,
       video_id: videoId,
       useful,
+      scope,
+      quiz_useful: coveredQuiz ? useful : null,
+      quiz_session_id: link?.quizSessionId || null,
+      delivery_id: link?.deliveryId || null,
       grade: video.grade,
       subject: video.subject,
-      topic: video.topic,
-      subtopic: video.subtopic,
+      topic: video.clean_chapter,
+      subtopic: video.clean_title,
     })
     .select('id')
     .single();
@@ -215,6 +261,8 @@ async function handleFeedbackButton(buttonId, phone) {
     logEvent('student_video.feedback.insert_failed', {
       videoId, userId, phone, useful, error: insertError?.message || 'insert returned no row',
     });
+    // Ack without pretending we saved anything; capture reason via orphan
+    // log if user taps 👎.
     if (useful) {
       await WhatsAppService.sendMessage(phone, _ackYes(language));
     } else {
@@ -265,7 +313,7 @@ function _ackNoReasonPrompt(language) {
 
 /**
  * Capture the next inbound text as the reason if the Redis flag is set.
- * Returns true if consumed (so the caller short-circuits).
+ * Mirrors lp-feedback.consumeReasonIfPending. Returns true if consumed.
  */
 async function consumeReasonIfPending(userId, phone, text) {
   if (!userId || !text || !text.trim()) return false;
@@ -290,7 +338,7 @@ async function consumeReasonIfPending(userId, phone, text) {
   // Clear flag first so a failed UPDATE doesn't trap the user
   try { await redisService.delete(REDIS_REASON_KEY(userId)); } catch (_) { /* non-fatal */ }
 
-  // Heuristic: Arabic/Urdu/Persian script blocks → 'ur', else 'en'.
+  // Match the lp-feedback heuristic: Arabic/Urdu/Persian script blocks.
   const hasUrduScript = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/.test(text);
   const reasonLanguage = hasUrduScript ? 'ur' : 'en';
   const reasonTrimmed = text.trim().slice(0, 2000);
