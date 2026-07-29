@@ -73,6 +73,14 @@ Every feature lives on WhatsApp. Click any feature for its own page — what it 
 
 Utility flows round it out — **settings** (language + framework), **status** (your active sessions), **edit-class** (roster), and a **student-video** library — each presence-gated on its WhatsApp Flow id.
 
+### 🌐 Languages — now with a full Indian-language suite
+
+Rumi meets teachers in their own language — for **text chat, voice-note transcription (STT), and spoken replies (TTS)** alike. Alongside English, Urdu, Arabic, Spanish, and Pakistan's regional languages, Rumi now ships a complete **Indian-language suite**:
+
+> **🇮🇳 हिन्दी Hindi · বাংলা Bengali · मराठी Marathi · తెలుగు Telugu · தமிழ் Tamil · ಕನ್ನಡ Kannada**
+
+Every one works end to end — teachers can chat and send voice notes in their language, get spoken and written replies back, and generate **lesson plans localized to Indian classrooms** (₹ money problems, locally familiar names and contexts). Pick a language anytime with **`/language`**, or just message Rumi in your own script. Which languages appear is driven per-region by config (`region_features`), so a deployment shows only what it serves.
+
 ---
 
 ## 🤖 Built to be run by an AI agent
