@@ -2,6 +2,10 @@
 
 ![The Taleemabad content library](../images/features/video-quiz-library.png)
 
+> **▶ Watch the film (68 s):** [**Taleemabad Library on Rumi**](https://pub-0edccec5d5bd419782ba389c59faecac.r2.dev/media/Taleemabad_Library_On_Rumi.mp4) — a phone on a charpai, one message, and 890 lessons.
+>
+> [![Watch: Taleemabad Library on Rumi](../images/features/video-quiz-film-poster.png)](https://pub-0edccec5d5bd419782ba389c59faecac.r2.dev/media/Taleemabad_Library_On_Rumi.mp4)
+
 > A teacher pulls up a curriculum video with `/video`, and three seconds after it lands she's offered its quiz — **15 questions, one at a time, with per-answer feedback**. She can take it herself, or send one forwardable link to her class group so every child plays in their own chat. The next morning she gets a designed PDF naming exactly what to reteach.
 
 ![Three phones: picture picker, Urdu phonics, score card](../images/features/video-quiz-phones.png)

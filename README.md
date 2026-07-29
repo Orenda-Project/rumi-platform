@@ -90,6 +90,13 @@ Every one works end to end — teachers can chat and send voice notes in their l
   <img src="docs/images/features/video-quiz-library.png" alt="The Taleemabad content library — 890 videos, 10,929 certified questions, 15,557 voice clips, 3,217 illustrations" width="100%" />
 </p>
 
+<p align="center">
+  <a href="https://pub-0edccec5d5bd419782ba389c59faecac.r2.dev/media/Taleemabad_Library_On_Rumi.mp4">
+    <img src="docs/images/features/video-quiz-film-poster.png" alt="▶ Watch the film: Taleemabad Library on Rumi (68 s)" width="100%" />
+  </a><br>
+  <em>▶ 68 seconds: a phone on a charpai, one message, and 890 lessons — <a href="https://pub-0edccec5d5bd419782ba389c59faecac.r2.dev/media/Taleemabad_Library_On_Rumi.mp4">watch the film</a></em>
+</p>
+
 Rumi now ships with a **real, complete content library — free and openly hosted**. Between 2015 and 2021, [Taleemabad](https://taleemabad.com)'s content team hand-wrote question banks, hand-drew the artwork, and studio-recorded voice clips for the Taleemabad Student App, used by hundreds of thousands of Pakistani children. That entire archive has been rescued, matched to its **890 curriculum videos** (Nursery–Grade 6, English + Urdu), QA-certified question by question, and rebuilt for WhatsApp:
 
 <p align="center">
