@@ -17,6 +17,7 @@
 
 const { logToFile } = require('./logger');
 const { VALID_LANGUAGES, DEFAULT_LANGUAGE } = require('./language-cache');
+const { LANGUAGES } = require('../config/supported-languages');
 
 // Minimum confidence threshold for language detection (0-1)
 const MIN_CONFIDENCE_THRESHOLD = 0.5;
@@ -150,6 +151,56 @@ const LANGUAGE_OVERRIDE_COMMANDS = {
     /talk in tamil/i,
     /use tamil/i,
     /tamil please/i
+  ],
+  // India market (December 2025). Note: generic "switch to tamil" stays mapped to
+  // ta-LK above; Indian Tamil uses explicit "indian tamil" triggers to avoid conflict.
+  hi: [
+    /हिंदी में बात करो/,
+    /हिंदी में बोलो/,
+    /switch to hindi/i,
+    /speak in hindi/i,
+    /talk in hindi/i,
+    /use hindi/i,
+    /hindi please/i
+  ],
+  bn: [
+    /বাংলায় কথা বলুন/,
+    /বাংলায় বলুন/,
+    /switch to bengali/i,
+    /speak in bengali/i,
+    /talk in bengali/i,
+    /use bengali/i,
+    /bengali please/i
+  ],
+  mr: [
+    /मराठीत बोला/,
+    /मराठी वापरा/,
+    /switch to marathi/i,
+    /speak in marathi/i,
+    /talk in marathi/i,
+    /use marathi/i,
+    /marathi please/i
+  ],
+  te: [
+    /తెలుగులో మాట్లాడండి/,
+    /switch to telugu/i,
+    /speak in telugu/i,
+    /talk in telugu/i,
+    /use telugu/i,
+    /telugu please/i
+  ],
+  'ta-IN': [
+    /switch to indian tamil/i,
+    /speak in indian tamil/i,
+    /indian tamil please/i
+  ],
+  kn: [
+    /ಕನ್ನಡದಲ್ಲಿ ಮಾತನಾಡಿ/,
+    /switch to kannada/i,
+    /speak in kannada/i,
+    /talk in kannada/i,
+    /use kannada/i,
+    /kannada please/i
   ]
 };
 
@@ -358,18 +409,8 @@ function analyzeLanguage(transcriptionResult, currentLanguage) {
  * @returns {string} Display name
  */
 function getLanguageDisplayName(languageCode) {
-  const names = {
-    en: 'English',
-    es: 'Español',
-    ur: 'اردو',
-    ar: 'العربية',
-    'pa-PK': 'پنجابی',
-    'sd-PK': 'سنڌي',
-    'ps-PK': 'پښتو',
-    'bal-PK': 'بلوچی',
-    'ta-LK': 'தமிழ்'
-  };
-  return names[languageCode] || languageCode;
+  // Native names come from the canonical config/supported-languages.js.
+  return LANGUAGES[languageCode]?.native || languageCode;
 }
 
 /**

@@ -126,7 +126,9 @@ Make this practical, detailed, and immediately usable by teachers with varying e
  *   - sectionCount: SECTION_COUNT (9), exposed for tests/consumers.
  */
 function buildLessonPlanPrompt({ language, grade, subject } = {}) {
-  const inputText = `This lesson plan should follow evidence-based pedagogical frameworks and be suitable for teachers in Pakistani classrooms (mixed-ability, limited resources). Structure the plan with these sections:
+  const { classroomContextFor } = require('./pedagogy/lp-localization.service');
+  const context = classroomContextFor(language); // e.g. 'Pakistani', 'Indian', 'local'
+  const inputText = `This lesson plan should follow evidence-based pedagogical frameworks and be suitable for teachers in ${context} classrooms (mixed-ability, limited resources). Structure the plan with these sections:
 
 ${SECTIONS_BLOCK}
 
