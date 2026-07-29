@@ -30,7 +30,7 @@ function makeWabaFlows(overrides = {}) {
 }
 
 function makeEnv(overrides = {}) {
-  const base = { WHATSAPP_TOKEN: 'tok', WABA_ID: '1383233296670749' };
+  const base = { WHATSAPP_TOKEN: 'tok', WABA_ID: '1000000000000001' };
   EXPECTED_FLOW_ID_ENV_VARS.forEach((name, idx) => { base[name] = `100${idx}`; });
   return { ...base, ...overrides };
 }
