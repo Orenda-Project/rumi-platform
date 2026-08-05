@@ -1,11 +1,11 @@
 /**
  * System Messages Library
  *
- * Complete localization of all system messages for 15 languages.
+ * Complete localization of all system messages for 16 languages.
  * Ensures ALL system messages exist in all supported languages.
  *
  * Languages: en, ur, ar, es, bal-PK, sd-PK, ps-PK, pa-PK, ta-LK,
- *            hi, bn, mr, te, ta-IN, kn (India market)
+ *            hi, bn, mr, te, ta-IN, kn (India market), fr (francophone)
  *
  * @see PROBLEM_B_IMPLEMENTATION_PLAN.md for full documentation
  */
@@ -27,7 +27,8 @@ const SYSTEM_MESSAGES = {
     mr: "ठीक आहे! नव्याने सुरुवात करूया. आज मी तुम्हाला कशी मदत करू शकते?",
     te: "సరే! కొత్తగా మొదలుపెడదాం. ఈరోజు నేను మీకు ఎలా సహాయం చేయగలను?",
     'ta-IN': "சரி! புதிதாக தொடங்குவோம். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?",
-    kn: "ಸರಿ! ಹೊಸದಾಗಿ ಆರಂಭಿಸೋಣ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?"
+    kn: "ಸರಿ! ಹೊಸದಾಗಿ ಆರಂಭಿಸೋಣ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?",
+    fr: "D'accord ! On repart de zéro. Comment puis-je vous aider aujourd'hui ?"
   },
 
   // Language switch confirmation
@@ -46,7 +47,8 @@ const SYSTEM_MESSAGES = {
     mr: "मी मराठीत बदललं आहे. आज मी तुम्हाला कशी मदत करू शकते?",
     te: "నేను తెలుగుకు మారాను. ఈరోజు నేను మీకు ఎలా సహాయం చేయగలను?",
     'ta-IN': "நான் தமிழுக்கு மாறிவிட்டேன். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?",
-    kn: "ನಾನು ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಿದ್ದೇನೆ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?"
+    kn: "ನಾನು ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಿದ್ದೇನೆ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?",
+    fr: "Je suis passée au français. Comment puis-je vous aider aujourd'hui ?"
   },
 
   // Empty transcription
@@ -65,7 +67,8 @@ const SYSTEM_MESSAGES = {
     mr: "माफ करा, मला तुमचा संदेश स्पष्ट ऐकू आला नाही. पुन्हा प्रयत्न कराल का?",
     te: "క్షమించండి, మీ సందేశం స్పష్టంగా వినిపించలేదు. మళ్ళీ ప్రయత్నిస్తారా?",
     'ta-IN': "மன்னிக்கவும், உங்கள் செய்தியைத் தெளிவாகக் கேட்க முடியவில்லை. மீண்டும் முயற்சிக்க முடியுமா?",
-    kn: "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಸಂದೇಶ ಸ್ಪಷ್ಟವಾಗಿ ಕೇಳಿಸಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತೀರಾ?"
+    kn: "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಸಂದೇಶ ಸ್ಪಷ್ಟವಾಗಿ ಕೇಳಿಸಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತೀರಾ?",
+    fr: "Désolée, je n'ai pas bien entendu votre message. Pouvez-vous réessayer ?"
   },
 
   // Processing/Loading
@@ -84,7 +87,8 @@ const SYSTEM_MESSAGES = {
     mr: "तुमचा lesson plan आत्ता तयार करत आहे. सुमारे एक मिनिट लागेल...",
     te: "మీ lesson plan ఇప్పుడు తయారు చేస్తున్నాను. సుమారు ఒక నిమిషం పడుతుంది...",
     'ta-IN': "உங்கள் lesson plan-ஐ இப்போது உருவாக்குகிறேன். சுமார் ஒரு நிமிடம் ஆகும்...",
-    kn: "ನಿಮ್ಮ lesson plan ಈಗ ರಚಿಸುತ್ತಿದ್ದೇನೆ. ಸುಮಾರು ಒಂದು ನಿಮಿಷ ತೆಗೆದುಕೊಳ್ಳುತ್ತದೆ..."
+    kn: "ನಿಮ್ಮ lesson plan ಈಗ ರಚಿಸುತ್ತಿದ್ದೇನೆ. ಸುಮಾರು ಒಂದು ನಿಮಿಷ ತೆಗೆದುಕೊಳ್ಳುತ್ತದೆ...",
+    fr: "Je crée votre lesson plan maintenant. Cela prendra environ une minute..."
   },
 
   // General error
@@ -103,7 +107,8 @@ const SYSTEM_MESSAGES = {
     mr: "काहीतरी चूक झाली. मी पुन्हा प्रयत्न करते.",
     te: "ఏదో తప్పు జరిగింది. నేను మళ్ళీ ప్రయత్నిస్తాను.",
     'ta-IN': "ஏதோ தவறு நடந்துவிட்டது. மீண்டும் முயற்சிக்கிறேன்.",
-    kn: "ಏನೋ ತಪ್ಪಾಗಿದೆ. ನಾನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತೇನೆ."
+    kn: "ಏನೋ ತಪ್ಪಾಗಿದೆ. ನಾನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತೇನೆ.",
+    fr: "Quelque chose s'est mal passé. Laissez-moi réessayer."
   },
 
   // Audio too long
@@ -122,7 +127,8 @@ const SYSTEM_MESSAGES = {
     mr: "तुमचा voice message बराच लांब आहे. थोडा छोटा पाठवाल का?",
     te: "మీ voice message చాలా పొడవుగా ఉంది. కొంచెం చిన్నది పంపగలరా?",
     'ta-IN': "உங்கள் voice message கொஞ்சம் நீளமாக உள்ளது. சிறியதாக அனுப்ப முடியுமா?",
-    kn: "ನಿಮ್ಮ voice message ಸ್ವಲ್ಪ ಉದ್ದವಾಗಿದೆ. ಚಿಕ್ಕದಾಗಿ ಕಳುಹಿಸಬಹುದೇ?"
+    kn: "ನಿಮ್ಮ voice message ಸ್ವಲ್ಪ ಉದ್ದವಾಗಿದೆ. ಚಿಕ್ಕದಾಗಿ ಕಳುಹಿಸಬಹುದೇ?",
+    fr: "Votre message vocal est assez long. Pourriez-vous en envoyer un plus court ?"
   },
 
   // Coaching session prompts
@@ -141,7 +147,8 @@ const SYSTEM_MESSAGES = {
     mr: "छान! चला तुमची coaching session सुरू करूया. आजच्या तुमच्या शिकवण्याबद्दल सांगा.",
     te: "బాగుంది! మీ coaching session మొదలుపెడదాం. ఈరోజు మీ బోధన గురించి చెప్పండి.",
     'ta-IN': "அருமை! உங்கள் coaching session-ஐ தொடங்குவோம். இன்றைய உங்கள் கற்பித்தல் பற்றி சொல்லுங்கள்.",
-    kn: "ಚೆನ್ನಾಗಿದೆ! ನಿಮ್ಮ coaching session ಆರಂಭಿಸೋಣ. ಇಂದಿನ ನಿಮ್ಮ ಬೋಧನೆ ಬಗ್ಗೆ ಹೇಳಿ."
+    kn: "ಚೆನ್ನಾಗಿದೆ! ನಿಮ್ಮ coaching session ಆರಂಭಿಸೋಣ. ಇಂದಿನ ನಿಮ್ಮ ಬೋಧನೆ ಬಗ್ಗೆ ಹೇಳಿ.",
+    fr: "Super ! Commençons votre coaching session. Parlez-moi de votre enseignement d'aujourd'hui."
   },
 
   // Encouragement
@@ -160,7 +167,8 @@ const SYSTEM_MESSAGES = {
     mr: "तुम्ही खूप छान करत आहात! असंच चांगलं काम सुरू ठेवा.",
     te: "మీరు చాలా బాగా చేస్తున్నారు! ఇలాగే మంచి పని కొనసాగించండి.",
     'ta-IN': "நீங்கள் மிகச் சிறப்பாகச் செய்கிறீர்கள்! இப்படியே தொடருங்கள்.",
-    kn: "ನೀವು ತುಂಬಾ ಚೆನ್ನಾಗಿ ಮಾಡುತ್ತಿದ್ದೀರಿ! ಹೀಗೆಯೇ ಒಳ್ಳೆಯ ಕೆಲಸ ಮುಂದುವರಿಸಿ."
+    kn: "ನೀವು ತುಂಬಾ ಚೆನ್ನಾಗಿ ಮಾಡುತ್ತಿದ್ದೀರಿ! ಹೀಗೆಯೇ ಒಳ್ಳೆಯ ಕೆಲಸ ಮುಂದುವರಿಸಿ.",
+    fr: "Vous vous en sortez très bien ! Continuez ce bon travail."
   },
 
   // Language nudge
@@ -179,7 +187,8 @@ const SYSTEM_MESSAGES = {
     mr: "तुम्हाला जिथे सर्वात सोयीस्कर वाटेल त्या भाषेतही मी बोलू शकते. उपलब्ध भाषा पाहण्यासाठी /language टाइप करा.",
     te: "మీకు అత్యంత సౌకర్యంగా ఉండే భాషలో కూడా నేను మాట్లాడగలను. అందుబాటులో ఉన్న భాషలను చూడటానికి /language టైప్ చేయండి.",
     'ta-IN': "உங்களுக்கு மிகவும் வசதியான மொழியிலும் நான் பேசலாம். கிடைக்கும் மொழிகளைப் பார்க்க /language என்று டைப் செய்யுங்கள்.",
-    kn: "ನಿಮಗೆ ಅತ್ಯಂತ ಅನುಕೂಲವಾದ ಭಾಷೆಯಲ್ಲೂ ನಾನು ಮಾತನಾಡಬಲ್ಲೆ. ಲಭ್ಯವಿರುವ ಭಾಷೆಗಳನ್ನು ನೋಡಲು /language ಟೈಪ್ ಮಾಡಿ."
+    kn: "ನಿಮಗೆ ಅತ್ಯಂತ ಅನುಕೂಲವಾದ ಭಾಷೆಯಲ್ಲೂ ನಾನು ಮಾತನಾಡಬಲ್ಲೆ. ಲಭ್ಯವಿರುವ ಭಾಷೆಗಳನ್ನು ನೋಡಲು /language ಟೈಪ್ ಮಾಡಿ.",
+    fr: "Je peux aussi vous parler dans la langue où vous êtes le plus à l'aise. Tapez /language pour voir les langues disponibles."
   },
 
   // Thank you
@@ -198,7 +207,8 @@ const SYSTEM_MESSAGES = {
     mr: "धन्यवाद! आणखी काही आहे का ज्यात मी मदत करू शकते?",
     te: "ధన్యవాదాలు! నేను సహాయం చేయగలిగే మరేదైనా ఉందా?",
     'ta-IN': "நன்றி! வேறு ஏதாவது நான் உதவ முடியுமா?",
-    kn: "ಧನ್ಯವಾದಗಳು! ನಾನು ಸಹಾಯ ಮಾಡಬಹುದಾದ ಇನ್ನೇನಾದರೂ ಇದೆಯೇ?"
+    kn: "ಧನ್ಯವಾದಗಳು! ನಾನು ಸಹಾಯ ಮಾಡಬಹುದಾದ ಇನ್ನೇನಾದರೂ ಇದೆಯೇ?",
+    fr: "Merci ! Y a-t-il autre chose que je puisse faire pour vous aider ?"
   },
 
   // Goodbye
@@ -217,7 +227,8 @@ const SYSTEM_MESSAGES = {
     mr: "निरोप! तुमचा दिवस छान जावो. जेव्हा मदत हवी असेल तेव्हा मला संदेश पाठवा.",
     te: "వీడ్కోలు! మీ రోజు బాగుండాలి. సహాయం కావలసినప్పుడు నాకు సందేశం పంపండి.",
     'ta-IN': "பிரியாவிடை! இனிய நாள் அமையட்டும். உதவி தேவைப்படும்போது எப்போதும் எனக்கு செய்தி அனுப்புங்கள்.",
-    kn: "ವಿದಾಯ! ನಿಮ್ಮ ದಿನ ಚೆನ್ನಾಗಿರಲಿ. ಸಹಾಯ ಬೇಕಾದಾಗ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ."
+    kn: "ವಿದಾಯ! ನಿಮ್ಮ ದಿನ ಚೆನ್ನಾಗಿರಲಿ. ಸಹಾಯ ಬೇಕಾದಾಗ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+    fr: "Au revoir ! Bonne journée. Écrivez-moi dès que vous avez besoin d'aide."
   }
 };
 
@@ -261,7 +272,7 @@ function hasMessage(key) {
  * @returns {string[]}
  */
 function getSupportedLanguages() {
-  return ['en', 'ur', 'ar', 'es', 'bal-PK', 'sd-PK', 'ps-PK', 'pa-PK', 'ta-LK', 'hi', 'bn', 'mr', 'te', 'ta-IN', 'kn'];
+  return ['en', 'ur', 'ar', 'es', 'bal-PK', 'sd-PK', 'ps-PK', 'pa-PK', 'ta-LK', 'hi', 'bn', 'mr', 'te', 'ta-IN', 'kn', 'fr'];
 }
 
 module.exports = {

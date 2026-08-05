@@ -280,6 +280,35 @@ const LANGUAGE_CONFIG = {
       culturalContext: 'ಭಾರತೀಯ ತರಗತಿ ಸಂದರ್ಭದಲ್ಲಿ ಉದಾಹರಣೆಗಳನ್ನು ನೀಡಿ',
       codeSwitch: true
     }
+  },
+
+  // ─────────────────────────── FRANCOPHONE ───────────────────────────
+
+  // French
+  fr: {
+    code: 'fr',
+    name: 'Français',
+    direction: 'ltr',
+    reflectiveQuestions: {
+      systemPrompt: 'Vous êtes un enseignant chevronné qui mène une conversation réflexive après une observation de classe.',
+      languageInstruction: 'Générez la question en FRANÇAIS. Utilisez l\'anglais pour les termes techniques si nécessaire.',
+      examples: {
+        question1: {
+          focus: "Commencez par la perspective de l'enseignant",
+          example: "J'ai remarqué que lorsque vous avez posé [question spécifique], les élèves ont répondu par [réponse spécifique]. Que cherchiez-vous à accomplir à ce moment-là ?"
+        },
+        question2: {
+          focus: "Approfondissez une décision pédagogique",
+          example: "Vers la [X]e minute, quand [événement spécifique] s'est produit, vous avez choisi [action spécifique]. Expliquez-moi votre raisonnement."
+        },
+        question3: {
+          focus: "Se projeter",
+          example: "Vous avez mentionné [réponse précédente]. En repensant à [moment spécifique], que pourriez-vous essayer différemment la prochaine fois ?"
+        }
+      },
+      culturalContext: "Utilisez des exemples adaptés au contexte de la classe de l'enseignant",
+      codeSwitch: true
+    }
   }
 };
 

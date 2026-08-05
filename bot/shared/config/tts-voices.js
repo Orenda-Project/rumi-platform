@@ -119,6 +119,16 @@ const TTS_VOICES = {
     testPhrases: ['ನಮಸ್ಕಾರ', 'ಹೇಗಿದ್ದೀರಾ', 'ಪಾಠ ಯೋಜನೆ'],
     warning: 'Verify Kannada voice quality before launch; fall back to OpenAI tts-1 if poor.',
     scriptGuidance: 'Use Kannada script with English terms in ASCII'
+  },
+
+  // ── Francophone markets (conversation only) ──
+  // eleven_v3 covers French natively; OpenAI tts-1 is the automatic fallback.
+  'fr': {
+    provider: 'elevenlabs',
+    voice: 'french-female',
+    notes: 'ElevenLabs eleven_v3 supports French well. Supports emotion tags.',
+    testPhrases: ['bonjour', 'comment allez-vous', 'créez un lesson plan'],
+    scriptGuidance: 'Use standard French orthography (accents included), Western numerals'
   }
 };
 
