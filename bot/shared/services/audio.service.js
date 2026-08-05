@@ -1034,14 +1034,6 @@ class AudioService {
   }
 
   /**
-   * Transcribe audio using user's preferred language
-   * Routes to Soniox or MMS-ASR based on language
-   *
-   * @param {string} wavPath - Path to WAV audio file
-   * @param {string} userLanguage - User's preferred language code
-   * @returns {Promise<{text: string, language: string, engine: string}>}
-   */
-  /**
    * Dominant language across Soniox per-token language IDs.
    * Region-strips codes (fr-FR → fr). Returns null when no token carries a
    * language, so the caller can fall back to text-based detection.
@@ -1061,6 +1053,14 @@ class AudioService {
     return ranked.length ? ranked[0][0] : null;
   }
 
+  /**
+   * Transcribe audio using user's preferred language
+   * Routes to Soniox or MMS-ASR based on language
+   *
+   * @param {string} wavPath - Path to WAV audio file
+   * @param {string} userLanguage - User's preferred language code
+   * @returns {Promise<{text: string, language: string, engine: string}>}
+   */
   static async transcribeWithLanguagePreference(wavPath, userLanguage) {
     const engine = this.getASREngine(userLanguage);
 
