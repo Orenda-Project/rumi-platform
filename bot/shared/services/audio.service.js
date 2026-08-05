@@ -37,7 +37,12 @@ ffmpeg.setFfprobePath(ffprobePath);
 // Soniox-supported languages (ISO 639-1, region-stripped before sending).
 // Indian languages (hi/bn/mr/te/ta/kn) are supported by Soniox and route here
 // automatically since they are absent from MMS_LANGUAGES below.
-const SONIOX_LANGUAGES = ['en', 'ur', 'ar', 'es', 'ta', 'ta-LK', 'pa', 'pa-PK', 'hi', 'bn', 'mr', 'te', 'kn'];
+const SONIOX_LANGUAGES = ['en', 'ur', 'ar', 'es', 'ta', 'ta-LK', 'pa', 'pa-PK', 'hi', 'bn', 'mr', 'te', 'kn', 'fr'];
+
+// Multi-language auto-detect hints for Soniox, used when no explicit language is
+// set (coaching / general voice notes). Region-stripped ISO 639-1 codes, only
+// languages Soniox supports. Exposed on the class for regression tests.
+const SONIOX_AUTODETECT_HINTS = ['en', 'ur', 'es', 'ar', 'pa', 'ta', 'hi', 'bn', 'mr', 'te', 'kn', 'fr'];
 const MMS_LANGUAGES = {
   'bal-PK': 'bcc-script_arabic',  // Southern Balochi with Arabic script
   'sd-PK': 'snd',                  // Sindhi
@@ -110,7 +115,7 @@ class AudioService {
       // e.g. coaching audio). Covers PK + India scripts for a shared deployment.
       const languageHints = normalizedLanguage
         ? [normalizedLanguage]
-        : ['en', 'ur', 'es', 'ar', 'pa', 'ta', 'hi', 'bn', 'mr', 'te', 'kn'];
+        : SONIOX_AUTODETECT_HINTS;
 
       const requestBody = {
         file_id: fileId,
@@ -269,7 +274,20 @@ class AudioService {
             || transcriptResponse.data.language_code
             || null;
 
-          // If Soniox didn't return language, use our language detector on the text
+          // Soniox v3/v5 tag language per-token (top-level `language` is often
+          // null). Prefer the dominant token language — it's Soniox's own ID and
+          // is reliable for distinct-phonology languages, unlike the rule-based
+          // text fallback which can't read Latin-script languages (e.g. French,
+          // which it mislabels as en/es). Only fall back to text detection when
+          // tokens carry no language at all (e.g. the v2 model).
+          if (!detectedLanguage) {
+            detectedLanguage = AudioService._languageFromTokens(tokens);
+            if (detectedLanguage) {
+              logToFile('Language derived from Soniox per-token identification', {
+                detectedLanguage
+              });
+            }
+          }
           if (!detectedLanguage && rawTranscript) {
             const LanguageDetectorService = require('./language-detector.service');
             detectedLanguage = LanguageDetectorService.detectLanguage(rawTranscript);
@@ -1023,6 +1041,26 @@ class AudioService {
    * @param {string} userLanguage - User's preferred language code
    * @returns {Promise<{text: string, language: string, engine: string}>}
    */
+  /**
+   * Dominant language across Soniox per-token language IDs.
+   * Region-strips codes (fr-FR → fr). Returns null when no token carries a
+   * language, so the caller can fall back to text-based detection.
+   * @param {Array<{language?: string}>} tokens
+   * @returns {string|null}
+   */
+  static _languageFromTokens(tokens) {
+    if (!Array.isArray(tokens) || tokens.length === 0) return null;
+    const counts = {};
+    for (const t of tokens) {
+      if (t && typeof t.language === 'string' && t.language) {
+        const code = t.language.split('-')[0];
+        counts[code] = (counts[code] || 0) + 1;
+      }
+    }
+    const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return ranked.length ? ranked[0][0] : null;
+  }
+
   static async transcribeWithLanguagePreference(wavPath, userLanguage) {
     const engine = this.getASREngine(userLanguage);
 
@@ -1088,5 +1126,9 @@ class AudioService {
     };
   }
 }
+
+// Expose the Soniox auto-detect hint list for regression tests (see
+// tests/language/french-stt.test.js) without loading the transcription path.
+AudioService.SONIOX_AUTODETECT_HINTS = SONIOX_AUTODETECT_HINTS;
 
 module.exports = AudioService;
