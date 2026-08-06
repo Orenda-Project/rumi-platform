@@ -53,6 +53,17 @@ async function handlePortalCommand(user, phoneNumber) {
         es: 'Tu cuenta ya está activa. Pide la URL del portal a tu administrador.'
       },
 
+      // PORTAL_URL is not set on this deployment. A permanent configuration
+      // gap, not a hiccup — the generic `error` message below tells the teacher
+      // to "try again in a few minutes", which will never help and reads as a
+      // bug in the bot rather than a feature this deployment hasn't set up.
+      notConfigured: {
+        en: "The teacher portal isn't set up on this deployment yet, so there's no link I can send you. Everything else still works here in chat — type /menu to see what I can do.",
+        ur: 'اس ڈیپلائمنٹ پر ٹیچر پورٹل ابھی سیٹ اپ نہیں ہے، اس لیے میں آپ کو لنک نہیں بھیج سکتا۔ باقی سب کچھ چیٹ میں کام کرتا ہے — /menu ٹائپ کریں۔',
+        ar: 'لم يتم إعداد بوابة المعلم في هذا النظام بعد، لذا لا يوجد رابط لإرساله. كل شيء آخر يعمل هنا في المحادثة — اكتب /menu.',
+        es: 'El portal del docente aún no está configurado en esta instalación, así que no hay enlace que enviarte. Todo lo demás funciona aquí en el chat: escribe /menu.',
+      },
+
       // Error sending invitation
       error: {
         en: `Sorry, I couldn't create your portal invitation right now. Please try again in a few minutes or contact support.\n\nمعذرت، میں ابھی آپ کا پورٹل دعوت نامہ نہیں بنا سکا۔ براہ کرم کچھ منٹوں میں دوبارہ کوشش کریں۔`,
@@ -69,6 +80,14 @@ async function handlePortalCommand(user, phoneNumber) {
     if (user.portal_activated) {
       logToFile('✅ Portal already activated, sending login link', { userId: user.id });
       return messages.alreadyActivated[language] || messages.alreadyActivated.en;
+    }
+
+    // Nothing to invite anyone to without a portal URL. Checked BEFORE the
+    // service call, which would otherwise mint and store an invite token that
+    // can never be used.
+    if (!portalBase) {
+      logToFile('⚠️ /portal requested but PORTAL_URL is not configured', { userId: user.id });
+      return messages.notConfigured[language] || messages.notConfigured.en;
     }
 
     // Send portal invitation (generates token, stores in DB, sends WhatsApp message)

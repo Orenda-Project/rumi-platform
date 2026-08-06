@@ -250,8 +250,8 @@ class QuizReportService {
    */
   static async _generateInsightBody(quiz, stats, language) {
     try {
-      const OpenAI = require('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      // See quiz-generation.service.js: the single LLM entry point is llm-client.
+      const openai = require('../llm-client').getClient();
 
       const prompt = `A teacher in Pakistan just received quiz results on "${quiz.topic}" (${quiz.grade || 'primary school'}).
 

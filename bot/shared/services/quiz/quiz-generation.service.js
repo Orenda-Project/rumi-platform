@@ -4,6 +4,13 @@
 const { logToFile } = require('../../utils/logger');
 const supabase = require('../../config/supabase');
 
+/**
+ * Output budget for one 10-question generation. See the call site for why an
+ * explicit bound matters rather than letting the provider reserve the model's
+ * full 16k output ceiling.
+ */
+const QUESTION_GENERATION_MAX_TOKENS = 4000;
+
 // Question count by difficulty
 const QUESTION_DISTRIBUTION = [
   { level: 1, count: 2 },
@@ -86,8 +93,12 @@ class QuizGenerationService {
    * @private
    */
   static async _generateQuestions({ topic, grade, subject, sourceContent, quizSource }) {
-    const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Routed through llm-client (OpenRouter) rather than a direct OpenAI
+    // client: it is the single LLM entry point this codebase documents, and a
+    // direct client demanded OPENAI_API_KEY, which a deployment configured with
+    // OPENROUTER_API_KEY does not set — quiz generation died on "Missing
+    // credentials … set the OPENAI_API_KEY environment variable".
+    const openai = require('../llm-client').getClient();
 
     const contentBlock = sourceContent
       ? `Based on this lesson plan content:\n${sourceContent.substring(0, 3000)}`
@@ -159,7 +170,15 @@ as keys; never include the correct option as a key).`;
           model: 'gpt-4o',
           messages: [{ role: 'user', content: systemPrompt }],
           temperature: attempts === 0 ? 0.7 : 0.9,
-          response_format: { type: 'json_object' }
+          response_format: { type: 'json_object' },
+          // Bounded deliberately. With no limit the provider reserves the
+          // model's entire output budget (16384 tokens for gpt-4o), which is
+          // ~6x what 10 questions need and is charged/quota-checked up front —
+          // OpenRouter rejected the request outright with "402 … You requested
+          // up to 16384 tokens, but can only afford 2236". 10 MCQs with
+          // explanations and misconception maps measure ~2.5k tokens, so this
+          // leaves comfortable headroom without reserving the whole ceiling.
+          max_tokens: QUESTION_GENERATION_MAX_TOKENS
         });
 
         const raw = response.choices[0].message.content;

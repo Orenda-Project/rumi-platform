@@ -49,6 +49,13 @@ function logToFile(message, data = null) {
     // Ignore file write errors in production (Railway has no persistent storage)
   }
 
+  // An interactive `rumi` command keeps the file record but not the console echo.
+  // Its terminal is a conversation with a person — a QR code, a wizard, a
+  // readiness table — and internal diagnostics interleaved with that read as
+  // though something went wrong. The command says what happened in its own
+  // words; this line is still in the log file if anyone needs it.
+  if (process.env.RUMI_CLI === '1') return;
+
   // For console: output structured (single-line JSON via structured-logger)
   // The structured-logger will intercept this and format it properly
   if (enrichedData) {

@@ -9,19 +9,32 @@
  *
  * Each feature's `keys` list is verified against the code that actually reads
  * them, so `doctor` and any runtime gate report the truth, not an aspiration.
+ *
+ * The messaging channel is presence-gated the same way, just scoped by
+ * CHANNEL_DRIVER (see resolveChannelDriver below and
+ * bot/shared/services/messaging/channel-registry.js): the WhatsApp/Meta vars
+ * are required only when the resolved channel is `meta` — a sandbox
+ * (Baileys) deployment needs none of them. This is a second presence-based
+ * selector, not a new tier system, the same shape as QUEUE_DRIVER.
  */
 
-// Hard requirements: the bot will not start without all of these.
+const { DRIVERS, DEFAULT_DRIVER } = require('../services/messaging/channel-registry');
+
+// Hard requirements, independent of messaging channel: the bot will not start
+// without all of these.
 const REQUIRED_VARS = [
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
   'OPENROUTER_API_KEY',
   'REDIS_URL',
-  'WHATSAPP_TOKEN',
-  'PHONE_NUMBER_ID',
-  'WEBHOOK_VERIFY_TOKEN',
-  'WABA_ID',
 ];
+
+// Additional vars required per messaging channel driver. Adding a new channel
+// (e.g. Slack) is a one-line addition here — no restructuring.
+const CHANNEL_REQUIRED_VARS = {
+  meta: ['WHATSAPP_TOKEN', 'PHONE_NUMBER_ID', 'WEBHOOK_VERIFY_TOKEN', 'WABA_ID'],
+  baileys: [],
+};
 
 // Optional features → the env key(s) that switch each one on.
 const FEATURES = [
@@ -55,9 +68,35 @@ const FEATURES = [
 const PLACEHOLDER_RE = /^CHANGEME|your-project|your_|^YOUR_|^<.*>$/i;
 const isSet = (v) => typeof v === 'string' && v.trim() !== '' && !PLACEHOLDER_RE.test(v.trim());
 
-/** Required vars that are NOT set (empty array = ready to boot). */
+/**
+ * Which messaging channel driver applies for this env. Explicit CHANNEL_DRIVER
+ * wins when it names a known driver; an unknown explicit value falls back to
+ * DEFAULT_DRIVER (messaging/index.js logs that case — this function stays a
+ * pure, side-effect-free config read). With no CHANNEL_DRIVER set at all,
+ * infer `meta` if ANY of its required vars is already present — a
+ * pre-existing or partially-configured Meta deployment must keep being told
+ * what's missing, not get silently reclassified as sandbox with nothing
+ * required.
+ */
+function resolveChannelDriver(env = process.env) {
+  const explicit = (env.CHANNEL_DRIVER || '').trim().toLowerCase();
+  if (explicit) {
+    return Object.prototype.hasOwnProperty.call(DRIVERS, explicit) ? explicit : DEFAULT_DRIVER;
+  }
+  const metaVars = CHANNEL_REQUIRED_VARS.meta;
+  if (metaVars.some((k) => isSet(env[k]))) return 'meta';
+  return DEFAULT_DRIVER;
+}
+
+/** The full required-vars list for this env: the channel-independent core plus whichever channel is resolved. */
+function requiredVarsFor(env = process.env) {
+  const channel = resolveChannelDriver(env);
+  return [...REQUIRED_VARS, ...(CHANNEL_REQUIRED_VARS[channel] || [])];
+}
+
+/** Required vars (core + resolved channel) that are NOT set (empty array = ready to boot). */
 function missingRequired(env = process.env) {
-  return REQUIRED_VARS.filter((k) => !isSet(env[k]));
+  return requiredVarsFor(env).filter((k) => !isSet(env[k]));
 }
 
 /**
@@ -82,4 +121,14 @@ function availableFeatures(env = process.env) {
   return FEATURES.filter((f) => isFeatureAvailable(f, env)).map((f) => f.name);
 }
 
-module.exports = { REQUIRED_VARS, FEATURES, isSet, missingRequired, isFeatureAvailable, availableFeatures };
+module.exports = {
+  REQUIRED_VARS,
+  CHANNEL_REQUIRED_VARS,
+  FEATURES,
+  isSet,
+  resolveChannelDriver,
+  requiredVarsFor,
+  missingRequired,
+  isFeatureAvailable,
+  availableFeatures,
+};

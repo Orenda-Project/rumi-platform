@@ -103,6 +103,24 @@ class TranscriptionService {
    */
   static async downloadAudio(audioUrl, assessmentId) {
     try {
+      // A file:// URL means the recording never went to object storage — see
+      // voice-message.handler.js, which keeps it on local disk when no bucket is
+      // configured. Copy it to a fresh temp path so this function's contract is
+      // unchanged (caller owns and deletes what it gets back) and the original
+      // recording isn't destroyed by that cleanup.
+      if (typeof audioUrl === 'string' && audioUrl.startsWith('file://')) {
+        const sourcePath = audioUrl.slice('file://'.length);
+        if (!fs.existsSync(sourcePath)) {
+          throw new Error(`Local audio no longer on disk: ${sourcePath}`);
+        }
+        const localTemp = path.join(TEMP_DIR, `reading_${assessmentId}_${Date.now()}.ogg`);
+        fs.copyFileSync(sourcePath, localTemp);
+        logToFile('✅ Audio read from local disk (no object storage configured)', {
+          sourcePath, path: localTemp, size: fs.statSync(localTemp).size,
+        });
+        return localTemp;
+      }
+
       const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 
       // Extract R2 key from URL (e.g., "audio/userId/timestamp_messageId.ogg")

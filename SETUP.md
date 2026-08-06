@@ -1,4 +1,75 @@
-# Rumi Platform - Setup Guide
+# Rumi Platform — Setup Guide
+
+Two commands take a fresh clone to a WhatsApp conversation with Rumi, in about fifteen minutes:
+
+```bash
+./install.sh     # tools, dependencies, and the `rumi` command
+rumi setup       # guided, one question at a time
+```
+
+`rumi setup` asks in plain language, checks every value against the real service as you enter it, and saves
+each answer as it goes — so Ctrl+C is safe, and running it again picks up where you stopped. Anything already
+working is not asked about twice.
+
+## What you'll need
+
+| For | Where to get it | Cost |
+|-----|-----------------|------|
+| **A database** — where Rumi remembers teachers, lessons and assessments | [supabase.com](https://supabase.com) | free tier is plenty |
+| **The AI** — one key, many models | [openrouter.ai/keys](https://openrouter.ai/keys) | a few dollars goes a long way |
+| **WhatsApp** | your own phone | — |
+
+Node.js 18+ and git need to be installed. Redis is required too, but the wizard offers to start one for you
+with Docker if you have it — otherwise paste any reachable address (Railway, Upstash, your own server).
+
+> **You do not need a Meta WhatsApp Business account to try Rumi.** The wizard's default links your own
+> WhatsApp the way WhatsApp Web does: scan a QR code and Rumi answers on your number. Nothing to register,
+> nothing to get approved. When you're ready for a real deployment, `rumi graduate` moves you to an official
+> WhatsApp Business number — teachers, conversations and past assessments all carry over, because Rumi
+> identifies people by phone number rather than by channel.
+
+## The `rumi` command
+
+| Command | What it does |
+|---------|--------------|
+| `rumi setup` | Connect Rumi to your accounts. Start here. `--reconfigure` re-asks everything. |
+| `rumi start` | Start the bot |
+| `rumi status` | Is Rumi running, which WhatsApp number it answers as, and what's switched on |
+| `rumi doctor` | Check every connection in detail, with where to get anything missing |
+| `rumi pair` | Link (or re-link) WhatsApp — sessions do expire |
+| `rumi graduate` | Move to an official WhatsApp Business number |
+
+If `install.sh` couldn't put `rumi` on your PATH (it needs npm permissions it may not have), use
+`node bin/rumi.js <command>` — identical in every way.
+
+## Then what?
+
+```bash
+rumi start
+```
+
+Message the number the wizard linked, from any phone, and try **Hi**, then `/menu`, `/reading test`, a voice
+note, or a photo of a worksheet.
+
+## What the wizard does, and what it can't
+
+It collects and live-checks your database, AI and Redis credentials; creates all 76 tables, the row-level
+security policies and the seed data; switches on any optional abilities you give it keys for; and links
+WhatsApp.
+
+One step it cannot do for you: Supabase offers no API for running arbitrary SQL, so the tiny `exec_sql`
+helper that the schema is applied through has to be pasted into the SQL editor once, by hand. The wizard
+detects this, prints the two lines, and links straight to the right page of your project.
+
+For a **production** deployment there is more to do than the wizard covers — hosting, the Meta webhook,
+registering WhatsApp Flows, and the background worker. That's what the rest of this guide is for.
+
+---
+
+# Manual setup and production reference
+
+Everything below can be done by hand instead of running the wizard, and steps 7 onward (deployment, webhook,
+Flows, workers) are needed for a real deployment either way.
 
 ## Prerequisites
 
@@ -9,7 +80,7 @@
 | Supabase account | [supabase.com](https://supabase.com) (free tier works) |
 | Railway account | [railway.app](https://railway.app) (for hosting + Redis) |
 | OpenRouter API key | [openrouter.ai/keys](https://openrouter.ai/keys) (for LLM access) |
-| WhatsApp Business credentials | [Meta Business Manager](https://business.facebook.com) |
+| WhatsApp Business credentials | [Meta Business Manager](https://business.facebook.com) — production only |
 
 > **New to any of these?** Two step-by-step guides walk you through the slow parts:
 > - **[docs/onboarding/whatsapp.md](docs/onboarding/whatsapp.md)** — get a working WhatsApp connection in ~10 minutes (free test number), then go to production.
@@ -48,7 +119,7 @@ cd bot && npm install && cd ..
    Then run `npm run bootstrap:db` — it applies all three SQL files in order. (If you skip the helper, the command stops with the exact SQL above.)
 
    **Option B — manual paste:** In the SQL Editor, run these three files in order:
-   - `infrastructure/supabase/00_complete-schema.sql` — all 73 tables, 40 functions, 29 triggers, 200+ indexes
+   - `infrastructure/supabase/00_complete-schema.sql` — all 76 tables, 40 functions, 29 triggers, 200+ indexes
    - `infrastructure/supabase/01_rls-policies.sql` — enables Row Level Security on all tables
    - `infrastructure/supabase/02_seed-data.sql` — adds reading assessment benchmarks
 4. **Verify** by running `infrastructure/supabase/verify-schema.sql` — all checks should show PASS

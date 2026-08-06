@@ -13,7 +13,12 @@
  * This guard locks the contract: every `WhatsAppService.<method>(` call site
  * in shipped bot source must name a real static member of the class.
  *
- * Method names are parsed off bot/shared/services/whatsapp.service.js:
+ * Method names are parsed off bot/shared/services/messaging/meta-channel.service.js
+ * (the Meta driver — moved out of the old standalone whatsapp.service.js,
+ * which is now a thin facade over bot/shared/services/messaging/. Meta is the
+ * fullest/reference driver, so it's the canonical name list; the sandbox
+ * (Baileys) driver derives its own stub surface FROM this same class at
+ * require time — see baileys-channel.service.js — so it can never drift):
  *   - static methods:  ^\s*static\s+(?:async\s+)?(\w+)\s*\(
  *   - static fields:   ^\s*static\s+(\w+)\s*=
  *
@@ -31,7 +36,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '../..');
-const SERVICE = path.join(ROOT, 'bot/shared/services/whatsapp.service.js');
+const SERVICE = path.join(ROOT, 'bot/shared/services/messaging/meta-channel.service.js');
 const SCAN_ROOT = path.join(ROOT, 'bot');
 
 // Directories that legitimately reference mock-only or not-yet-real members.

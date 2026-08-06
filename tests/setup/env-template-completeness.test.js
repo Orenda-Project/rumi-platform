@@ -70,6 +70,18 @@ const ALLOWED_MISSING = new Set([
   'USER',
   'SHELL',
   'TERM',
+  // Set by the `rumi` commands themselves, before their first require, to stop
+  // structured-logger.js taking over console.* — see tests/setup/cli-console.test.js.
+  // Never configured for a deployment; the bot server must never see it set.
+  'RUMI_CLI',
+
+  // Terminal colour conventions the CLI honours (bot/scripts/setup/ui.js).
+  // Set by the terminal or by the person running a command, never configured
+  // for a deployment — putting them in .env.template would invite someone to
+  // pin NO_COLOR for their whole install.
+  'NO_COLOR',
+  'FORCE_COLOR',
+  'COLORTERM',
   'LANG',
   'TMPDIR',
   'TZ',

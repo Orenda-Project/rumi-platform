@@ -18,13 +18,16 @@
 
 const OpenAI = require('openai');
 const { logToFile } = require('../../utils/logger');
-const { lazyClient } = require('../../utils/lazy-client');
 
 // Lazy-initialised so the bot can boot without OPENAI_API_KEY set; the
 // classifier only needs it when an image actually arrives.
-const getOpenAI = lazyClient(OpenAI, ['OPENAI_API_KEY'], (env) => ({
-  apiKey: env.OPENAI_API_KEY,
-}));
+// Routed through llm-client, the single LLM entry point this codebase
+// documents: it points at whichever provider is configured (OpenRouter by
+// default) and prefixes bare model names for it. A direct OpenAI client
+// demanded OPENAI_API_KEY, which an OpenRouter deployment does not set — so
+// this failed with "SDK client cannot be constructed — missing env:
+// OPENAI_API_KEY" while the rest of the bot's LLM calls worked.
+const { getClient: getOpenAI } = require('../llm-client');
 
 const VALID_TYPES = ['BOOK_PAGE', 'CLASSROOM', 'STUDENT_WORK', 'EXAM', 'OTHER'];
 const MODEL = process.env.PIC_LP_CLASSIFIER_MODEL || 'gpt-4o-mini';

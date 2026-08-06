@@ -9,6 +9,11 @@
  * never the raw URL; clean up; and degrade to false (not throw) on failure.
  */
 
+// Exercises the real Meta driver directly, so opt into it explicitly rather
+// than relying on messaging/index.js's backward-compat inference (which reads
+// real WHATSAPP_TOKEN/etc. from process.env, not the mocked constants module).
+process.env.CHANNEL_DRIVER = 'meta';
+
 jest.mock('../../bot/shared/utils/constants', () => ({
   WHATSAPP_TOKEN: 'test-token',
   PHONE_NUMBER_ID: 'test-phone-id',
@@ -37,6 +42,8 @@ const R2_URL = 'https://acct.r2.cloudflarestorage.com/bucket/coaching-card-abc.p
 
 describe('WhatsAppService.sendImageFromUrl', () => {
   let sendImageSpy;
+
+  afterAll(() => { delete process.env.CHANNEL_DRIVER; });
 
   beforeEach(() => {
     jest.clearAllMocks();
