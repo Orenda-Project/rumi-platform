@@ -19,7 +19,7 @@ working is not asked about twice.
 | **The AI** — one key, many models | [openrouter.ai/keys](https://openrouter.ai/keys) | a few dollars goes a long way |
 | **WhatsApp** | your own phone | — |
 
-Node.js 18+ and git need to be installed. Redis is required too, but the wizard offers to start one for you
+Node.js 20+ and git need to be installed. Redis is required too, but the wizard offers to start one for you
 with Docker if you have it — otherwise paste any reachable address (Railway, Upstash, your own server).
 
 > **You do not need a Meta WhatsApp Business account to try Rumi.** The wizard's default links your own
@@ -75,7 +75,7 @@ Flows, workers) are needed for a real deployment either way.
 
 | Requirement | Where to Get It |
 |------------|----------------|
-| Node.js 18+ | [nodejs.org](https://nodejs.org) |
+| Node.js 20+ | [nodejs.org](https://nodejs.org) |
 | GitHub account | [github.com](https://github.com) (to fork the repo) |
 | Supabase account | [supabase.com](https://supabase.com) (free tier works) |
 | Railway account | [railway.app](https://railway.app) (for hosting + Redis) |

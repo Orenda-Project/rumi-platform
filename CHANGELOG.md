@@ -19,6 +19,12 @@ commands.
 
 ### BREAKING (vs v1.2.0)
 
+- **Node 20 is now the minimum** (was 18). The Baileys sandbox driver refuses to
+  install on 18 — its own preinstall check reports "This package requires
+  Node.js 20+ to run reliably" — so `npm ci` in `bot/` fails outright rather
+  than degrading. Node 18 has also been end-of-life since April 2025. `engines`
+  is set on both packages, `install.sh` checks for 20, and the CI matrix is now
+  20 and 22.
 - **`npm run setup` now launches the interactive setup wizard.** It previously
   ran the preflight (`doctor.js`). If you had it in a script or a deploy step,
   switch to **`npm run doctor`** (or `rumi doctor`) — same output, unchanged.

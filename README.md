@@ -22,7 +22,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" /></a>
   <a href="https://github.com/Orenda-Project/rumi-platform/actions/workflows/ci.yml"><img src="https://github.com/Orenda-Project/rumi-platform/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg" alt="Node.js" />
+  <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg" alt="Node.js" />
   <img src="https://img.shields.io/badge/platform-WhatsApp-25D366.svg" alt="WhatsApp" />
   <img src="https://img.shields.io/badge/setup-15%20minutes-25D366.svg" alt="15 minute setup" />
   <img src="https://img.shields.io/badge/setup-AI--agent--native-7C3AED.svg" alt="Agent-native" />
@@ -94,7 +94,7 @@ it goes — so Ctrl+C is safe and running it again picks up where you stopped.
 
 | | Where to get it | What it's for | Cost |
 |---|---|---|---|
-| **Node.js 18+** and **git** | [nodejs.org](https://nodejs.org) | Running Rumi | free |
+| **Node.js 20+** and **git** | [nodejs.org](https://nodejs.org) | Running Rumi | free |
 | **A Supabase project** | [supabase.com](https://supabase.com) | Where Rumi remembers teachers, lessons and assessments | free tier is plenty |
 | **An OpenRouter key** | [openrouter.ai/keys](https://openrouter.ai/keys) | How Rumi thinks — one key, 500+ models | a few dollars goes a long way |
 | **A Redis address** | [Upstash](https://upstash.com) · [Railway](https://railway.app) · or local Docker | Conversations in progress, and background jobs | free tier is plenty |
@@ -364,7 +364,7 @@ Guide](docs/agent-customization.md) maps each goal to exact files:
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| Runtime | Node.js 18+ | Server-side JavaScript |
+| Runtime | Node.js 20+ | Server-side JavaScript |
 | Web | Express.js | Webhook + API routes |
 | Messaging | WhatsApp Cloud API **or** linked-device socket (pluggable via `CHANNEL_DRIVER`) | Messages, media, interactive Flows |
 | AI / LLM | OpenRouter (500+ models) | Chat, analysis, content |

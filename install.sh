@@ -51,12 +51,12 @@ printf '\n%sAn AI teaching companion that lives in WhatsApp%s\n\n' "$DIM" "$RESE
 step "Checking the tools this needs"
 
 command -v git >/dev/null 2>&1 || fail "git is not installed. Install it, then run this again."
-command -v node >/dev/null 2>&1 || fail "Node.js is not installed. Get version 18 or newer from https://nodejs.org, then run this again."
+command -v node >/dev/null 2>&1 || fail "Node.js is not installed. Get version 20 or newer from https://nodejs.org, then run this again."
 command -v npm >/dev/null 2>&1 || fail "npm is not installed — it normally comes with Node.js. Reinstall Node from https://nodejs.org"
 
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
-if [ "$NODE_MAJOR" -lt 18 ]; then
-  fail "Rumi needs Node 18 or newer; this is $(node -v). Update from https://nodejs.org, then run this again."
+if [ "$NODE_MAJOR" -lt 20 ]; then
+  fail "Rumi needs Node 20 or newer; this is $(node -v). Update from https://nodejs.org, then run this again."
 fi
 ok "Node $(node -v), npm $(npm -v), git"
 

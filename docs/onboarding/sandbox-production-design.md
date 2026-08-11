@@ -437,7 +437,7 @@ rather than a globally-curl-installed package. Layer 1 is mechanical and asks no
 layer 2 asks everything and touches no dependencies. Keeping them apart is what makes each independently
 re-runnable.
 
-**Layer 1 — `install.sh`** (`./install.sh`, once): Node ≥18 / npm / git check, `npm install` at the root and
+**Layer 1 — `install.sh`** (`./install.sh`, once): Node ≥20 / npm / git check, `npm install` at the root and
 in `bot/`, `.env` created from the template only if absent, `npm link` so a bare `rumi` works (falling back
 to a printed `node bin/rumi.js` when npm lacks permission), then it offers to run `rumi setup` immediately —
 which is the whole point of the split being invisible to a first-time user.
