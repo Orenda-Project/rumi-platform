@@ -126,11 +126,20 @@ module.exports = { DatabaseBootstrapper };
 
 function loadRepoEnv() {
   const repoRoot = path.resolve(__dirname, '../..');
+  const envPath = path.join(repoRoot, '.env');
+  
+  // Manually load .env since dotenv isn't in this package's dependencies
   try {
-    require(path.join(repoRoot, 'bot/node_modules/dotenv'))
-      .config({ path: path.join(repoRoot, '.env'), quiet: true });
+    const fs = require('fs');
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const match = line.match(/^([^#=]+)=(.*)$/);
+      if (match && !process.env[match[1]]) {
+        process.env[match[1]] = match[2].replace(/^["']|["']$/g, '');
+      }
+    });
   } catch {
-    // dotenv is a bot dependency; unset vars still fail the check below.
+    // .env might not exist yet
   }
 }
 
