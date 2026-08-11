@@ -93,6 +93,16 @@ const GAMMA_LANGUAGE_CONFIG = {
     promptSuffix: 'Generate all content in Kannada (ಕನ್ನಡ). Use simple, clear everyday Kannada suitable for classrooms in Karnataka.',
     lessonPlanIntro: 'ಒಂದು ಸಮಗ್ರವಾದ, ತರಗತಿಗೆ ಸಿದ್ಧವಾದ lesson plan ಅನ್ನು ಕನ್ನಡದಲ್ಲಿ ರಚಿಸಿ',
     presentationIntro: 'ಒಂದು ಶೈಕ್ಷಣಿಕ ಪ್ರಸ್ತುತಿಯನ್ನು ಕನ್ನಡದಲ್ಲಿ ರಚಿಸಿ'
+  },
+
+  // ── Francophone markets (LTR) ──
+  fr: {
+    code: 'fr',
+    name: 'French',
+    textDirection: 'ltr',
+    promptSuffix: 'Generate all content in French (Français). Use clear, standard classroom French suitable for teachers and pupils.',
+    lessonPlanIntro: 'Rédige en français un plan de leçon complet, directement utilisable en classe',
+    presentationIntro: 'Rédige en français une présentation pédagogique'
   }
 };
 

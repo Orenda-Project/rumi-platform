@@ -44,6 +44,7 @@ const LANGUAGES = {
   // Other
   ar: { native: 'العربية', english: 'Arabic' },
   es: { native: 'Español', english: 'Spanish' },
+  fr: { native: 'Français', english: 'French' },
 };
 
 const SUPPORTED_LANGUAGES = Object.keys(LANGUAGES);
