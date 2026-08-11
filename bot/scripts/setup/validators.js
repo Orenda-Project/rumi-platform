@@ -66,19 +66,23 @@ function identifyForeignKey(value) {
 
 /** @returns {Verdict} */
 function supabaseUrl(input) {
-  const value = clean(input).replace(/\/+$/, '');
-  if (!value) return no("The project URL can't be empty.");
-  if (/^eyJ|^sb_/.test(value)) return no('That looks like a key, not a URL. The project URL looks like https://abcdefgh.supabase.co');
+  let value = clean(input).replace(/\/+$/, '');
+  
+  // Strip /rest/v1 if present (common mistake when copying from Data API page)
+  value = value.replace(/\/rest\/v1\/?$/, '');
+  
+  if (!value) return no("The API URL can't be empty.");
+  if (/^eyJ|^sb_/.test(value)) return no('That looks like a key, not a URL. The API URL looks like https://abcdefgh.supabase.co');
   if (!/^https?:\/\//.test(value)) {
     return /\.supabase\.(co|in)$/.test(value)
       ? ok(`https://${value}`)
-      : no('That should start with https:// — copy the "Project URL" field exactly.');
+      : no('That should start with https:// — copy the "API URL" field (without /rest/v1).');
   }
   if (/supabase\.com\/dashboard/.test(value)) {
-    return no('That is the dashboard page in your browser, not the API URL. The one you want is under Project Settings → Data API, and ends in .supabase.co');
+    return no('That is the dashboard page in your browser, not the API URL. The one you want is under Project Settings → Data API, and ends in .supabase.co (without /rest/v1)');
   }
   if (!/\.supabase\.(co|in)$/.test(value) && !/localhost|127\.0\.0\.1/.test(value)) {
-    return no('That does not look like a Supabase project URL (expected something ending in .supabase.co).');
+    return no('That does not look like a Supabase API URL (expected something ending in .supabase.co).');
   }
   return ok(value);
 }

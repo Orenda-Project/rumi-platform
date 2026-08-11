@@ -187,7 +187,7 @@ async function checkLive(label, name, env, successText) {
 const SUPABASE_WALKTHROUGH = [
   'Open https://supabase.com/dashboard/new and sign in (the free plan is plenty)',
   'Give the project any name, choose the region closest to your teachers, and let it start up — about two minutes',
-  'Open Project Settings → Data API, and keep that page open',
+  'Open Settings → API in the sidebar — you will copy two values from this page',
 ];
 
 /**
@@ -210,16 +210,16 @@ async function stepDatabase(io, env, save, opts = {}) {
   console.log(ui.steps(SUPABASE_WALKTHROUGH));
 
   for (;;) {
-    const url = await io.ask('Project URL', {
+    const url = await io.ask('API URL', {
       fallback: prefill(env, 'SUPABASE_URL'),
       validate: validators.supabaseUrl,
-      hint: 'On that page, the field called "Project URL".',
+      hint: 'On that page, the field called "API URL" — copy it without the /rest/v1 at the end.',
     });
     const key = await io.ask('Service key', {
       secret: true,
       fallback: prefill(env, 'SUPABASE_SERVICE_ROLE_KEY'),
       validate: validators.supabaseServiceKey,
-      hint: 'The "service_role" key, further down the same page — you have to click Reveal to see it. It is hidden as you type.',
+      hint: 'Go to Settings → API Keys → Legacy anon, service_role API keys. Copy the "service_role" key (click Reveal first). It is hidden as you type.',
     });
 
     save({ SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key });
