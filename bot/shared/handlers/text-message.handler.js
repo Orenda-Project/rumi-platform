@@ -114,7 +114,11 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         }
 
         const quizState = await QuizSessionService.getActiveState(from);
-        if (quizState) {
+        // A slash command is never a quiz answer. Without this, ANY user with a
+        // live quiz session could not run a single command — every /menu, /video
+        // or /quiz came back as "Tap one of the answer buttons above". A teacher
+        // is often also a parent on the same number, so this is not a corner case.
+        if (quizState && !messageBody.trim().startsWith('/')) {
           const trimmedQ = messageBody.trim();
           const lowerQ = trimmedQ.toLowerCase();
           if (/^(start quiz|start_quiz|کوئز شروع کریں)$/i.test(trimmedQ)) {
@@ -123,9 +127,15 @@ async function handleTextMessage(message, from, messageBody, user = null) {
             await QuizSessionService.endSession(from, quizState, 'incomplete');
           } else if (/^[abc]$/i.test(trimmedQ) && quizState.currentQuestionId) {
             await QuizSessionService.handleAnswer(from, trimmedQ, quizState);
-          } else {
+          } else if (quizState.currentQuestionId) {
             await WhatsAppService.sendMessage(from,
               '❓ Tap one of the answer buttons above, or type A, B, or C.\n\nType STOP to exit the quiz.'
+            );
+          } else {
+            // Invited but not started: there is no question "above" to answer,
+            // so pointing at answer buttons is simply wrong.
+            await WhatsAppService.sendMessage(from,
+              '❓ Reply *Start Quiz* when you are ready to begin.\n\nType STOP if you would rather not.'
             );
           }
           typingController.stop();
@@ -436,9 +446,13 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         logToFile('📹 First-use intro video sent for reading assessment', { userId: user.id });
       }
 
-      // Send WhatsApp Flow for reading assessment setup
+      // Send WhatsApp Flow for reading assessment setup. On a channel with no
+      // Flow support this becomes the equivalent text conversation (same
+      // fields, same submission shape) — see messaging/text-flow-definitions.js.
       const flowSent = await WhatsAppService.sendFlow(from, {
         flowId: process.env.READING_ASSESSMENT_FLOW_ID,
+        flowKind: 'reading-assessment',
+        flowToken: `${user.id}:reading-assessment:${Date.now()}`,
         header: '📚 Reading Assessment',
         body: 'Let\'s set up a reading assessment for your student. This will help measure their reading fluency and comprehension.',
         footer: 'Takes about 5-10 minutes',
@@ -451,7 +465,14 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         // Mark feature as used (after video was shown)
         await FeatureIntroService.markFeatureUsed(user.id, 'reading');
       } else {
-        throw new Error('Failed to send WhatsApp Flow');
+        // Not an exception: this channel simply cannot offer the assessment.
+        // Throwing here used to produce "Sorry, something went wrong", which
+        // reads as a bug rather than as a feature that isn't configured.
+        logToFile('⚠️ Reading assessment unavailable on this channel', { userId: user.id });
+        await WhatsAppService.sendMessage(from, ({
+          ur: 'ریڈنگ اسسمنٹ ابھی سیٹ اپ نہیں ہے۔ /menu ٹائپ کریں یہ دیکھنے کے لیے کہ میں اور کیا کر سکتا ہوں۔',
+        })[await getUserLanguage(from) || 'en']
+          || 'The reading assessment is not set up on this deployment yet. Type /menu to see what else I can do.');
       }
     } catch (error) {
       logToFile('❌ Error sending reading assessment flow', {
@@ -553,25 +574,33 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       return;
     }
 
-    // Presence-gated: when STUDENT_VIDEOS_FLOW_ID is set, /video opens the
-    // pre-made Student Video Library picker. When it is empty, /video falls
-    // through to the runtime video generator below.
+    // The pre-made Student Video Library picker. Attempted whenever a picker
+    // can be rendered AT ALL — either as a Meta Flow (STUDENT_VIDEOS_FLOW_ID
+    // set) or, on a channel with no Flow support, as the equivalent text
+    // conversation. Only if neither is possible does /video fall through to the
+    // runtime video generator below.
+    //
+    // Previously this was gated on STUDENT_VIDEOS_FLOW_ID alone, which made the
+    // whole imported library unreachable on the sandbox driver: the ID can only
+    // exist once a Meta Flow has been published, so /video always skipped the
+    // library and went to the generator, which then needs its own API keys.
     const STUDENT_VIDEOS_FLOW_ID = process.env.STUDENT_VIDEOS_FLOW_ID || '';
-    if (STUDENT_VIDEOS_FLOW_ID) {
-      typingController.stop();
-      const flowToken = `${user?.id || 'anon'}:student-videos:${Date.now()}`;
-      await WhatsAppService.sendFlow(from, {
-        flowId: STUDENT_VIDEOS_FLOW_ID,
-        header: '🎬 Student Videos',
-        body: ({
-          ur: 'اپنی کلاس، مضمون اور موضوع چنیں — میں ویڈیو آپ کی چیٹ میں بھیج دوں گا۔',
-        })[responseLanguage] || 'Pick a class, subject and topic — I will send the video to your chat.',
-        buttonText: ({
-          ur: 'تلاش کریں',
-        })[responseLanguage] || 'Browse',
-        flowToken,
-      });
-      logToFile('🎬 Sent student videos flow (/video)', { userId: user?.id });
+    typingController.stop();
+    const videoFlowToken = `${user?.id || 'anon'}:student-videos:${Date.now()}`;
+    const pickerSent = await WhatsAppService.sendFlow(from, {
+      flowId: STUDENT_VIDEOS_FLOW_ID,
+      flowKind: 'student-videos',
+      header: '🎬 Student Videos',
+      body: ({
+        ur: 'اپنی کلاس، مضمون اور موضوع چنیں — میں ویڈیو آپ کی چیٹ میں بھیج دوں گا۔',
+      })[responseLanguage] || 'Pick a class, subject and topic — I will send the video to your chat.',
+      buttonText: ({
+        ur: 'تلاش کریں',
+      })[responseLanguage] || 'Browse',
+      flowToken: videoFlowToken,
+    });
+    if (pickerSent) {
+      logToFile('🎬 Sent student videos picker (/video)', { userId: user?.id });
       return;
     }
 
@@ -915,7 +944,7 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         .eq('status', 'conducting_conversation')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (activeCoaching) {
         // Check if session is stuck (no update in last hour)
@@ -984,7 +1013,7 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         .in('status', ['conducting_conversation', 'analyzing'])
         .order('updated_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (stuckSession) {
         const lastUpdate = new Date(stuckSession.updated_at);
@@ -1235,18 +1264,15 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       }
     }
 
-    const SETTINGS_FLOW_ID = process.env.SETTINGS_FLOW_ID || '';
-    if (!SETTINGS_FLOW_ID) {
-      await WhatsAppService.sendMessage(from, ({
-        ur: 'سیٹنگز ابھی دستیاب نہیں ہیں۔ بعد میں دوبارہ کوشش کریں۔',
-        sw: 'Mipangilio bado haijapatikana. Tafadhali jaribu tena baadaye.',
-      })[responseLanguage] || 'Settings are not available yet. Please try again later.');
-      return;
-    }
-
+    // Tried as a Meta Flow when one is published, and as the equivalent text
+    // conversation otherwise — both driven by the SAME settings endpoint, so
+    // preferences are written identically either way. The old code returned
+    // "Settings are not available yet" whenever SETTINGS_FLOW_ID was unset,
+    // which on the sandbox driver meant /settings could never do anything.
     const flowToken = `${user?.id}:settings:${Date.now()}`;
-    await WhatsAppService.sendFlow(from, {
-      flowId: SETTINGS_FLOW_ID,
+    const settingsSent = await WhatsAppService.sendFlow(from, {
+      flowId: process.env.SETTINGS_FLOW_ID || '',
+      flowKind: 'settings',
       header: 'Rumi Settings',
       body: ({
         ur: 'اپنی زبان اور آبزرویشن ٹول کی ترجیحات اپ ڈیٹ کریں۔',
@@ -1258,6 +1284,14 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       })[responseLanguage] || 'Open Settings',
       flowToken
     });
+
+    if (!settingsSent) {
+      await WhatsAppService.sendMessage(from, ({
+        ur: 'سیٹنگز ابھی دستیاب نہیں ہیں۔ زبان بدلنے کے لیے /language ٹائپ کریں۔',
+        sw: 'Mipangilio bado haijapatikana. Andika /language kubadilisha lugha.',
+      })[responseLanguage]
+        || 'Settings are not available on this deployment yet. Type /language to change your language.');
+    }
     return;
   }
 
@@ -1599,19 +1633,20 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     logToFile('📋 Add class keyword detected', { userId: user.id, keyword: addClassDetection.keyword });
     typingController.stop();
 
-    if (ATTENDANCE_SETUP_FLOW_ID) {
-      await WhatsAppService.sendFlow(from, {
-        flowId: ATTENDANCE_SETUP_FLOW_ID,
-        header: '📋 Add New Class',
-        body: "Let's set up a new class for attendance tracking!",
-        buttonText: 'Add Class',
-        screen: 'CLASS_INFO',
-        flowToken: user.id  // Pass user ID so endpoint can create class for correct user
-      });
+    const addClassSent = await WhatsAppService.sendFlow(from, {
+      flowId: ATTENDANCE_SETUP_FLOW_ID,
+      flowKind: 'class-setup',
+      header: '📋 Add New Class',
+      body: "Let's set up a new class for attendance tracking!",
+      buttonText: 'Add Class',
+      screen: 'CLASS_INFO',
+      flowToken: user.id  // Pass user ID so endpoint can create class for correct user
+    });
+    if (addClassSent) {
       logToFile('📋 Sent add class flow', { userId: user.id, flowId: ATTENDANCE_SETUP_FLOW_ID });
     } else {
       await WhatsAppService.sendMessage(from, 'Sorry, class setup is not available right now. Please try again later.');
-      logToFile('⚠️ ATTENDANCE_SETUP_FLOW_ID not configured', { userId: user.id });
+      logToFile('⚠️ Class setup unavailable on this channel', { userId: user.id });
     }
     return;
   }
@@ -1626,22 +1661,22 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       const result = await AttendanceConversationService.startAttendanceSession(user.id);
 
       if (result.action === 'SEND_SETUP_FLOW') {
-        // User has no classes - send setup flow
-        if (ATTENDANCE_SETUP_FLOW_ID) {
-          // Send the WhatsApp Flow for class setup
-          await WhatsAppService.sendFlow(from, {
-            flowId: ATTENDANCE_SETUP_FLOW_ID,
-            header: '📋 Class Setup',
-            body: result.message,
-            buttonText: 'Set Up Class',
-            screen: 'CLASS_INFO',
-            flowToken: user.id  // Pass user ID so endpoint can create class for correct user
-          });
+        // User has no classes — set one up, as a Flow or as the text equivalent.
+        const setupSent = await WhatsAppService.sendFlow(from, {
+          flowId: ATTENDANCE_SETUP_FLOW_ID,
+          flowKind: 'class-setup',
+          header: '📋 Class Setup',
+          body: result.message,
+          buttonText: 'Set Up Class',
+          screen: 'CLASS_INFO',
+          flowToken: user.id  // Pass user ID so endpoint can create class for correct user
+        });
+        if (setupSent) {
           logToFile('📋 Sent attendance setup flow', { userId: user.id, flowId: ATTENDANCE_SETUP_FLOW_ID });
         } else {
-          // Fallback if flow not configured - just send the message
+          // Neither a Flow nor a text flow is available — say what we know.
           await WhatsAppService.sendMessage(from, result.message);
-          logToFile('⚠️ ATTENDANCE_SETUP_FLOW_ID not configured, sent text message instead', { userId: user.id });
+          logToFile('⚠️ Class setup unavailable on this channel, sent text message instead', { userId: user.id });
         }
       } else if (result.action === 'ASK_CLASS_SELECTION' || result.action === 'ASK_MARKING_METHOD') {
         await WhatsAppService.sendMessage(from, result.message);
@@ -1758,7 +1793,7 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         .eq('session_id', sessionId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       conversationState = conversation?.current_state || null;  // Issue #41 FIX: VARCHAR, not nested JSONB
       logToFile('Conversation state retrieved', { state: conversationState });

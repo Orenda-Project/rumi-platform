@@ -128,18 +128,21 @@ async function _openQuizManagerFlow(user, from, topic) {
 
 async function _openAddClassFlow(user, from) {
   const { ATTENDANCE_SETUP_FLOW_ID } = require('../../utils/constants');
-  if (!ATTENDANCE_SETUP_FLOW_ID) {
-    await WhatsAppService.sendMessage(from, "Sorry, class setup isn't available right now.");
-    return;
-  }
-  await WhatsAppService.sendFlow(from, {
+  // Attempted as a Flow when one is published, and as the equivalent text
+  // conversation otherwise (messaging/text-flow-definitions.js) — a channel
+  // without Flows must still be able to create the class a quiz needs.
+  const sent = await WhatsAppService.sendFlow(from, {
     flowId: ATTENDANCE_SETUP_FLOW_ID,
+    flowKind: 'class-setup',
     header: '📋 Add New Class',
     body: "Let's set up your class so we can send the quiz to parents.",
     buttonText: 'Add Class',
     screen: 'CLASS_INFO',
     flowToken: user.id
   });
+  if (!sent) {
+    await WhatsAppService.sendMessage(from, "Sorry, class setup isn't available right now.");
+  }
 }
 
 async function _openEditClassFlow(user, from, cls, focus) {

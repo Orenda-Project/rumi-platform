@@ -20,7 +20,7 @@ const {
   storeAudioSession,
   storeLessonPlan
 } = require('../database/bot-helpers');
-const { uploadAudio } = require('../storage/r2');
+const { uploadAudio, isR2Configured } = require('../storage/r2');
 const supabase = require('../config/supabase');
 // Import language detection for content generation
 const { detectRequestedLanguage } = require('../utils/language-detection');
@@ -414,7 +414,7 @@ async function handleVoiceMessage(message, from, user = null) {
           .gte('created_at', thirtyMinutesAgo)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (activeAssessment) {
           // FIX 2: Validate assessment state to detect stale reads and invalid states
@@ -519,20 +519,34 @@ async function handleVoiceMessage(message, from, user = null) {
               audioPath
             });
 
-            // Upload audio to R2
-            const audioUrl = await uploadAudio(audioPath, user.id, audioId);
-
-            logToFile('✓ Audio uploaded to R2', {
-              assessmentId: activeAssessment.id,
-              audioUrl
-            });
-
-            // Clean up temp file
-            fs.unlinkSync(audioPath);
-
-            logToFile('✓ Temp file cleaned up', {
-              assessmentId: activeAssessment.id
-            });
+            // Persist the audio so the QUEUED analysis step can still read it
+            // later (it downloads by URL — see reading/transcription.service.js).
+            //
+            // With object storage configured, that's R2. Without it, the recording
+            // stays on local disk and the URL is a file:// path. This matters
+            // because the upload used to be unconditional: on a deployment with no
+            // bucket it threw "S3Client cannot be constructed", which aborted the
+            // whole assessment with "🚨 CRITICAL: Reading assessment audio
+            // processing failed" — after the teacher had already recorded the
+            // student reading. A sandbox has no bucket by definition, so that was
+            // the entire reading feature, unusable.
+            //
+            // Local files are single-machine by nature: fine for a sandbox (the
+            // analysis runs in this same process), and R2 remains the right answer
+            // for a real deployment with workers on other hosts.
+            let audioUrl;
+            if (isR2Configured()) {
+              audioUrl = await uploadAudio(audioPath, user.id, audioId);
+              logToFile('✓ Audio uploaded to R2', { assessmentId: activeAssessment.id, audioUrl });
+              fs.unlinkSync(audioPath);
+              logToFile('✓ Temp file cleaned up', { assessmentId: activeAssessment.id });
+            } else {
+              audioUrl = `file://${audioPath}`;
+              logToFile('✓ Audio kept on local disk (no object storage configured)', {
+                assessmentId: activeAssessment.id, audioUrl,
+              });
+              // Deliberately NOT deleted — the analysis step reads it back.
+            }
 
             // Stop typing indicator
             typingController.stop();
@@ -600,7 +614,16 @@ async function handleVoiceMessage(message, from, user = null) {
             const userLanguage = user.preferred_language || 'en';
             const errorMessage = errorMessages[userLanguage] || errorMessages.en;
 
-            await WhatsAppService.sendMessage(from, errorMessage);
+            // Skip when the analysis service already apologised (it sets this
+            // flag) — otherwise one failure produced two apologies in a row, plus
+            // a spoken one, which is what the teacher actually sees.
+            if (processingError.userNotified) {
+              logToFile('↩️ Reading assessment failure already reported to the user — not repeating it', {
+                assessmentId: activeAssessment.id,
+              });
+            } else {
+              await WhatsAppService.sendMessage(from, errorMessage);
+            }
 
             // Re-throw to be caught by outer handler
             throw processingError;
@@ -636,7 +659,7 @@ async function handleVoiceMessage(message, from, user = null) {
           .eq('status', 'conducting_conversation')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (activeCoaching) {
           logToFile('🎓 Active coaching session detected - processing as reflective response', {
@@ -943,7 +966,7 @@ async function handleVoiceMessage(message, from, user = null) {
           .eq('session_id', sessionId)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         conversationState = conversation?.conversation_state?.current_state || null;
         logToFile('Conversation state retrieved (voice)', { state: conversationState });
@@ -1040,20 +1063,42 @@ async function handleVoiceMessage(message, from, user = null) {
       hasEmotionTags: /\[[\w]+\]/.test(aiResponse)
     });
 
-    // Step 7: Generate speech using appropriate TTS service based on language
+    // Step 7: Generate speech using appropriate TTS service based on language.
+    //
+    // A SPOKEN reply is an enhancement; understanding the voice note is the
+    // feature. So TTS failure must never lose the answer — found live on a
+    // deployment with no TTS keys: the voice note was transcribed and answered
+    // correctly, then ElevenLabs 401'd, its OpenAI-TTS fallback threw "OPENAI_API_KEY
+    // is required", and that exception propagated all the way out to the handler's
+    // catch, so the teacher received only "Sorry, an error occurred while
+    // processing the voice message" and never saw the answer at all.
     logToFile('Step 7: Generating speech for language:', { language: detectedLanguage });
-    const speechBuffer = await AudioService.generateSpeechForLanguage(aiResponse, detectedLanguage);
-    logToFile('Speech generated', {
-      bufferSize: speechBuffer.length,
-      ttsService: detectedLanguage === 'en' ? 'ElevenLabs' : 'Uplift'
-    });
+    let speechBuffer = null;
+    try {
+      speechBuffer = await AudioService.generateSpeechForLanguage(aiResponse, detectedLanguage);
+      logToFile('Speech generated', {
+        bufferSize: speechBuffer.length,
+        ttsService: detectedLanguage === 'en' ? 'ElevenLabs' : 'Uplift'
+      });
+    } catch (ttsError) {
+      logToFile('⚠️ Text-to-speech unavailable — replying in text instead', {
+        error: ttsError.message, language: detectedLanguage,
+      });
+    }
 
-    // Step 8: Send audio response (stop typing indicator first)
-    logToFile('Step 8: Sending audio response...');
+    // Step 8: Send the reply — spoken when we have audio, written otherwise.
+    logToFile('Step 8: Sending response...', { spoken: Boolean(speechBuffer) });
     typingController.stop();
-    await WhatsAppService.sendAudio(from, speechBuffer, TEMP_DIR);
+    if (speechBuffer) {
+      await WhatsAppService.sendAudio(from, speechBuffer, TEMP_DIR);
+    } else {
+      // sendMessage strips the [emotion] tags the voice prompt adds for TTS
+      // (_removeEmotionTags, in both channel drivers), so the written reply
+      // doesn't leak them.
+      await WhatsAppService.sendMessage(from, aiResponse);
+    }
 
-    logToFile('✅ Voice acknowledgment sent successfully!');
+    logToFile('✅ Voice acknowledgment sent successfully!', { spoken: Boolean(speechBuffer) });
 
     // Step 8.5: Send loading sticker if intent is presentation or lesson plan
     if (intent.type === 'lesson_plan' || intent.type === 'presentation') {
@@ -1120,10 +1165,19 @@ async function handleVoiceMessage(message, from, user = null) {
       errorDetails: error.response?.data
     });
     typingController.stop(); // Stop typing indicator before sending error message
-    await WhatsAppService.sendMessage(
-      from,
-      'معذرت، آواز پیغام پر کارروائی کرتے وقت خرابی آ گئی۔' // Sorry, error processing voice message
-    );
+
+    // The failure may already have been explained to the user by a more specific
+    // handler further in (the reading-assessment analysis sets this flag). Adding
+    // a generic apology on top just means she gets told twice about one problem,
+    // the second time less usefully — and in Urdu regardless of her language.
+    if (error.userNotified) {
+      logToFile('↩️ Voice failure already reported to the user — not repeating it', {});
+    } else {
+      await WhatsAppService.sendMessage(
+        from,
+        'معذرت، آواز پیغام پر کارروائی کرتے وقت خرابی آ گئی۔' // Sorry, error processing voice message
+      );
+    }
   } finally {
     // CRITICAL: Always stop typing indicator, even if function exits early or throws
     typingController.stop();

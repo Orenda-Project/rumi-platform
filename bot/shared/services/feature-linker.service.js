@@ -170,9 +170,16 @@ class FeatureLinkerService {
           // Check if user has seen the intro video for this feature
           const hasSeenVideo = await FeatureIntroService.hasSeenIntroVideo(userId, link.feature);
 
-          if (hasSeenVideo) {
-            // User already saw video, just send text suggestion
-            logToFile('📝 User already saw video, sending text only', { feature: link.feature });
+          // No intro video available on this deployment (FEATURE_VIDEO_URLS is
+          // null when R2_PUBLIC_URL is unset) — so offering to show one is a
+          // promise that cannot be kept. Send the plain text suggestion instead
+          // of a "Want to see how? 🎥" button that leads nowhere.
+          const hasVideoToShow = Boolean(FEATURE_VIDEO_URLS[link.feature]);
+
+          if (hasSeenVideo || !hasVideoToShow) {
+            logToFile('📝 Sending text-only feature suggestion', {
+              feature: link.feature, hasSeenVideo, hasVideoToShow,
+            });
             await WhatsAppService.sendMessage(phoneNumber, textMessage);
           } else {
             // User hasn't seen video - ask for consent via interactive buttons

@@ -11,10 +11,8 @@
  * Extracted from coaching.service.js as part of Phase 2 refactoring
  */
 
-const OpenAI = require('openai');
 const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
-const { OPENAI_API_KEY } = require('../../utils/constants');
 
 class CoachingHelpersService {
   /**
@@ -26,7 +24,9 @@ class CoachingHelpersService {
   static async generateEncouragingMessage(firstName, durationSeconds) {
     try {
       const durationMinutes = Math.round(durationSeconds / 60);
-      const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+      // See the note in pic-to-lp/classifier.service.js: llm-client is the single
+      // LLM entry point, and a direct OpenAI client breaks an OpenRouter deployment.
+      const openai = require('../llm-client').getClient();
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',

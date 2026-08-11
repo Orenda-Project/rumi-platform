@@ -723,7 +723,21 @@ async function uploadBuffer(buffer, key, contentType = 'application/octet-stream
   }
 }
 
+/**
+ * Whether object storage is configured at all.
+ *
+ * Callers use this to choose a local fallback INSTEAD of failing, on deployments
+ * that have no bucket (a sandbox, by definition). Kept here so the credential
+ * list can't drift from what the S3 client actually requires.
+ */
+function isR2Configured() {
+  return Boolean(
+    process.env.R2_ENDPOINT && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY
+  );
+}
+
 module.exports = {
+  isR2Configured,
   uploadAudio,
   deleteAudio,
   uploadClassroomAudio,

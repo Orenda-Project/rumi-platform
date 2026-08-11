@@ -6,7 +6,7 @@
 
 | Path | What's there |
 |------|--------------|
-| `supabase/00_complete-schema.sql` | The single fresh-install artifact — 73 tables, functions, triggers, + an idempotent column-reconcile section at the end |
+| `supabase/00_complete-schema.sql` | The single fresh-install artifact — 76 tables, functions, triggers, + an idempotent column-reconcile section at the end |
 | `supabase/01_rls-policies.sql` | Row-level security policies |
 | `supabase/02_seed-data.sql` | Reference data (reading benchmarks) + `region_features` default row (fail-open gating) |
 | `supabase/migrations/V*.sql` | Versioned upgrades, tracked in `schema_versions` |

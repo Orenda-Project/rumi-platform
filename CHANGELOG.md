@@ -5,6 +5,138 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-08-07
+
+**Rumi no longer requires a Meta WhatsApp Business account to run.** The messaging
+channel is now pluggable: the default links your own WhatsApp by QR the way
+WhatsApp Web does, so a clone goes from `git clone` to a working conversation in
+about fifteen minutes with no Business account, no app review and no waiting.
+When you're ready for a real deployment, `rumi graduate` moves you to an official
+number and every teacher, conversation and past assessment carries over.
+
+Alongside it, setup stopped being an eleven-step document and became two
+commands.
+
+### BREAKING (vs v1.2.0)
+
+- **Node 20 is now the minimum** (was 18). The Baileys sandbox driver refuses to
+  install on 18 — its own preinstall check reports "This package requires
+  Node.js 20+ to run reliably" — so `npm ci` in `bot/` fails outright rather
+  than degrading. Node 18 has also been end-of-life since April 2025. `engines`
+  is set on both packages, `install.sh` checks for 20, and the CI matrix is now
+  20 and 22.
+- **`npm run setup` now launches the interactive setup wizard.** It previously
+  ran the preflight (`doctor.js`). If you had it in a script or a deploy step,
+  switch to **`npm run doctor`** (or `rumi doctor`) — same output, unchanged.
+- **`.env` is read from the repo root, not the process working directory.**
+  `bot/whatsapp-bot.js`, `bin/rumi.js` and `bot/scripts/setup/doctor.js` now
+  resolve it relative to the repository. If you kept a `bot/.env`, move it to the
+  repo root. Railway is unaffected — its Procfile already runs from the root.
+  This fixed a real failure: `cd bot && npm start` loaded **zero** variables and
+  aborted with "Missing REQUIRED env var(s)" on a fully configured deployment.
+- **`REQUIRED_VARS` is now core-only** (`SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, `REDIS_URL`); the channel's
+  own variables come from `CHANNEL_REQUIRED_VARS[CHANNEL_DRIVER]`. **Existing Meta
+  deployments need no change** — with `CHANNEL_DRIVER` unset and the four Meta
+  variables present, the driver is inferred as `meta`.
+- **`CHANNEL_STATE_DIR` (default `.channel-state`) resolves against the repo**,
+  not the working directory. Only affects the new sandbox driver, but it is the
+  reason a bot started from `bot/` registered a *second* WhatsApp device and
+  re-synced endlessly until WhatsApp invalidated the first.
+
+### Added
+
+- **A two-layer CLI.** `./install.sh` does the mechanical bootstrap (tool check,
+  dependencies, `.env`, puts `rumi` on your PATH) and offers to run the wizard;
+  `rumi` does everything else: `setup`, `start`, `status`, `doctor`, `pair`,
+  `graduate`.
+- **`rumi setup` — a five-step guided wizard.** Asks in plain language rather
+  than by variable name ("where should Rumi keep its memory", not
+  `SUPABASE_URL`), checks every value against the real service as you type it
+  using the same probes `rumi doctor` runs, writes each answer to `.env`
+  immediately (so Ctrl+C costs nothing), and skips anything already working on a
+  re-run. Creates the full database — 76 tables, RLS policies and seed data —
+  inline.
+- **Pluggable messaging channels** via `CHANNEL_DRIVER`. A registry
+  (`bot/shared/services/messaging/channel-registry.js`) with an explicit
+  production-tier allowlist; `whatsapp.service.js` is now a one-line facade over
+  it, so all ~40 existing call sites are untouched. Adding a channel later is a
+  new registry key plus a service file.
+- **The Baileys sandbox driver** — QR pairing, text, reactions, typing
+  indicators, images, audio, documents, video and stickers, plus an inbound
+  adapter that normalizes a socket event into the same shape Meta's webhook
+  produces, so the existing dispatch runs unchanged.
+- **WhatsApp Flows, rendered as a conversation.** A Flow is only a renderer; the
+  endpoint holds the logic. The new text-flow engine drives those *same*
+  endpoints over chat, so `/settings`, `/video`, reading assessment and class
+  setup work on a channel that has no Flows — with the field names pinned by
+  tests against their real consumers.
+- **`rumi graduate`** — collects the target channel's credentials, validates them
+  against the live service *before* touching `.env`, retires (never deletes) the
+  outgoing session, and prints the checklist for what only you can do in Meta's
+  console.
+- **`rumi status`** — is Rumi running, which WhatsApp number it answers as, and
+  what's switched on. Reads the connection module's own lock rather than
+  inventing a second source of truth.
+- **Field-shape validation with specific corrections.** Catches Supabase's
+  **anon** key pasted instead of `service_role` (both are `eyJ…` JWTs on the same
+  page — the anon key cannot see past RLS, so the bot runs and finds no data), a
+  phone *number* in Meta's `PHONE_NUMBER_ID`, another vendor's `sk-…` in
+  `OPENROUTER_API_KEY`, the Supabase dashboard URL instead of the API URL, and
+  Upstash's `https://` endpoint as `REDIS_URL`.
+- **An optional-abilities step** that describes each extra by what a teacher
+  would notice, defaults to skipping, and only stores a multi-key feature when
+  every key is given.
+
+### Fixed
+
+Most of these were pre-existing and affected Meta deployments too. Each failed
+inside a `try/catch` that made it look transient.
+
+- **`redisService.setNX` and `setexWithCeiling` never existed.** No quiz could
+  ever be delivered and every image message failed. Added, with a conformance
+  guard.
+- **`quiz_class_*` replies had no handler**, despite a comment claiming one.
+- **Five services bypassed `llm-client.js`** and called `OPENAI_API_KEY`
+  directly.
+- **`quiz_sessions` was missing six columns** on any database created before
+  them — `CREATE TABLE IF NOT EXISTS` is a no-op on an existing table, so they
+  only ever reached fresh installs. Added to the `ALTER … ADD COLUMN IF NOT
+  EXISTS` reconcile block.
+- **`rumi doctor` reported a green tick for an OpenRouter key with no credit** —
+  the worst kind of preflight, since it sends you hunting for a bug in the bot.
+  It now reports the remaining balance.
+- **Feature-intro videos and reading-passage backgrounds produced relative URLs**
+  when no public asset host was configured, so the bot offered "want to see how?
+  🎥", the teacher accepted, and nothing arrived. Both are presence-gated now,
+  and the offer is only made when there is something to send.
+- **Reading assessments leaked artifacts** — every run left an `.ogg` of a
+  child's voice and a report PDF on disk forever.
+- **A failure message claimed "our team has been notified"** when nobody had
+  been. Replaced with an honest one.
+- **A failed voice note apologised three times.**
+- Baileys sessions are protected by a single-instance lock, and a QR shown when
+  credentials already exist is treated as terminal rather than looping forever
+  (which is how this project kept tripping WhatsApp's device-linking rate limit).
+- Two tests read the repo's real channel state; one renamed a live WhatsApp
+  session. Both now use throwaway directories.
+
+### Changed
+
+- **README and SETUP.md** lead with the two-command path; the manual walkthrough
+  remains as the production reference. Both now state that **you need a second
+  phone number to test from** — Rumi answers *as* your number, so messaging it
+  from the same account looks exactly like a broken bot.
+- **The `/setup` skill** documents both front doors: the human wizard, and the
+  agent-driven "set me up" flow. The agent path calls the wizard's own modules
+  (validators, `.env` patcher, doctor probes, schema bootstrap) so the two cannot
+  drift, and the skill is explicit that `rumi setup`, `rumi pair` and
+  `rumi graduate` are interactive TTY programs an agent must not launch.
+- `rumi doctor` is channel-aware: it skips the Meta probe cleanly on a sandbox
+  channel and names the address when Redis does not answer.
+- `.env.template` opens by pointing at `./install.sh && rumi setup`.
+- **Test suite: 170 suites / 1997 tests**, up from 155/1724.
+
 ## [1.2.0] - 2026-07-29
 
 ### Added

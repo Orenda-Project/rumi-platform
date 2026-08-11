@@ -117,7 +117,11 @@ function resolveLocal(fromDir, spec) {
       continue;
     }
     if (!stat.isFile()) continue;
-    if (path.basename(c) === 'package.json') {
+    // Only treat package.json as a package *manifest* (follow its `main`) when
+    // we reached it by looking inside a directory. A spec that names the file
+    // outright — `require('../package.json')`, how a CLI reads its own version —
+    // resolves to that file's contents, exactly as Node does.
+    if (path.basename(c) === 'package.json' && !spec.endsWith('package.json')) {
       try {
         const pj = JSON.parse(fs.readFileSync(c, 'utf8'));
         const main = pj.main || 'index.js';

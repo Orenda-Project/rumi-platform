@@ -210,6 +210,15 @@ class PassageGenerationService {
     const randomIndex = Math.floor(Math.random() * levelBackgrounds.length);
     const backgroundPath = levelBackgrounds[randomIndex];
     const baseUrl = process.env.R2_PUBLIC_URL || PASSAGE_BACKGROUNDS.r2BaseUrl;
+
+    // Presence-gated, like every other optional feature: with no base URL
+    // configured (R2_PUBLIC_URL unset and passage-backgrounds.json's r2BaseUrl
+    // empty, which is how the repo ships) there is no image to fetch, and
+    // interpolating an empty base produced the relative "/passage_backgrounds/…"
+    // that later blew up as "TypeError: Invalid URL". Backgrounds are
+    // decoration — no base URL just means a plain passage card.
+    if (!baseUrl) return null;
+
     return `${baseUrl}/${backgroundPath}`;
   }
 
@@ -223,7 +232,19 @@ class PassageGenerationService {
       // R2 bucket is private - need presigned URL for access
       const presignedUrl = await getPresignedUrl(url, 3600); // 1 hour expiry
 
-      return new Promise((resolve) => {
+      // https.get() throws SYNCHRONOUSLY on a non-absolute URL, and that throw
+      // used to escape this try/catch entirely (see the `return await` below),
+      // taking the whole passage down with it — a decorative background must
+      // never be able to do that.
+      if (!/^https?:\/\//i.test(String(presignedUrl || ''))) {
+        logToFile('⚠️ Skipping passage background — not an absolute URL', { url, presignedUrl });
+        return null;
+      }
+
+      // AWAITED deliberately: `return new Promise(...)` handed the promise back
+      // before this try/catch could see a rejection, so anything thrown inside
+      // the executor surfaced in the caller as an unhandled failure.
+      return await new Promise((resolve) => {
         https.get(presignedUrl, (response) => {
           // Handle redirects
           if (response.statusCode === 301 || response.statusCode === 302) {
@@ -379,12 +400,23 @@ class PassageGenerationService {
       fs.writeFileSync(tempImagePath, imageBuffer);
       logToFile('📁 Passage image saved to temp file', { tempImagePath });
 
-      // Step 4: Upload image to R2
-      const imageUrl = await this.uploadPassageImage(
-        imageBuffer,
-        userId,
-        assessmentId
-      );
+      // Step 4: Archive the image to R2, if R2 is configured.
+      //
+      // Non-fatal by design: this URL is only stored on the assessment row for
+      // later reference — Step 6 below sends the passage from the LOCAL temp
+      // file, never from this URL. Letting the upload throw meant a deployment
+      // with no object storage got "there was an error generating the passage"
+      // for a passage that had already been generated successfully and was
+      // sitting on disk ready to send ("No value provided for input HTTP label:
+      // Bucket", found live on the sandbox channel).
+      let imageUrl = null;
+      try {
+        imageUrl = await this.uploadPassageImage(imageBuffer, userId, assessmentId);
+      } catch (uploadError) {
+        logToFile('⚠️ Passage image not archived (object storage unavailable) — sending it anyway', {
+          assessmentId, error: uploadError.message,
+        });
+      }
 
       // Step 5: Update assessment record (store title separately)
       await supabase

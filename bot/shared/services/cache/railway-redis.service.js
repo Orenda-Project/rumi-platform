@@ -20,6 +20,16 @@ const Redis = require('ioredis');
 const { logToFile } = require('../../utils/logger');
 const { RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_SECONDS } = require('../../utils/constants');
 
+/**
+ * Upper bound for setexWithCeiling(). Conversational state (a quiz in progress,
+ * a pending prompt) belongs to the day it was created; a longer-lived key is a
+ * leak rather than a cache.
+ */
+const TTL_CEILING_SECONDS = 24 * 60 * 60;
+
+/** Fallback TTL for setNX() when the caller passes no usable one. */
+const SETNX_DEFAULT_TTL_SECONDS = 60;
+
 class RailwayRedisService {
   constructor() {
     if (!process.env.REDIS_URL) {
@@ -626,6 +636,86 @@ class RailwayRedisService {
       });
       return false;
     }
+  }
+
+  /**
+   * SET if Not eXists, with a TTL — an atomic "claim this key" primitive.
+   *
+   * image-message.handler.js uses it as the idempotency guard at the very top of
+   * runImageAnalysis(), NOT inside a try/catch of its own — so with the method
+   * missing, every inbound image threw immediately and the teacher got the
+   * generic "something went wrong" error. Image analysis could not work at all.
+   *
+   * Distinct from acquireLock(), which claims a lock whose value is a lock id it
+   * later verifies before releasing; this stores the caller's own value (the
+   * in-flight state that the duplicate path reads back) and simply expires.
+   *
+   * @param {string} key
+   * @param {string} value
+   * @param {number} ttlSeconds
+   * @returns {Promise<boolean>} true when THIS caller claimed the key. False when
+   *   another already holds it — and also when Redis is unavailable, since a
+   *   deployment without Redis must still process the image rather than treat
+   *   every one as a duplicate... see the note below.
+   */
+  async setNX(key, value, ttlSeconds) {
+    if (!this.isAvailable()) {
+      // No Redis means no cross-process idempotency to enforce. Returning TRUE
+      // (claimed) is the safe answer: the caller proceeds with the work. False
+      // would make it believe a duplicate is already in flight and skip it.
+      return true;
+    }
+
+    // An absent, zero or negative TTL is a caller bug, not a request for a
+    // 1-second key — fall back to a sane default instead of a claim that expires
+    // before the work it guards has started.
+    const requested = Number(ttlSeconds);
+    const ttl = Number.isFinite(requested) && requested > 0
+      ? Math.floor(requested)
+      : SETNX_DEFAULT_TTL_SECONDS;
+
+    try {
+      const result = await this.redis.set(key, value, 'EX', ttl, 'NX');
+      return result === 'OK';
+    } catch (error) {
+      logToFile('Failed to setNX', { key, error: error.message });
+      // Same reasoning as above: a Redis failure must not silently drop work.
+      return true;
+    }
+  }
+
+  /**
+   * setex with the TTL clamped to a 24-hour maximum.
+   *
+   * The quiz subsystem calls this for every piece of its conversational state —
+   * the active session, the delivery queue, the post-quiz prompt, the follow-up
+   * topic wait (quiz-session/quiz-delivery/quiz-follow-up.service.js, 10+ call
+   * sites) — and it was never implemented, so EVERY one of them threw
+   * "redisService.setexWithCeiling is not a function". Found live: picking a
+   * class after /quiz answered "Sorry, something went wrong. Please try /quiz
+   * again", and no quiz could ever be delivered on any deployment.
+   *
+   * The ceiling is what the name promises: quiz state describes an in-flight
+   * conversation, so a key that outlives the day it was created is a leak, not a
+   * cache. Callers already assume it (quiz-follow-up.service.js: "1h —
+   * comfortably under the 24h ceiling").
+   *
+   * @param {string} key
+   * @param {number} seconds requested TTL; clamped to [1, 86400]
+   * @param {string} value
+   * @returns {Promise<boolean>} false when Redis is unavailable or the write failed
+   */
+  async setexWithCeiling(key, seconds, value) {
+    const requested = Number(seconds);
+    const ttl = Number.isFinite(requested) && requested > 0
+      ? Math.min(Math.floor(requested), TTL_CEILING_SECONDS)
+      : TTL_CEILING_SECONDS;
+
+    if (ttl !== requested) {
+      logToFile('Clamped Redis TTL to the 24h ceiling', { key, requested: seconds, ttl });
+    }
+
+    return this.setex(key, ttl, value);
   }
 
   // ============================================================================

@@ -220,7 +220,20 @@ function deliverVideoAsync(flowToken, row) {
       }
       const caption =
         `📚 ${gradeTitle(row.grade)} · ${row.subject}\n${row.clean_title}`;
-      await WhatsAppService.sendVideoFromUrl(phone, row.r2_url, caption);
+      // sendVideoFromUrl RETURNS false on failure rather than throwing, so the
+      // try/catch below never saw a failed upload: a teacher who received no
+      // video was still counted as delivered and then offered a quiz on it.
+      const delivered = await WhatsAppService.sendVideoFromUrl(phone, row.r2_url, caption);
+      if (!delivered) {
+        logToFile('Student Videos: video upload failed — not offering a quiz for it', {
+          userId, videoId: row.id, url: row.r2_url,
+        });
+        await WhatsAppService.sendMessage(
+          phone,
+          `Sorry — I couldn't send "${row.clean_title}" just now. Please try /video again in a moment.`
+        );
+        return;
+      }
       logEvent('student_videos.delivered', {
         userId,
         videoId: row.id,

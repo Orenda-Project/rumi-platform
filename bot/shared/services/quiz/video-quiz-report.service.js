@@ -320,8 +320,8 @@ async function generateGuidance(context) {
   const prompt = buildGuidancePrompt(context);
   if (!prompt) return null;
   try {
-    const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // See quiz-generation.service.js: the single LLM entry point is llm-client.
+    const openai = require('../llm-client').getClient();
     const res = await openai.chat.completions.create({
       // This paragraph is the one part of the report a teacher acts on, so it
       // gets the better model. gpt-4o-mini produced textbook prose here —

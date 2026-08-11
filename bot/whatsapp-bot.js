@@ -1,7 +1,10 @@
 // Structured logging - must be first to capture all console.log calls
 const { generateCorrelationId, runWithCorrelation } = require('./shared/utils/structured-logger');
 
-require('dotenv').config();
+// Anchored to the repo root rather than the working directory: `cd bot && npm
+// start` otherwise looked for bot/.env, found nothing, and the bot aborted with
+// "Missing REQUIRED env var(s)" on a fully configured deployment.
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const express = require('express');
 const fs = require('fs');
 
@@ -240,9 +243,17 @@ app.get('/webhook', (req, res) => {
 });
 
 /**
- * Webhook endpoint to receive messages (POST)
+ * Webhook endpoint to receive messages (POST).
+ *
+ * Extracted to a named function (rather than an inline arrow passed straight
+ * to app.post) so it can ALSO be invoked directly with a synthetic
+ * Express-shaped {req, res} pair — which is exactly what
+ * shared/services/messaging/inbound/baileys-socket.adapter.js does for
+ * Baileys-sourced messages, translated into this same Meta webhook shape.
+ * Zero behavior change from the previous inline handler; see
+ * wireBaileysInboundIfSelected() below for where the Baileys path plugs in.
  */
-app.post('/webhook', async (req, res) => {
+async function handleWebhookPost(req, res) {
   // Generate correlation ID for tracing this request across all logs
   const correlationId = generateCorrelationId();
 
@@ -1116,6 +1127,25 @@ app.post('/webhook', async (req, res) => {
         if (await VideoQuizService.handleAnswer(from, listId)) return;
       }
 
+      // /quiz's class picker. QuizOrchestrator.initiateQuizRequest builds these
+      // `quiz_class_<studentListId>` rows and continueWithClass() is documented
+      // as "Called from whatsapp-bot.js list_reply handler" — but nothing ever
+      // called it, so picking a class did nothing on ANY channel ("⚠️ Unknown
+      // list item ID") and /quiz could not be completed at all. continueWithClass
+      // re-reads its own Redis state (topic, session, language), so the class id
+      // is all it needs from here.
+      if (listId.startsWith('quiz_class_') && user?.id) {
+        const classId = listId.slice('quiz_class_'.length);
+        try {
+          const QuizOrchestrator = require('./shared/services/quiz/quiz-orchestrator.service');
+          await QuizOrchestrator.continueWithClass(user, from, classId, user.language || 'en');
+        } catch (quizErr) {
+          logToFile('❌ quiz class selection failed', { classId, error: quizErr.message });
+          await WhatsAppService.sendMessage(from, 'Sorry, something went wrong. Please try /quiz again.');
+        }
+        return;
+      }
+
       // CRITICAL: Get the CURRENT session first, then query conversations in THAT session
       const { getOrCreateSession } = require('./shared/database/bot-helpers');
       const currentSessionId = await getOrCreateSession(user.id);
@@ -1405,7 +1435,9 @@ app.post('/webhook', async (req, res) => {
     res.status(200).send('EVENT_RECEIVED'); // Still send 200 to avoid retries
   }
   }); // End of runWithCorrelation
-});
+}
+
+app.post('/webhook', handleWebhookPost);
 
 /**
  * Handle document messages (classroom audio or lesson plan uploads for coaching)
@@ -1718,11 +1750,100 @@ Si no solicitaste esto, ignora este mensaje.`
 });
 
 /**
+ * If CHANNEL_DRIVER resolves to `baileys`, attaches the Baileys inbound
+ * listener (shared/services/messaging/inbound/baileys-socket.adapter.js) so
+ * incoming WhatsApp Web messages reach handleWebhookPost the same way a real
+ * Meta webhook POST does. No-op for the `meta` channel (Express's own
+ * /webhook route already handles that). Failures here are logged, never
+ * thrown — a Baileys connection problem must not crash server boot.
+ */
+async function wireBaileysInboundIfSelected() {
+  const { resolveChannelDriver } = require('./shared/config/feature-availability');
+  if (resolveChannelDriver(process.env) !== 'baileys') return;
+
+  try {
+    const baileysSocketAdapter = require('./shared/services/messaging/inbound/baileys-socket.adapter');
+    await baileysSocketAdapter.attach(handleWebhookPost);
+  } catch (error) {
+    logToFile('❌ Failed to attach Baileys inbound listener', { error: error.message, stack: error.stack });
+  }
+}
+
+/**
+ * Exit code for "the WhatsApp session is gone; a human must re-pair". Chosen as
+ * sysexits.h's EX_CONFIG — conventionally "don't just restart me, fix the
+ * configuration" — so it reads as deliberate rather than a random crash.
+ */
+const EXIT_CODE_CHANNEL_LOGGED_OUT = 78;
+
+/**
+ * Treat a logged-out channel session as a TERMINAL failure.
+ *
+ * baileys-connection.js already refuses to auto-reconnect on
+ * DisconnectReason.loggedOut (401) — but that only protects the current
+ * process. Every real process supervisor (systemd, PM2, Docker
+ * `restart: always`, Railway) restarts on exit, and each restart re-attempts
+ * pairing against dead credentials. That is an endless loop hammering
+ * WhatsApp's pairing endpoint, which is exactly how live testing repeatedly
+ * tripped WhatsApp's "can't link new devices right now" rate limit.
+ *
+ * So: say plainly what happened and exit with a distinctive code, letting the
+ * supervisor's backoff/alerting surface it to a human instead of spinning
+ * silently. No-op for `meta`, which holds no local session.
+ */
+function exitOnChannelLogout() {
+  const { resolveChannelDriver } = require('./shared/config/feature-availability');
+  if (resolveChannelDriver(process.env) !== 'baileys') return;
+
+  const connection = require('./shared/services/messaging/baileys-connection');
+  connection.events.on('close', ({ loggedOut }) => {
+    if (!loggedOut) return;
+    logToFile('🔒 WhatsApp session is logged out — re-pairing is required, exiting', {
+      remedy: `delete ${connection.authDir()} and run: npm run pair:baileys`,
+      exitCode: EXIT_CODE_CHANNEL_LOGGED_OUT,
+    });
+    process.exit(EXIT_CODE_CHANNEL_LOGGED_OUT);
+  });
+}
+
+/**
+ * Close the Baileys socket cleanly on SIGTERM/SIGINT before the process dies.
+ *
+ * Without this, an abrupt exit loses Baileys' not-yet-flushed Signal session
+ * state (see baileys-connection.js's close()). A PaaS redeploy sends SIGTERM on
+ * every release, so this runs on the normal deploy path, not just on manual
+ * stops. No-op for the `meta` channel, which holds no local session state.
+ */
+function registerChannelShutdownHandlers() {
+  const { resolveChannelDriver } = require('./shared/config/feature-availability');
+  if (resolveChannelDriver(process.env) !== 'baileys') return;
+
+  let shuttingDown = false;
+  const shutdown = async (signal) => {
+    if (shuttingDown) return; // a second signal must not cut the flush short
+    shuttingDown = true;
+    logToFile(`Received ${signal} — closing Baileys connection before exit`, {});
+    try {
+      await require('./shared/services/messaging/baileys-connection').close();
+    } catch (error) {
+      logToFile('❌ Baileys shutdown failed', { error: error.message });
+    }
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
+
+/**
  * Start server. Gated behind `require.main === module` so requiring this
  * file as a library (e.g. from a test harness or a downstream that wants the
  * Express `app` without its listener) does NOT bind to a port.
  */
 function startServer() {
+  wireBaileysInboundIfSelected();
+  registerChannelShutdownHandlers();
+  exitOnChannelLogout();
   return app.listen(constants.PORT, () => {
   // Read version from VERSION file
   const path = require('path');

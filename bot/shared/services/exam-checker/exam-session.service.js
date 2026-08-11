@@ -275,12 +275,19 @@ class ExamSessionService {
 
   // ==================== REDIS HELPERS ====================
 
+  // These go through railway-redis.service's own API (get/setex/delete), which
+  // is already null-safe when REDIS_URL is unset. They previously called
+  // `redisService.getClient()` — a method that does not exist — and then
+  // `redis.setEx`, which is the node-redis spelling, not ioredis's `setex`. The
+  // try/catch hid both, so every read and write here failed silently and the
+  // cache never once worked; each call did a wasted round trip to nothing before
+  // falling back to the database.
+
   static async _getFromRedis(userId) {
     try {
-      const redis = await redisService.getClient();
-      const key = `${REDIS_PREFIX}${userId}`;
-      const data = await redis.get(key);
-      return data ? JSON.parse(data) : null;
+      const data = await redisService.get(`${REDIS_PREFIX}${userId}`);
+      if (!data) return null;
+      return typeof data === 'string' ? JSON.parse(data) : data;
     } catch (error) {
       logToFile('⚠️ Redis get failed', { userId, error: error.message });
       return null;
@@ -289,9 +296,7 @@ class ExamSessionService {
 
   static async _saveToRedis(userId, session) {
     try {
-      const redis = await redisService.getClient();
-      const key = `${REDIS_PREFIX}${userId}`;
-      await redis.setEx(key, REDIS_TTL, JSON.stringify(session));
+      await redisService.setex(`${REDIS_PREFIX}${userId}`, REDIS_TTL, JSON.stringify(session));
     } catch (error) {
       logToFile('⚠️ Redis save failed', { userId, error: error.message });
     }
@@ -299,9 +304,7 @@ class ExamSessionService {
 
   static async _clearFromRedis(userId) {
     try {
-      const redis = await redisService.getClient();
-      const key = `${REDIS_PREFIX}${userId}`;
-      await redis.del(key);
+      await redisService.delete(`${REDIS_PREFIX}${userId}`);
     } catch (error) {
       logToFile('⚠️ Redis clear failed', { userId, error: error.message });
     }

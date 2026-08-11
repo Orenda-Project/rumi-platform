@@ -64,7 +64,10 @@ class AxiomBatcher {
       process.on('beforeExit', () => this.flush());
       process.on('SIGTERM', () => this.flush());
       process.on('SIGINT', () => this.flush());
-    } else {
+    } else if (process.env.RUMI_CLI !== '1') {
+      // Worth saying on a server, where silent log loss is a real problem.
+      // Not worth saying to someone running `rumi pair`, who has not asked for
+      // observability and reads "⚠️ DISABLED" as something being wrong.
       process.stderr.write(`[Axiom] ⚠️ Logging DISABLED - dataset=${this.dataset || 'MISSING'}, token=${this.token ? 'SET' : 'MISSING'}\n`);
     }
   }
@@ -261,7 +264,7 @@ let logger;
 if (isDev) {
   // Pretty print in development (single transport is fine)
   logger = pino({
-    level: process.env.LOG_LEVEL || 'info',
+    level: process.env.LOG_LEVEL || (process.env.RUMI_CLI === '1' ? 'warn' : 'info'),
     transport: {
       target: 'pino-pretty',
       options: {
@@ -282,7 +285,7 @@ if (isDev) {
 } else {
   // Production: JSON to custom stream (stdout + Axiom HTTP)
   logger = pino({
-    level: process.env.LOG_LEVEL || 'info',
+    level: process.env.LOG_LEVEL || (process.env.RUMI_CLI === '1' ? 'warn' : 'info'),
     formatters: {
       level: (label) => ({ level: label }),
     },
@@ -441,31 +444,47 @@ function enhanceWithCorrelation(data) {
   return data;
 }
 
-// Override console methods to produce structured output
-console.log = (...args) => {
-  const { message, data } = parseConsoleArgs(args);
-  logger.info(enhanceWithCorrelation(data), message);
-};
+// ============================================================
+// Console override
+// ============================================================
+//
+// The bot server wants every line as structured JSON with a correlation id —
+// that is what these overrides are for, and they stay on by default.
+//
+// An interactive command wants the exact opposite. `rumi pair` prints a QR code
+// and step-by-step instructions; `rumi setup` prints a whole wizard. Any of
+// those that transitively loads this file (the WhatsApp connection module does)
+// would have its output wrapped in JSON and become unreadable. So the `rumi`
+// commands set RUMI_CLI=1 before requiring anything, and keep the real console.
+// Nothing about the server's behaviour changes.
+const IS_INTERACTIVE_CLI = process.env.RUMI_CLI === '1';
 
-console.error = (...args) => {
-  const { message, data } = parseConsoleArgs(args);
-  logger.error(enhanceWithCorrelation(data), message);
-};
+if (!IS_INTERACTIVE_CLI) {
+  console.log = (...args) => {
+    const { message, data } = parseConsoleArgs(args);
+    logger.info(enhanceWithCorrelation(data), message);
+  };
 
-console.warn = (...args) => {
-  const { message, data } = parseConsoleArgs(args);
-  logger.warn(enhanceWithCorrelation(data), message);
-};
+  console.error = (...args) => {
+    const { message, data } = parseConsoleArgs(args);
+    logger.error(enhanceWithCorrelation(data), message);
+  };
 
-console.info = (...args) => {
-  const { message, data } = parseConsoleArgs(args);
-  logger.info(enhanceWithCorrelation(data), message);
-};
+  console.warn = (...args) => {
+    const { message, data } = parseConsoleArgs(args);
+    logger.warn(enhanceWithCorrelation(data), message);
+  };
 
-console.debug = (...args) => {
-  const { message, data } = parseConsoleArgs(args);
-  logger.debug(enhanceWithCorrelation(data), message);
-};
+  console.info = (...args) => {
+    const { message, data } = parseConsoleArgs(args);
+    logger.info(enhanceWithCorrelation(data), message);
+  };
+
+  console.debug = (...args) => {
+    const { message, data } = parseConsoleArgs(args);
+    logger.debug(enhanceWithCorrelation(data), message);
+  };
+}
 
 // ============================================================
 // Semantic Event Logging

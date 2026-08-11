@@ -9,7 +9,6 @@
 const OpenAI = require('openai');
 const axios = require('axios');
 const { logToFile } = require('../../utils/logger');
-const { lazyClient } = require('../../utils/lazy-client');
 // Presign R2 URLs before passing to OpenAI vision. The R2 bucket is private —
 // raw URLs return 400 from OpenAI's image download. Without the presign the
 // metadata extractor silently fails (the form just opens with blank pre-fills
@@ -20,9 +19,13 @@ const { extractFromCaption, mergeWithCaption } = require('./caption-prefill');
 
 // Lazy: the bot can boot without OPENAI_API_KEY; only invoking the extractor
 // (i.e. a teacher sending a textbook page) needs the key.
-const getOpenAI = lazyClient(OpenAI, ['OPENAI_API_KEY'], (env) => ({
-  apiKey: env.OPENAI_API_KEY,
-}));
+// Routed through llm-client, the single LLM entry point this codebase
+// documents: it points at whichever provider is configured (OpenRouter by
+// default) and prefixes bare model names for it. A direct OpenAI client
+// demanded OPENAI_API_KEY, which an OpenRouter deployment does not set — so
+// this failed with "SDK client cannot be constructed — missing env:
+// OPENAI_API_KEY" while the rest of the bot's LLM calls worked.
+const { getClient: getOpenAI } = require('../llm-client');
 const MODEL = process.env.PIC_LP_EXTRACTOR_MODEL || 'gpt-4o-mini';
 const TIMEOUT_MS = 45000;
 

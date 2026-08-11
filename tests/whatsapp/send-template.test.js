@@ -11,6 +11,12 @@
 
 // axios + form-data resolve to tests/__mocks__ stubs via jest.config
 // moduleNameMapper (they live in bot/node_modules, absent during the root job).
+//
+// Exercises the real Meta driver directly, so opt into it explicitly rather
+// than relying on messaging/index.js's backward-compat inference (which reads
+// real WHATSAPP_TOKEN/etc. from process.env, not the mocked constants module).
+process.env.CHANNEL_DRIVER = 'meta';
+
 jest.mock('../../bot/shared/utils/constants', () => ({
   WHATSAPP_TOKEN: 'test-token',
   PHONE_NUMBER_ID: 'test-phone-id',
@@ -25,6 +31,8 @@ const axios = require('axios'); // the mapped stub — axios.post is a jest.fn
 const WhatsAppService = require('../../bot/shared/services/whatsapp.service');
 
 describe('WhatsAppService.sendTemplate', () => {
+  afterAll(() => { delete process.env.CHANNEL_DRIVER; });
+
   beforeEach(() => {
     axios.post.mockReset();
     axios.post.mockResolvedValue({ data: {}, status: 200 });
