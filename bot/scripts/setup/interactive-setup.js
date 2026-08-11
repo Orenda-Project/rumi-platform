@@ -187,7 +187,7 @@ async function checkLive(label, name, env, successText) {
 const SUPABASE_WALKTHROUGH = [
   'Open https://supabase.com/dashboard/new and sign in (the free plan is plenty)',
   'Give the project any name, choose the region closest to your teachers, and let it start up — about two minutes',
-  'Open Project Settings → Data API, and keep that page open',
+  'Open Project settings → Data API → Copy the API URL (without /rest/v1) and service_role key',
 ];
 
 /**
@@ -210,16 +210,16 @@ async function stepDatabase(io, env, save, opts = {}) {
   console.log(ui.steps(SUPABASE_WALKTHROUGH));
 
   for (;;) {
-    const url = await io.ask('Project URL', {
+    const url = await io.ask('API URL', {
       fallback: prefill(env, 'SUPABASE_URL'),
       validate: validators.supabaseUrl,
-      hint: 'On that page, the field called "Project URL".',
+      hint: 'On that page, the field called "API URL" — copy it without the /rest/v1 at the end.',
     });
     const key = await io.ask('Service key', {
       secret: true,
       fallback: prefill(env, 'SUPABASE_SERVICE_ROLE_KEY'),
       validate: validators.supabaseServiceKey,
-      hint: 'The "service_role" key, further down the same page — you have to click Reveal to see it. It is hidden as you type.',
+      hint: 'Go to Settings → API Keys → Legacy anon, service_role API keys. Copy the "service_role" key (click Reveal first). It is hidden as you type.',
     });
 
     save({ SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key });
@@ -262,7 +262,7 @@ async function ensureTables(io, env) {
     const editor = dbSetup.sqlEditorUrl(env.SUPABASE_URL);
     console.log(ui.steps([
       editor ? `Open ${editor}` : 'Open the SQL Editor in your Supabase project',
-      'Paste the two lines below and press Run',
+      'Paste everything in the box below and press Run — include the grant and the notify line',
       'Come back here',
     ]));
     console.log('');
@@ -270,10 +270,16 @@ async function ensureTables(io, env) {
     console.log('');
     await io.pressEnter('Press Enter once you have run it');
 
-    const recheck = await dbSetup.hasExecSql(env);
+    const waiting = ui.spinner('Waiting for Supabase to see the helper…');
+    const recheck = await dbSetup.waitForExecSql(env);
+    waiting.stop();
     if (!recheck.present) {
-      console.log(ui.warn('Still cannot see it. Skipping the tables for now — run `npm run bootstrap:db` once the two lines are in place.'));
-      return;
+      throw new Error(
+        'The SQL helper is still not visible, so the tables were not created. '
+        + 'In the SQL editor, paste the whole box (including GRANT and NOTIFY), press Run, '
+        + 'then run `rumi setup` again. Setup will not continue without the tables — '
+        + 'that is what makes "Hi" crash with a missing `users` table.'
+      );
     }
   }
 
@@ -283,7 +289,11 @@ async function ensureTables(io, env) {
   else {
     applying.fail('Could not finish setting up the tables');
     for (const failure of result.errors) console.log(ui.aside(`${failure.file}: ${failure.error}`));
-    console.log(ui.aside('Setup will carry on — retry the tables later with `npm run bootstrap:db`.'));
+    throw new Error(
+      'The database still has no Rumi tables, so setup stopped here. '
+      + 'Fix the error above, then run `npm run bootstrap:db` or `rumi setup` again. '
+      + 'Do not start the bot until that succeeds — messages will fail with a missing `users` table.'
+    );
   }
 }
 
@@ -403,7 +413,7 @@ async function stepMemory(io, env, save, opts = {}) {
     console.log('');
     console.log(ui.say('If you do not have one yet, either of these takes about two minutes:'));
     console.log(ui.steps([
-      'Free hosted: sign up at https://upstash.com, create a Redis database, and copy its redis:// URL',
+      'Free hosted: sign up at https://upstash.com, create a Redis database, and copy its TCP URL (redis://) — not the REST URL',
       'On your own machine: install Docker, then `docker run -d -p 6379:6379 redis:7-alpine` and use redis://localhost:6379',
       'Already running one on a server? Paste its address — it only has to be reachable from here.',
     ]));
@@ -432,7 +442,7 @@ async function stepMemory(io, env, save, opts = {}) {
     const url = await io.ask('Redis address', {
       fallback: prefill(env, 'REDIS_URL') || LOCAL_REDIS.url,
       validate: validators.redisUrl,
-      hint: 'Looks like redis://host:6379, or redis://default:password@host:6379 for a hosted one.',
+      hint: 'Looks like redis://host:6379, or redis://default:password@host:6379 for a hosted one. If using Upstash, use the TCP URL (redis://), not the REST URL (https://).',
     });
     save({ REDIS_URL: url });
     const check = await checkLive('Saying hello to Redis…', 'redis', env, (d) => `Short-term memory ready ${ui.dim(d)}`);

@@ -168,7 +168,7 @@ describe('re-running the wizard', () => {
 
     await stepDatabase(io, { SUPABASE_URL: 'https://old.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'eyJold' }, () => {}, { reconfigure: true });
 
-    expect(io.asked.ask.map((a) => a.label)).toEqual(['Project URL', 'Service key']);
+    expect(io.asked.ask.map((a) => a.label)).toEqual(['API URL', 'Service key']);
   });
 
   it('re-asks when the stored credentials have stopped working', async () => {
@@ -207,7 +207,7 @@ describe('creating the tables', () => {
       probes: allPass,
       dbSetup: {
         inspectDatabase: async () => ({ state: 'needs-helper', detail: 'exec_sql is missing (HTTP 404)' }),
-        hasExecSql: async () => ({ present: true, detail: 'exec_sql answered' }),
+        waitForExecSql: async () => ({ present: true, detail: 'exec_sql answered' }),
         applySchema,
       },
     });
@@ -215,30 +215,29 @@ describe('creating the tables', () => {
 
     await ensureTables(io, { SUPABASE_URL: 'https://abcdefgh.supabase.co' });
 
-    expect(log.text).toContain('create or replace function exec_sql');
+    expect(log.text).toContain('create or replace function public.exec_sql');
     expect(log.text).toContain('https://supabase.com/dashboard/project/abcdefgh/sql/new');
     expect(io.asked.pressEnter).toBe(1);
     expect(applySchema).toHaveBeenCalled();
   });
 
-  it('carries on with a clear next step when the helper still is not there', async () => {
+  it('stops setup when the helper still is not there — tables are not optional', async () => {
     const applySchema = jest.fn();
     const { ensureTables } = loadWizard({
       probes: allPass,
       dbSetup: {
         inspectDatabase: async () => ({ state: 'needs-helper', detail: 'missing' }),
-        hasExecSql: async () => ({ present: false, detail: 'still missing' }),
+        waitForExecSql: async () => ({ present: false, detail: 'still missing' }),
         applySchema,
       },
     });
 
-    await ensureTables(fakeIo(), { SUPABASE_URL: 'https://abcdefgh.supabase.co' });
-
+    await expect(ensureTables(fakeIo(), { SUPABASE_URL: 'https://abcdefgh.supabase.co' }))
+      .rejects.toThrow(/tables were not created/i);
     expect(applySchema).not.toHaveBeenCalled();
-    expect(log.text).toMatch(/bootstrap:db/);
   });
 
-  it('reports a failed schema apply without aborting the rest of setup', async () => {
+  it('stops setup when schema apply fails — a bot without users is not set up', async () => {
     const { ensureTables } = loadWizard({
       probes: allPass,
       dbSetup: {
@@ -247,11 +246,9 @@ describe('creating the tables', () => {
       },
     });
 
-    // The guarantee is that it does not throw: a database that half-applied is a
-    // problem to report and retry, not a reason to lose the four other steps.
-    await expect(ensureTables(fakeIo(), { SUPABASE_URL: 'https://x.supabase.co' })).resolves.toBeUndefined();
+    await expect(ensureTables(fakeIo(), { SUPABASE_URL: 'https://x.supabase.co' }))
+      .rejects.toThrow(/no Rumi tables/i);
     expect(log.text).toMatch(/statement timeout/);
-    expect(log.text).toMatch(/bootstrap:db/);
   });
 });
 

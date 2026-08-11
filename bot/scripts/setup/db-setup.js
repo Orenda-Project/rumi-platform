@@ -15,17 +15,9 @@
  */
 
 const path = require('path');
+const { EXEC_SQL_DEFINITION } = require('../../../infrastructure/scripts/exec-sql-helper');
 
 const SCHEMA_DIR = path.resolve(__dirname, '../../../infrastructure/supabase');
-
-/**
- * The one-time helper. `exec_sql` is what every schema/migration script in this
- * repo runs SQL through; a brand-new project has no such function.
- */
-const EXEC_SQL_DEFINITION = [
-  'create or replace function exec_sql(query text)',
-  'returns void as $$ begin execute query; end; $$ language plpgsql;',
-];
 
 /**
  * A table from the top of 00_complete-schema.sql, used as the "has the schema
@@ -110,8 +102,34 @@ function sqlEditorUrl(supabaseUrl) {
 }
 
 /**
+ * PostgREST caches the schema. After someone pastes `exec_sql`, the function
+ * can exist in Postgres for several seconds before `/rpc/exec_sql` answers.
+ * Polling here is what stops setup from skipping the tables on that race.
+ *
+ * @param {{SUPABASE_URL: string, SUPABASE_SERVICE_ROLE_KEY: string}} env
+ * @param {typeof fetch} [fetchImpl]
+ * @param {{attempts?: number, delayMs?: number, sleep?: (ms: number) => Promise<void>}} [opts]
+ */
+async function waitForExecSql(env, fetchImpl = fetch, opts = {}) {
+  const attempts = opts.attempts == null ? 8 : opts.attempts;
+  const delayMs = opts.delayMs == null ? 2000 : opts.delayMs;
+  const sleep = opts.sleep || ((ms) => new Promise((resolve) => { setTimeout(resolve, ms); }));
+  let last = { present: false, detail: 'not checked' };
+  for (let i = 0; i < attempts; i++) {
+    last = await hasExecSql(env, fetchImpl);
+    if (last.present) return last;
+    if (i < attempts - 1) await sleep(delayMs);
+  }
+  return last;
+}
+
+/**
  * Applies schema → RLS → seed via the existing bootstrapper, which is
  * idempotent, so re-running on a half-applied database is safe.
+ *
+ * "Applied the SQL files" is not "the bot can see `users`". We re-inspect
+ * after bootstrap so a silent no-op (or a first-statement-only EXECUTE)
+ * cannot look like success.
  *
  * @param {object} env
  * @returns {Promise<{ok: boolean, applied: string[], errors: Array<{file: string, error: string}>}>}
@@ -124,10 +142,23 @@ async function applySchema(env) {
     schemaDir: SCHEMA_DIR,
   });
   const result = await bootstrapper.bootstrap();
-  return { ok: result.errors.length === 0, ...result };
+  if (result.errors.length > 0) return { ok: false, ...result };
+
+  const status = await inspectDatabase(env);
+  if (status.state !== 'ready') {
+    return {
+      ok: false,
+      ...result,
+      errors: [{
+        file: SENTINEL_TABLE,
+        error: `SQL ran but the "${SENTINEL_TABLE}" table is still missing (${status.detail})`,
+      }],
+    };
+  }
+  return { ok: true, ...result };
 }
 
 module.exports = {
   EXEC_SQL_DEFINITION, SENTINEL_TABLE, SCHEMA_DIR,
-  inspectDatabase, hasExecSql, sqlEditorUrl, applySchema,
+  inspectDatabase, hasExecSql, waitForExecSql, sqlEditorUrl, applySchema,
 };

@@ -141,6 +141,28 @@ const defaultProbes = {
     return { ok: res.status < 500, detail: `HTTP ${res.status}` };
   },
   /**
+   * Reachable Supabase ≠ Rumi tables. An empty project answers HTTP 200 on
+   * /rest/v1/ and then every inbound "Hi" dies on PGRST205 for public.users.
+   */
+  async tables(env) {
+    const db = require('./db-setup');
+    const status = await db.inspectDatabase(env);
+    if (status.state === 'ready') return { ok: true, detail: status.detail };
+    if (status.state === 'needs-helper') {
+      return {
+        ok: false,
+        detail: 'paste the exec_sql helper in the SQL editor, then run `npm run bootstrap:db` (or `rumi setup`)',
+      };
+    }
+    if (status.state === 'needs-schema') {
+      return {
+        ok: false,
+        detail: 'helper is there but the tables are not — run `npm run bootstrap:db` or `rumi setup`',
+      };
+    }
+    return { ok: false, detail: status.detail };
+  },
+  /**
    * Checks the key AND that it can actually pay for a call.
    *
    * A valid-but-broke key answers HTTP 200 here while every real feature fails:
@@ -214,6 +236,7 @@ const defaultProbes = {
 // Which probe backs each REQUIRED service, and the env vars it needs to run.
 const REQUIRED_PROBES = [
   { name: 'Supabase', probe: 'supabase', needs: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] },
+  { name: 'Rumi tables', probe: 'tables', needs: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] },
   { name: 'OpenRouter (LLM)', probe: 'openrouter', needs: ['OPENROUTER_API_KEY'] },
   { name: 'WhatsApp Cloud API', probe: 'whatsapp', needs: ['PHONE_NUMBER_ID', 'WHATSAPP_TOKEN'] },
   { name: 'Redis', probe: 'redis', needs: ['REDIS_URL'] },

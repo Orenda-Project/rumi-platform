@@ -79,6 +79,11 @@ describe('Supabase project URL', () => {
   it('allows a local/self-hosted address', () => {
     expect(v.supabaseUrl('http://localhost:54321').ok).toBe(true);
   });
+
+  it('strips /rest/v1 from the end if present (common mistake from Data API page)', () => {
+    expect(v.supabaseUrl('https://abcdefgh.supabase.co/rest/v1')).toEqual({ ok: true, value: 'https://abcdefgh.supabase.co' });
+    expect(v.supabaseUrl('https://abcdefgh.supabase.co/rest/v1/')).toEqual({ ok: true, value: 'https://abcdefgh.supabase.co' });
+  });
 });
 
 describe('OpenRouter key', () => {

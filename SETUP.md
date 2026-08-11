@@ -59,7 +59,7 @@ WhatsApp.
 
 One step it cannot do for you: Supabase offers no API for running arbitrary SQL, so the tiny `exec_sql`
 helper that the schema is applied through has to be pasted into the SQL editor once, by hand. The wizard
-detects this, prints the two lines, and links straight to the right page of your project.
+detects this, prints the helper SQL (including GRANT and NOTIFY), and links straight to the right page of your project. It will not continue until the `users` table exists.
 
 For a **production** deployment there is more to do than the wizard covers — hosting, the Meta webhook,
 registering WhatsApp Flows, and the background worker. That's what the rest of this guide is for.
@@ -111,12 +111,20 @@ cd bot && npm install && cd ..
 2. **Create a new project** — choose a region closest to your users
 3. **Run the schema.** Two ways:
 
-   **Option A — one command (recommended):** First create the tiny `exec_sql` helper that `npm run bootstrap:db` uses to apply SQL. A brand-new Supabase project does not have it, so paste this **once** in the SQL Editor (Settings > SQL Editor):
+   **Option A — one command (recommended):** First create the tiny `exec_sql` helper that `npm run bootstrap:db` uses to apply SQL. A brand-new Supabase project does not have it, so paste this **once** in the SQL Editor (ALTER OWNER gives it extension-creation rights; search_path includes `extensions` because uuid-ossp lives there; GRANT and NOTIFY make PostgREST see it):
    ```sql
-   CREATE OR REPLACE FUNCTION exec_sql(query TEXT)
-   RETURNS VOID AS $$ BEGIN EXECUTE query; END; $$ LANGUAGE plpgsql;
+   CREATE OR REPLACE FUNCTION public.exec_sql(query text)
+   RETURNS void
+   LANGUAGE plpgsql
+   SECURITY DEFINER
+   SET search_path = public, extensions
+   AS $$ BEGIN EXECUTE query; END; $$;
+
+   ALTER FUNCTION public.exec_sql(text) OWNER TO postgres;
+   GRANT EXECUTE ON FUNCTION public.exec_sql(text) TO service_role;
+   NOTIFY pgrst, 'reload schema';
    ```
-   Then run `npm run bootstrap:db` — it applies all three SQL files in order. (If you skip the helper, the command stops with the exact SQL above.)
+   Then run `npm run bootstrap:db` — it applies all three SQL files in order, statement by statement, and fails if the `users` table is still missing. (`rumi setup` does the same and will not continue without the tables.)
 
    **Option B — manual paste:** In the SQL Editor, run these three files in order:
    - `infrastructure/supabase/00_complete-schema.sql` — all 76 tables, 40 functions, 29 triggers, 200+ indexes

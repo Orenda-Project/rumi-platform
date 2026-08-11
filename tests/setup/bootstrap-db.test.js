@@ -17,24 +17,30 @@ describe('DatabaseBootstrapper', () => {
       execSql: async (_sql, label) => { applied.push(label); },
     });
     const result = await b.bootstrap();
-    expect(applied).toEqual([
+    expect(applied[0]).toMatch(/^00_complete-schema\.sql#1$/);
+    expect(applied.some((label) => label.startsWith('01_rls-policies.sql#'))).toBe(true);
+    expect(applied.some((label) => label.startsWith('02_seed-data.sql#'))).toBe(true);
+    // Whole-file EXECUTE cannot create tables; each statement is its own RPC.
+    expect(applied.filter((label) => label.startsWith('00_complete-schema.sql#')).length).toBeGreaterThan(10);
+    expect(result.errors).toEqual([]);
+    expect(result.applied).toEqual([
       '00_complete-schema.sql',
       '01_rls-policies.sql',
       '02_seed-data.sql',
     ]);
-    expect(result.errors).toEqual([]);
-    expect(result.applied).toHaveLength(3);
   });
 
-  it('passes the real file contents to execSql (non-empty schema)', async () => {
-    const sizes = {};
+  it('passes real statement text to execSql (non-empty schema)', async () => {
+    const chunks = [];
     const b = new DatabaseBootstrapper({
       supabaseUrl: 'x', supabaseKey: 'y', schemaDir: SCHEMA_DIR,
-      execSql: async (sql, label) => { sizes[label] = sql.length; },
+      execSql: async (sql, label) => { chunks.push({ sql, label }); },
     });
     await b.bootstrap();
-    expect(sizes['00_complete-schema.sql']).toBeGreaterThan(1000);
-    expect(sizes['02_seed-data.sql']).toBeGreaterThan(100);
+    const schema = chunks.filter((c) => c.label.startsWith('00_complete-schema.sql#'));
+    expect(schema.some((c) => /create table if not exists users/i.test(c.sql))).toBe(true);
+    expect(schema.reduce((n, c) => n + c.sql.length, 0)).toBeGreaterThan(1000);
+    expect(chunks.filter((c) => c.label.startsWith('02_seed-data.sql#')).length).toBeGreaterThan(0);
   });
 
   it('stops at the first failure — RLS/seed are not applied if schema fails', async () => {
@@ -42,7 +48,7 @@ describe('DatabaseBootstrapper', () => {
     const b = new DatabaseBootstrapper({
       supabaseUrl: 'x', supabaseKey: 'y', schemaDir: SCHEMA_DIR,
       execSql: async (_sql, label) => {
-        if (label === '00_complete-schema.sql') throw new Error('boom');
+        if (label.startsWith('00_complete-schema.sql')) throw new Error('boom');
         applied.push(label);
       },
     });
@@ -50,6 +56,23 @@ describe('DatabaseBootstrapper', () => {
     expect(applied).toEqual([]); // never reached rls/seed
     expect(result.applied).toEqual([]);
     expect(result.errors).toEqual([{ file: '00_complete-schema.sql', error: 'boom' }]);
+  });
+
+  it('continues when the optional vector extension cannot be created', async () => {
+    const applied = [];
+    const b = new DatabaseBootstrapper({
+      supabaseUrl: 'x', supabaseKey: 'y', schemaDir: SCHEMA_DIR,
+      execSql: async (sql, label) => {
+        if (/create\s+extension/i.test(sql) && /vector/i.test(sql)) {
+          throw new Error('extension "vector" is not available');
+        }
+        applied.push(label);
+      },
+    });
+    const result = await b.bootstrap();
+    expect(result.errors).toEqual([]);
+    expect(result.applied).toHaveLength(3);
+    expect(applied.some((label) => label.startsWith('00_complete-schema.sql#'))).toBe(true);
   });
 
   it('errors clearly when a SQL file is missing', async () => {

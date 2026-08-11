@@ -171,11 +171,15 @@ describe('Security Scan', () => {
             if (file.includes('migrate.js')) continue;
             // Allow the DB bootstrapper which applies the canonical schema via exec_sql RPC
             if (file.includes('bootstrap-db.js')) continue;
+            // Allow exec-sql-helper.js which contains the SQL definition
+            if (file.includes('exec-sql-helper.js')) continue;
             // Allow `rumi setup`'s database step, which probes for the same
             // helper (and prints its definition) so it can tell "no tables yet"
             // apart from "no way to create them" — the operator-run setup path,
             // same category as bootstrap-db.js, not a runtime SQL surface.
             if (file.includes('scripts/setup/db-setup.js')) continue;
+            // Allow `rumi doctor` which diagnoses missing exec_sql helper
+            if (file.includes('scripts/setup/doctor.js')) continue;
             throw new Error(`Active exec_sql reference found at ${file}:${i + 1}: ${line.trim()}`);
           }
         }

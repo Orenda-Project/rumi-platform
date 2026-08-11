@@ -5,33 +5,29 @@
 
 -- WCPM Percentile Benchmarks (DIBELS-based norms for reading assessment)
 -- These are used to compare student reading fluency scores
-INSERT INTO wcpm_percentiles (grade, percentile, fall_wcpm, winter_wcpm, spring_wcpm, source)
+-- Table structure: grade_level (INTEGER), language, season, percentile, wcpm_threshold
+INSERT INTO wcpm_percentiles (grade_level, language, season, percentile, wcpm_threshold)
 VALUES
-  ('Grade 1', 10, 0, 10, 19, 'DIBELS'),
-  ('Grade 1', 25, 3, 23, 36, 'DIBELS'),
-  ('Grade 1', 50, 10, 40, 56, 'DIBELS'),
-  ('Grade 1', 75, 23, 59, 77, 'DIBELS'),
-  ('Grade 1', 90, 43, 79, 97, 'DIBELS'),
-  ('Grade 2', 10, 30, 49, 60, 'DIBELS'),
-  ('Grade 2', 25, 48, 67, 80, 'DIBELS'),
-  ('Grade 2', 50, 67, 89, 101, 'DIBELS'),
-  ('Grade 2', 75, 86, 109, 121, 'DIBELS'),
-  ('Grade 2', 90, 104, 127, 139, 'DIBELS'),
-  ('Grade 3', 10, 50, 62, 72, 'DIBELS'),
-  ('Grade 3', 25, 67, 83, 93, 'DIBELS'),
-  ('Grade 3', 50, 88, 105, 115, 'DIBELS'),
-  ('Grade 3', 75, 108, 126, 135, 'DIBELS'),
-  ('Grade 3', 90, 127, 146, 153, 'DIBELS'),
-  ('Grade 4', 10, 65, 75, 83, 'DIBELS'),
-  ('Grade 4', 25, 83, 96, 103, 'DIBELS'),
-  ('Grade 4', 50, 104, 118, 125, 'DIBELS'),
-  ('Grade 4', 75, 125, 138, 146, 'DIBELS'),
-  ('Grade 4', 90, 144, 157, 165, 'DIBELS'),
-  ('Grade 5', 10, 76, 84, 90, 'DIBELS'),
-  ('Grade 5', 25, 95, 105, 111, 'DIBELS'),
-  ('Grade 5', 50, 118, 128, 133, 'DIBELS'),
-  ('Grade 5', 75, 139, 150, 155, 'DIBELS'),
-  ('Grade 5', 90, 159, 169, 174, 'DIBELS')
+  -- Grade 1
+  (1, 'en', 'fall', 10, 0), (1, 'en', 'fall', 25, 3), (1, 'en', 'fall', 50, 10), (1, 'en', 'fall', 75, 23), (1, 'en', 'fall', 90, 43),
+  (1, 'en', 'winter', 10, 10), (1, 'en', 'winter', 25, 23), (1, 'en', 'winter', 50, 40), (1, 'en', 'winter', 75, 59), (1, 'en', 'winter', 90, 79),
+  (1, 'en', 'spring', 10, 19), (1, 'en', 'spring', 25, 36), (1, 'en', 'spring', 50, 56), (1, 'en', 'spring', 75, 77), (1, 'en', 'spring', 90, 97),
+  -- Grade 2
+  (2, 'en', 'fall', 10, 30), (2, 'en', 'fall', 25, 48), (2, 'en', 'fall', 50, 67), (2, 'en', 'fall', 75, 86), (2, 'en', 'fall', 90, 104),
+  (2, 'en', 'winter', 10, 49), (2, 'en', 'winter', 25, 67), (2, 'en', 'winter', 50, 89), (2, 'en', 'winter', 75, 109), (2, 'en', 'winter', 90, 127),
+  (2, 'en', 'spring', 10, 60), (2, 'en', 'spring', 25, 80), (2, 'en', 'spring', 50, 101), (2, 'en', 'spring', 75, 121), (2, 'en', 'spring', 90, 139),
+  -- Grade 3
+  (3, 'en', 'fall', 10, 50), (3, 'en', 'fall', 25, 67), (3, 'en', 'fall', 50, 88), (3, 'en', 'fall', 75, 108), (3, 'en', 'fall', 90, 127),
+  (3, 'en', 'winter', 10, 62), (3, 'en', 'winter', 25, 83), (3, 'en', 'winter', 50, 105), (3, 'en', 'winter', 75, 126), (3, 'en', 'winter', 90, 146),
+  (3, 'en', 'spring', 10, 72), (3, 'en', 'spring', 25, 93), (3, 'en', 'spring', 50, 115), (3, 'en', 'spring', 75, 135), (3, 'en', 'spring', 90, 153),
+  -- Grade 4
+  (4, 'en', 'fall', 10, 65), (4, 'en', 'fall', 25, 83), (4, 'en', 'fall', 50, 104), (4, 'en', 'fall', 75, 125), (4, 'en', 'fall', 90, 144),
+  (4, 'en', 'winter', 10, 75), (4, 'en', 'winter', 25, 96), (4, 'en', 'winter', 50, 118), (4, 'en', 'winter', 75, 138), (4, 'en', 'winter', 90, 157),
+  (4, 'en', 'spring', 10, 83), (4, 'en', 'spring', 25, 103), (4, 'en', 'spring', 50, 125), (4, 'en', 'spring', 75, 146), (4, 'en', 'spring', 90, 165),
+  -- Grade 5
+  (5, 'en', 'fall', 10, 76), (5, 'en', 'fall', 25, 95), (5, 'en', 'fall', 50, 118), (5, 'en', 'fall', 75, 139), (5, 'en', 'fall', 90, 159),
+  (5, 'en', 'winter', 10, 84), (5, 'en', 'winter', 25, 105), (5, 'en', 'winter', 50, 128), (5, 'en', 'winter', 75, 150), (5, 'en', 'winter', 90, 169),
+  (5, 'en', 'spring', 10, 90), (5, 'en', 'spring', 25, 111), (5, 'en', 'spring', 50, 133), (5, 'en', 'spring', 75, 155), (5, 'en', 'spring', 90, 174)
 ON CONFLICT DO NOTHING;
 
 -- LCPM Benchmarks (Letter Correct Per Minute)
