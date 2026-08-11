@@ -127,7 +127,7 @@ const TTS_VOICES = {
     provider: 'elevenlabs',
     voice: 'french-female',
     notes: 'ElevenLabs eleven_v3 supports French well. Supports emotion tags.',
-    testPhrases: ['bonjour', 'comment allez-vous', 'créez un lesson plan'],
+    testPhrases: ['bonjour', 'comment allez-vous', 'préparez un plan de leçon'],
     scriptGuidance: 'Use standard French orthography (accents included), Western numerals'
   }
 };

@@ -28,7 +28,7 @@ const SYSTEM_MESSAGES = {
     te: "సరే! కొత్తగా మొదలుపెడదాం. ఈరోజు నేను మీకు ఎలా సహాయం చేయగలను?",
     'ta-IN': "சரி! புதிதாக தொடங்குவோம். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?",
     kn: "ಸರಿ! ಹೊಸದಾಗಿ ಆರಂಭಿಸೋಣ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?",
-    fr: "D'accord ! On repart de zéro. Comment puis-je vous aider aujourd'hui ?"
+    fr: "Très bien, on recommence ! Qu'est-ce que je peux faire pour vous ?"
   },
 
   // Language switch confirmation
@@ -48,7 +48,7 @@ const SYSTEM_MESSAGES = {
     te: "నేను తెలుగుకు మారాను. ఈరోజు నేను మీకు ఎలా సహాయం చేయగలను?",
     'ta-IN': "நான் தமிழுக்கு மாறிவிட்டேன். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?",
     kn: "ನಾನು ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಿದ್ದೇನೆ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?",
-    fr: "Je suis passée au français. Comment puis-je vous aider aujourd'hui ?"
+    fr: "Parfait, je passe au français ! Comment puis-je vous aider ?"
   },
 
   // Empty transcription
@@ -68,7 +68,7 @@ const SYSTEM_MESSAGES = {
     te: "క్షమించండి, మీ సందేశం స్పష్టంగా వినిపించలేదు. మళ్ళీ ప్రయత్నిస్తారా?",
     'ta-IN': "மன்னிக்கவும், உங்கள் செய்தியைத் தெளிவாகக் கேட்க முடியவில்லை. மீண்டும் முயற்சிக்க முடியுமா?",
     kn: "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಸಂದೇಶ ಸ್ಪಷ್ಟವಾಗಿ ಕೇಳಿಸಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತೀರಾ?",
-    fr: "Désolée, je n'ai pas bien entendu votre message. Pouvez-vous réessayer ?"
+    fr: "Désolée, je n'ai pas bien entendu. Vous pouvez réessayer ?"
   },
 
   // Processing/Loading
@@ -88,7 +88,7 @@ const SYSTEM_MESSAGES = {
     te: "మీ lesson plan ఇప్పుడు తయారు చేస్తున్నాను. సుమారు ఒక నిమిషం పడుతుంది...",
     'ta-IN': "உங்கள் lesson plan-ஐ இப்போது உருவாக்குகிறேன். சுமார் ஒரு நிமிடம் ஆகும்...",
     kn: "ನಿಮ್ಮ lesson plan ಈಗ ರಚಿಸುತ್ತಿದ್ದೇನೆ. ಸುಮಾರು ಒಂದು ನಿಮಿಷ ತೆಗೆದುಕೊಳ್ಳುತ್ತದೆ...",
-    fr: "Je crée votre lesson plan maintenant. Cela prendra environ une minute..."
+    fr: "Je prépare votre plan de leçon, ça prend moins d'une minute..."
   },
 
   // General error
@@ -108,7 +108,7 @@ const SYSTEM_MESSAGES = {
     te: "ఏదో తప్పు జరిగింది. నేను మళ్ళీ ప్రయత్నిస్తాను.",
     'ta-IN': "ஏதோ தவறு நடந்துவிட்டது. மீண்டும் முயற்சிக்கிறேன்.",
     kn: "ಏನೋ ತಪ್ಪಾಗಿದೆ. ನಾನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತೇನೆ.",
-    fr: "Quelque chose s'est mal passé. Laissez-moi réessayer."
+    fr: "Oups, il y a eu un problème. Je réessaie."
   },
 
   // Audio too long
@@ -128,7 +128,7 @@ const SYSTEM_MESSAGES = {
     te: "మీ voice message చాలా పొడవుగా ఉంది. కొంచెం చిన్నది పంపగలరా?",
     'ta-IN': "உங்கள் voice message கொஞ்சம் நீளமாக உள்ளது. சிறியதாக அனுப்ப முடியுமா?",
     kn: "ನಿಮ್ಮ voice message ಸ್ವಲ್ಪ ಉದ್ದವಾಗಿದೆ. ಚಿಕ್ಕದಾಗಿ ಕಳುಹಿಸಬಹುದೇ?",
-    fr: "Votre message vocal est assez long. Pourriez-vous en envoyer un plus court ?"
+    fr: "Votre message vocal est un peu long. Vous pouvez en envoyer un plus court ?"
   },
 
   // Coaching session prompts
@@ -148,7 +148,7 @@ const SYSTEM_MESSAGES = {
     te: "బాగుంది! మీ coaching session మొదలుపెడదాం. ఈరోజు మీ బోధన గురించి చెప్పండి.",
     'ta-IN': "அருமை! உங்கள் coaching session-ஐ தொடங்குவோம். இன்றைய உங்கள் கற்பித்தல் பற்றி சொல்லுங்கள்.",
     kn: "ಚೆನ್ನಾಗಿದೆ! ನಿಮ್ಮ coaching session ಆರಂಭಿಸೋಣ. ಇಂದಿನ ನಿಮ್ಮ ಬೋಧನೆ ಬಗ್ಗೆ ಹೇಳಿ.",
-    fr: "Super ! Commençons votre coaching session. Parlez-moi de votre enseignement d'aujourd'hui."
+    fr: "Super ! On commence votre séance de coaching. Racontez-moi comment s'est passé votre cours aujourd'hui."
   },
 
   // Encouragement
@@ -168,7 +168,7 @@ const SYSTEM_MESSAGES = {
     te: "మీరు చాలా బాగా చేస్తున్నారు! ఇలాగే మంచి పని కొనసాగించండి.",
     'ta-IN': "நீங்கள் மிகச் சிறப்பாகச் செய்கிறீர்கள்! இப்படியே தொடருங்கள்.",
     kn: "ನೀವು ತುಂಬಾ ಚೆನ್ನಾಗಿ ಮಾಡುತ್ತಿದ್ದೀರಿ! ಹೀಗೆಯೇ ಒಳ್ಳೆಯ ಕೆಲಸ ಮುಂದುವರಿಸಿ.",
-    fr: "Vous vous en sortez très bien ! Continuez ce bon travail."
+    fr: "Vous vous débrouillez très bien ! Continuez comme ça."
   },
 
   // Language nudge
@@ -188,7 +188,7 @@ const SYSTEM_MESSAGES = {
     te: "మీకు అత్యంత సౌకర్యంగా ఉండే భాషలో కూడా నేను మాట్లాడగలను. అందుబాటులో ఉన్న భాషలను చూడటానికి /language టైప్ చేయండి.",
     'ta-IN': "உங்களுக்கு மிகவும் வசதியான மொழியிலும் நான் பேசலாம். கிடைக்கும் மொழிகளைப் பார்க்க /language என்று டைப் செய்யுங்கள்.",
     kn: "ನಿಮಗೆ ಅತ್ಯಂತ ಅನುಕೂಲವಾದ ಭಾಷೆಯಲ್ಲೂ ನಾನು ಮಾತನಾಡಬಲ್ಲೆ. ಲಭ್ಯವಿರುವ ಭಾಷೆಗಳನ್ನು ನೋಡಲು /language ಟೈಪ್ ಮಾಡಿ.",
-    fr: "Je peux aussi vous parler dans la langue où vous êtes le plus à l'aise. Tapez /language pour voir les langues disponibles."
+    fr: "Je peux aussi vous répondre dans la langue de votre choix. Tapez /language pour voir les langues disponibles."
   },
 
   // Thank you
@@ -208,7 +208,7 @@ const SYSTEM_MESSAGES = {
     te: "ధన్యవాదాలు! నేను సహాయం చేయగలిగే మరేదైనా ఉందా?",
     'ta-IN': "நன்றி! வேறு ஏதாவது நான் உதவ முடியுமா?",
     kn: "ಧನ್ಯವಾದಗಳು! ನಾನು ಸಹಾಯ ಮಾಡಬಹುದಾದ ಇನ್ನೇನಾದರೂ ಇದೆಯೇ?",
-    fr: "Merci ! Y a-t-il autre chose que je puisse faire pour vous aider ?"
+    fr: "Merci ! Je peux vous aider sur autre chose ?"
   },
 
   // Goodbye
@@ -228,7 +228,7 @@ const SYSTEM_MESSAGES = {
     te: "వీడ్కోలు! మీ రోజు బాగుండాలి. సహాయం కావలసినప్పుడు నాకు సందేశం పంపండి.",
     'ta-IN': "பிரியாவிடை! இனிய நாள் அமையட்டும். உதவி தேவைப்படும்போது எப்போதும் எனக்கு செய்தி அனுப்புங்கள்.",
     kn: "ವಿದಾಯ! ನಿಮ್ಮ ದಿನ ಚೆನ್ನಾಗಿರಲಿ. ಸಹಾಯ ಬೇಕಾದಾಗ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
-    fr: "Au revoir ! Bonne journée. Écrivez-moi dès que vous avez besoin d'aide."
+    fr: "Au revoir, bonne journée ! Écrivez-moi dès que vous avez besoin d'aide."
   }
 };
 

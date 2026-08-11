@@ -101,8 +101,8 @@ const GAMMA_LANGUAGE_CONFIG = {
     name: 'French',
     textDirection: 'ltr',
     promptSuffix: 'Generate all content in French (Français). Use clear, standard classroom French suitable for teachers and pupils.',
-    lessonPlanIntro: 'Créer un plan de leçon complet et prêt pour la classe en français',
-    presentationIntro: 'Créer une présentation éducative en français'
+    lessonPlanIntro: 'Rédige en français un plan de leçon complet, directement utilisable en classe',
+    presentationIntro: 'Rédige en français une présentation pédagogique'
   }
 };
 
