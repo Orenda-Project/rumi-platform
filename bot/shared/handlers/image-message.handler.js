@@ -296,17 +296,29 @@ async function handleImageMessage(message, from, user = null) {
  * localized generic error message (gated by idempotencyAcquired). Returns
  * `{ idempotencyAcquired }` so the caller can update its own flag for that guard.
  */
-async function runImageAnalysis({ user, from, imageId, mimeType, caption, typingController, correlationId, startTime }) {
+async function runImageAnalysis({
+  user, from, imageId, mimeType, caption, typingController, correlationId, startTime,
+  // The idempotency claim below exists to stop a REDELIVERY of the same image
+  // being analysed twice. The pic-LP batch coalescer is not a redelivery: the
+  // router already tagged this key ('pic_lp_handled') on its behalf before
+  // handing the image to the batch, so when the batch flushes and asks for
+  // vision feedback the key is always already taken — and the teacher got NO
+  // reply at all for any non-textbook image. It passes false to say "this is the
+  // continuation of that same handling, not a second copy of it".
+  claimIdempotency = true,
+}) {
   // Get or create session for conversation history
   const sessionId = await getOrCreateSession(user.id);
 
   // Atomic idempotency check — SET NX ensures only one handler proceeds
   const idempotencyKey = `image:${user.id}:${imageId}`;
-  const idempotencyAcquired = await redisService.setNX(
-    idempotencyKey,
-    JSON.stringify({ status: 'processing', startedAt: Date.now() }),
-    IDEMPOTENCY_TTL_SECONDS
-  );
+  const idempotencyAcquired = claimIdempotency
+    ? await redisService.setNX(
+      idempotencyKey,
+      JSON.stringify({ status: 'processing', startedAt: Date.now() }),
+      IDEMPOTENCY_TTL_SECONDS
+    )
+    : true; // already claimed upstream on this call's behalf — see the parameter
 
   if (!idempotencyAcquired) {
     // Another handler already has this image — check for cached result
@@ -688,6 +700,8 @@ async function handleCoalescedBatch({ user, from, batch }) {
         typingController: primaryTypingController,
         correlationId,
         startTime,
+        // Not a redelivery — the router already claimed this key before batching.
+        claimIdempotency: false,
       });
     } catch (visionErr) {
       logToFile('⚠️ runImageAnalysis from coalescer threw', {

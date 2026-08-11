@@ -27,6 +27,12 @@ module.exports = {
     '^pino$': '<rootDir>/tests/__mocks__/pino.js',
     '^canvas$': '<rootDir>/tests/__mocks__/canvas.js',
     '^dotenv$': '<rootDir>/tests/__mocks__/dotenv.js',
+    // ffmpeg + its bundled binaries: bot-only deps that audio.service.js
+    // configures at import time, so anything reaching the audio/transcription
+    // services needs them mapped for the root-suite-first CI pass.
+    '^fluent-ffmpeg$': '<rootDir>/tests/__mocks__/fluent-ffmpeg.js',
+    '^@ffmpeg-installer/ffmpeg$': '<rootDir>/tests/__mocks__/ffmpeg-installer.js',
+    '^@ffprobe-installer/ffprobe$': '<rootDir>/tests/__mocks__/ffmpeg-installer.js',
   },
   setupFiles: ['<rootDir>/tests/setup.js'],
   testEnvironment: 'node',

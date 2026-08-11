@@ -353,15 +353,27 @@ class QuizDeliveryService {
     // When all students complete, _maybeAdvanceReport enqueues a SECOND
     // message with delaySeconds=60. The handler's quiz_report_sent Redis
     // flag (24h TTL) ensures only one report ever fires per quiz.
-    await SQSQueueService.queueJob(
-      quizId,
-      'quiz_report',
-      { teacherPhone, language },
-      {
-        delaySeconds: 900,  // 15-min cascade start; handler walks to 12h cap
-        deduplicationId: `${quizId}-quiz_report-initial`
-      }
-    );
+    // Non-fatal, like the quiz_expire enqueue above. By this point the quiz is
+    // generated, marked sent, and every student has already received it — a
+    // failure to schedule the REPORT must not be reported to the teacher as
+    // "something went wrong creating the quiz", which is what happened on a
+    // deployment with no queue configured: students got their quiz and the
+    // teacher was told it had failed.
+    try {
+      await SQSQueueService.queueJob(
+        quizId,
+        'quiz_report',
+        { teacherPhone, language },
+        {
+          delaySeconds: 900,  // 15-min cascade start; handler walks to 12h cap
+          deduplicationId: `${quizId}-quiz_report-initial`
+        }
+      );
+    } catch (reportErr) {
+      logToFile('⚠️ Could not enqueue quiz_report (non-fatal — quiz was delivered)', {
+        quizId, error: reportErr.message,
+      });
+    }
 
     // Confirm to teacher
     await WhatsAppService.sendMessage(teacherPhone,

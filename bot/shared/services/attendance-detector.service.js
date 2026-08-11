@@ -59,6 +59,16 @@ const ADD_CLASS_KEYWORDS = [
   'another class',
   '/addclass',
   '/add-class',
+  // The exact phrases the bot ITSELF tells teachers to type — quiz-orchestrator
+  // .service.js says 'Type "set up class" or say "class setup" to get started!'
+  // when a quiz has no class to go to. None of them were listed here, so
+  // following the bot's own instruction fell through to general AI chat and the
+  // teacher could never get past it.
+  'set up class',
+  'setup class',
+  'class setup',
+  'set up my class',
+  'set up a class',
 
   // Urdu (Arabic script)
   'نئی کلاس',

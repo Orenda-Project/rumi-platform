@@ -9,13 +9,14 @@
 |------|--------------|
 | `whatsapp-bot.js` | Express webhook, interactive-button router, message dispatch |
 | `shared/handlers/` | Message handlers (text, voice, image, flow-response, …) — 10 files |
-| `shared/services/` | Domain services (49) — AI, coaching, reading, quiz, pic-to-LP, whatsapp, R2, … |
+| `shared/services/` | Domain services (45) — AI, coaching, reading, quiz, pic-to-LP, whatsapp, R2, … |
 | `shared/services/queue/` | **Pluggable queue** — `index.js` selects driver by `QUEUE_DRIVER` (sqs\|bullmq) |
+| `shared/services/messaging/` | **Pluggable channel** — `index.js` selects driver by `CHANNEL_DRIVER` (meta\|baileys); `inbound/` normalizes either into one shape; `text-flow*.js` renders Meta Flows as chat |
 | `shared/routes/` | WhatsApp Flow endpoints (registration, attendance, settings, status, …) |
 | `shared/config/` | `feature-availability.js` (presence gating), `branding.js`, `region-config.js` |
 | `shared/utils/` | logger, structured-logger (correlation IDs), constants, phone-validation |
-| `workers/` | Background job workers (10) — `sqs-worker.js` is the poll loop; one handler per job type |
-| `scripts/` | CLI simulator, validators, setup `doctor.js` |
+| `workers/` | Background job workers (9) — `sqs-worker.js` is the poll loop; one handler per job type |
+| `scripts/` | CLI simulator, validators, and `scripts/setup/` — the `rumi` wizard, doctor, pairing, flow registration |
 
 ## Things to know before editing
 

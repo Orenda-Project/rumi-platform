@@ -3858,6 +3858,50 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
 -- quiz_sessions: idle-reminder cron flag.
 ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS idle_reminder_sent BOOLEAN DEFAULT FALSE;
 
+-- quiz_sessions: the video-quiz identity set. These already appear in the
+-- table definition above, which is exactly why they were missing on every
+-- upgraded database: "CREATE TABLE IF NOT EXISTS" is a no-op on an existing
+-- table, so columns added to a definition only ever reach a FRESH install.
+-- Found live — a teacher accepting the
+-- post-video quiz offer got "Sorry — I couldn't start that quiz", from
+-- PostgREST's "Could not find the 'invited_by_student_id' column of
+-- 'quiz_sessions' in the schema cache".
+ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS student_name TEXT;
+ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS student_class TEXT;
+ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS share_code_id UUID REFERENCES quiz_share_codes(id) ON DELETE SET NULL;
+ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS invited_by_student_id UUID REFERENCES students(id);
+ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'roster';
+-- A solo run by a teacher, and a child arriving via a share link, have no
+-- roster row. The original table made student_id mandatory.
+ALTER TABLE quiz_sessions ALTER COLUMN student_id DROP NOT NULL;
+
+-- The two CHECKs that ship inline in the CREATE TABLE, added here for the same
+-- upgraded-database reason. Guarded by name: ADD CONSTRAINT has no IF NOT EXISTS.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                 WHERE conrelid = 'quiz_sessions'::regclass AND conname = 'quiz_sessions_source_check') THEN
+    ALTER TABLE quiz_sessions ADD CONSTRAINT quiz_sessions_source_check
+      CHECK (source IN ('roster', 'video_solo', 'share_link'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                 WHERE conrelid = 'quiz_sessions'::regclass AND conname = 'quiz_sessions_has_identity') THEN
+    ALTER TABLE quiz_sessions ADD CONSTRAINT quiz_sessions_has_identity
+      CHECK (student_id IS NOT NULL OR user_id IS NOT NULL OR student_name IS NOT NULL);
+  END IF;
+END $$;
+
+-- Re-declared after the columns exist: the CREATE INDEX statements next to the
+-- table definition run BEFORE this reconcile, so on an upgraded database they
+-- hit "column does not exist" and aborted the apply.
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_user_id
+    ON quiz_sessions(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_share_code
+    ON quiz_sessions(share_code_id) WHERE share_code_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_invited_by
+    ON quiz_sessions (invited_by_student_id) WHERE invited_by_student_id IS NOT NULL;
+
 -- reading_assessments: abandon-path timestamp.
 ALTER TABLE reading_assessments ADD COLUMN IF NOT EXISTS failed_at TIMESTAMPTZ;
 

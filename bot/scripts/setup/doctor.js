@@ -24,7 +24,10 @@
 // Single source of truth: bot/shared/config/feature-availability.js
 const fs = require('fs');
 const path = require('path');
-const { REQUIRED_VARS, FEATURES, isSet } = require('../../shared/config/feature-availability');
+const {
+  REQUIRED_VARS, CHANNEL_REQUIRED_VARS, FEATURES, isSet, requiredVarsFor, resolveChannelDriver,
+} = require('../../shared/config/feature-availability');
+const { DRIVERS, isProductionTier } = require('../../shared/services/messaging/channel-registry');
 const { FLOW_CONFIGS } = require('./flow-configs');
 
 // ── "Where do I get this?" hints ─────────────────────────────────────────────
@@ -80,11 +83,21 @@ function analyzeFlows(state) {
 
 /**
  * @param {object} env  Usually process.env.
- * @returns {{ requiredPresent, missingRequired, features }}
+ * @returns {{ requiredPresent, missingRequired, features, channel, channelDriverTypo }}
  */
 function analyzeEnv(env) {
-  const requiredPresent = REQUIRED_VARS.filter((k) => isSet(env[k]));
-  const missingRequired = REQUIRED_VARS.filter((k) => !isSet(env[k]));
+  const channel = resolveChannelDriver(env);
+  // If CHANNEL_DRIVER was set explicitly but didn't name a known driver,
+  // surface that as its own warning — resolveChannelDriver() already fell
+  // back to the default, so this is the one place left that would otherwise
+  // silently hide a typo from the report.
+  const rawChannelDriver = (env.CHANNEL_DRIVER || '').trim().toLowerCase();
+  const channelDriverTypo = rawChannelDriver && !Object.prototype.hasOwnProperty.call(DRIVERS, rawChannelDriver)
+    ? rawChannelDriver
+    : null;
+  const requiredVars = requiredVarsFor(env);
+  const requiredPresent = requiredVars.filter((k) => isSet(env[k]));
+  const missingRequired = requiredVars.filter((k) => !isSet(env[k]));
 
   const features = FEATURES.map((f) => {
     // Features may declare keys two ways:
@@ -111,7 +124,9 @@ function analyzeEnv(env) {
     return { name: f.name, requiredKeys: keys, missingKeys, available, probe: f.probe || null, notes: f.notes || null };
   });
 
-  return { requiredPresent, missingRequired, features };
+  return {
+    requiredPresent, missingRequired, features, channel, channelDriverTypo,
+  };
 }
 
 // ── Default live probes (network). Each returns { ok, detail }. ──────────────
@@ -125,10 +140,46 @@ const defaultProbes = {
     });
     return { ok: res.status < 500, detail: `HTTP ${res.status}` };
   },
+  /**
+   * Checks the key AND that it can actually pay for a call.
+   *
+   * A valid-but-broke key answers HTTP 200 here while every real feature fails:
+   * a fresh OpenRouter account has no purchased credits, and once the free
+   * allowance is spent the API returns "402 … you requested up to 16384 tokens,
+   * but can only afford 2236". Reporting a green tick for that is the worst kind
+   * of preflight — it sends the operator looking for a bug in the bot. Found
+   * live on exactly this setup: chat replies worked, quiz generation did not.
+   */
   async openrouter(env) {
-    const res = await fetch('https://openrouter.ai/api/v1/key', {
-      headers: { Authorization: `Bearer ${env.OPENROUTER_API_KEY}` },
-    });
+    const headers = { Authorization: `Bearer ${env.OPENROUTER_API_KEY}` };
+    const res = await fetch('https://openrouter.ai/api/v1/key', { headers });
+    if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
+
+    // Credits are a separate endpoint; a failure to read them must not turn a
+    // working key red, so this only ever downgrades on a definite answer.
+    try {
+      const creditRes = await fetch('https://openrouter.ai/api/v1/credits', { headers });
+      if (creditRes.ok) {
+        const { data } = await creditRes.json();
+        const granted = Number(data?.total_credits);
+        const used = Number(data?.total_usage);
+        if (Number.isFinite(granted) && Number.isFinite(used)) {
+          const remaining = granted - used;
+          if (remaining <= 0) {
+            return {
+              ok: false,
+              detail: granted === 0
+                ? 'key valid, but the account has no credits — add some at openrouter.ai/settings/credits'
+                : `key valid, but credits are exhausted ($${granted.toFixed(2)} granted, $${used.toFixed(2)} used) — top up at openrouter.ai/settings/credits`,
+            };
+          }
+          return { ok: true, detail: `HTTP ${res.status} · $${remaining.toFixed(2)} credit remaining` };
+        }
+      }
+    } catch {
+      // fall through to the plain auth result
+    }
+
     return { ok: res.ok, detail: `HTTP ${res.status}` };
   },
   async whatsapp(env) {
@@ -146,6 +197,14 @@ const defaultProbes = {
       await client.connect();
       const pong = await client.ping();
       return { ok: pong === 'PONG', detail: pong };
+    } catch (err) {
+      // ioredis reports an unreachable server as "Connection is closed.", which
+      // says nothing about where it tried or why. Name the address instead.
+      const host = String(env.REDIS_URL || '').replace(/\/\/[^@/]*@/, '//');
+      if (/Connection is closed/i.test(err.message)) {
+        throw new Error(`nothing answered at ${host}`);
+      }
+      throw new Error(`${err.message} (${host})`);
     } finally {
       client.disconnect();
     }
@@ -172,7 +231,9 @@ async function runDoctor({
   env = process.env,
   probes = defaultProbes,
   setupState, // inject a parsed .setup-state.json (or null) in tests; otherwise read from disk
-  statePath = path.resolve(process.cwd(), '.setup-state.json'),
+  // Repo-anchored, like every other path here: run from bot/ it would otherwise
+  // report "no flows registered" for a deployment that has them all.
+  statePath = path.resolve(__dirname, '../../..', '.setup-state.json'),
 } = {}) {
   const analysis = analyzeEnv(env);
 
@@ -224,7 +285,15 @@ async function runDoctor({
   const probesPassed = probeResults.every((p) => p.status !== 'fail');
   const ok = analysis.missingRequired.length === 0 && probesPassed;
 
-  return { ok, missingRequired: analysis.missingRequired, probeResults, featureResults, flowResults };
+  return {
+    ok,
+    missingRequired: analysis.missingRequired,
+    probeResults,
+    featureResults,
+    flowResults,
+    channel: analysis.channel,
+    channelDriverTypo: analysis.channelDriverTypo,
+  };
 }
 
 // ── Pretty printer ────────────────────────────────────────────────────────────
@@ -233,6 +302,26 @@ function formatReport(result) {
   const mark = (s) => ({ pass: '✅', fail: '❌', skip: '⏭️ ', on: '✅', off: '➖' }[s] || '•');
   const lines = [];
   lines.push('Rumi doctor — deployment preflight');
+  if (result.channel) {
+    const tier = isProductionTier(result.channel) ? 'production' : 'sandbox';
+    lines.push(`Channel driver: ${result.channel} (${tier})`);
+    if (result.channel === 'baileys') {
+      lines.push(
+        'ℹ️  Baileys sends/receives text, image, audio, and document messages once paired — run'
+        + ' `rumi pair` if you have not yet. WhatsApp Flows, approved templates, and'
+        + ' carousels have no Baileys equivalent (Meta-only) and log clearly rather than sending.'
+        + ' A green result below means your OTHER required services are configured — it does NOT'
+        + ' confirm messaging works end to end; pair and send yourself a test message to confirm that.'
+        + ' See docs/onboarding/sandbox-production-design.md.'
+      );
+    }
+  }
+  if (result.channelDriverTypo) {
+    lines.push(
+      `⚠️  CHANNEL_DRIVER="${result.channelDriverTypo}" is not a recognized driver (valid: meta | baileys) —`
+      + ` falling back to ${result.channel}.`
+    );
+  }
   lines.push('');
   if (result.missingRequired.length) {
     lines.push('❌ MISSING REQUIRED variables — the bot will REFUSE TO START until you set these:');
@@ -281,7 +370,9 @@ function formatReport(result) {
 // ── CLI entry ──────────────────────────────────────────────────────────────────
 
 async function main() {
-  try { require('dotenv').config(); } catch { /* dotenv optional */ }
+  try {
+    require('dotenv').config({ path: path.resolve(__dirname, '../../..', '.env'), quiet: true });
+  } catch { /* dotenv optional */ }
   const result = await runDoctor({});
   console.log(formatReport(result));
   process.exit(result.ok ? 0 : 1);
@@ -289,4 +380,19 @@ async function main() {
 
 if (require.main === module) main();
 
-module.exports = { analyzeEnv, analyzeFlows, runDoctor, formatReport, keySource, KEY_SOURCES, REQUIRED_VARS, FEATURES };
+module.exports = {
+  analyzeEnv,
+  analyzeFlows,
+  runDoctor,
+  formatReport,
+  keySource,
+  KEY_SOURCES,
+  REQUIRED_VARS,
+  CHANNEL_REQUIRED_VARS,
+  requiredVarsFor,
+  resolveChannelDriver,
+  FEATURES,
+  // Exported so the real probes' behaviour can be tested (the runner injects
+  // fakes, which meant nothing verified the probes themselves).
+  defaultProbes,
+};

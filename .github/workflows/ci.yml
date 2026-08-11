@@ -12,7 +12,10 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        # Node 20 is the floor: the baileys sandbox driver refuses to install
+        # on 18 ("requires Node.js 20+ to run reliably"), and 18 has been
+        # end-of-life since April 2025.
+        node-version: [20, 22]
 
     steps:
       - name: Checkout repository

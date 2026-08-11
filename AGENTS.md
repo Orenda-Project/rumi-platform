@@ -11,7 +11,7 @@ Open-source AI teaching companion on WhatsApp. Teachers get 24/7 coaching, readi
 
 ## Tech Stack
 
-- **Runtime**: Node.js 18+ (Express.js)
+- **Runtime**: Node.js 20+ (Express.js)
 - **Database**: Supabase (PostgreSQL, 73 tables, Row Level Security)
 - **Queue**: pluggable via `QUEUE_DRIVER` — AWS SQS (default) or BullMQ/Redis (no AWS)
 - **AI**: OpenRouter (500+ models via single API)

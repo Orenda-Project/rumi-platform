@@ -2,101 +2,140 @@
 
 > **Up:** [.claude/CLAUDE.md](../../CLAUDE.md) (config & skills router) · **Architecture overview:** [digital-coach](../digital-coach/SKILL.md)
 
-Automated setup guide for deploying the AI teaching-assistant bot. This skill walks through the complete
-setup interactively. Once the bot is running, the [digital-coach](../digital-coach/SKILL.md) skill is the
-map to everything else.
+Setting up a Rumi deployment. Once the bot is running, the [digital-coach](../digital-coach/SKILL.md) skill
+is the map to everything else.
 
-## What This Does
+## Two ways in — pick the right one before you touch anything
 
-1. **Pre-flight checks**: Verifies Node.js 18+, git, npm (`npm run doctor`)
-2. **Feature selection (presence-based)**: there are **no tiers** — a feature turns on when the env vars it needs are present. Set the keys for the features you want; leave the rest unset and the bot degrades gracefully.
-3. **Infrastructure setup**: Creates Supabase project + Railway project + Redis manually
-4. **WhatsApp config**: Set webhook URL, verify handshake
-5. **Register flows**: WhatsApp Flows for interactive forms
-6. **E2E test**: Send test message, verify response
+Setting Rumi up is one sequence with two front doors. Both are first-class; they differ only in who types.
 
-## Usage
+|  | **`rumi setup`** | **"Set me up"** (this skill) |
+|---|---|---|
+| Who answers the questions | the user, in their own terminal | the user, in conversation with you |
+| Needs a TTY | yes | no |
+| Use when | they want to drive it themselves | they asked *you* to do it |
 
-```
-/setup
-```
+### Never run the interactive commands yourself
 
-The agent will guide you through each step interactively.
+**`rumi setup`, `rumi pair` and `rumi graduate` are interactive TTY programs** — arrow-key menus, masked
+input, a QR code to scan with a phone. Launched from a tool call they stop at the first prompt and wait
+forever, because there is no keyboard attached. If the user should run one, *tell them to* and stop.
 
-## Prerequisites
+| Agent-safe (non-interactive) | Human-only (needs a keyboard) |
+|---|---|
+| `./install.sh` — skips its one prompt when stdin isn't a terminal | `rumi setup` |
+| `rumi doctor` (same as `npm run doctor`), `rumi status` | `rumi pair` — also needs a phone to scan |
+| `npm run validate:env`, `npm run bootstrap:db`, `npm test` | `rumi graduate` |
 
-- Node.js 18+ installed
-- WhatsApp Business credentials (from Meta Business Manager)
-- Supabase account (free tier works)
-- Railway account (free tier works)
+If `rumi` isn't on the PATH, `node bin/rumi.js <command>` is identical — and each has an `npm run` equivalent
+in `package.json`, which is the safer form to reach for inside a tool call.
 
-## Feature selection (presence-based, no tiers)
+## Doing it yourself: the "set me up" flow
 
-Gating is by **presence of keys**, not a tier flag. Start with the required core; add each feature's keys
-when you want it on. `.env.template` documents every feature's keys under an `ENABLES:` heading, and
-`npm run validate:env` reports which features are currently switched on.
+Use the wizard's **own modules** rather than a prose re-implementation. They are the same code `rumi setup`
+runs, so the two paths cannot drift, and you inherit every shape check and live probe for free.
 
-| To run… | Set these (on top of the core) |
-|---------|-------------------------------|
-| **Core** (AI chat + registration) | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `REDIS_URL`, `OPENROUTER_API_KEY`, WhatsApp creds |
-| Voice transcription | `SONIOX_API_KEY` |
-| Spoken replies (TTS) | `ELEVENLABS_API_KEY` (+ `UPLIFT_API_KEY` for Urdu/regional) |
-| Reading pronunciation scoring | `AZURE_SPEECH_KEY` |
-| Lesson-plan generation | `GAMMA_API_KEY` |
-| Educational video | `VIDEO_GENERATION_ENABLED=true` + `KIE_API_KEY` |
+### A. Collect the values, in plain language
 
-The single source of truth for what each key enables is
-[bot/shared/config/feature-availability.js](../../../bot/shared/config/feature-availability.js).
+Ask for one service at a time, in the user's terms — "the project URL from Supabase", never `SUPABASE_URL`.
+The order that works: database → AI → Redis → optional extras → WhatsApp.
 
-## Setup Steps (Detailed)
+**Check each answer with the real validator before you accept it.** These exist because the expensive
+mistakes are *well-formed values for the wrong thing*, and they name the specific fix:
 
-### Step 1: Pre-flight Checks
-
-```bash
-node --version  # Must be 18+
-npm --version
-git --version
+```js
+const v = require('./bot/scripts/setup/validators');
+v.supabaseServiceKey(pasted);  // → { ok:false, reason:'That is the anon (public) key…' }
+v.phoneNumberId(pasted);       // → catches a phone number in Meta's id field
+v.openrouterKey(pasted);       // → names which vendor's key was pasted by mistake
+v.validatorFor('ANY_ENV_VAR'); // → the right one, or a presence check
 ```
 
-### Step 2: Create Infrastructure
+A validator may return a cleaned `value` (trimmed URL, wrapped `host:port`) — store that, not the raw paste.
 
-Follow [SETUP.md](../../../SETUP.md) to manually create:
-- Supabase project (copy URL + service role key)
-- Railway project + Redis plugin
-- OpenRouter API key
+### B. Write them to `.env`
 
-Copy the credentials into `.env` based on `.env.template`.
-
-### Step 3: Bootstrap the Database
-
-One command applies the schema, RLS policies, and seed data in order:
-
-```bash
-npm run bootstrap:db
+```js
+const { readEnvFile, writeEnvVars } = require('./bot/scripts/setup/env-file');
+writeEnvVars('.env', { SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key },
+  { fromTemplatePath: '.env.template' });
 ```
 
-(Equivalent manual apply: `psql $DATABASE_URL -f infrastructure/supabase/00_complete-schema.sql`, then
-`01_rls-policies.sql`, then `02_seed-data.sql`.)
+Patches in place — every comment, every unrelated var untouched. **Write after each service, not at the end**,
+so an interrupted conversation costs nothing. Never regenerate `.env` from the template.
 
-Then confirm your environment is wired correctly before deploying:
+### C. Verify against the live service
 
-```bash
-npm run validate:env   # which features are switched on (by key presence)
-npm run doctor         # connection + config preflight
+"Set" is not "working". Use the same probes the doctor uses:
+
+```js
+const { defaultProbes } = require('./bot/scripts/setup/doctor');
+await defaultProbes.supabase(env);    // { ok, detail }
+await defaultProbes.openrouter(env);  // also reports the credit balance
+await defaultProbes.redis(env);
 ```
 
-### Step 4: Add WhatsApp Credentials
+A valid OpenRouter key with **no credit** is a distinct case: it answers greetings and then fails on anything
+substantial. Tell the user, and let them decide whether to add credit now.
 
-Edit `.env` and add your WhatsApp credentials (from Meta Business Manager):
+### D. Create the tables
 
-```env
-WHATSAPP_TOKEN=EAA...
-PHONE_NUMBER_ID=123456789
-WABA_ID=987654321
-WEBHOOK_VERIFY_TOKEN=your-random-string
+```js
+const db = require('./bot/scripts/setup/db-setup');
+await db.inspectDatabase(env);   // 'ready' | 'needs-schema' | 'needs-helper' | 'unreachable'
 ```
 
-### Step 5: Install & Deploy
+- **`ready`** — nothing to do.
+- **`needs-schema`** — run `db.applySchema(env)` (or `npm run bootstrap:db`).
+- **`needs-helper`** — **this step needs the user's hands.** Supabase exposes no API for arbitrary SQL, so the
+  `exec_sql` function the schema is applied through has to be pasted in once. Give them
+  `db.EXEC_SQL_DEFINITION` (two lines) and `db.sqlEditorUrl(env.SUPABASE_URL)` — a link straight to *their*
+  project's SQL editor — then wait, re-check with `db.hasExecSql(env)`, and apply.
+- **`unreachable`** — the key was rejected or the host didn't answer; don't proceed as if there were no tables.
+
+### E. Connect WhatsApp
+
+Ask the plain-language question, not "which channel driver":
+
+> **Just trying it out** — links their own WhatsApp like WhatsApp Web. Nothing to register.
+> **Real deployment** — an official WhatsApp Business number through Meta.
+
+**Trying it out:** write `CHANNEL_DRIVER=baileys`, `QUEUE_DRIVER=bullmq` (the template default is `sqs`, which
+needs an AWS account they do not have) and `CHANNEL_STATE_DIR=.channel-state`. Then **hand pairing to the
+user** — it needs a phone camera:
+
+> Run `rumi pair` in your terminal and scan the code with WhatsApp → Settings → Linked devices.
+
+Say the caveats first: it becomes a linked device on their personal account and can see their chats; the
+Meta-only surfaces (tap-through forms, approved templates, picture carousels) render as an ordinary chat
+instead; and **they need a second phone number to message it from**, because Rumi *is* their number.
+
+**Real deployment:** the four Meta values, with the on-page names and guidance already written in
+[bot/scripts/setup/fields.js](../../../bot/scripts/setup/fields.js) (`META_FIELDS` — use its `label`, `hint`
+and `validate`; `WEBHOOK_VERIFY_TOKEN` has a `generate()`). Then `defaultProbes.whatsapp(env)`, then
+`META_REMAINING_STEPS` for what only they can do in Meta's console.
+
+### F. Finish
+
+Run `rumi doctor` and read it back in plain language. Then tell them: `rumi start`, message the number from
+their **second** number, and try `Hi`, `/menu`, `/reading test`.
+
+### What you add that the wizard cannot
+
+1. **Deciding which path they're on** — trying it out vs a real deployment changes everything downstream. If
+   they haven't said, ask. See
+   [docs/onboarding/sandbox-production-design.md](../../../docs/onboarding/sandbox-production-design.md).
+2. **Explaining *why* a step exists** when someone stalls, and interpreting a failure in their words.
+3. **The production steps below** — hosting, the Meta webhook, Flow registration, the background worker.
+4. **Customization afterwards** — the table at the end.
+
+## Production steps the wizard does not do
+
+
+### Deploy
+
+Rumi runs on any Node host. **Railway** is the documented default, and what
+`infrastructure/railway/` is configured for:
 
 ```bash
 cd bot && npm install && cd ..
@@ -104,16 +143,24 @@ railway login
 railway up
 ```
 
-### Step 6: Configure WhatsApp Webhook
+For Railway specifics — scaling, logs, the worker process — see
+[docs/railway-operations.md](../../../docs/railway-operations.md).
 
-1. Go to Meta Business Manager > WhatsApp > Configuration > Webhook
-2. Set URL: `https://your-app.up.railway.app/webhook`
-3. Set verify token: same as `WEBHOOK_VERIFY_TOKEN`
-4. Subscribe to: `messages`
+### Configure the WhatsApp webhook (Meta only)
 
-### Step 7: Register WhatsApp Flows & Templates
+1. Meta Business Manager → WhatsApp → Configuration → Webhook
+2. Callback URL: `https://your-app.up.railway.app/webhook`
+3. Verify token: the same value as `WEBHOOK_VERIFY_TOKEN` in `.env` (the wizard calls this the "webhook
+   password" and can generate one)
+4. **Subscribe to the `messages` field** — without it Meta accepts the URL and then never sends anything,
+   which looks exactly like a broken bot
 
-After deploying, register the WhatsApp Flows (interactive forms) and Message Templates with Meta:
+### Register WhatsApp Flows & templates (Meta only)
+
+Flows are Meta-only interactive forms. On the sandbox channel they are not used at all — the same endpoint
+logic is rendered as a text conversation instead (see
+[bot/shared/services/messaging/text-flow-definitions.js](../../../bot/shared/services/messaging/text-flow-definitions.js)),
+so there is nothing to register.
 
 ```bash
 node bot/scripts/setup/run-full-setup.js \
@@ -123,33 +170,46 @@ node bot/scripts/setup/run-full-setup.js \
   --endpoint-base=https://your-app.up.railway.app
 ```
 
-The script will:
-1. Generate RSA-2048 encryption keys
-2. Register flows: Reading Assessment, Attendance Setup, Attendance Marking
-3. Submit message templates
+It generates the RSA-2048 keypair, registers the Flows, and submits the message templates. Set the values it
+prints as env vars on the host: `READING_ASSESSMENT_FLOW_ID`, `ATTENDANCE_SETUP_FLOW_ID`,
+`ATTENDANCE_MARKING_FLOW_ID`, `REGISTRATION_FLOW_ID`, `FLOW_PRIVATE_KEY` (base64).
 
-**Output**: Flow IDs and env var values to set in Railway:
-- `READING_ASSESSMENT_FLOW_ID`
-- `ATTENDANCE_SETUP_FLOW_ID`
-- `ATTENDANCE_MARKING_FLOW_ID`
-- `FLOW_PRIVATE_KEY` (base64-encoded)
+### Background worker
 
-Set the output values as Railway env vars:
+The coaching pipeline needs the stale-session worker on a schedule (every 15 minutes):
+`node bot/workers/stale-session.worker.js`. See SETUP.md Step 11.
 
-```bash
-railway variables set READING_ASSESSMENT_FLOW_ID=<value>
-railway variables set ATTENDANCE_SETUP_FLOW_ID=<value>
-railway variables set ATTENDANCE_MARKING_FLOW_ID=<value>
-railway variables set FLOW_PRIVATE_KEY=<base64-value>
-```
+### Test
 
-### Step 8: Test
+Send "Hi" to the number. Expected: a welcome message and the registration prompt. If nothing arrives, check
+the webhook is subscribed to `messages`, then the host's logs.
 
-Send "Hi" to your WhatsApp number. Expected: welcome message + registration flow.
+## Feature gating (presence-based, no tiers)
+
+A feature is on iff the env vars it needs are present — there is no tier flag and no master switch. The
+wizard's step 4 offers the common ones; anything can be added later by setting its key and restarting.
+`rumi status` and `rumi doctor` both list what is currently on and which key would switch each remaining one
+on.
+
+| To run… | Set these (on top of the core) |
+|---------|-------------------------------|
+| **Core** (AI chat + registration) | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `REDIS_URL`, `OPENROUTER_API_KEY`, + the channel's own vars |
+| Voice notes / reading assessment | `SONIOX_API_KEY` |
+| Spoken replies | `ELEVENLABS_API_KEY` (+ `UPLIFT_API_KEY` for Urdu/regional) |
+| Reading pronunciation scoring | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` |
+| Lesson-plan generation | `GAMMA_API_KEY` |
+| Educational video | `VIDEO_GENERATION_ENABLED=true` + `KIE_API_KEY` |
+| Exam-checker OCR | `MISTRAL_API_KEY` or `CHANDRA_API_KEY` |
+
+The single source of truth is
+[bot/shared/config/feature-availability.js](../../../bot/shared/config/feature-availability.js) — read it
+rather than trusting this table if they disagree.
 
 ## Resuming
 
-If setup fails partway through, run `/setup` again. It reads `.setup-state.json` and resumes from the last completed step.
+Both halves resume: `rumi setup` saves each answer to `.env` as it is given and skips whatever already works,
+so re-running after an interruption costs a few seconds. Flow registration keeps its own progress in
+`.setup-state.json`, which `rumi doctor` reads to report which Flows are registered.
 
 ## After Setup: Customization
 

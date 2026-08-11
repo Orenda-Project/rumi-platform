@@ -18,6 +18,11 @@ keys/
 *.key
 *.cert
 *.p12
+
+# Messaging channel local state (e.g. .channel-state/baileys/ session auth) —
+# grants live account access, treat like a credential. See CHANNEL_STATE_DIR
+# in .env.template.
+.channel-state/
 credentials*
 service-account*.json
 .railway-token

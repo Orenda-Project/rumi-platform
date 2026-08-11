@@ -26,20 +26,20 @@ describe('Setup Infrastructure', () => {
     });
 
     test('validateEnv returns valid:false when required vars missing', () => {
-      const originalTier = process.env.RUMI_TIER;
-      const originalKey = process.env.OPENROUTER_API_KEY;
-      process.env.RUMI_TIER = 'minimal';
-      delete process.env.WHATSAPP_TOKEN;
-      delete process.env.OPENROUTER_API_KEY;
-
-      jest.resetModules();
+      // An explicit, self-contained env (not process.env mutation) — avoids
+      // depending on dotenv's reload-on-require behavior or on the real local
+      // .env file's contents, both of which are incidental to what this test
+      // actually checks: a missing CORE required var (channel-independent).
       const { validateEnv } = require(path.join(ROOT, 'bot/scripts/validate-env.js'));
-      const result = validateEnv();
+      const env = {
+        SUPABASE_URL: 'https://x.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'k',
+        REDIS_URL: 'redis://localhost:6379',
+        // OPENROUTER_API_KEY intentionally omitted.
+      };
+      const result = validateEnv(env);
       expect(result.valid).toBe(false);
-      expect(result.missing.length).toBeGreaterThan(0);
-
-      process.env.RUMI_TIER = originalTier;
-      process.env.OPENROUTER_API_KEY = originalKey;
+      expect(result.missing).toContain('OPENROUTER_API_KEY');
     });
 
     test('validateEnv reports presence-based features (no tier)', () => {

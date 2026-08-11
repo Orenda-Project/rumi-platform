@@ -22,7 +22,9 @@ describe('Documentation Completeness', () => {
     });
 
     test('contains project description', () => {
-      expect(readme).toContain('AI Teaching Assistant');
+      // Case-insensitive: the guard is that the README says what Rumi *is*,
+      // not how the phrase is capitalised in a given tagline.
+      expect(readme).toMatch(/AI teaching assistant/i);
       expect(readme).toContain('WhatsApp');
     });
 

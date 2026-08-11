@@ -29,10 +29,16 @@ CLAUDE.md (this file)  →  <folder>/CLAUDE.md (router)  →  .claude/skills/<sk
 2. **The queue backend is pluggable** via `QUEUE_DRIVER` (default `sqs`; `bullmq` runs the whole async
    pipeline on Redis with no AWS). Producers/consumers require `bot/shared/services/queue/` (the index),
    never a specific driver. See [bot/CLAUDE.md](bot/CLAUDE.md).
-3. **All LLM calls go through** `bot/shared/services/llm-client.js` (OpenRouter — one API, many models).
-4. **Region behaviour is config-driven** (`region_features` table, fail-open) — never hardcode a country,
+3. **The messaging channel is pluggable** via `CHANNEL_DRIVER` (`meta` = WhatsApp Cloud API, the only
+   production tier; `baileys` = a linked device, for trying Rumi out). Never require a driver directly —
+   require `bot/shared/services/messaging/` (the index), the same rule as the queue. Meta-only surfaces
+   (Flows, approved templates, carousels) degrade to a text conversation driven by the *same* Flow endpoint;
+   see `messaging/text-flow-definitions.js` and
+   [docs/onboarding/sandbox-production-design.md](docs/onboarding/sandbox-production-design.md).
+4. **All LLM calls go through** `bot/shared/services/llm-client.js` (OpenRouter — one API, many models).
+5. **Region behaviour is config-driven** (`region_features` table, fail-open) — never hardcode a country,
    phone-number-id, or region name.
-5. **No credentials in code.** Everything comes from `.env` (copy `.env.template`). The repo is public —
+6. **No credentials in code.** Everything comes from `.env` (copy `.env.template`). The repo is public —
    no secrets, no internal phone numbers, no internal ticket refs in source (CI enforces all three).
 
 ## Working rules
@@ -47,6 +53,6 @@ CLAUDE.md (this file)  →  <folder>/CLAUDE.md (router)  →  .claude/skills/<sk
 
 ## Repo map
 
-`bot/` WhatsApp bot (Node/Express; entry `bot/whatsapp-bot.js`; 10 handlers, 49 services, 10 workers) ·
-`infrastructure/` Supabase schema (73 tables) + deploy configs · `tests/` Jest suites (93 suites / 1161
+`bot/` WhatsApp bot (Node/Express; entry `bot/whatsapp-bot.js`; 10 handlers, 45 services, 9 workers) ·
+`infrastructure/` Supabase schema (76 tables) + deploy configs · `tests/` Jest suites (170 suites / 1996
 tests) · `docs/` architecture & customization · `dashboard/` + `portal/` observability/teacher UIs.

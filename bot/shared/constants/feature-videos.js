@@ -8,12 +8,18 @@
  * 3. When keywords are detected in chat (explicit consent via buttons)
  */
 
+// Presence-gated, like every other optional asset. With R2_PUBLIC_URL unset
+// these interpolated to a RELATIVE path ("/feature_videos/reading_intro.mp4"),
+// which is not fetchable by anything — so the bot asked "Want to see how? 🎥",
+// the teacher said yes, and nothing ever arrived (the send failed with "Could
+// not extract R2 key from URL"). Null means "there is no video here", and callers
+// then don't make the offer at all.
 const R2_BASE = process.env.R2_PUBLIC_URL || '';
 
 const FEATURE_VIDEO_URLS = {
-  lesson_plan: `${R2_BASE}/feature_videos/lesson_plan_intro.mp4`,
-  coaching: `${R2_BASE}/feature_videos/coaching_intro.mp4`,
-  reading: `${R2_BASE}/feature_videos/reading_intro.mp4`,
+  lesson_plan: R2_BASE ? `${R2_BASE}/feature_videos/lesson_plan_intro.mp4` : null,
+  coaching: R2_BASE ? `${R2_BASE}/feature_videos/coaching_intro.mp4` : null,
+  reading: R2_BASE ? `${R2_BASE}/feature_videos/reading_intro.mp4` : null,
 };
 
 /**

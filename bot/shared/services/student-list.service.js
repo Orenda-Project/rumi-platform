@@ -18,8 +18,18 @@ class StudentListService {
    * - Numbered lists: "1. Name, Father"
    * - Bullet lists: "- Name, Father"
    *
+   * An optional parent WhatsApp number may appear anywhere in the line and is
+   * extracted before the name is parsed:
+   * - "Ahmed Khan +923001234567"
+   * - "Zara s/o Abdul 03001234567"
+   * Without a number the line parses exactly as before. This matters because
+   * quizzes and reports are delivered to parents: a roster with no phone numbers
+   * gets as far as the class picker and then stops ("your class doesn't have any
+   * parent phone numbers yet"), which is a dead end when the roster was entered
+   * as text with nowhere to put them.
+   *
    * @param {string} text - Raw student list text (one student per line)
-   * @returns {Array<{studentName: string, fatherName: string|null}>}
+   * @returns {Array<{studentName: string, fatherName: string|null, parentPhone: string|null}>}
    */
   static parseStudentText(text) {
     if (!text || typeof text !== 'string') {
@@ -48,6 +58,20 @@ class StudentListService {
       // Skip if empty after cleaning
       if (!cleaned) continue;
 
+      // Pull out a parent phone number, if the line carries one, BEFORE parsing
+      // the name — otherwise the digits end up inside the father-name field.
+      // Deliberately narrow: 10+ digits with optional +, spaces and dashes, so a
+      // roll number or a grade in the line is not mistaken for a phone.
+      let parentPhone = null;
+      const phoneMatch = cleaned.match(/\+?\d[\d\s-]{8,}\d/);
+      if (phoneMatch) {
+        parentPhone = phoneMatch[0].replace(/[\s-]/g, '');
+        cleaned = cleaned.replace(phoneMatch[0], ' ').replace(/\s+/g, ' ').trim();
+        // A trailing separator left behind by removing the number
+        cleaned = cleaned.replace(/[,;|]\s*$/, '').trim();
+      }
+      if (!cleaned) continue; // a bare phone number identifies no student
+
       let studentName = null;
       let fatherName = null;
 
@@ -70,7 +94,7 @@ class StudentListService {
       }
 
       if (studentName) {
-        students.push({ studentName, fatherName });
+        students.push({ studentName, fatherName, parentPhone });
       }
     }
 
@@ -180,6 +204,9 @@ class StudentListService {
       list_id: listId,
       student_name: parsedStudent.studentName,
       father_name: parsedStudent.fatherName || null,
+      // Optional — only set when the roster line carried a number. Quizzes and
+      // reports are delivered here.
+      parent_phone: parsedStudent.parentPhone || null,
       roll_number: parsedStudent.rollNumber,
       is_active: true
     };

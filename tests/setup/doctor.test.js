@@ -9,7 +9,7 @@
  */
 
 const {
-  analyzeEnv, analyzeFlows, runDoctor, formatReport, keySource, REQUIRED_VARS,
+  analyzeEnv, analyzeFlows, runDoctor, formatReport, keySource, REQUIRED_VARS, CHANNEL_REQUIRED_VARS, requiredVarsFor,
 } = require('../../bot/scripts/setup/doctor');
 
 const FULL_ENV = {
@@ -34,7 +34,22 @@ describe('analyzeEnv', () => {
   it('reports all required present when the full env is set', () => {
     const a = analyzeEnv(FULL_ENV);
     expect(a.missingRequired).toEqual([]);
-    expect(a.requiredPresent.sort()).toEqual([...REQUIRED_VARS].sort());
+    // FULL_ENV sets all 4 Meta vars with no explicit CHANNEL_DRIVER, so the
+    // channel is inferred as `meta` and the full 8-var list applies.
+    expect(a.requiredPresent.sort()).toEqual(requiredVarsFor(FULL_ENV).sort());
+    expect(a.channel).toBe('meta');
+  });
+
+  it('resolves to the sandbox (baileys) channel and requires only the 4 core vars when no Meta vars are set', () => {
+    const env = {
+      SUPABASE_URL: 'https://x.supabase.co',
+      SUPABASE_SERVICE_ROLE_KEY: 'k',
+      OPENROUTER_API_KEY: 'k',
+      REDIS_URL: 'redis://localhost:6379',
+    };
+    const a = analyzeEnv(env);
+    expect(a.channel).toBe('baileys');
+    expect(a.missingRequired).toEqual([]);
   });
 
   it('flags a missing required var', () => {
@@ -108,6 +123,78 @@ describe('runDoctor', () => {
     const on = await runDoctor({ env: { ...FULL_ENV, MISTRAL_API_KEY: 'k' }, probes: allPassProbes });
     expect(on.featureResults.find((f) => f.name.includes('Exam')).status).toBe('on');
   });
+
+  it('sandbox (baileys) deployments are ok=true without any Meta credentials, and the WhatsApp probe is skipped', async () => {
+    const env = {
+      SUPABASE_URL: 'https://x.supabase.co',
+      SUPABASE_SERVICE_ROLE_KEY: 'k',
+      OPENROUTER_API_KEY: 'k',
+      REDIS_URL: 'redis://localhost:6379',
+      CHANNEL_DRIVER: 'baileys',
+    };
+    let whatsappProbed = false;
+    const probes = { ...allPassProbes, whatsapp: async () => { whatsappProbed = true; return { ok: true, detail: 'HTTP 200' }; } };
+    const r = await runDoctor({ env, probes });
+    expect(r.channel).toBe('baileys');
+    expect(r.ok).toBe(true);
+    expect(whatsappProbed).toBe(false);
+    expect(r.probeResults.find((p) => p.name.includes('WhatsApp')).status).toBe('skip');
+  });
+});
+
+describe('formatReport — channel driver line', () => {
+  it('shows the resolved channel and its tier', async () => {
+    const r = await runDoctor({ env: FULL_ENV, probes: allPassProbes });
+    expect(formatReport(r)).toMatch(/Channel driver: meta \(production\)/);
+  });
+
+  it('does not print a channel line when the result has no channel field (hand-built result objects)', () => {
+    const result = { ok: true, missingRequired: [], probeResults: [], featureResults: [], flowResults: [] };
+    expect(formatReport(result)).not.toMatch(/Channel driver:/);
+  });
+
+  it('notes that a green result does not by itself confirm Baileys messaging works end to end', async () => {
+    const env = {
+      SUPABASE_URL: 'https://x.supabase.co',
+      SUPABASE_SERVICE_ROLE_KEY: 'k',
+      OPENROUTER_API_KEY: 'k',
+      REDIS_URL: 'redis://localhost:6379',
+      CHANNEL_DRIVER: 'baileys',
+    };
+    const r = await runDoctor({ env, probes: allPassProbes });
+    const report = formatReport(r);
+    expect(report).toMatch(/Channel driver: baileys \(sandbox\)/);
+    expect(report).toMatch(/does NOT confirm messaging works end to end/i);
+    expect(report).toMatch(/rumi pair/);
+  });
+
+  it('does not print the Baileys-specific note for the meta channel', async () => {
+    const r = await runDoctor({ env: FULL_ENV, probes: allPassProbes });
+    expect(formatReport(r)).not.toMatch(/rumi pair/);
+  });
+
+  it('warns when CHANNEL_DRIVER is set to an unrecognized value, naming the typo and the fallback', async () => {
+    const env = {
+      SUPABASE_URL: 'https://x.supabase.co',
+      SUPABASE_SERVICE_ROLE_KEY: 'k',
+      OPENROUTER_API_KEY: 'k',
+      REDIS_URL: 'redis://localhost:6379',
+      CHANNEL_DRIVER: 'mta',
+    };
+    const a = analyzeEnv(env);
+    expect(a.channelDriverTypo).toBe('mta');
+    expect(a.channel).toBe('baileys');
+
+    const r = await runDoctor({ env, probes: allPassProbes });
+    const report = formatReport(r);
+    expect(report).toMatch(/CHANNEL_DRIVER="mta" is not a recognized driver/);
+    expect(report).toMatch(/falling back to baileys/);
+  });
+
+  it('does not warn about a typo when CHANNEL_DRIVER is unset (inference is not a typo)', () => {
+    const a = analyzeEnv({ ...FULL_ENV });
+    expect(a.channelDriverTypo).toBeNull();
+  });
 });
 
 describe('key sourcing ("get it here" guidance)', () => {
@@ -116,8 +203,9 @@ describe('key sourcing ("get it here" guidance)', () => {
     expect(keySource('NOT_A_REAL_VAR')).toBe('');
   });
 
-  it('every REQUIRED var has a documented "get it here" source', () => {
-    const undocumented = REQUIRED_VARS.filter((v) => !keySource(v));
+  it('every REQUIRED var (core + every channel driver) has a documented "get it here" source', () => {
+    const allVars = [...REQUIRED_VARS, ...Object.values(CHANNEL_REQUIRED_VARS).flat()];
+    const undocumented = allVars.filter((v) => !keySource(v));
     expect(undocumented).toEqual([]);
   });
 
@@ -164,5 +252,78 @@ describe('flow registration state (analyzeFlows + doctor reporting)', () => {
   it('formatReport tells the user to run setup:flows when no flows are registered', async () => {
     const r = await runDoctor({ env: FULL_ENV, probes: allPassProbes, setupState: null });
     expect(formatReport(r)).toMatch(/npm run setup:flows/);
+  });
+});
+
+describe('the real OpenRouter probe — a valid key is not the same as a usable one', () => {
+  // Live finding: doctor reported "✅ OpenRouter (LLM) — HTTP 200" and "All
+  // required services are configured and reachable" on an account with zero
+  // credits, while every substantial LLM call failed with HTTP 402. A green tick
+  // there sends the operator hunting for a bug in the bot.
+  const { defaultProbes } = require('../../bot/scripts/setup/doctor');
+  const ENV = { OPENROUTER_API_KEY: 'test-key' };
+
+  const mockFetch = (routes) => jest.fn(async (url) => {
+    for (const [fragment, response] of Object.entries(routes)) {
+      if (String(url).includes(fragment)) return response;
+    }
+    throw new Error(`unexpected fetch: ${url}`);
+  });
+
+  const okJson = (body) => ({ ok: true, status: 200, json: async () => body });
+
+  let realFetch;
+  beforeEach(() => { realFetch = global.fetch; });
+  afterEach(() => { global.fetch = realFetch; });
+
+  it('is exported so the credit behaviour can be tested at all', () => {
+    expect(typeof defaultProbes.openrouter).toBe('function');
+  });
+
+  it('fails a key whose account has no credits, and says where to fix it', async () => {
+    global.fetch = mockFetch({
+      '/v1/key': okJson({}),
+      '/v1/credits': okJson({ data: { total_credits: 0, total_usage: 0.088 } }),
+    });
+    const result = await defaultProbes.openrouter(ENV);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/no credits/i);
+    expect(result.detail).toMatch(/openrouter\.ai\/settings\/credits/);
+  });
+
+  it('fails a key whose granted credits are spent', async () => {
+    global.fetch = mockFetch({
+      '/v1/key': okJson({}),
+      '/v1/credits': okJson({ data: { total_credits: 5, total_usage: 5 } }),
+    });
+    const result = await defaultProbes.openrouter(ENV);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/exhausted/i);
+  });
+
+  it('passes a funded key and reports what is left', async () => {
+    global.fetch = mockFetch({
+      '/v1/key': okJson({}),
+      '/v1/credits': okJson({ data: { total_credits: 10, total_usage: 2.5 } }),
+    });
+    const result = await defaultProbes.openrouter(ENV);
+    expect(result.ok).toBe(true);
+    expect(result.detail).toMatch(/\$7\.50 credit remaining/);
+  });
+
+  it('fails an invalid key without even asking about credits', async () => {
+    global.fetch = mockFetch({ '/v1/key': { ok: false, status: 401 } });
+    const result = await defaultProbes.openrouter(ENV);
+    expect(result).toEqual({ ok: false, detail: 'HTTP 401' });
+  });
+
+  it('still passes a working key when the credits endpoint is unavailable', async () => {
+    // Only a definite answer may downgrade the result; an unreadable credits
+    // endpoint must not turn a perfectly good key red.
+    global.fetch = mockFetch({
+      '/v1/key': okJson({}),
+      '/v1/credits': { ok: false, status: 500 },
+    });
+    await expect(defaultProbes.openrouter(ENV)).resolves.toEqual({ ok: true, detail: 'HTTP 200' });
   });
 });

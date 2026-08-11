@@ -7,8 +7,6 @@ const WhatsAppService = require('../whatsapp.service');
 const redisService = require('../cache/railway-redis.service');
 const SQSQueueService = require('../queue');  //  Phase 8 producer side
 const { computeNextDifficulty, shouldEndQuiz } = require('./quiz-adaptive');
-const OpenAI = require('openai');
-const { OPENAI_API_KEY } = require('../../utils/constants');
 
 // Normalise phone format for Redis keys. Meta webhooks deliver
 // `messages[0].from` WITHOUT the leading +, but students.parent_phone is
@@ -727,7 +725,8 @@ class QuizSessionService {
         return; // Silently ignore rapid-fire messages
       }
 
-      const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+      // See quiz-generation.service.js: the single LLM entry point is llm-client.
+      const openai = require('../llm-client').getClient();
 
       // build the system prompt with the quiz Q&A snapshot so
       // Rumi can answer in context. The snapshot is fetched once at

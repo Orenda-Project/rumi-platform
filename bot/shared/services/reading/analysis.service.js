@@ -25,6 +25,10 @@ const BenchmarkService = require('./benchmark.service');
 const WhatsAppService = require('../whatsapp.service');
 const FeatureLinkerService = require('../feature-linker.service');
 const FeatureRegistrationService = require('../feature-registration.service');
+const fs = require('fs');
+const path = require('path');
+const { isR2Configured } = require('../../storage/r2');
+const { TEMP_DIR } = require('../../utils/constants');
 const { logToFile } = require('../../utils/logger');
 const { getClient } = require('../llm-client');
 const { OPENAI_API_KEY } = require('../../utils/constants');
@@ -339,28 +343,74 @@ class AnalysisService {
         })
         .eq('id', assessmentId);
 
-      // Send error message to teacher
+      // Tell the teacher — ONCE, and truthfully.
+      //
+      // This used to instruct the model to say "Our team has been notified",
+      // which is simply false: Rumi is self-hosted, there is no team watching an
+      // inbox, and telling a teacher help is coming when it isn't is worse than
+      // admitting the failure. What she can actually act on is retrying.
       const errorPrompt = `Generate a brief error message in language code "${userLanguage}" saying:
-1. There was an error analyzing the reading assessment
-2. Our team has been notified
-3. They can try again or contact support
-4. Apologetic tone
+1. The reading assessment could not be analysed
+2. The recording was not lost — she can send it again, or start over with /reading test
+3. Do NOT claim that anyone has been notified, or that a team is investigating
+4. Apologetic but practical tone
 5. Maximum 3 sentences
 6. NO markdown`;
 
-      const errorResponse = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: errorPrompt }],
-        temperature: 0.3,
-        max_tokens: 150
-      });
+      let errorMessage = 'Sorry — I could not analyse that reading. Please send the recording '
+        + 'again, or start over with /reading test.';
+      try {
+        const errorResponse = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: errorPrompt }],
+          temperature: 0.3,
+          max_tokens: 150
+        });
+        errorMessage = errorResponse.choices[0].message.content.trim() || errorMessage;
+      } catch (messageError) {
+        // An error path must not depend on the LLM being reachable.
+        logToFile('⚠️ Could not generate a localised failure message, using the default', {
+          assessmentId, error: messageError.message,
+        });
+      }
 
-      await WhatsAppService.sendMessage(
-        phoneNumber,
-        errorResponse.choices[0].message.content.trim()
-      );
+      await WhatsAppService.sendMessage(phoneNumber, errorMessage);
 
+      // The caller catches this and would send its OWN error message — the
+      // teacher got two apologies for one failure (plus a spoken one). Flag that
+      // she has already been told.
+      error.userNotified = true;
       throw error;
+    }
+  }
+
+  /**
+   * Deletes local artifacts once they have served their purpose.
+   *
+   * On a deployment with no object storage, the recording and the report PDF live
+   * on local disk (see voice-message.handler.js and generateReport). Nothing else
+   * ever removes them, so every assessment would leave an .ogg and a .pdf behind
+   * forever — a slow disk leak, and stale copies of a child's voice sitting around
+   * longer than they need to. R2-hosted artifacts are left alone: they are the
+   * durable copy, and the report URL is stored on the assessment row.
+   *
+   * Best-effort by design: failing to tidy up must never fail an assessment that
+   * has already been delivered.
+   */
+  static _cleanupLocalArtifacts({ audioUrl, reportUrl, assessmentId }) {
+    for (const url of [audioUrl, reportUrl]) {
+      if (typeof url !== 'string' || !url.startsWith('file://')) continue;
+      const localPath = url.slice('file://'.length);
+      try {
+        if (fs.existsSync(localPath)) {
+          fs.unlinkSync(localPath);
+          logToFile('🗑️ Removed local assessment artifact', { assessmentId, localPath });
+        }
+      } catch (error) {
+        logToFile('⚠️ Could not remove local assessment artifact', {
+          assessmentId, localPath, error: error.message,
+        });
+      }
     }
   }
 
@@ -398,6 +448,11 @@ class AnalysisService {
       // STEP 7: Send results to teacher
       logToFile('Step 7/8: Sending results to teacher...');
       await this.sendResults(assessment, reportUrl, phoneNumber, userLanguage);
+
+      // Delivered — local copies are no longer needed.
+      this._cleanupLocalArtifacts({
+        audioUrl: assessment.audio_url, reportUrl, assessmentId: assessment.id,
+      });
 
       // STEP 8 (OPTIONAL): Generate voice feedback
       logToFile('Step 8/8: Generating voice feedback (optional)...');
@@ -957,6 +1012,20 @@ Output the complete enhanced summary (not just the new parts).`;
       const reportType = assessment.comprehension_score !== null && assessment.comprehension_score !== undefined ?
         'Fluency_Comprehension' : 'Fluency_Only';
       const fileName = `${reportType}_${studentName}_${dateStr}.pdf`;
+      // No object storage? Keep the report on local disk and hand back a file://
+      // URL. sendResults() delivers it with sendDocumentFromUrl(), which resolves
+      // local files on the sandbox driver. Without this, a report that had already
+      // been RENDERED failed on upload, which marked the whole assessment 'failed'
+      // and sent the teacher nothing — after a student had read the passage aloud.
+      if (!isR2Configured()) {
+        const localPath = path.join(TEMP_DIR, fileName);
+        fs.writeFileSync(localPath, pdfBuffer);
+        logToFile('✅ Report PDF kept on local disk (no object storage configured)', {
+          path: localPath, bytes: pdfBuffer.length,
+        });
+        return `file://${localPath}`;
+      }
+
       const key = `reading_reports/${assessment.user_id}/${fileName}`;
 
       const command = new PutObjectCommand({
@@ -1514,6 +1583,11 @@ Output the complete enhanced summary (not just the new parts).`;
 
       // Send combined report to teacher
       await this.sendResults(assessment, publicUrl, phoneNumber, userLanguage);
+
+      // Delivered — local copies are no longer needed.
+      this._cleanupLocalArtifacts({
+        audioUrl: assessment.audio_url, reportUrl: publicUrl, assessmentId: assessment.id,
+      });
 
       // Generate and send voice feedback (includes both fluency and comprehension)
       try {
