@@ -26,6 +26,16 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
 CREATE EXTENSION IF NOT EXISTS "vector" SCHEMA public;
 
+-- =============================================================================
+-- SECTION 1.5: Sequences
+-- =============================================================================
+-- These sequences are referenced by tables below and must exist first.
+
+CREATE SEQUENCE IF NOT EXISTS lcpm_benchmarks_id_seq;
+CREATE SEQUENCE IF NOT EXISTS wcpm_percentiles_id_seq;
+CREATE SEQUENCE IF NOT EXISTS qa_test_runs_run_number_seq;
+CREATE SEQUENCE IF NOT EXISTS migration_test_id_seq;
+
 
 -- =============================================================================
 -- SECTION 2: Tables
@@ -3297,17 +3307,19 @@ CREATE INDEX IF NOT EXISTS idx_lp_requests_status ON lesson_plan_requests USING 
 CREATE INDEX IF NOT EXISTS idx_lp_requests_user ON lesson_plan_requests USING btree (user_id);
 CREATE INDEX IF NOT EXISTS idx_lesson_plans_pdf_url ON lesson_plans USING btree (pdf_url) WHERE (pdf_url IS NOT NULL);
 CREATE INDEX IF NOT EXISTS idx_lesson_plans_user_created ON lesson_plans USING btree (user_id, created_at DESC);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_dashboard_stats_unique ON mv_dashboard_stats USING btree ((1));
-CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_dashboard_stats_by_country_pk ON mv_dashboard_stats_by_country USING btree (country_code);
-CREATE INDEX IF NOT EXISTS idx_mv_retention_cohorts_feature ON mv_retention_cohorts USING btree (feature_type);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_retention_cohorts_unique ON mv_retention_cohorts USING btree (cohort_week, feature_type);
-CREATE INDEX IF NOT EXISTS idx_mv_users_activity_country ON mv_users_activity USING btree (country_code) WHERE (is_test_user = false);
-CREATE INDEX IF NOT EXISTS idx_mv_users_activity_created ON mv_users_activity USING btree (created_at DESC);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_users_activity_id ON mv_users_activity USING btree (id);
-CREATE INDEX IF NOT EXISTS idx_mv_users_activity_last_activity ON mv_users_activity USING btree (last_activity DESC NULLS LAST);
-CREATE INDEX IF NOT EXISTS idx_mv_users_activity_phone ON mv_users_activity USING btree (phone_number);
-CREATE INDEX IF NOT EXISTS idx_mv_users_activity_school ON mv_users_activity USING btree (school_name_lower) WHERE ((is_test_user = false) AND (school_name_lower <> ''::text));
-CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_view_refresh_status_pk ON mv_view_refresh_status USING btree (view_name);
+-- Materialized view indexes commented out - views are created separately in production
+-- Uncomment after creating the materialized views (mv_dashboard_stats, mv_users_activity, mv_retention_cohorts, mv_view_refresh_status)
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_dashboard_stats_unique ON mv_dashboard_stats USING btree ((1));
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_dashboard_stats_by_country_pk ON mv_dashboard_stats_by_country USING btree (country_code);
+-- CREATE INDEX IF NOT EXISTS idx_mv_retention_cohorts_feature ON mv_retention_cohorts USING btree (feature_type);
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_retention_cohorts_unique ON mv_retention_cohorts USING btree (cohort_week, feature_type);
+-- CREATE INDEX IF NOT EXISTS idx_mv_users_activity_country ON mv_users_activity USING btree (country_code) WHERE (is_test_user = false);
+-- CREATE INDEX IF NOT EXISTS idx_mv_users_activity_created ON mv_users_activity USING btree (created_at DESC);
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_users_activity_id ON mv_users_activity USING btree (id);
+-- CREATE INDEX IF NOT EXISTS idx_mv_users_activity_last_activity ON mv_users_activity USING btree (last_activity DESC NULLS LAST);
+-- CREATE INDEX IF NOT EXISTS idx_mv_users_activity_phone ON mv_users_activity USING btree (phone_number);
+-- CREATE INDEX IF NOT EXISTS idx_mv_users_activity_school ON mv_users_activity USING btree (school_name_lower) WHERE ((is_test_user = false) AND (school_name_lower <> ''::text));
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_view_refresh_status_pk ON mv_view_refresh_status USING btree (view_name);
 CREATE INDEX IF NOT EXISTS idx_portal_orgs_active ON portal_organizations USING btree (is_active);
 CREATE INDEX IF NOT EXISTS idx_portal_orgs_name ON portal_organizations USING btree (name);
 CREATE INDEX IF NOT EXISTS idx_qa_proposals_created ON qa_analyst_proposals USING btree (created_at DESC);

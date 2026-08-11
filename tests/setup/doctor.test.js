@@ -25,6 +25,7 @@ const FULL_ENV = {
 
 const allPassProbes = {
   supabase: async () => ({ ok: true, detail: 'HTTP 200' }),
+  tables: async () => ({ ok: true, detail: 'the "users" table is already there' }),
   openrouter: async () => ({ ok: true, detail: 'HTTP 200' }),
   whatsapp: async () => ({ ok: true, detail: 'HTTP 200' }),
   redis: async () => ({ ok: true, detail: 'PONG' }),

@@ -97,7 +97,38 @@ describe('sqlEditorUrl', () => {
 describe('the one-time helper definition', () => {
   it('is the function every schema and migration script here runs SQL through', () => {
     const sql = dbSetup.EXEC_SQL_DEFINITION.join(' ');
-    expect(sql).toMatch(/create or replace function exec_sql\(query text\)/i);
+    expect(sql).toMatch(/create or replace function public\.exec_sql\(query text\)/i);
     expect(sql).toMatch(/execute query/i);
+    // Without these, PostgREST 404s the helper after a successful paste and
+    // setup used to skip creating tables.
+    expect(sql).toMatch(/alter function public\.exec_sql\(text\) owner to postgres/i);
+    expect(sql).toMatch(/grant execute on function public\.exec_sql\(text\) to service_role/i);
+    expect(sql).toMatch(/notify pgrst,\s*'reload schema'/i);
+    expect(sql).toMatch(/security definer/i);
+    // Must include extensions schema so uuid_generate_v4() works
+    expect(sql).toMatch(/set search_path = public,\s*extensions/i);
+  });
+});
+
+describe('waitForExecSql', () => {
+  it('returns as soon as the helper answers, without waiting out the budget', async () => {
+    const sleep = jest.fn(async () => {});
+    const fetchImpl = fakeFetch({ '/rpc/exec_sql': respond(200) });
+    const result = await dbSetup.waitForExecSql(ENV, fetchImpl, { attempts: 8, delayMs: 2000, sleep });
+    expect(result.present).toBe(true);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it('polls until the schema cache catches up', async () => {
+    let calls = 0;
+    const fetchImpl = jest.fn(async () => {
+      calls += 1;
+      return respond(calls >= 3 ? 200 : 404, calls >= 3 ? '' : 'missing');
+    });
+    const sleep = jest.fn(async () => {});
+    const result = await dbSetup.waitForExecSql(ENV, fetchImpl, { attempts: 8, delayMs: 10, sleep });
+    expect(result.present).toBe(true);
+    expect(calls).toBe(3);
+    expect(sleep).toHaveBeenCalledTimes(2);
   });
 });

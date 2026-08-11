@@ -487,7 +487,9 @@ someone to paste tidily.
    be pasted in once. `db-setup.js` distinguishes the three states a project can be in — already set up /
    helper missing / ready for the schema — because "no tables yet" and "no way to create them" look
    identical from outside and need opposite instructions. When the helper is missing the wizard prints the
-   two lines and links straight to *that project's* SQL editor, derived from the API URL.
+   helper SQL (function + GRANT + NOTIFY) and links straight to *that project's* SQL editor, derived from
+   the API URL. It polls until PostgREST can see the helper, applies the schema statement-by-statement, and
+   refuses to continue if `users` is still missing.
 2. **AI.** OpenRouter key (masked), then the probe that checks the balance as well as the key. A valid key
    with no credit is treated as a question ("carry on and add credit later?"), not a rejection — re-asking
    for a key that is perfectly fine would be nonsense.

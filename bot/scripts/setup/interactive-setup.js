@@ -262,7 +262,7 @@ async function ensureTables(io, env) {
     const editor = dbSetup.sqlEditorUrl(env.SUPABASE_URL);
     console.log(ui.steps([
       editor ? `Open ${editor}` : 'Open the SQL Editor in your Supabase project',
-      'Paste the two lines below and press Run',
+      'Paste everything in the box below and press Run — include the grant and the notify line',
       'Come back here',
     ]));
     console.log('');
@@ -270,10 +270,16 @@ async function ensureTables(io, env) {
     console.log('');
     await io.pressEnter('Press Enter once you have run it');
 
-    const recheck = await dbSetup.hasExecSql(env);
+    const waiting = ui.spinner('Waiting for Supabase to see the helper…');
+    const recheck = await dbSetup.waitForExecSql(env);
+    waiting.stop();
     if (!recheck.present) {
-      console.log(ui.warn('Still cannot see it. Skipping the tables for now — run `npm run bootstrap:db` once the two lines are in place.'));
-      return;
+      throw new Error(
+        'The SQL helper is still not visible, so the tables were not created. '
+        + 'In the SQL editor, paste the whole box (including GRANT and NOTIFY), press Run, '
+        + 'then run `rumi setup` again. Setup will not continue without the tables — '
+        + 'that is what makes "Hi" crash with a missing `users` table.'
+      );
     }
   }
 
@@ -283,7 +289,11 @@ async function ensureTables(io, env) {
   else {
     applying.fail('Could not finish setting up the tables');
     for (const failure of result.errors) console.log(ui.aside(`${failure.file}: ${failure.error}`));
-    console.log(ui.aside('Setup will carry on — retry the tables later with `npm run bootstrap:db`.'));
+    throw new Error(
+      'The database still has no Rumi tables, so setup stopped here. '
+      + 'Fix the error above, then run `npm run bootstrap:db` or `rumi setup` again. '
+      + 'Do not start the bot until that succeeds — messages will fail with a missing `users` table.'
+    );
   }
 }
 

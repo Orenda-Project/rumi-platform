@@ -86,11 +86,16 @@ await db.inspectDatabase(env);   // 'ready' | 'needs-schema' | 'needs-helper' | 
 ```
 
 - **`ready`** — nothing to do.
-- **`needs-schema`** — run `db.applySchema(env)` (or `npm run bootstrap:db`).
+- **`needs-schema`** — run `db.applySchema(env)` (or `npm run bootstrap:db`). `applySchema` re-checks that
+  `users` exists afterwards — do not treat a bootstrap log as success without that.
 - **`needs-helper`** — **this step needs the user's hands.** Supabase exposes no API for arbitrary SQL, so the
-  `exec_sql` function the schema is applied through has to be pasted in once. Give them
-  `db.EXEC_SQL_DEFINITION` (two lines) and `db.sqlEditorUrl(env.SUPABASE_URL)` — a link straight to *their*
-  project's SQL editor — then wait, re-check with `db.hasExecSql(env)`, and apply.
+  `exec_sql` function the schema is applied through has to be pasted in once. Give them the full
+  `db.EXEC_SQL_DEFINITION` (function + ALTER OWNER + GRANT + NOTIFY — not the old two-line version; OWNER
+  postgres is required for CREATE EXTENSION) and `db.sqlEditorUrl(env.SUPABASE_URL)` — a link straight to
+  *their* project's SQL editor — then wait with `db.waitForExecSql(env)` (PostgREST caches the schema; a
+  single `hasExecSql` right after paste often 404s), then apply. **Do not continue setup if the helper is
+  still missing or `users` is still absent.** That is the PGRST205 / `Cannot read properties of null
+  (reading 'id')` crash on "Hi".
 - **`unreachable`** — the key was rejected or the host didn't answer; don't proceed as if there were no tables.
 
 ### E. Connect WhatsApp

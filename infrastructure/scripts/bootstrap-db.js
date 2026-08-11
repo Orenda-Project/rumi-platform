@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const { splitSqlStatements, isOptionalStatement } = require('./sql-statements');
+const { EXEC_SQL_SQL, describeExecSqlFailure } = require('./exec-sql-helper');
 
 /**
  * DatabaseBootstrapper — one-command fresh-install of the Rumi schema.
@@ -38,7 +40,8 @@ class DatabaseBootstrapper {
   }
 
   async _defaultExecSql(sql, label) {
-    const response = await fetch(`${this.supabaseUrl}/rest/v1/rpc/exec_sql`, {
+    const url = `${this.supabaseUrl}/rest/v1/rpc/exec_sql`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         apikey: this.supabaseKey,
@@ -53,15 +56,13 @@ class DatabaseBootstrapper {
       // Chicken-and-egg: a fresh Supabase project has no `exec_sql` RPC, so the very first
       // call 404s with "Could not find the function". Surface the exact one-time fix instead
       // of an opaque 404 (SETUP.md Step 2 documents this too).
-      const missingExecSql = response.status === 404
-        || /could not find the function|exec_sql/i.test(errorText);
-      if (missingExecSql) {
-        throw new Error(
-          `${label}: the one-time \`exec_sql\` helper is missing in this database.\n`
-          + `Run this ONCE in the Supabase SQL Editor, then re-run \`npm run bootstrap:db\`:\n\n`
-          + `  CREATE OR REPLACE FUNCTION exec_sql(query TEXT)\n`
-          + `  RETURNS VOID AS $$ BEGIN EXECUTE query; END; $$ LANGUAGE plpgsql;\n`
-        );
+      console.error(`[bootstrap-debug] ${label} failed:`);
+      console.error(`  URL: ${url}`);
+      console.error(`  Status: ${response.status}`);
+      console.error(`  Body: ${errorText.slice(0, 300)}`);
+      const hint = describeExecSqlFailure(response.status, errorText);
+      if (hint) {
+        throw new Error(`${label}: ${hint}`);
       }
       throw new Error(`${label}: ${response.status} - ${errorText}`);
     }
@@ -73,8 +74,25 @@ class DatabaseBootstrapper {
       throw new Error(`SQL file not found: ${filePath}`);
     }
     const sql = fs.readFileSync(filePath, 'utf-8');
-    console.log(`[bootstrap] Applying ${filename} (${sql.length} bytes)...`);
-    await this.execSql(sql, filename);
+    const statements = splitSqlStatements(sql);
+    if (statements.length === 0) {
+      throw new Error(`${filename}: no SQL statements found`);
+    }
+    console.log(`[bootstrap] Applying ${filename} (${statements.length} statements)...`);
+    for (let i = 0; i < statements.length; i++) {
+      const statement = statements[i];
+      try {
+        await this.execSql(statement, `${filename}#${i + 1}`);
+      } catch (err) {
+        // pgvector is used by one optional column. A project that cannot
+        // enable the extension must still get `users` and the rest of core.
+        if (isOptionalStatement(statement)) {
+          console.warn(`[bootstrap] Skipping optional statement in ${filename}: ${err.message}`);
+          continue;
+        }
+        throw err;
+      }
+    }
     console.log(`[bootstrap] Applied ${filename}.`);
   }
 
@@ -106,8 +124,19 @@ DatabaseBootstrapper.FILES = [
 
 module.exports = { DatabaseBootstrapper };
 
+function loadRepoEnv() {
+  const repoRoot = path.resolve(__dirname, '../..');
+  try {
+    require(path.join(repoRoot, 'bot/node_modules/dotenv'))
+      .config({ path: path.join(repoRoot, '.env'), quiet: true });
+  } catch {
+    // dotenv is a bot dependency; unset vars still fail the check below.
+  }
+}
+
 // ── CLI entrypoint ──
 if (require.main === module) {
+  loadRepoEnv();
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -119,9 +148,8 @@ if (require.main === module) {
     console.error('Usage:');
     console.error('  SUPABASE_URL=https://xxx.supabase.co SUPABASE_SERVICE_ROLE_KEY=xxx npm run bootstrap:db');
     console.error('');
-    console.error('Requires an exec_sql function in the DB:');
-    console.error('  CREATE OR REPLACE FUNCTION exec_sql(query TEXT)');
-    console.error('  RETURNS VOID AS $$ BEGIN EXECUTE query; END; $$ LANGUAGE plpgsql;');
+    console.error('Requires an exec_sql function in the DB. Paste this in the SQL Editor:');
+    console.error(EXEC_SQL_SQL);
     process.exit(1);
   }
 
