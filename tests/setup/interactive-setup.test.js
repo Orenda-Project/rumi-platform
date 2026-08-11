@@ -168,7 +168,7 @@ describe('re-running the wizard', () => {
 
     await stepDatabase(io, { SUPABASE_URL: 'https://old.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'eyJold' }, () => {}, { reconfigure: true });
 
-    expect(io.asked.ask.map((a) => a.label)).toEqual(['Project URL', 'Service key']);
+    expect(io.asked.ask.map((a) => a.label)).toEqual(['API URL', 'Service key']);
   });
 
   it('re-asks when the stored credentials have stopped working', async () => {
