@@ -187,7 +187,7 @@ async function checkLive(label, name, env, successText) {
 const SUPABASE_WALKTHROUGH = [
   'Open https://supabase.com/dashboard/new and sign in (the free plan is plenty)',
   'Give the project any name, choose the region closest to your teachers, and let it start up — about two minutes',
-  'Open Settings → API in the sidebar — you will copy two values from this page',
+  'Open Project settings → Data API → Copy the API URL (without /rest/v1) and service_role key',
 ];
 
 /**
@@ -413,7 +413,7 @@ async function stepMemory(io, env, save, opts = {}) {
     console.log('');
     console.log(ui.say('If you do not have one yet, either of these takes about two minutes:'));
     console.log(ui.steps([
-      'Free hosted: sign up at https://upstash.com, create a Redis database, and copy its redis:// URL',
+      'Free hosted: sign up at https://upstash.com, create a Redis database, and copy its TCP URL (redis://) — not the REST URL',
       'On your own machine: install Docker, then `docker run -d -p 6379:6379 redis:7-alpine` and use redis://localhost:6379',
       'Already running one on a server? Paste its address — it only has to be reachable from here.',
     ]));
@@ -442,7 +442,7 @@ async function stepMemory(io, env, save, opts = {}) {
     const url = await io.ask('Redis address', {
       fallback: prefill(env, 'REDIS_URL') || LOCAL_REDIS.url,
       validate: validators.redisUrl,
-      hint: 'Looks like redis://host:6379, or redis://default:password@host:6379 for a hosted one.',
+      hint: 'Looks like redis://host:6379, or redis://default:password@host:6379 for a hosted one. If using Upstash, use the TCP URL (redis://), not the REST URL (https://).',
     });
     save({ REDIS_URL: url });
     const check = await checkLive('Saying hello to Redis…', 'redis', env, (d) => `Short-term memory ready ${ui.dim(d)}`);
