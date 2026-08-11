@@ -452,7 +452,12 @@ describe('the template is a set of suggestions, not answers', () => {
     });
     const io = fakeIo({ ask: ['redis://default:pw@host.rlwy.net:38580'] });
 
-    await stepMemory(io, { ...FRESH_ENV }, () => {});
+    // Docker pinned off. Left to the real probe this passed on a machine without
+    // a Docker daemon and failed on CI, which has one: the step would offer the
+    // container menu, the fake io would take its default, and the test would
+    // shell out to `docker run` on the runner. A test must not depend on what
+    // happens to be installed on the host.
+    await stepMemory(io, { ...FRESH_ENV }, () => {}, { dockerAvailable: () => false });
 
     expect(log.text).not.toMatch(/Redis you already have/);
     expect(log.text).not.toMatch(/not answering/);
@@ -463,7 +468,9 @@ describe('the template is a set of suggestions, not answers', () => {
     const { stepMemory } = loadWizard({ probes: allPass });
     const io = fakeIo();
 
-    await stepMemory(io, { ...FRESH_ENV }, () => {});
+    // Returns before Docker is consulted, but pinned anyway so the test cannot
+    // start depending on the host if the order of the step ever changes.
+    await stepMemory(io, { ...FRESH_ENV }, () => {}, { dockerAvailable: () => false });
 
     expect(io.asked.ask).toHaveLength(0);
     expect(log.text).toMatch(/already running at redis:\/\/localhost:6379/);
@@ -476,6 +483,19 @@ describe('the template is a set of suggestions, not answers', () => {
     await stepChannel(io, { ...FRESH_ENV }, () => {});
 
     expect(io.asked.select).toHaveLength(1);
+  });
+});
+
+describe('no test may consult the host for Docker', () => {
+  it('every stepMemory call injects dockerAvailable', () => {
+    // The failure this prevents: a test that reaches the real `dockerAvailable()`
+    // passes on a machine without a Docker daemon and fails on CI, which has
+    // one — and on the way it shells out to `docker run` on the runner. Both
+    // branches are worth testing; neither may be chosen by the host.
+    const source = require('fs').readFileSync(__filename, 'utf-8');
+    const calls = source.match(/stepMemory\(io[^;]*?\);/gs) || [];
+    expect(calls.length).toBeGreaterThan(0);
+    for (const call of calls) expect(call).toMatch(/dockerAvailable:/);
   });
 });
 
