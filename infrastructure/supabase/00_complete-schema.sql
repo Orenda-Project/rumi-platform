@@ -47,7 +47,11 @@ CREATE SEQUENCE IF NOT EXISTS migration_test_id_seq;
 
 CREATE TABLE IF NOT EXISTS users (
     id UUID NOT NULL DEFAULT uuid_generate_v4(),
-    phone_number VARCHAR(20) NOT NULL,
+    -- Nullable: a user who first reaches Rumi on a non-WhatsApp channel (Slack,
+    -- Discord, ...) has no phone number at all. See user_channels below for how
+    -- a person's channel identities are tracked; this column stays the sole
+    -- identity key for WhatsApp-only deployments (unchanged UNIQUE constraint).
+    phone_number VARCHAR(20),
     name VARCHAR(100),
     grades_taught VARCHAR(100),
     registration_completed BOOLEAN DEFAULT false,
@@ -80,6 +84,27 @@ CREATE TABLE IF NOT EXISTS users (
     country VARCHAR(100),
     region VARCHAR(100),
     organization VARCHAR(200),
+    PRIMARY KEY (id)
+);
+
+-- A teacher's channel identities — one row per (channel, WhatsApp phone /
+-- Slack user id / Discord user id) linking back to a single `users` row.
+-- Multi-homed by design: the same person can have a whatsapp row AND a slack
+-- row AND a discord row at once, each independently addressable. Conversation
+-- STATE (sessions, pending menus, in-progress Flow/modal steps) must stay
+-- keyed by (channel, channel_user_id) — never by user_id — so a live
+-- conversation on one channel never bleeds into another (see
+-- messaging/channel-registry.js's driverForIdentifier and bot-helpers.js's
+-- getOrCreateUserByChannel). This table is purely about IDENTITY (who is
+-- this), never about session/state.
+CREATE TABLE IF NOT EXISTS user_channels (
+    id UUID NOT NULL DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    channel VARCHAR(20) NOT NULL,
+    channel_user_id VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    last_message_at TIMESTAMPTZ,
     PRIMARY KEY (id)
 );
 
@@ -1329,6 +1354,11 @@ END $$;
 
 DO $$ BEGIN
     ALTER TABLE users ADD CONSTRAINT users_phone_number_key UNIQUE (phone_number);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE user_channels ADD CONSTRAINT user_channels_channel_channel_user_id_key UNIQUE (channel, channel_user_id);
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
@@ -3367,6 +3397,8 @@ CREATE INDEX IF NOT EXISTS idx_users_portal_invite_token ON users USING btree (p
 CREATE INDEX IF NOT EXISTS idx_users_portal_login ON users USING btree (phone_number, portal_activated) WHERE (portal_activated = true);
 CREATE INDEX IF NOT EXISTS idx_users_preferred_language ON users USING btree (preferred_language);
 CREATE INDEX IF NOT EXISTS idx_users_registration_completed ON users USING btree (registration_completed_at) WHERE (registration_completed_at IS NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_user_channels_user_id ON user_channels USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_channels_lookup ON user_channels USING btree (channel, channel_user_id);
 CREATE INDEX IF NOT EXISTS idx_users_registration_state ON users USING btree (registration_state);
 CREATE INDEX IF NOT EXISTS idx_users_school_name_lower ON users USING btree (lower((school_name)::text));
 CREATE INDEX IF NOT EXISTS idx_users_session_id ON users USING btree (session_id);
@@ -3956,6 +3988,14 @@ ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20);
 -- profile edit). The broadcast user-fetch SELECTed it and threw on the missing
 -- column. Populated on every inbound by bot-helpers.getOrCreateUser.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ;
+
+-- users.phone_number: relaxed from NOT NULL so a teacher who first reaches
+-- Rumi on a non-WhatsApp channel (Slack, Discord, ...) can have a users row
+-- with no phone number at all. The UNIQUE constraint is untouched — Postgres
+-- allows multiple NULLs under a unique constraint, so existing WhatsApp-only
+-- deployments (every row already has a phone_number) see no behavior change.
+-- See user_channels above and bot-helpers.getOrCreateUserByChannel.
+ALTER TABLE users ALTER COLUMN phone_number DROP NOT NULL;
 
 -- =============================================================================
 -- Function reconcile (Phase 5) — RPCs the bot invokes via supabase.rpc() that the

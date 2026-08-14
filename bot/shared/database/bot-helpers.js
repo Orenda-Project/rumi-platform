@@ -84,6 +84,142 @@ async function getOrCreateUser(phoneNumber) {
 }
 
 /**
+ * Get or create a user by a channel-scoped identity (Slack user id, Discord
+ * user id, ...) — the multi-homed counterpart to getOrCreateUser, which stays
+ * untouched and channel === 'whatsapp' is delegated to it directly below.
+ *
+ * A person can be linked to more than one channel at once (WhatsApp AND Slack
+ * AND Discord), each tracked as its own row in user_channels pointing back to
+ * one shared `users` row — see infrastructure/supabase/00_complete-schema.sql.
+ * This function resolves IDENTITY only; conversation/session state must stay
+ * keyed by (channel, channelUserId), never by the returned user's id — see
+ * bot/shared/services/messaging/channel-registry.js's driverForIdentifier.
+ *
+ * @param {string} channel - 'whatsapp' | 'slack' | 'discord'
+ * @param {string} channelUserId - the bare identifier on that channel (a
+ *   WhatsApp phone number, a Slack user id, a Discord snowflake — never a
+ *   "channel:id"-prefixed string; that prefix is a messaging-router concern)
+ * @returns {Promise<object>} User record (the same shape getOrCreateUser returns)
+ */
+async function getOrCreateUserByChannel(channel, channelUserId) {
+  if (channel === 'whatsapp') {
+    // The legacy path is authoritative for WhatsApp — same lookup key
+    // (phone_number), same insert shape, zero behavior change. Only make sure
+    // a user_channels row exists for it (lazy backfill for any row a one-time
+    // migration missed, and so future multi-homing reads see it too).
+    const user = await getOrCreateUser(channelUserId);
+    await ensureUserChannelRow(user.id, channel, channelUserId, { isPrimary: true });
+    return user;
+  }
+
+  try {
+    const { data: existingLink } = await supabase
+      .from('user_channels')
+      .select('user_id')
+      .eq('channel', channel)
+      .eq('channel_user_id', channelUserId)
+      .single();
+
+    if (existingLink) {
+      const nowIso = new Date().toISOString();
+      try {
+        await supabase.from('user_channels').update({ last_message_at: nowIso }).eq('channel', channel).eq('channel_user_id', channelUserId);
+      } catch (stampErr) {
+        console.error('user_channels last_message_at update failed:', stampErr.message);
+      }
+
+      const { data: user, error: fetchUserError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', existingLink.user_id)
+        .single();
+      if (fetchUserError) {
+        console.error('Error fetching user for existing channel link:', fetchUserError);
+        throw fetchUserError;
+      }
+      return user;
+    }
+
+    // No existing link — brand-new person on this channel. Create both the
+    // users row (no phone_number — see the schema's relaxed NOT NULL) and its
+    // first user_channels row together.
+    const { data: newUser, error: createUserError } = await supabase
+      .from('users')
+      .insert({
+        registration_completed: false,
+        created_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (createUserError) {
+      console.error('Error creating user for new channel identity:', createUserError);
+      throw createUserError;
+    }
+
+    await ensureUserChannelRow(newUser.id, channel, channelUserId, { isPrimary: true });
+    console.log(`✅ New user created via ${channel}: ${channelUserId}`);
+    return newUser;
+  } catch (error) {
+    console.error('Error in getOrCreateUserByChannel:', error);
+    throw error;
+  }
+}
+
+/**
+ * Insert a user_channels row if one doesn't already exist for (channel,
+ * channelUserId) — the lazy-backfill helper getOrCreateUserByChannel uses for
+ * both the whatsapp delegation path and brand-new channel identities.
+ */
+async function ensureUserChannelRow(userId, channel, channelUserId, { isPrimary = false } = {}) {
+  try {
+    const { data: existing } = await supabase
+      .from('user_channels')
+      .select('id')
+      .eq('channel', channel)
+      .eq('channel_user_id', channelUserId)
+      .single();
+    if (existing) return;
+
+    await supabase.from('user_channels').insert({
+      user_id: userId,
+      channel,
+      channel_user_id: channelUserId,
+      is_primary: isPrimary,
+      created_at: new Date().toISOString(),
+      last_message_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    // Best-effort — a failed backfill must not break the calling inbound
+    // message; the row is retried on the next message from this identity.
+    console.error('ensureUserChannelRow failed:', error.message);
+  }
+}
+
+/**
+ * Every channel identity a user is reachable on — for async workers/services
+ * that need to proactively notify "this person," not reply to an in-request
+ * message. Loop the result and send once per row; never assume a single
+ * phone_number is the only destination once multi-channel is in play.
+ *
+ * @param {string} userId
+ * @returns {Promise<Array<{channel: string, channel_user_id: string}>>}
+ */
+async function getSendTargetsForUser(userId) {
+  const { data, error } = await supabase
+    .from('user_channels')
+    .select('channel, channel_user_id')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error in getSendTargetsForUser:', error);
+    return [];
+  }
+  return data || [];
+}
+
+/**
  * Get or create a chat session for the user (30-minute timeout)
  * @param {string} userId - User's UUID
  * @param {number} timeoutMinutes - Session timeout in minutes (default: 30)
@@ -488,6 +624,8 @@ async function trackChatStart(user, phoneNumber, messageBody) {
 
 module.exports = {
   getOrCreateUser,
+  getOrCreateUserByChannel,
+  getSendTargetsForUser,
   getOrCreateSession,
   updateSessionType,
   storeConversation,
