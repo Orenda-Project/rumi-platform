@@ -45,15 +45,20 @@ class ExamCheckerOrchestrator {
    * Main entry point - delegates to appropriate handler based on session state
    * @param {object} message - WhatsApp message object
    * @param {string} userId - User UUID
+   * @param {string} [from] - The channel identifier this request came in on (a
+   *   bare WhatsApp phone number, or "slack:<id>") — stored on the session at
+   *   creation so background delivery (grading results, progress updates)
+   *   never has to re-derive it from users.phone_number, which is WhatsApp-only
+   *   and would misdeliver a Slack-originated session's results.
    * @returns {object} Response to send back
    */
-  static async process(message, userId) {
+  static async process(message, userId, from) {
     const correlationId = getCurrentCorrelationId() || `ech-${Date.now()}`;
 
     return runWithCorrelation(correlationId, async () => {
       // Get or create session (delegate to session service)
       const ExamSessionService = require('./exam-session.service');
-      const session = await ExamSessionService.getOrCreate(userId);
+      const session = await ExamSessionService.getOrCreate(userId, from);
 
       logToFile('📝 Processing exam checker message', {
         state: session.status,

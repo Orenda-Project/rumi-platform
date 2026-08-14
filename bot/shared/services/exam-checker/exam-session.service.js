@@ -18,9 +18,13 @@ class ExamSessionService {
   /**
    * Get or create an exam session for a user
    * @param {string} userId - User UUID
+   * @param {string} [from] - The channel identifier this request came in on
+   *   (a bare WhatsApp phone number, or "slack:<id>") — only used if a NEW
+   *   session is created; an existing session already has its own stored
+   *   value from when it was first created.
    * @returns {object} Session object
    */
-  static async getOrCreate(userId) {
+  static async getOrCreate(userId, from) {
     // Check Redis first for active session
     const cachedSession = await this._getFromRedis(userId);
     if (cachedSession) {
@@ -43,7 +47,7 @@ class ExamSessionService {
     }
 
     // Create new session
-    return this._createSession(userId);
+    return this._createSession(userId, from);
   }
 
   /**
@@ -99,15 +103,20 @@ class ExamSessionService {
   /**
    * Create a new exam session
    * @param {string} userId - User UUID
+   * @param {string} [from] - The channel identifier this request came in on
+   *   (a bare WhatsApp phone number, or "slack:<id>") — stored on the row so
+   *   later delivery (grading results, progress updates) never has to
+   *   re-derive it from users.phone_number, which is WhatsApp-only.
    * @returns {object} New session
    */
-  static async _createSession(userId) {
+  static async _createSession(userId, from) {
     const { data, error } = await supabase
       .from('exam_check_sessions')
       .insert({
         user_id: userId,
         status: 'collecting_images',
-        original_images: []
+        original_images: [],
+        recipient_identifier: from || null
       })
       .select()
       .single();

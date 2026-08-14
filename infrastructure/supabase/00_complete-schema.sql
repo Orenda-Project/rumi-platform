@@ -3997,6 +3997,20 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ;
 -- See user_channels above and bot-helpers.getOrCreateUserByChannel.
 ALTER TABLE users ALTER COLUMN phone_number DROP NOT NULL;
 
+-- recipient_identifier: the exact channel identifier (a bare WhatsApp phone
+-- number, or a "slack:<id>"-prefixed Slack identifier — whatever
+-- messaging/index.js's router dispatches on) that ORIGINATED a background job,
+-- captured once at request-creation time. A background job must always
+-- deliver back to this stored value, never re-derive "who to notify" from a
+-- users.phone_number join — that re-derivation is WhatsApp-only and silently
+-- sends a Slack-originated request's results to the wrong channel (or nowhere,
+-- for a Slack-only teacher with no phone number at all). See bot/workers/
+-- coaching-session.service.js#initiateSession, exam-session.service.js#_createSession,
+-- video-orchestrator.service.js#startGeneration for where each is populated.
+ALTER TABLE coaching_sessions ADD COLUMN IF NOT EXISTS recipient_identifier VARCHAR(255);
+ALTER TABLE exam_check_sessions ADD COLUMN IF NOT EXISTS recipient_identifier VARCHAR(255);
+ALTER TABLE video_requests ADD COLUMN IF NOT EXISTS recipient_identifier VARCHAR(255);
+
 -- =============================================================================
 -- Function reconcile (Phase 5) — RPCs the bot invokes via supabase.rpc() that the
 -- consolidated schema predated. CREATE OR REPLACE keeps it idempotent. (get_column_info

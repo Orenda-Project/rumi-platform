@@ -55,6 +55,14 @@ class CoachingSessionService {
           session_id: sessionId,
           audio_id: audioId,
           audio_duration_seconds: audioDuration,
+          // The exact channel identifier this request came in on (a bare
+          // WhatsApp phone number, or "slack:<id>") — captured now because
+          // it's never re-derivable correctly later: a users.phone_number
+          // join is WhatsApp-only and silently sends this session's later
+          // background notifications to the wrong channel (or nowhere) for
+          // a Slack-originated request. See lesson-plan-extraction.worker.js
+          // and stale-session.worker.js, which read this column back.
+          recipient_identifier: from,
           status: 'initiated',
           conversation_state: {
             current_state: 'AWAITING_CONFIRMATION',

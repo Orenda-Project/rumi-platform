@@ -515,7 +515,13 @@ class VideoOrchestrator {
           customization,
           style,  // Issue #35: Store selected style
           status: 'pending',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          // The exact channel this request came in on (a bare WhatsApp phone
+          // number, or "slack:<id>") — stored so a stale-recovery re-queue
+          // (sqs-worker.js) can restore it even if the re-queued job payload
+          // ever drops `from`, rather than falling back to a
+          // users.phone_number re-derivation that is WhatsApp-only.
+          recipient_identifier: from,
         })
         .select('id')
         .single();

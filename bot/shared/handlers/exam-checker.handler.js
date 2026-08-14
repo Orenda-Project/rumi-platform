@@ -103,7 +103,8 @@ async function handleExamText(message, from, user) {
     try {
       const response = await ExamCheckerOrchestrator.process(
         { type: 'text', text },
-        user.id
+        user.id,
+        from
       );
 
       typingController.stop();
@@ -191,7 +192,8 @@ async function handleExamImage(message, from, user) {
           mediaUrl: imageUrl,
           caption: message.image?.caption
         },
-        user.id
+        user.id,
+        from
       );
 
       typingController.stop();
@@ -312,7 +314,8 @@ async function handleExamFlow(flowId, flowResponse, from, user) {
     try {
       const response = await ExamCheckerOrchestrator.process(
         { type: 'flow', flowResponse },
-        user.id
+        user.id,
+        from
       );
 
       typingController.stop();

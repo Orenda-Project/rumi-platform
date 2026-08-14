@@ -74,14 +74,18 @@ async function processStaleCoachingSessions() {
   let autoCompleted = 0;
   let skipped = 0;
 
-  // Query sessions in conducting_conversation status
+  // Query sessions in conducting_conversation status. recipient_identifier
+  // (not users.phone_number) is the channel this session actually
+  // originated on — a WhatsApp-only join would misdeliver (or silently drop)
+  // a reminder for a Slack-originated session. See
+  // coaching-session.service.js#initiateSession, which stores it.
   const { data: staleSessions, error } = await supabase
     .from('coaching_sessions')
     .select(`
       id, user_id, status, conversation_state,
       transcript_text, analysis_data, lesson_plan_text,
-      reminder_sent_at, created_at,
-      users!inner(first_name, phone_number)
+      reminder_sent_at, created_at, recipient_identifier,
+      users!inner(first_name)
     `)
     .eq('status', 'conducting_conversation')
     .order('created_at', { ascending: true });
@@ -286,7 +290,7 @@ async function sendSessionReminder(session) {
     }
 
     // Send interactive message with buttons
-    await WhatsAppService.sendInteractiveButtons(session.users.phone_number, {
+    await WhatsAppService.sendInteractiveButtons(session.recipient_identifier, {
       body: reminderText,
       buttons: [
         { id: `coaching_continue_${session.id}`, title: 'Continue Now' },
@@ -355,7 +359,7 @@ async function autoCompleteSession(session) {
 
     // 2. Queue report generation with partial flag
     await CoachingJobQueueService.queueReport(session.id, {
-      from: session.users.phone_number,
+      from: session.recipient_identifier,
       partial: questionsAnswered < 3,
       autoCompleted: true
     });
@@ -367,7 +371,7 @@ async function autoCompleteSession(session) {
       : `Hi ${session.users.first_name}! Since you didn't continue the reflective conversation, ` +
         `I'm generating your coaching report based on the classroom audio analysis. 📊`;
 
-    await WhatsAppService.sendMessage(session.users.phone_number, notificationText);
+    await WhatsAppService.sendMessage(session.recipient_identifier, notificationText);
 
     logToFile('✅ Auto-complete initiated', {
       sessionId: session.id,
@@ -389,4 +393,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { main };
+module.exports = { main, processStaleCoachingSessions };
