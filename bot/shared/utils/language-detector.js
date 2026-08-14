@@ -201,6 +201,17 @@ const LANGUAGE_OVERRIDE_COMMANDS = {
     /talk in kannada/i,
     /use kannada/i,
     /kannada please/i
+  ],
+  // Francophone markets. French is Latin-script, so there is no Unicode
+  // detection rule — these explicit commands + Soniox's trusted `fr` handle it.
+  fr: [
+    /parle[rz]? en fran[çc]ais/i,
+    /en fran[çc]ais/i,
+    /switch to french/i,
+    /speak in french/i,
+    /talk in french/i,
+    /use french/i,
+    /french please/i
   ]
 };
 

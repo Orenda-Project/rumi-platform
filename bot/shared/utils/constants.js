@@ -103,6 +103,10 @@ const ELEVENLABS_TELUGU_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_TE || ELEVENL
 const ELEVENLABS_TAMIL_IN_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_TA_IN || ELEVENLABS_VOICE_ID;
 const ELEVENLABS_KANNADA_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_KN || ELEVENLABS_VOICE_ID;
 
+// Francophone-market voice ID. eleven_v3 covers French natively; defaults to the
+// shared multilingual voice, override via env with a native-verified voice.
+const ELEVENLABS_FRENCH_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_FR || ELEVENLABS_VOICE_ID;
+
 // Voice Model Routing Configuration
 // Tier 1: Full support (coaching + reading assessment)
 // Tier 2: Coaching only (no reading assessment)
@@ -127,7 +131,10 @@ const VOICE_MODELS = {
   mr: { provider: 'elevenlabs', voiceId: ELEVENLABS_MARATHI_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Marathi
   te: { provider: 'elevenlabs', voiceId: ELEVENLABS_TELUGU_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Telugu
   'ta-IN': { provider: 'elevenlabs', voiceId: ELEVENLABS_TAMIL_IN_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Indian Tamil
-  kn: { provider: 'elevenlabs', voiceId: ELEVENLABS_KANNADA_VOICE_ID, supportsEmotionTags: true, tier: 2 } // Kannada
+  kn: { provider: 'elevenlabs', voiceId: ELEVENLABS_KANNADA_VOICE_ID, supportsEmotionTags: true, tier: 2 }, // Kannada
+
+  // Francophone (conversation only) — eleven_v3 covers French; OpenAI tts-1 auto-fallback.
+  fr: { provider: 'elevenlabs', voiceId: ELEVENLABS_FRENCH_VOICE_ID, supportsEmotionTags: true, tier: 2 } // French
 };
 
 // Message Limits
