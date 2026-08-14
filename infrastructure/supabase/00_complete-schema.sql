@@ -1289,97 +1289,97 @@ CREATE TABLE IF NOT EXISTS migration_test (
 
 DO $$ BEGIN
     ALTER TABLE ab_test_variants ADD CONSTRAINT ab_test_variants_test_id_variant_name_key UNIQUE (variant_name, test_id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE ab_tests ADD CONSTRAINT ab_tests_test_name_key UNIQUE (test_name);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE dashboard_users ADD CONSTRAINT dashboard_users_email_key UNIQUE (email);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE dashboard_users ADD CONSTRAINT dashboard_users_invite_token_key UNIQUE (invite_token);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE dashboard_users ADD CONSTRAINT dashboard_users_password_reset_token_key UNIQUE (password_reset_token);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE dashboard_users ADD CONSTRAINT dashboard_users_username_key UNIQUE (username);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE invitations ADD CONSTRAINT invitations_token_key UNIQUE (token);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE lcpm_benchmarks ADD CONSTRAINT lcpm_benchmarks_grade_level_language_season_key UNIQUE (grade_level, season, language);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE portal_organizations ADD CONSTRAINT portal_organizations_name_key UNIQUE (name);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE teacher_facts ADD CONSTRAINT teacher_facts_user_id_fact_key UNIQUE (user_id, fact);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE feature_permissions ADD CONSTRAINT unique_role_feature UNIQUE (feature_key, role);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE access_scopes ADD CONSTRAINT unique_user_scope UNIQUE (dashboard_user_id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE user_feature_first_use ADD CONSTRAINT user_feature_first_use_user_id_feature_key UNIQUE (user_id, feature);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE users ADD CONSTRAINT users_phone_number_key UNIQUE (phone_number);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE user_channels ADD CONSTRAINT user_channels_channel_channel_user_id_key UNIQUE (channel, channel_user_id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE users ADD CONSTRAINT users_portal_invite_token_key UNIQUE (portal_invite_token);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE video_tasks ADD CONSTRAINT video_tasks_video_request_id_filename_key UNIQUE (video_request_id, filename);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE wcpm_percentiles ADD CONSTRAINT wcpm_percentiles_grade_level_language_season_percentile_key UNIQUE (season, language, grade_level, percentile);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE website_visits ADD CONSTRAINT website_visits_session_id_key UNIQUE (session_id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 
@@ -1391,441 +1391,441 @@ DO $$ BEGIN
     ALTER TABLE ab_test_events
         ADD CONSTRAINT ab_test_events_test_id_fkey
         FOREIGN KEY (test_id) REFERENCES ab_tests(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE ab_test_events
         ADD CONSTRAINT ab_test_events_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE ab_test_variants
         ADD CONSTRAINT ab_test_variants_test_id_fkey
         FOREIGN KEY (test_id) REFERENCES ab_tests(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE access_scopes
         ADD CONSTRAINT access_scopes_created_by_fkey
         FOREIGN KEY (created_by) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE access_scopes
         ADD CONSTRAINT access_scopes_dashboard_user_id_fkey
         FOREIGN KEY (dashboard_user_id) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE ama_conversations
         ADD CONSTRAINT ama_conversations_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE ama_messages
         ADD CONSTRAINT ama_messages_conversation_id_fkey
         FOREIGN KEY (conversation_id) REFERENCES ama_conversations(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE ama_messages
         ADD CONSTRAINT ama_messages_tracer_user_id_fkey
         FOREIGN KEY (tracer_user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE ama_query_audit
         ADD CONSTRAINT ama_query_audit_message_id_fkey
         FOREIGN KEY (message_id) REFERENCES ama_messages(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE ama_query_audit
         ADD CONSTRAINT ama_query_audit_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE attendance_records
         ADD CONSTRAINT attendance_records_session_id_fkey
         FOREIGN KEY (session_id) REFERENCES attendance_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE attendance_records
         ADD CONSTRAINT attendance_records_student_id_fkey
         FOREIGN KEY (student_id) REFERENCES students(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE attendance_sessions
         ADD CONSTRAINT attendance_sessions_list_id_fkey
         FOREIGN KEY (list_id) REFERENCES student_lists(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE attendance_sessions
         ADD CONSTRAINT attendance_sessions_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE audio_sessions
         ADD CONSTRAINT audio_sessions_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE broadcast_logs
         ADD CONSTRAINT broadcast_logs_admin_user_id_fkey
         FOREIGN KEY (admin_user_id) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE broadcast_messages
         ADD CONSTRAINT broadcast_messages_broadcast_id_fkey
         FOREIGN KEY (broadcast_id) REFERENCES broadcast_logs(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE broadcast_messages
         ADD CONSTRAINT broadcast_messages_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE byof_approval_log
         ADD CONSTRAINT byof_approval_log_performed_by_fkey
         FOREIGN KEY (performed_by) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE byof_approval_log
         ADD CONSTRAINT byof_approval_log_plan_id_fkey
         FOREIGN KEY (plan_id) REFERENCES byof_plans(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE byof_messages
         ADD CONSTRAINT byof_messages_session_id_fkey
         FOREIGN KEY (session_id) REFERENCES byof_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE byof_plans
         ADD CONSTRAINT byof_plans_approved_by_fkey
         FOREIGN KEY (approved_by) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE byof_plans
         ADD CONSTRAINT byof_plans_session_id_fkey
         FOREIGN KEY (session_id) REFERENCES byof_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE byof_sessions
         ADD CONSTRAINT byof_sessions_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE chat_sessions
         ADD CONSTRAINT chat_sessions_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE chat_starts
         ADD CONSTRAINT chat_starts_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE coaching_jobs
         ADD CONSTRAINT coaching_jobs_coaching_session_id_fkey
         FOREIGN KEY (coaching_session_id) REFERENCES coaching_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE coaching_processing_queue
         ADD CONSTRAINT coaching_processing_queue_coaching_session_id_fkey
         FOREIGN KEY (coaching_session_id) REFERENCES coaching_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE coaching_quality_metrics
         ADD CONSTRAINT coaching_quality_metrics_coaching_session_id_fkey
         FOREIGN KEY (coaching_session_id) REFERENCES coaching_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE coaching_sessions
         ADD CONSTRAINT coaching_sessions_session_id_fkey
         FOREIGN KEY (session_id) REFERENCES chat_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE coaching_sessions
         ADD CONSTRAINT coaching_sessions_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE conversations
         ADD CONSTRAINT conversations_session_id_fkey
         FOREIGN KEY (session_id) REFERENCES chat_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE conversations
         ADD CONSTRAINT conversations_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE dashboard_audit_log
         ADD CONSTRAINT dashboard_audit_log_organization_id_fkey
         FOREIGN KEY (organization_id) REFERENCES portal_organizations(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE dashboard_audit_log
         ADD CONSTRAINT dashboard_audit_log_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE dashboard_users
         ADD CONSTRAINT dashboard_users_invited_by_fkey
         FOREIGN KEY (invited_by) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE dashboard_users
         ADD CONSTRAINT dashboard_users_organization_id_fkey
         FOREIGN KEY (organization_id) REFERENCES portal_organizations(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE exam_check_sessions
         ADD CONSTRAINT exam_check_sessions_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE exam_grades
         ADD CONSTRAINT exam_grades_edited_by_fkey
         FOREIGN KEY (edited_by) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE exam_grades
         ADD CONSTRAINT exam_grades_submission_id_fkey
         FOREIGN KEY (submission_id) REFERENCES exam_submissions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE exam_submissions
         ADD CONSTRAINT exam_submissions_session_id_fkey
         FOREIGN KEY (session_id) REFERENCES exam_check_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE exam_submissions
         ADD CONSTRAINT exam_submissions_student_id_fkey
         FOREIGN KEY (student_id) REFERENCES students(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE exam_templates
         ADD CONSTRAINT exam_templates_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE feature_suggestions
         ADD CONSTRAINT feature_suggestions_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE grade_audit_log
         ADD CONSTRAINT grade_audit_log_grade_id_fkey
         FOREIGN KEY (grade_id) REFERENCES exam_grades(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE grade_audit_log
         ADD CONSTRAINT grade_audit_log_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE image_analysis_requests
         ADD CONSTRAINT image_analysis_requests_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE invitations
         ADD CONSTRAINT invitations_created_user_id_fkey
         FOREIGN KEY (created_user_id) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE invitations
         ADD CONSTRAINT invitations_invited_by_fkey
         FOREIGN KEY (invited_by) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE invitations
         ADD CONSTRAINT invitations_revoked_by_fkey
         FOREIGN KEY (revoked_by) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE lesson_plan_requests
         ADD CONSTRAINT lesson_plan_requests_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE lesson_plans
         ADD CONSTRAINT lesson_plans_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE portal_organizations
         ADD CONSTRAINT portal_organizations_created_by_fkey
         FOREIGN KEY (created_by) REFERENCES dashboard_users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE reading_assessments
         ADD CONSTRAINT reading_assessments_session_id_fkey
         FOREIGN KEY (session_id) REFERENCES chat_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE reading_assessments
         ADD CONSTRAINT reading_assessments_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE student_lists
         ADD CONSTRAINT student_lists_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE students
         ADD CONSTRAINT students_list_id_fkey
         FOREIGN KEY (list_id) REFERENCES student_lists(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE teacher_facts
         ADD CONSTRAINT teacher_facts_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE teacher_progress
         ADD CONSTRAINT teacher_progress_session_id_fkey
         FOREIGN KEY (session_id) REFERENCES audio_sessions(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE teacher_progress
         ADD CONSTRAINT teacher_progress_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE user_feature_first_use
         ADD CONSTRAINT user_feature_first_use_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE video_requests
         ADD CONSTRAINT video_requests_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 DO $$ BEGIN
     ALTER TABLE video_tasks
         ADD CONSTRAINT video_tasks_video_request_id_fkey
         FOREIGN KEY (video_request_id) REFERENCES video_requests(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
 
 

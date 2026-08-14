@@ -20,7 +20,8 @@ function loadService({ postMessageImpl, conversationsOpenImpl } = {}) {
       info: jest.fn(async () => ({ file: { url_private: 'https://files.slack.com/x', mimetype: 'image/png', size: 42 } })),
     },
   };
-  jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+  const logger = { logToFile: jest.fn() };
+  jest.doMock('../../bot/shared/utils/logger', () => logger);
   jest.doMock('../../bot/shared/storage/r2', () => ({
     downloadFromR2: jest.fn(),
     extractKeyFromUrl: jest.fn((url) => url.split('/').pop()),
@@ -31,7 +32,7 @@ function loadService({ postMessageImpl, conversationsOpenImpl } = {}) {
 
   process.env.SLACK_BOT_TOKEN = 'xoxb-test-token';
   const service = require('../../bot/shared/services/messaging/slack-channel.service');
-  return { service, client };
+  return { service, client, logger };
 }
 
 afterEach(() => {
@@ -67,6 +68,19 @@ describe('slack-channel.service — outbound', () => {
   it('sendMessage returns false (never throws) when the API call rejects', async () => {
     const { service } = loadService({ postMessageImpl: async () => { throw new Error('boom'); } });
     await expect(service.sendMessage(TO, 'hi')).resolves.toBe(false);
+  });
+
+  it('logs the exact missing scope on a missing_scope error, not just the generic API-error message', async () => {
+    const scopeError = new Error('An API error occurred: missing_scope');
+    scopeError.data = { error: 'missing_scope', needed: 'chat:write', provided: 'im:write,reactions:write' };
+    const { service, logger } = loadService({ postMessageImpl: async () => { throw scopeError; } });
+
+    await service.sendMessage(TO, 'hi');
+
+    expect(logger.logToFile).toHaveBeenCalledWith(
+      '❌ Slack: error sending message',
+      expect.objectContaining({ code: 'missing_scope', neededScope: 'chat:write', providedScopes: 'im:write,reactions:write' })
+    );
   });
 
   it('sendTextReturningId returns the message ts', async () => {

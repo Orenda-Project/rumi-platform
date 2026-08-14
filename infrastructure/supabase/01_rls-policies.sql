@@ -72,99 +72,161 @@ ALTER TABLE migration_test ENABLE ROW LEVEL SECURITY;
 -- =============================================================================
 
 -- Core User Management
+DROP POLICY IF EXISTS "service_role_users" ON users;
 CREATE POLICY "service_role_users" ON users FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_dashboard_users" ON dashboard_users;
 CREATE POLICY "service_role_dashboard_users" ON dashboard_users FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_portal_orgs" ON portal_organizations;
 CREATE POLICY "service_role_portal_orgs" ON portal_organizations FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_access_scopes" ON access_scopes;
 CREATE POLICY "service_role_access_scopes" ON access_scopes FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_feature_perms" ON feature_permissions;
 CREATE POLICY "service_role_feature_perms" ON feature_permissions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_invitations" ON invitations;
 CREATE POLICY "service_role_invitations" ON invitations FOR ALL USING (auth.role() = 'service_role');
 
 -- Engagement & Analytics
+DROP POLICY IF EXISTS "service_role_feature_first_use" ON user_feature_first_use;
 CREATE POLICY "service_role_feature_first_use" ON user_feature_first_use FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_chat_sessions" ON chat_sessions;
 CREATE POLICY "service_role_chat_sessions" ON chat_sessions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_conversations" ON conversations;
 CREATE POLICY "service_role_conversations" ON conversations FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_chat_starts" ON chat_starts;
 CREATE POLICY "service_role_chat_starts" ON chat_starts FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_cta_clicks" ON cta_clicks;
 CREATE POLICY "service_role_cta_clicks" ON cta_clicks FOR ALL USING (auth.role() = 'service_role');
 
 -- Coaching
+DROP POLICY IF EXISTS "service_role_coaching_sessions" ON coaching_sessions;
 CREATE POLICY "service_role_coaching_sessions" ON coaching_sessions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_coaching_jobs" ON coaching_jobs;
 CREATE POLICY "service_role_coaching_jobs" ON coaching_jobs FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_coaching_queue" ON coaching_processing_queue;
 CREATE POLICY "service_role_coaching_queue" ON coaching_processing_queue FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_coaching_metrics" ON coaching_quality_metrics;
 CREATE POLICY "service_role_coaching_metrics" ON coaching_quality_metrics FOR ALL USING (auth.role() = 'service_role');
 
 -- Legacy Audio & Teacher
+DROP POLICY IF EXISTS "service_role_audio_sessions" ON audio_sessions;
 CREATE POLICY "service_role_audio_sessions" ON audio_sessions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_teacher_progress" ON teacher_progress;
 CREATE POLICY "service_role_teacher_progress" ON teacher_progress FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_teacher_facts" ON teacher_facts;
 CREATE POLICY "service_role_teacher_facts" ON teacher_facts FOR ALL USING (auth.role() = 'service_role');
 
 -- Lesson Plans
+DROP POLICY IF EXISTS "service_role_lesson_plans" ON lesson_plans;
 CREATE POLICY "service_role_lesson_plans" ON lesson_plans FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_lesson_plan_requests" ON lesson_plan_requests;
 CREATE POLICY "service_role_lesson_plan_requests" ON lesson_plan_requests FOR ALL USING (auth.role() = 'service_role');
 
 -- Reading Assessment
+DROP POLICY IF EXISTS "service_role_reading_assessments" ON reading_assessments;
 CREATE POLICY "service_role_reading_assessments" ON reading_assessments FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_lcpm_benchmarks" ON lcpm_benchmarks;
 CREATE POLICY "service_role_lcpm_benchmarks" ON lcpm_benchmarks FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_wcpm_percentiles" ON wcpm_percentiles;
 CREATE POLICY "service_role_wcpm_percentiles" ON wcpm_percentiles FOR ALL USING (auth.role() = 'service_role');
 
 -- Attendance
+DROP POLICY IF EXISTS "service_role_student_lists" ON student_lists;
 CREATE POLICY "service_role_student_lists" ON student_lists FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_students" ON students;
 CREATE POLICY "service_role_students" ON students FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_student_videos" ON student_videos;
 CREATE POLICY "service_role_student_videos" ON student_videos FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_attendance_sessions" ON attendance_sessions;
 CREATE POLICY "service_role_attendance_sessions" ON attendance_sessions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_attendance_records" ON attendance_records;
 CREATE POLICY "service_role_attendance_records" ON attendance_records FOR ALL USING (auth.role() = 'service_role');
 
 -- Exam Checker
+DROP POLICY IF EXISTS "service_role_exam_sessions" ON exam_check_sessions;
 CREATE POLICY "service_role_exam_sessions" ON exam_check_sessions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_exam_templates" ON exam_templates;
 CREATE POLICY "service_role_exam_templates" ON exam_templates FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_exam_submissions" ON exam_submissions;
 CREATE POLICY "service_role_exam_submissions" ON exam_submissions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_exam_grades" ON exam_grades;
 CREATE POLICY "service_role_exam_grades" ON exam_grades FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_grade_audit_log" ON grade_audit_log;
 CREATE POLICY "service_role_grade_audit_log" ON grade_audit_log FOR ALL USING (auth.role() = 'service_role');
 
 -- Image Analysis
+DROP POLICY IF EXISTS "service_role_image_analysis" ON image_analysis_requests;
 CREATE POLICY "service_role_image_analysis" ON image_analysis_requests FOR ALL USING (auth.role() = 'service_role');
 
 -- Video
+DROP POLICY IF EXISTS "service_role_video_requests" ON video_requests;
 CREATE POLICY "service_role_video_requests" ON video_requests FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_video_tasks" ON video_tasks;
 CREATE POLICY "service_role_video_tasks" ON video_tasks FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_videos" ON videos;
 CREATE POLICY "service_role_videos" ON videos FOR ALL USING (auth.role() = 'service_role');
 
 -- A/B Testing
+DROP POLICY IF EXISTS "service_role_ab_tests" ON ab_tests;
 CREATE POLICY "service_role_ab_tests" ON ab_tests FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_ab_test_variants" ON ab_test_variants;
 CREATE POLICY "service_role_ab_test_variants" ON ab_test_variants FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_ab_test_events" ON ab_test_events;
 CREATE POLICY "service_role_ab_test_events" ON ab_test_events FOR ALL USING (auth.role() = 'service_role');
 
 -- AMA
+DROP POLICY IF EXISTS "service_role_ama_conversations" ON ama_conversations;
 CREATE POLICY "service_role_ama_conversations" ON ama_conversations FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_ama_messages" ON ama_messages;
 CREATE POLICY "service_role_ama_messages" ON ama_messages FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_ama_query_audit" ON ama_query_audit;
 CREATE POLICY "service_role_ama_query_audit" ON ama_query_audit FOR ALL USING (auth.role() = 'service_role');
 
 -- BYOF
+DROP POLICY IF EXISTS "service_role_byof_sessions" ON byof_sessions;
 CREATE POLICY "service_role_byof_sessions" ON byof_sessions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_byof_messages" ON byof_messages;
 CREATE POLICY "service_role_byof_messages" ON byof_messages FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_byof_plans" ON byof_plans;
 CREATE POLICY "service_role_byof_plans" ON byof_plans FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_byof_approval_log" ON byof_approval_log;
 CREATE POLICY "service_role_byof_approval_log" ON byof_approval_log FOR ALL USING (auth.role() = 'service_role');
 
 -- Broadcast
+DROP POLICY IF EXISTS "service_role_broadcast_logs" ON broadcast_logs;
 CREATE POLICY "service_role_broadcast_logs" ON broadcast_logs FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_broadcast_messages" ON broadcast_messages;
 CREATE POLICY "service_role_broadcast_messages" ON broadcast_messages FOR ALL USING (auth.role() = 'service_role');
 
 -- QA
+DROP POLICY IF EXISTS "service_role_qa_test_runs" ON qa_test_runs;
 CREATE POLICY "service_role_qa_test_runs" ON qa_test_runs FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_qa_analyst_proposals" ON qa_analyst_proposals;
 CREATE POLICY "service_role_qa_analyst_proposals" ON qa_analyst_proposals FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_qa_bug_patterns" ON qa_bug_patterns;
 CREATE POLICY "service_role_qa_bug_patterns" ON qa_bug_patterns FOR ALL USING (auth.role() = 'service_role');
 
 -- Misc / System
+DROP POLICY IF EXISTS "service_role_dashboard_audit" ON dashboard_audit_log;
 CREATE POLICY "service_role_dashboard_audit" ON dashboard_audit_log FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_feature_suggestions" ON feature_suggestions;
 CREATE POLICY "service_role_feature_suggestions" ON feature_suggestions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_api_usage_log" ON api_usage_log;
 CREATE POLICY "service_role_api_usage_log" ON api_usage_log FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_failed_operations" ON failed_operations;
 CREATE POLICY "service_role_failed_operations" ON failed_operations FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_release_notes" ON release_notes;
 CREATE POLICY "service_role_release_notes" ON release_notes FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_schema_versions" ON schema_versions;
 CREATE POLICY "service_role_schema_versions" ON schema_versions FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_website_visits" ON website_visits;
 CREATE POLICY "service_role_website_visits" ON website_visits FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_migration_test" ON migration_test;
 CREATE POLICY "service_role_migration_test" ON migration_test FOR ALL USING (auth.role() = 'service_role');
 
 -- Video quizzes
 ALTER TABLE quiz_share_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE video_quiz_deliveries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "service_role_quiz_share_codes" ON quiz_share_codes;
 CREATE POLICY "service_role_quiz_share_codes" ON quiz_share_codes FOR ALL USING (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "service_role_video_quiz_deliveries" ON video_quiz_deliveries;
 CREATE POLICY "service_role_video_quiz_deliveries" ON video_quiz_deliveries FOR ALL USING (auth.role() = 'service_role');
