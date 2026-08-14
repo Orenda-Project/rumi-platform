@@ -15,15 +15,19 @@
 const DRIVERS = {
   meta: './meta-channel.service',
   baileys: './baileys-channel.service',
-  // slack: './slack-channel.service' — added once the Slack driver ships.
+  slack: './slack-channel.service',
+  // discord: './discord-channel.service' — added in the Discord phase.
 };
 
 const DEFAULT_DRIVER = 'baileys';
 
 // Drivers that require a formal business registration / app-review process —
 // the thing that actually makes a channel "production-grade" here. Every
-// driver NOT in this list is sandbox-tier by default.
-const PRODUCTION_TIER_DRIVERS = ['meta'];
+// driver NOT in this list is sandbox-tier by default. Slack has no such
+// process (a Slack app install has no review gate like WhatsApp Business
+// verification), so it is listed here — usable in BOTH sandbox and
+// production, per the original ask, unlike Baileys which stays sandbox-only.
+const PRODUCTION_TIER_DRIVERS = ['meta', 'slack'];
 
 // Additive-channel drivers (Slack, Discord, ...) are never selected via
 // CHANNEL_DRIVER — they run alongside whichever WhatsApp-family driver
@@ -34,7 +38,8 @@ const PRODUCTION_TIER_DRIVERS = ['meta'];
 // intentionally NOT in this map — a bare phone number has no prefix and
 // falls through to the single resolved CHANNEL_DRIVER, unchanged.
 const CHANNEL_PREFIXES = {
-  // slack: 'slack' — added once the Slack driver ships.
+  slack: 'slack',
+  // discord: 'discord' — added in the Discord phase.
 };
 
 function isKnownDriver(name) {

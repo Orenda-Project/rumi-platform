@@ -29,14 +29,52 @@ const constants = require('./shared/utils/constants');
 const { setUserLanguage, setLanguageLock } = require('./shared/utils/language-cache');
 
 // Import Database helpers
-const { getOrCreateUser, trackChatStart } = require('./shared/database/bot-helpers');
+const { getOrCreateUser, getOrCreateUserByChannel, trackChatStart } = require('./shared/database/bot-helpers');
 const supabase = require('./shared/config/supabase');
 
 // Import Routes (Flow encryption endpoints)
 const flowEndpointRoutes = require('./shared/routes/flow-endpoint.routes');
 
+// The channel-registry map from additive-driver name -> the `channel` value
+// user_channels/getOrCreateUserByChannel expects (registry driver names are
+// per-implementation — meta/baileys both mean 'whatsapp' as an identity
+// family; slack/discord map 1:1). See driverForIdentity() below.
+const { driverForIdentifier } = require('./shared/services/messaging/channel-registry');
+const CHANNEL_FAMILY = { slack: 'slack', discord: 'discord' };
+
+/**
+ * Resolves the (channel, channelUserId) pair for a `from` identifier, or null
+ * for a bare WhatsApp phone number — the one place identity resolution needs
+ * to know about additive channels at all; every other line below already
+ * operates on the resolved `user`/`message`/`messageType`, never re-deriving
+ * identity from `from` itself.
+ */
+function resolveChannelIdentity(from) {
+  const driverName = driverForIdentifier(from);
+  if (!driverName) return null;
+  const prefix = `${driverName}:`; // CHANNEL_PREFIXES value happens to equal the driver name today
+  return { channel: CHANNEL_FAMILY[driverName] || driverName, channelUserId: String(from).slice(prefix.length) };
+}
+
 // Create Express app
 const app = express();
+
+// Slack's request signature is an HMAC over the EXACT raw bytes it sent —
+// must be captured before ANY body parser (including the global
+// express.json() below) reconstructs the body, since a reconstruction can
+// differ in whitespace/key order from the wire bytes. Mounted first, and
+// scoped to the Slack path only so every other route's body-parsing is
+// untouched.
+app.use('/api/slack', express.raw({ type: '*/*' }), (req, res, next) => {
+  req.rawBody = req.body; // a Buffer, from express.raw() above
+  next();
+});
+// handleWebhookPost is a hoisted function declaration defined further down
+// this file — safe to reference here since this code only ever RUNS at
+// require-time, after every top-level declaration has already been hoisted.
+const mountSlackRoutes = require('./shared/routes/slack-interactions.routes');
+app.use('/api/slack', mountSlackRoutes(handleWebhookPost));
+
 app.use(express.json());
 
 // Mount routes (Flow encryption endpoints)
@@ -358,10 +396,15 @@ async function handleWebhookPost(req, res) {
     // Show typing indicator
     await WhatsAppService.showTypingIndicator(from, message.id);
 
-    // Get or create user in database
+    // Get or create user in database — a bare phone number goes through the
+    // untouched legacy path; a prefixed additive-channel identifier
+    // (e.g. "slack:U0123ABC") resolves through the multi-homed path instead.
     let user = null;
     try {
-      user = await getOrCreateUser(from);
+      const channelIdentity = resolveChannelIdentity(from);
+      user = channelIdentity
+        ? await getOrCreateUserByChannel(channelIdentity.channel, channelIdentity.channelUserId)
+        : await getOrCreateUser(from);
       logToFile('User retrieved/created', { userId: user.id, phoneNumber: from });
     } catch (error) {
       logToFile('⚠️ Error with database user operation', { error: error.message });

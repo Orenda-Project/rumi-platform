@@ -39,6 +39,7 @@ const { DRIVERS } = require('../../bot/shared/services/messaging/channel-registr
 // variable path so the driver LIST stays registry-driven (see file header).
 require('../../bot/shared/services/messaging/meta-channel.service');
 require('../../bot/shared/services/messaging/baileys-channel.service');
+require('../../bot/shared/services/messaging/slack-channel.service');
 
 function parseMethodNames(src) {
   const names = new Set();
@@ -61,6 +62,16 @@ const EXTRA_MOCKS_BY_DRIVER = {
       isConnected: jest.fn().mockReturnValue(false),
       authDir: jest.fn().mockReturnValue('/tmp/never-used'),
     }));
+  },
+  slack: () => {
+    jest.doMock('@slack/web-api', () => ({
+      WebClient: jest.fn().mockImplementation(() => ({
+        conversations: { open: jest.fn().mockRejectedValue(new Error('not connected in this test')) },
+        chat: { postMessage: jest.fn() },
+        reactions: { add: jest.fn() },
+        files: { uploadV2: jest.fn(), info: jest.fn() },
+      })),
+    }), { virtual: true });
   },
 };
 
@@ -149,8 +160,80 @@ describe('channel driver parity', () => {
       '../../bot/shared/services/messaging/meta-channel.service',
       () => { throw new Error('baileys-channel.service.js must not require() meta-channel.service.js'); },
     );
-    require('../../bot/shared/services/messaging/baileys-channel.service');
-    expect(axiosRequired).toBe(false);
-    expect(formDataRequired).toBe(false);
+    try {
+      require('../../bot/shared/services/messaging/baileys-channel.service');
+      expect(axiosRequired).toBe(false);
+      expect(formDataRequired).toBe(false);
+    } finally {
+      // jest.resetModules() clears the module REGISTRY but not a doMock
+      // FACTORY registered in this test — without this, the throwing
+      // meta-channel.service mock above leaks into every test that runs
+      // after this one in the file (a real, pre-existing test-isolation gap
+      // this generalization surfaced, not something new to it).
+      jest.dontMock('../../bot/shared/services/messaging/meta-channel.service');
+    }
+  });
+
+  // Slack's stub set differs from Baileys': no Flow/template/carousel methods
+  // (same reason — needs the unbuilt channel-agnostic template registry), but
+  // ALSO no typing indicator (Slack has no bot typing-indicator API at all,
+  // unlike Baileys' presence-update equivalent) — so this is its own table,
+  // not a reuse of STUB_ASYNC_METHODS/STUB_SYNC_METHODS above.
+  const SLACK_STUB_ASYNC_METHODS = ['sendTemplate', 'sendFlow', 'sendStyleCarousel', 'sendFeatureMenuCarousel'];
+  const SLACK_STUB_SYNC_METHODS = ['buildStyleCarouselPayload', 'buildFeatureMenuCarouselPayload'];
+
+  it.each(SLACK_STUB_ASYNC_METHODS)('Slack %s() has no equivalent yet — logs and resolves false', async (m) => {
+    const { slack } = loadDrivers();
+    await expect(slack[m]('slack:U0123ABC', 'x', 'y', 'z')).resolves.toBe(false);
+  });
+
+  it.each(SLACK_STUB_SYNC_METHODS)('Slack %s() has no equivalent yet — is synchronous and returns null, not a Promise', (m) => {
+    const { slack } = loadDrivers();
+    const result = slack[m]('slack:U0123ABC');
+    expect(result).not.toBeInstanceOf(Promise);
+    expect(result).toBeNull();
+  });
+
+  it('Slack showTypingIndicator() is a documented no-op, not a stub — resolves true without a Slack API call', async () => {
+    const { slack } = loadDrivers();
+    await expect(slack.showTypingIndicator('slack:U0123ABC')).resolves.toBe(true);
+  });
+
+  it('Slack startContinuousTypingIndicator() is synchronous and returns a real, callable no-op controller', () => {
+    const { slack } = loadDrivers();
+    const controller = slack.startContinuousTypingIndicator('slack:U0123ABC');
+    expect(controller).not.toBeInstanceOf(Promise);
+    expect(typeof controller.stop).toBe('function');
+    expect(() => controller.stop()).not.toThrow();
+  });
+
+  it('Slack _removeEmotionTags() is a real, synchronous reimplementation (pure/channel-agnostic), not a stub', () => {
+    const { slack } = loadDrivers();
+    expect(slack._removeEmotionTags('[warmly] hello')).toBe('hello');
+  });
+
+  it('loading the Slack driver never requires Meta\'s HTTP client (axios/form-data) or meta-channel.service.js itself', () => {
+    jest.resetModules();
+    let axiosRequired = false;
+    let formDataRequired = false;
+    jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+    jest.doMock('../../bot/shared/storage/r2', () => ({ downloadFromR2: jest.fn(), extractKeyFromUrl: jest.fn() }));
+    jest.doMock('@slack/web-api', () => ({ WebClient: jest.fn() }), { virtual: true });
+    jest.doMock('axios', () => { axiosRequired = true; return {}; }, { virtual: true });
+    jest.doMock('form-data', () => { formDataRequired = true; return {}; }, { virtual: true });
+    jest.doMock(
+      '../../bot/shared/services/messaging/meta-channel.service',
+      () => { throw new Error('slack-channel.service.js must not require() meta-channel.service.js'); },
+    );
+    try {
+      require('../../bot/shared/services/messaging/slack-channel.service');
+      expect(axiosRequired).toBe(false);
+      expect(formDataRequired).toBe(false);
+    } finally {
+      // See the matching comment on the Baileys isolation test above —
+      // jest.resetModules() does not undo a doMock FACTORY, so this must be
+      // explicitly cleared or it poisons whatever test runs next in the file.
+      jest.dontMock('../../bot/shared/services/messaging/meta-channel.service');
+    }
   });
 });

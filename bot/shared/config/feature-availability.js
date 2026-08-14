@@ -42,12 +42,18 @@ const CHANNEL_REQUIRED_VARS = {
 // requiredVarsFor/missingRequired). A channel here turns on the moment every
 // one of its listed vars is present, same presence-gate shape as FEATURES.
 const ADDITIVE_CHANNEL_REQUIRED_VARS = {
-  // slack: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'] — added once the Slack driver ships.
+  slack: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'],
+  // discord: [...] — added in the Discord phase.
 };
 
 // Optional features → the env key(s) that switch each one on.
 const FEATURES = [
   { name: 'Voice notes (speech-to-text, Soniox)', keys: ['SONIOX_API_KEY'] },
+  {
+    name: 'Slack channel (Bot + Events API)',
+    keys: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'],
+    notes: 'Runs alongside your WhatsApp driver, in both sandbox and production — set via `rumi setup`\'s optional Slack step.',
+  },
   { name: 'Spoken replies (text-to-speech, ElevenLabs)', keys: ['ELEVENLABS_API_KEY'] },
   { name: 'Urdu / regional voices (Uplift)', keys: ['UPLIFT_API_KEY'] },
   { name: 'Lesson-plan generation (Gamma)', keys: ['GAMMA_API_KEY'] },

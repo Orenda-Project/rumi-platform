@@ -32,6 +32,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "@google/generative-ai": "^0.24.1",
+    "@slack/web-api": "^7.19.0",
     "@supabase/supabase-js": "^2.78.0",
     "aws-sdk": "^2.1691.0",
     "axios": "^1.13.1",

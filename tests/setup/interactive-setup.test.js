@@ -382,6 +382,38 @@ describe('optional extras', () => {
     expect(saved.SONIOX_API_KEY).toBe('soniox-key');
     expect(saved.AZURE_SPEECH_KEY).toBeUndefined();
   });
+
+  it('masks EVERY key of a multi-secret extra, not just the first — Slack needs both hidden', async () => {
+    // Azure's second key (a region string) isn't actually sensitive, which is
+    // why this went unnoticed until Slack's second key (a real bot token)
+    // needed masking too. Answering every OPTIONAL_EXTRAS question in order
+    // and inspecting what was actually asked with {secret: true} is the real
+    // behavioral contract — not just a static check of the field definition.
+    const { stepExtras } = loadWizard();
+    const { OPTIONAL_EXTRAS } = require('../../bot/scripts/setup/fields');
+    const totalKeys = OPTIONAL_EXTRAS.reduce((n, e) => n + e.keys.length, 0);
+    const io = fakeIo({ select: ['add'], ask: new Array(totalKeys).fill('answer') });
+
+    await stepExtras(io, {}, () => {});
+
+    const slackExtra = OPTIONAL_EXTRAS.find((e) => e.keys.includes('SLACK_BOT_TOKEN'));
+    expect(Array.isArray(slackExtra.secret)).toBe(true);
+
+    // Match each recorded question back to the Slack extra's own key order —
+    // io.asked.ask is a flat, in-order log of every "Key"-labelled prompt
+    // across all extras, so slice out the two entries belonging to Slack.
+    let cursor = 0;
+    const questionsByExtra = OPTIONAL_EXTRAS.map((extra) => {
+      const slice = io.asked.ask.slice(cursor, cursor + extra.keys.length);
+      cursor += extra.keys.length;
+      return { extra, slice };
+    });
+    const { slice: slackQuestions } = questionsByExtra.find(({ extra }) => extra === slackExtra);
+
+    expect(slackQuestions).toHaveLength(2);
+    expect(slackQuestions[0].secret).toBe(true); // SLACK_SIGNING_SECRET
+    expect(slackQuestions[1].secret).toBe(true); // SLACK_BOT_TOKEN — the bug this fixes
+  });
 });
 
 describe('the template is a set of suggestions, not answers', () => {

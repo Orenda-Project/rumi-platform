@@ -488,8 +488,15 @@ async function stepExtras(io, env, save, opts = {}) {
       // The label is the env var only for the odd second field (a region, say)
       // where there is no plainer name for it than the thing itself.
       const label = key === extra.keys[0] ? 'Key' : key.replace(/_/g, ' ').toLowerCase();
+      // extra.secret may be a bare boolean (masks only the first key — the
+      // shape every single-secret extra uses today) or an array naming which
+      // keys are actually sensitive (an entry with MULTIPLE real secrets,
+      // e.g. Slack's signing secret AND bot token, both of which must never
+      // echo to the terminal — masking only the first would silently type
+      // the second one in the clear).
+      const isSecret = Array.isArray(extra.secret) ? extra.secret.includes(key) : Boolean(extra.secret) && key === extra.keys[0];
       // eslint-disable-next-line no-await-in-loop -- one question at a time, by design
-      const value = await io.ask(label, { secret: Boolean(extra.secret) && key === extra.keys[0], fallback: prefill(env, key) });
+      const value = await io.ask(label, { secret: isSecret, fallback: prefill(env, key) });
       if (!value) break;
       collected[key] = value;
     }

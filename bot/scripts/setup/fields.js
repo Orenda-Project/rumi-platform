@@ -129,6 +129,15 @@ const OPTIONAL_EXTRAS = [
     where: 'console.mistral.ai → API Keys',
     secret: true,
   },
+  {
+    keys: ['SLACK_SIGNING_SECRET', 'SLACK_BOT_TOKEN'],
+    title: 'Also talk to teachers on Slack',
+    why: 'Runs alongside WhatsApp, not instead of it — a teacher can message Rumi on either. Works in both sandbox and production, no formal review process needed.',
+    where: 'api.slack.com/apps → create an app → Basic Information (signing secret) and OAuth & Permissions (bot token)',
+    // Both keys are real secrets (unlike e.g. AZURE_SPEECH_REGION, a plain
+    // region string) — mask both, not just the first.
+    secret: ['SLACK_SIGNING_SECRET', 'SLACK_BOT_TOKEN'],
+  },
 ];
 
 module.exports = {
