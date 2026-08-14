@@ -1279,6 +1279,22 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       }
     }
 
+    // Slack has a real Flow-equivalent (a Block Kit modal, opened by button
+    // click — see slack-flow-registry.js / slack-modal-interactions.handler.js),
+    // not sendFlow()'s Meta/Baileys-shaped {flowId, flowToken} contract. A
+    // button whose action_id is "open_modal:settings" is all the modal
+    // renderer needs — it mints its own flowToken once the click arrives.
+    if (driverForIdentifier(from) === 'slack') {
+      await WhatsAppService.sendInteractiveButtons(from, {
+        body: ({
+          ur: 'اپنی زبان اور آبزرویشن ٹول کی ترجیحات اپ ڈیٹ کریں۔',
+          sw: 'Sasisha mapendeleo yako ya lugha na zana ya uchunguzi.',
+        })[responseLanguage] || 'Update your language and observation tool preferences.',
+        buttons: [{ id: 'open_modal:settings', title: 'Open Settings' }],
+      });
+      return;
+    }
+
     // Tried as a Meta Flow when one is published, and as the equivalent text
     // conversation otherwise — both driven by the SAME settings endpoint, so
     // preferences are written identically either way. The old code returned

@@ -20,6 +20,7 @@ const router = express.Router();
 const SlackSignatureService = require('../services/slack-signature.service');
 const { logToFile } = require('../utils/logger');
 const { makeEventsHandler, makeInteractionsHandler } = require('../services/messaging/inbound/slack-events.adapter');
+const modalInteractions = require('./slack-modal-interactions.handler');
 
 /**
  * express.raw() (mounted by whatsapp-bot.js ahead of this router) leaves
@@ -52,9 +53,70 @@ function verifyAndParse(contentType) {
   };
 }
 
+/**
+ * Dispatches an already-verified Interactivity payload to the right place:
+ *   - view_submission            -> the modal renderer, response body carries
+ *                                    the response_action Slack itself reads
+ *   - block_actions "open_modal:<kind>" / "<kind>_back" -> the modal
+ *     renderer's open/back handling (fire-and-forget from Slack's POV — it
+ *     already got its 200 ack; the modal update happens via a separate
+ *     views.open/views.update API call)
+ *   - any other block_actions     -> ordinary chat button/select click,
+ *                                    the existing inbound adapter's job
+ */
+function makeRoutedInteractionsHandler(dispatch) {
+  const chatHandler = makeInteractionsHandler(dispatch);
+
+  return async function routeSlackInteraction(req, res) {
+    let payload;
+    try {
+      payload = JSON.parse(req.body.payload);
+    } catch (error) {
+      res.status(400).send('Bad payload');
+      return;
+    }
+
+    if (payload.type === 'view_submission') {
+      try {
+        const result = await modalInteractions.handleViewSubmission(payload);
+        if (result) {
+          res.status(200).json(result);
+        } else {
+          res.status(200).send('');
+        }
+      } catch (error) {
+        logToFile('❌ Slack interactions: view_submission dispatch failed', { error: error.message });
+        res.status(200).send('');
+      }
+      return;
+    }
+
+    if (payload.type === 'block_actions') {
+      const action = payload?.actions?.[0];
+      if (modalInteractions.isOpenModalAction(action?.action_id) || modalInteractions.isBackAction(action?.action_id)) {
+        res.status(200).send(''); // ack immediately — the modal update is a separate API call
+        try {
+          if (modalInteractions.isOpenModalAction(action.action_id)) {
+            await modalInteractions.handleOpenModal(payload);
+          } else {
+            await modalInteractions.handleBackButton(payload);
+          }
+        } catch (error) {
+          logToFile('❌ Slack interactions: modal block_actions dispatch failed', { error: error.message });
+        }
+        return;
+      }
+    }
+
+    // Not a modal-related payload — ordinary chat interactivity.
+    // req.body still holds the raw form-encoded body chatHandler expects.
+    await chatHandler(req, res);
+  };
+}
+
 function mount(dispatch) {
   router.post('/events', verifyAndParse('json'), makeEventsHandler(dispatch));
-  router.post('/interactions', verifyAndParse('form'), makeInteractionsHandler(dispatch));
+  router.post('/interactions', verifyAndParse('form'), makeRoutedInteractionsHandler(dispatch));
   return router;
 }
 
