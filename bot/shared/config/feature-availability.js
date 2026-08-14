@@ -36,6 +36,15 @@ const CHANNEL_REQUIRED_VARS = {
   baileys: [],
 };
 
+// Additive channels (Slack, Discord, ...) run ALONGSIDE whichever
+// CHANNEL_DRIVER is resolved below — they are never selected by
+// CHANNEL_DRIVER, and their vars are never boot-blocking (never folded into
+// requiredVarsFor/missingRequired). A channel here turns on the moment every
+// one of its listed vars is present, same presence-gate shape as FEATURES.
+const ADDITIVE_CHANNEL_REQUIRED_VARS = {
+  // slack: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'] — added once the Slack driver ships.
+};
+
 // Optional features → the env key(s) that switch each one on.
 const FEATURES = [
   { name: 'Voice notes (speech-to-text, Soniox)', keys: ['SONIOX_API_KEY'] },
@@ -121,12 +130,28 @@ function availableFeatures(env = process.env) {
   return FEATURES.filter((f) => isFeatureAvailable(f, env)).map((f) => f.name);
 }
 
+/**
+ * Which additive channels (Slack, Discord, ...) are active — i.e. every var
+ * ADDITIVE_CHANNEL_REQUIRED_VARS lists for that channel is present. Distinct
+ * from resolveChannelDriver: that resolves the ONE mutually-exclusive
+ * WhatsApp-family driver (meta|baileys); this resolves the SET of additional
+ * channels running concurrently alongside it. A deployment with none
+ * configured gets [] — byte-identical behavior to before this existed.
+ */
+function resolveActiveChannels(env = process.env) {
+  return Object.keys(ADDITIVE_CHANNEL_REQUIRED_VARS).filter((name) =>
+    ADDITIVE_CHANNEL_REQUIRED_VARS[name].every((k) => isSet(env[k]))
+  );
+}
+
 module.exports = {
   REQUIRED_VARS,
   CHANNEL_REQUIRED_VARS,
+  ADDITIVE_CHANNEL_REQUIRED_VARS,
   FEATURES,
   isSet,
   resolveChannelDriver,
+  resolveActiveChannels,
   requiredVarsFor,
   missingRequired,
   isFeatureAvailable,

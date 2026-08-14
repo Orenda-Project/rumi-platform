@@ -8,8 +8,15 @@
  *
  * Method names are parsed independently off meta-channel.service.js's source
  * (same regex the guard test uses), NOT via introspection — so this test
- * doesn't just tautologically confirm baileys-channel.service.js's own
- * derivation mechanism works; it's a second, independent check.
+ * doesn't just tautologically confirm each driver's own derivation mechanism
+ * works; it's a second, independent check.
+ *
+ * The driver LIST itself comes from channel-registry.js's DRIVERS map, not a
+ * literal object — so a third/fourth driver (Slack, Discord, ...) is picked
+ * up here automatically the day it's added to the registry, with no changes
+ * to this file beyond registering that driver's own mock deps in
+ * EXTRA_MOCKS_BY_DRIVER below (mirroring how baileys-connection is mocked
+ * for baileys today).
  *
  * This file only checks EXISTENCE + the still-stubbed methods' behavior.
  * Behavior of the REAL (connection-backed) methods is covered by
@@ -20,7 +27,18 @@
 const fs = require('fs');
 const path = require('path');
 
-const META_SERVICE = path.resolve(__dirname, '../../bot/shared/services/messaging/meta-channel.service.js');
+const MESSAGING_DIR = path.resolve(__dirname, '../../bot/shared/services/messaging');
+const META_SERVICE = path.join(MESSAGING_DIR, 'meta-channel.service.js');
+const { DRIVERS } = require('../../bot/shared/services/messaging/channel-registry');
+
+// A literal require (not just the dynamic path.join(MESSAGING_DIR, ...) load
+// inside loadDrivers() below) so tests/setup/orphan-modules.test.js's static
+// require-graph scan keeps tracing an edge to every driver module — that
+// scan only follows string-literal `require()` calls, not ones built from a
+// runtime variable. Unused directly; loadDrivers() still requires by
+// variable path so the driver LIST stays registry-driven (see file header).
+require('../../bot/shared/services/messaging/meta-channel.service');
+require('../../bot/shared/services/messaging/baileys-channel.service');
 
 function parseMethodNames(src) {
   const names = new Set();
@@ -32,6 +50,20 @@ function parseMethodNames(src) {
 
 const REQUIRED_METHODS = parseMethodNames(fs.readFileSync(META_SERVICE, 'utf-8'));
 
+// Per-driver mocks beyond the common set every driver needs (logger, r2).
+// Add an entry here when a new driver's require graph needs something
+// driver-specific stubbed out (e.g. baileys-connection for baileys,
+// @slack/web-api for a future slack entry) — same shape, no restructuring.
+const EXTRA_MOCKS_BY_DRIVER = {
+  baileys: () => {
+    jest.doMock('../../bot/shared/services/messaging/baileys-connection', () => ({
+      getSocket: jest.fn().mockRejectedValue(new Error('not connected in this test')),
+      isConnected: jest.fn().mockReturnValue(false),
+      authDir: jest.fn().mockReturnValue('/tmp/never-used'),
+    }));
+  },
+};
+
 function loadDrivers() {
   jest.resetModules();
   jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
@@ -39,15 +71,14 @@ function loadDrivers() {
     downloadFromR2: jest.fn(),
     extractKeyFromUrl: jest.fn(),
   }));
-  jest.doMock('../../bot/shared/services/messaging/baileys-connection', () => ({
-    getSocket: jest.fn().mockRejectedValue(new Error('not connected in this test')),
-    isConnected: jest.fn().mockReturnValue(false),
-    authDir: jest.fn().mockReturnValue('/tmp/never-used'),
-  }));
-  return {
-    meta: require('../../bot/shared/services/messaging/meta-channel.service'),
-    baileys: require('../../bot/shared/services/messaging/baileys-channel.service'),
-  };
+  for (const name of Object.keys(DRIVERS)) {
+    if (EXTRA_MOCKS_BY_DRIVER[name]) EXTRA_MOCKS_BY_DRIVER[name]();
+  }
+  const loaded = {};
+  for (const [name, modulePath] of Object.entries(DRIVERS)) {
+    loaded[name] = require(path.join(MESSAGING_DIR, modulePath));
+  }
+  return loaded;
 }
 
 afterEach(() => jest.resetModules());
@@ -59,14 +90,11 @@ describe('channel driver parity', () => {
     expect(REQUIRED_METHODS.length).toBeGreaterThan(20);
   });
 
-  it.each(REQUIRED_METHODS)('Meta driver implements %s()', (m) => {
-    const { meta } = loadDrivers();
-    expect(typeof meta[m]).toBe('function');
-  });
-
-  it.each(REQUIRED_METHODS)('Baileys driver implements %s()', (m) => {
-    const { baileys } = loadDrivers();
-    expect(typeof baileys[m]).toBe('function');
+  describe.each(Object.keys(DRIVERS))('%s driver', (driverName) => {
+    it.each(REQUIRED_METHODS)('implements %s()', (m) => {
+      const drivers = loadDrivers();
+      expect(typeof drivers[driverName][m]).toBe('function');
+    });
   });
 
   // Methods with NO Baileys equivalent (Meta-template-specific — see

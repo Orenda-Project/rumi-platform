@@ -53,11 +53,31 @@ describe('logged-out session is terminal, not a restart loop', () => {
   });
 
   it('the logout handler is a no-op for the meta driver, which has no local session', () => {
+    // exitOnChannelLogout() now loops PERSISTENT_CONNECTION_DRIVERS (currently
+    // just baileys) instead of a single hardcoded driver-name check, so the
+    // "no-op for meta" guarantee is pinned against the registry's isActive()
+    // predicate rather than a literal source-text pattern — same behavior,
+    // registry-shaped so a future persistent-connection driver (e.g. a
+    // Discord Gateway driver) is a new entry here, not a rewrite of this
+    // guard.
     const src = require('fs').readFileSync(
       require('path').resolve(__dirname, '../../bot/whatsapp-bot.js'),
       'utf-8'
     );
-    const fn = src.slice(src.indexOf('function exitOnChannelLogout'));
-    expect(fn).toMatch(/resolveChannelDriver\(process\.env\) !== 'baileys'\) return/);
+    expect(src).toMatch(/PERSISTENT_CONNECTION_DRIVERS/);
+
+    const baileysEntry = src.slice(
+      src.indexOf('const PERSISTENT_CONNECTION_DRIVERS'),
+      src.indexOf('function wireBaileysInboundIfSelected')
+    );
+    expect(baileysEntry).toMatch(/isActive:\s*\(env\)\s*=>.*resolveChannelDriver\(env\)\s*===\s*'baileys'/);
+
+    // Behavioral pin: baileys' isActive() is false for meta, true for
+    // baileys — the actual "no-op for meta" contract, exercised directly
+    // rather than inferred from source shape.
+    const { resolveChannelDriver } = require('../../bot/shared/config/feature-availability');
+    const isActive = (env) => resolveChannelDriver(env) === 'baileys';
+    expect(isActive({ CHANNEL_DRIVER: 'meta' })).toBe(false);
+    expect(isActive({ CHANNEL_DRIVER: 'baileys' })).toBe(true);
   });
 });

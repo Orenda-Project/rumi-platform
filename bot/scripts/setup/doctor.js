@@ -26,6 +26,7 @@ const fs = require('fs');
 const path = require('path');
 const {
   REQUIRED_VARS, CHANNEL_REQUIRED_VARS, FEATURES, isSet, requiredVarsFor, resolveChannelDriver,
+  resolveActiveChannels,
 } = require('../../shared/config/feature-availability');
 const { DRIVERS, isProductionTier } = require('../../shared/services/messaging/channel-registry');
 const { FLOW_CONFIGS } = require('./flow-configs');
@@ -99,6 +100,11 @@ function analyzeEnv(env) {
   const requiredPresent = requiredVars.filter((k) => isSet(env[k]));
   const missingRequired = requiredVars.filter((k) => !isSet(env[k]));
 
+  // Additive channels (Slack, Discord, ...) run ALONGSIDE the one resolved
+  // `channel` above — never boot-blocking, purely informational here, same
+  // presence-gate shape as FEATURES.
+  const activeChannels = resolveActiveChannels(env);
+
   const features = FEATURES.map((f) => {
     // Features may declare keys two ways:
     //   - `keys`     → ALL required (the default, conjunctive)
@@ -125,7 +131,7 @@ function analyzeEnv(env) {
   });
 
   return {
-    requiredPresent, missingRequired, features, channel, channelDriverTypo,
+    requiredPresent, missingRequired, features, channel, channelDriverTypo, activeChannels,
   };
 }
 
@@ -316,6 +322,7 @@ async function runDoctor({
     flowResults,
     channel: analysis.channel,
     channelDriverTypo: analysis.channelDriverTypo,
+    activeChannels: analysis.activeChannels,
   };
 }
 
@@ -344,6 +351,9 @@ function formatReport(result) {
       `⚠️  CHANNEL_DRIVER="${result.channelDriverTypo}" is not a recognized driver (valid: meta | baileys) —`
       + ` falling back to ${result.channel}.`
     );
+  }
+  if (result.activeChannels && result.activeChannels.length) {
+    lines.push(`Additional channels active: ${result.activeChannels.join(', ')}`);
   }
   lines.push('');
   if (result.missingRequired.length) {
