@@ -9,8 +9,9 @@ const openai = getClient();
 const VALID_LANGUAGE_CODES = SUPPORTED_LANGUAGES;
 
 // Languages that Soniox handles well - trust these directly (no GPT confirmation).
-// Indian languages use distinct Brahmic scripts, so Soniox identification is reliable.
-const SONIOX_TRUSTED_LANGUAGES = ['en', 'es', 'ar', 'ta', 'hi', 'bn', 'mr', 'te', 'kn'];
+// Indian languages use distinct Brahmic scripts, and French has distinct enough
+// phonology, that Soniox's identification is reliable.
+const SONIOX_TRUSTED_LANGUAGES = ['en', 'es', 'ar', 'ta', 'hi', 'bn', 'mr', 'te', 'kn', 'fr'];
 
 /**
  * Language Detector Service
