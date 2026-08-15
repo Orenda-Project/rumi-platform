@@ -22,6 +22,13 @@ function loadRouter() {
   jest.resetModules();
   process.env.SLACK_SIGNING_SECRET = SIGNING_SECRET;
   jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+  // slack-interactions.routes.js requires slack-modal-interactions.handler.js,
+  // which requires bot-helpers.js -> the real config/supabase.js ->
+  // @supabase/supabase-js — a bot/-only dependency CI installs AFTER root
+  // `npm test` runs (see CLAUDE.md's "TDD" note). Mocking supabase here, same
+  // as every other suite that touches bot-helpers.js, keeps this test from
+  // needing that package installed at all.
+  jest.doMock('../../bot/shared/config/supabase', () => ({ from: jest.fn() }));
   const dispatch = jest.fn().mockResolvedValue(undefined);
   const mountSlackRoutes = require('../../bot/shared/routes/slack-interactions.routes');
   const router = mountSlackRoutes(dispatch);

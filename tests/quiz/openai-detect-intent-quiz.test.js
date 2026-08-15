@@ -16,6 +16,13 @@ function loadService() {
   jest.resetModules();
   createChatCompletion = jest.fn();
   jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+  // openai.service.js requires bot-helpers.js (for getConversationHistory),
+  // which requires the real config/supabase.js -> @supabase/supabase-js — a
+  // bot/-only dependency CI installs AFTER root `npm test` runs (see
+  // CLAUDE.md's "TDD" note). Mocking supabase here, same as every other
+  // suite that touches bot-helpers.js, keeps this test from needing that
+  // package installed at all.
+  jest.doMock('../../bot/shared/config/supabase', () => ({ from: jest.fn() }));
   jest.doMock('../../bot/shared/services/llm-client', () => ({
     getClient: () => ({ chat: { completions: { create: createChatCompletion } } }),
   }));
