@@ -2016,6 +2016,21 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     }
   }
 
+  // Quiz intent (deterministic regex priors — cheap, no LLM call, checked
+  // before the generic classifier below since its own prompt has no "quiz"
+  // category and would otherwise misroute "create a quiz on X for grade Y"
+  // into lesson_plan (see quiz-intent.detector.js's file header).
+  if (user) {
+    const { isQuizIntent } = require('../services/quiz/quiz-intent.detector');
+    if (isQuizIntent(messageBody)) {
+      logToFile('📝 Quiz intent detected (natural language)', { userId: user.id });
+      typingController.stop();
+      const QuizIntentRouter = require('../services/quiz/quiz-intent-router.service');
+      await QuizIntentRouter.promptQuizConfirmation(user, from, messageBody, responseLanguage);
+      return;
+    }
+  }
+
   // Detect intent (lesson plan, presentation, or general)
   const intent = await OpenAIService.detectIntent(messageBody);
   logToFile('Intent detected', { intent: intent.type });
@@ -2043,6 +2058,14 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     typingController.stop();
     const topic = await VideoOrchestrator.extractTopicFromMessage(messageBody, responseLanguage);
     await VideoOrchestrator.initiateVideoRequest(user, from, sessionId, responseLanguage, topic);
+  } else if (intent.type === 'quiz') {
+    // Defense-in-depth: isQuizIntent()'s regex priors (checked above, before
+    // this LLM call) should already catch most phrasing — this branch only
+    // fires for wording the regexes missed but the LLM/fallback still
+    // recognized as a quiz request. Same confirmation flow either way.
+    typingController.stop();
+    const QuizIntentRouter = require('../services/quiz/quiz-intent-router.service');
+    await QuizIntentRouter.promptQuizConfirmation(user, from, messageBody, responseLanguage);
   } else {
     await handleGeneralConversation(from, messageBody, user, sessionId, responseLanguage, typingController);
   }
