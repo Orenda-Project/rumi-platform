@@ -59,9 +59,23 @@ function load({ staleSessions = [] } = {}) {
   return { worker, whatsapp, coachingJobQueue };
 }
 
-afterEach(() => jest.resetModules());
-
 const now = Date.parse('2026-08-14T12:00:00Z');
+
+// The worker computes idle time from the REAL clock (Date.now(), called live
+// at run time) — the test data below is built relative to the fixed `now`
+// above, so without actually freezing time, every session's "idle for N
+// hours" drifts further from what the test intends with each day that
+// passes. Real bug this fixes: the first test assumed a session idle for 3
+// hours (past the 2h reminder threshold, but under the 12h auto-complete
+// one) — once enough real days had passed, that same session looked idle
+// for 24+ hours to the worker's real Date.now(), crossing the auto-complete
+// threshold instead, and the worker took a different action than the test
+// expected.
+beforeEach(() => jest.useFakeTimers({ now, doNotFake: ['nextTick', 'setImmediate'] }));
+afterEach(() => {
+  jest.useRealTimers();
+  jest.resetModules();
+});
 
 describe('stale-session.worker — recipient_identifier delivery', () => {
   it('sends the reminder to session.recipient_identifier (Slack) instead of a re-derived phone number', async () => {
