@@ -129,17 +129,62 @@ const OPTIONAL_EXTRAS = [
     where: 'console.mistral.ai → API Keys',
     secret: true,
   },
-  {
-    keys: ['SLACK_SIGNING_SECRET', 'SLACK_BOT_TOKEN'],
-    title: 'Also talk to teachers on Slack',
-    why: 'Runs alongside WhatsApp, not instead of it — a teacher can message Rumi on either. Works in both sandbox and production, no formal review process needed.',
-    where: 'api.slack.com/apps → create an app → Basic Information (signing secret) and OAuth & Permissions (bot token)',
-    // Both keys are real secrets (unlike e.g. AZURE_SPEECH_REGION, a plain
-    // region string) — mask both, not just the first.
-    secret: ['SLACK_SIGNING_SECRET', 'SLACK_BOT_TOKEN'],
-  },
+];
+
+// ── Slack (an additive messaging channel, not an "optional ability") ────────
+// Deliberately NOT in OPTIONAL_EXTRAS — unlike Soniox/Gamma/Azure/Mistral,
+// Slack is a whole second messaging channel with its own multi-part app-side
+// configuration (scopes, event subscriptions, interactivity, slash commands),
+// not a single key that switches a feature on. It gets its own wizard step
+// (stepMessagingChannels) so that configuration can be presented as one
+// ordered checklist instead of a single "Key" prompt that leaves the app-side
+// setup entirely undiscovered until something fails at runtime.
+
+/** Every OAuth scope the Slack driver's Web API calls actually need (see
+ * slack-channel.service.js) — chat.postMessage, conversations.open,
+ * reactions.add, files.info, files.uploadV2. Kept in one place so the
+ * checklist shown to the user and doctor.js's live scope probe can never
+ * silently drift apart. */
+const SLACK_BOT_SCOPES = ['chat:write', 'im:write', 'reactions:write', 'files:read', 'files:write'];
+
+/** Every Slash Command text-message.handler.js recognizes (see
+ * slack-events.adapter.js#mapSlashCommandToMetaShape) — registered as real
+ * Slack Slash Commands so they work with Slack's own `/` autocomplete,
+ * rather than being typed as plain text (which Slack intercepts and rejects
+ * before it ever reaches the bot). */
+const SLACK_SLASH_COMMANDS = [
+  '/portal', '/readingtest', '/quiz', '/video', '/menu', '/register', '/language', '/settings', '/status',
+];
+
+/**
+ * Builds the exact 3 Request URLs from one base, so the wizard can print
+ * them fully assembled instead of making the user append
+ * "/api/slack/events" etc. by hand three times.
+ *
+ * @param {string} baseUrl - e.g. an ngrok https URL, with or without a trailing slash
+ */
+function slackRequestUrls(baseUrl) {
+  const base = String(baseUrl || '').replace(/\/+$/, '');
+  return {
+    events: `${base}/api/slack/events`,
+    interactions: `${base}/api/slack/interactions`,
+    commands: `${base}/api/slack/commands`,
+  };
+}
+
+const SLACK_APP_WALKTHROUGH_INTRO = [
+  'Open https://api.slack.com/apps → Create New App → From scratch',
+  'Turn Socket Mode OFF (left sidebar) — Rumi is HTTP-webhook-based and never opens a Socket Mode connection; leaving it on silently stops events/interactions from ever reaching the bot',
 ];
 
 module.exports = {
-  META_FIELDS, META_WALKTHROUGH, META_REMAINING_STEPS, fieldsFor, OPTIONAL_EXTRAS,
+  META_FIELDS,
+  META_WALKTHROUGH,
+  META_REMAINING_STEPS,
+  fieldsFor,
+  OPTIONAL_EXTRAS,
+  SLACK_BOT_SCOPES,
+  SLACK_SLASH_COMMANDS,
+  SLACK_APP_WALKTHROUGH_INTRO,
+  slackRequestUrls,
 };

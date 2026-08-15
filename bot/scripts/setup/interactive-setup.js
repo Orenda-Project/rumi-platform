@@ -50,7 +50,7 @@ const summary = require('./summary');
 const ROOT = path.resolve(__dirname, '../../..');
 const ENV_PATH = path.join(ROOT, '.env');
 const ENV_TEMPLATE_PATH = path.join(ROOT, '.env.template');
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 const LOCAL_REDIS = { url: 'redis://localhost:6379', container: 'rumi-redis', image: 'redis:7-alpine' };
 
 // ── Shared plumbing ──────────────────────────────────────────────────────────
@@ -664,6 +664,122 @@ async function stepChannel(io, env, save, opts = {}) {
   return { channel, ...outcome };
 }
 
+// ── Step 6: additional messaging channels (Slack, later Discord) ────────────
+
+/**
+ * Walks the Slack app-configuration checklist one screen at a time, in the
+ * exact order the app's own sidebar is laid out — Press Enter to move from
+ * each section to the next, rather than a single screen listing every
+ * requirement at once.
+ *
+ * This exists because the alternative (discover each requirement from a live
+ * failure — Socket Mode, then App Home, then a missing scope, then another
+ * missing scope) is what actually happened testing this by hand: eight
+ * separate rounds of trial and error, each one a different error message with
+ * no indication of what else was still missing. One section per screen, done
+ * in order with nothing to skip ahead to, turns that into one pass.
+ */
+async function walkSlackAppConfig(io, baseUrl) {
+  const urls = fields.slackRequestUrls(baseUrl);
+
+  console.log('');
+  console.log(ui.say('Slack apps are configured on Slack\'s own site — nothing here can do that part for you. This walks through it one section at a time, in the order Slack\'s own sidebar lists them.'));
+  console.log('');
+  console.log(ui.bold('  1. Create the app'));
+  console.log(ui.steps(fields.SLACK_APP_WALKTHROUGH_INTRO));
+  await io.pressEnter('Press Enter once the app exists and Socket Mode is off');
+
+  console.log('');
+  console.log(ui.bold('  2. Bot Token Scopes') + ui.dim('  (OAuth & Permissions → Scopes → Bot Token Scopes)'));
+  console.log(ui.say('Click "Add an OAuth Scope" and add each of these:'));
+  console.log(ui.box(fields.SLACK_BOT_SCOPES, { role: 'accent' }));
+  await io.pressEnter('Press Enter once all five scopes are added');
+
+  console.log('');
+  console.log(ui.bold('  3. Event Subscriptions'));
+  console.log(ui.steps([
+    'Turn Event Subscriptions on',
+    'Set the Request URL below',
+    'Under "Subscribe to bot events", add: message.im — this one event covers both plain messages and file/voice uploads in a DM',
+  ]));
+  console.log(ui.box([urls.events], { title: 'Request URL', role: 'accent' }));
+  await io.pressEnter('Press Enter once the Request URL is verified and message.im is subscribed');
+
+  console.log('');
+  console.log(ui.bold('  4. Interactivity & Shortcuts'));
+  console.log(ui.steps([
+    'Turn Interactivity on',
+    'Set the Request URL below',
+  ]));
+  console.log(ui.box([urls.interactions], { title: 'Request URL', role: 'accent' }));
+  await io.pressEnter('Press Enter once that Request URL is saved');
+
+  console.log('');
+  console.log(ui.bold('  5. Slash Commands'));
+  console.log(ui.say('Add each of these as its own Slash Command, every one pointing at the same Request URL:'));
+  console.log(ui.box([urls.commands], { title: 'Request URL (same one, every time)', role: 'accent' }));
+  console.log(ui.table(fields.SLACK_SLASH_COMMANDS.map((cmd) => [cmd, ''])));
+  console.log(ui.aside('/readingtest is one word — Slack command names cannot contain a space.'));
+  await io.pressEnter('Press Enter once all nine commands are added');
+
+  console.log('');
+  console.log(ui.bold('  6. Install the app'));
+  console.log(ui.steps([
+    'Go to OAuth & Permissions',
+    'Click "Install to Workspace" (or "Reinstall" if you changed scopes after installing once already)',
+  ]));
+  await io.pressEnter('Press Enter once it is installed — the next two questions come from that page');
+}
+
+async function stepMessagingChannels(io, env, save, opts = {}) {
+  beginStep(6, 'Other places teachers can reach Rumi');
+
+  const slackConfigured = hasAll(env, ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET']);
+  if (slackConfigured && !opts.reconfigure) {
+    const check = await checkLive('Checking the Slack connection you already have…', 'slack', env, (d) => `Slack already connected ${ui.dim(d)}`);
+    if (check.ok) return { slack: true };
+    console.log(ui.say('That token is not working. Let\'s set Slack up again.'));
+  }
+
+  console.log(ui.say('WhatsApp is set up. A teacher can also reach Rumi on Slack, at the same time, on the same account — nobody has to choose.'));
+  console.log('');
+
+  const wantsSlack = await io.confirm('Also connect Slack?', false);
+  if (!wantsSlack) return { slack: false };
+
+  const baseUrl = await io.ask('Public URL Slack should send requests to', {
+    hint: 'The https address your bot is reachable at — an ngrok URL while testing locally (run `ngrok http <port>` in another terminal), or your deployed address in production.',
+    validate: (input) => {
+      const value = String(input || '').trim().replace(/\/+$/, '');
+      if (!value) return { ok: false, reason: 'This can\'t be empty.' };
+      if (!/^https:\/\//.test(value)) return { ok: false, reason: 'Slack requires https:// — an http:// or bare host will be rejected when you try to save it.' };
+      return { ok: true, value };
+    },
+  });
+
+  await walkSlackAppConfig(io, baseUrl);
+
+  for (;;) {
+    const signingSecret = await io.ask('Signing Secret', {
+      secret: true,
+      fallback: prefill(env, 'SLACK_SIGNING_SECRET'),
+      hint: 'Basic Information → App Credentials → Signing Secret.',
+    });
+    const botToken = await io.ask('Bot User OAuth Token', {
+      secret: true,
+      fallback: prefill(env, 'SLACK_BOT_TOKEN'),
+      hint: 'OAuth & Permissions → Bot User OAuth Token — starts with xoxb-.',
+    });
+
+    save({ SLACK_SIGNING_SECRET: signingSecret, SLACK_BOT_TOKEN: botToken });
+    const check = await checkLive('Checking the token and its scopes…', 'slack', env, (d) => `Slack connected ${ui.dim(d)}`);
+    if (check.ok) return { slack: true };
+    console.log(ui.aside(check.detail));
+    const retry = await io.confirm('Try those two values again?', true);
+    if (!retry) return { slack: false };
+  }
+}
+
 // ── Screens ──────────────────────────────────────────────────────────────────
 
 function welcome(env) {
@@ -687,7 +803,7 @@ function welcome(env) {
 }
 
 async function finish(env, channelResult) {
-  const { channel, number, linked } = channelResult;
+  const { channel, number, linked, slack } = channelResult;
   console.log('');
   console.log(ui.rule());
   const spin = ui.spinner('One last check of everything…');
@@ -705,7 +821,7 @@ async function finish(env, channelResult) {
   console.log('');
   console.log(ui.rule());
   console.log('');
-  console.log(summary.renderNextSteps({ channel, number }));
+  console.log(summary.renderNextSteps({ channel, number, slack }));
   console.log('');
   if (!doctor.ok) {
     console.log(ui.aside('Run `rumi doctor` for the detail on what is not working yet.'));
@@ -742,8 +858,10 @@ async function main(argv = process.argv) {
     await stepExtras(io, env, save, opts);
     finishStep('Optional abilities');
     const channelResult = await stepChannel(io, env, save, opts);
+    finishStep('Connecting WhatsApp');
+    const messagingResult = await stepMessagingChannels(io, env, save, opts);
 
-    await finish(env, channelResult);
+    await finish(env, { ...channelResult, ...messagingResult });
   } catch (err) {
     if (err instanceof PromptAbortError || err.aborted) {
       console.log('');
@@ -764,9 +882,9 @@ if (require.main === module) {
 
 module.exports = {
   main, welcome, finish,
-  stepDatabase, stepBrain, stepMemory, stepExtras, stepChannel,
+  stepDatabase, stepBrain, stepMemory, stepExtras, stepChannel, stepMessagingChannels,
   ensureTables, chooseChannelDriver, collectMetaCredentials, linkSandbox, channelAlreadyWorking,
   createSaver, hasAll, isProvided, prefill, isTemplateSuggestion, startLocalRedis, dockerAvailable, probe,
-  beginStep, finishStep,
+  beginStep, finishStep, walkSlackAppConfig,
   TOTAL_STEPS, LOCAL_REDIS,
 };

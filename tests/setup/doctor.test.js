@@ -256,6 +256,68 @@ describe('flow registration state (analyzeFlows + doctor reporting)', () => {
   });
 });
 
+describe('the real Slack probe — a token that authenticates is not the same as one with every scope Rumi needs', () => {
+  // Live finding: `auth.test` succeeding says nothing about which OAuth scopes
+  // the token actually carries — Slack reports those in the `x-oauth-scopes`
+  // response HEADER, not the JSON body. Without checking it, a token missing
+  // e.g. files:read looked "connected" here and then failed hours later, mid
+  // conversation, with an opaque "missing_scope" naming neither which scope
+  // nor how to fix it.
+  const { defaultProbes } = require('../../bot/scripts/setup/doctor');
+  const ENV = { SLACK_BOT_TOKEN: 'xoxb-test-token' };
+
+  function authTestResponse({ ok = true, scopes = '', status = 200, body = {} } = {}) {
+    return {
+      ok: status < 300,
+      status,
+      headers: { get: (name) => (name === 'x-oauth-scopes' ? scopes : null) },
+      json: async () => ({ ok, team: 'My Workspace', ...body }),
+    };
+  }
+
+  const ALL_SCOPES = 'chat:write,im:write,reactions:write,files:read,files:write';
+
+  let realFetch;
+  beforeEach(() => { realFetch = global.fetch; });
+  afterEach(() => { global.fetch = realFetch; });
+
+  it('passes a token with every required scope present', async () => {
+    global.fetch = jest.fn().mockResolvedValue(authTestResponse({ scopes: ALL_SCOPES }));
+    const result = await defaultProbes.slack(ENV);
+    expect(result.ok).toBe(true);
+    expect(result.detail).toMatch(/My Workspace/);
+  });
+
+  it('fails and names EVERY missing scope, not just the first', async () => {
+    global.fetch = jest.fn().mockResolvedValue(authTestResponse({ scopes: 'chat:write,im:write,reactions:write' }));
+    const result = await defaultProbes.slack(ENV);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toContain('files:read');
+    expect(result.detail).toContain('files:write');
+    expect(result.detail).not.toContain('chat:write'); // present — must not be reported as missing
+  });
+
+  it('fails a token Slack itself rejects (auth.test ok:false), naming the error Slack gave', async () => {
+    global.fetch = jest.fn().mockResolvedValue(authTestResponse({ ok: false, body: { error: 'invalid_auth' } }));
+    const result = await defaultProbes.slack(ENV);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/invalid_auth/);
+  });
+
+  it('fails on a non-2xx HTTP response without even reading scopes', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+    const result = await defaultProbes.slack(ENV);
+    expect(result).toEqual({ ok: false, detail: 'HTTP 500' });
+  });
+
+  it('treats an absent x-oauth-scopes header as zero scopes granted, not as "everything present"', async () => {
+    global.fetch = jest.fn().mockResolvedValue(authTestResponse({ scopes: '' }));
+    const result = await defaultProbes.slack(ENV);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toContain('chat:write');
+  });
+});
+
 describe('the real OpenRouter probe — a valid key is not the same as a usable one', () => {
   // Live finding: doctor reported "✅ OpenRouter (LLM) — HTTP 200" and "All
   // required services are configured and reachable" on an account with zero

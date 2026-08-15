@@ -53,6 +53,8 @@ const KEY_SOURCES = {
   AZURE_SPEECH_REGION: 'portal.azure.com → Speech resource',
   KIE_API_KEY: 'kie.ai → API Key',
   MISTRAL_API_KEY: 'console.mistral.ai → API Keys',
+  SLACK_SIGNING_SECRET: 'api.slack.com/apps → your app → Basic Information → App Credentials',
+  SLACK_BOT_TOKEN: 'api.slack.com/apps → your app → OAuth & Permissions → Bot User OAuth Token',
   AXIOM_DATASET: 'axiom.co → Datasets',
   AXIOM_TOKEN: 'axiom.co → Settings → API tokens',
 };
@@ -215,6 +217,41 @@ const defaultProbes = {
       `https://graph.facebook.com/v21.0/${env.PHONE_NUMBER_ID}?access_token=${env.WHATSAPP_TOKEN}`,
     );
     return { ok: res.ok, detail: `HTTP ${res.status}` };
+  },
+  /**
+   * Checks the bot token AND that it actually carries every scope Rumi's
+   * Slack driver needs (chat:write, im:write, reactions:write, files:read,
+   * files:write). A token that authenticates but lacks one is the single most
+   * common Slack setup failure — the scope error only ever surfaces later,
+   * mid-conversation, as an opaque "missing_scope" with no indication of
+   * which of the five is absent. auth.test succeeding is not enough on its
+   * own: Slack reports the token's granted scopes in the `x-oauth-scopes`
+   * response header, not in the JSON body, so that header is what this reads.
+   */
+  async slack(env) {
+    const REQUIRED_SCOPES = ['chat:write', 'im:write', 'reactions:write', 'files:read', 'files:write'];
+    const res = await fetch('https://slack.com/api/auth.test', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.SLACK_BOT_TOKEN}` },
+    });
+    if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
+
+    const body = await res.json();
+    if (!body.ok) {
+      return { ok: false, detail: `Slack rejected the token: ${body.error || 'unknown error'}` };
+    }
+
+    const granted = (res.headers.get('x-oauth-scopes') || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const missing = REQUIRED_SCOPES.filter((s) => !granted.includes(s));
+    if (missing.length) {
+      return {
+        ok: false,
+        detail: `token works, but is missing ${missing.length === 1 ? 'scope' : 'scopes'}: ${missing.join(', ')} `
+          + '— add them under OAuth & Permissions → Scopes → Bot Token Scopes, then reinstall the app',
+      };
+    }
+
+    return { ok: true, detail: `connected as ${body.team || 'your workspace'}, all required scopes present` };
   },
   async redis(env) {
     // Lazy require so the bot's redis lib is optional at doctor time.

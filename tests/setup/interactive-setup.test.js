@@ -383,36 +383,157 @@ describe('optional extras', () => {
     expect(saved.AZURE_SPEECH_KEY).toBeUndefined();
   });
 
-  it('masks EVERY key of a multi-secret extra, not just the first — Slack needs both hidden', async () => {
-    // Azure's second key (a region string) isn't actually sensitive, which is
-    // why this went unnoticed until Slack's second key (a real bot token)
-    // needed masking too. Answering every OPTIONAL_EXTRAS question in order
-    // and inspecting what was actually asked with {secret: true} is the real
-    // behavioral contract — not just a static check of the field definition.
-    const { stepExtras } = loadWizard();
+  it('no longer lists Slack — it has its own step, not a single "Key" prompt (a whole channel with app-side config needs more than one field)', () => {
     const { OPTIONAL_EXTRAS } = require('../../bot/scripts/setup/fields');
-    const totalKeys = OPTIONAL_EXTRAS.reduce((n, e) => n + e.keys.length, 0);
-    const io = fakeIo({ select: ['add'], ask: new Array(totalKeys).fill('answer') });
+    expect(OPTIONAL_EXTRAS.some((e) => e.keys.includes('SLACK_BOT_TOKEN'))).toBe(false);
+  });
+});
 
-    await stepExtras(io, {}, () => {});
+describe('stepMessagingChannels', () => {
+  const slackPass = { slack: async () => ({ ok: true, detail: 'connected as My Workspace, all required scopes present' }) };
 
-    const slackExtra = OPTIONAL_EXTRAS.find((e) => e.keys.includes('SLACK_BOT_TOKEN'));
-    expect(Array.isArray(slackExtra.secret)).toBe(true);
+  it('defaults to declining Slack — WhatsApp alone is a complete setup', async () => {
+    const { stepMessagingChannels } = loadWizard();
+    const io = fakeIo({ confirm: [false] });
 
-    // Match each recorded question back to the Slack extra's own key order —
-    // io.asked.ask is a flat, in-order log of every "Key"-labelled prompt
-    // across all extras, so slice out the two entries belonging to Slack.
-    let cursor = 0;
-    const questionsByExtra = OPTIONAL_EXTRAS.map((extra) => {
-      const slice = io.asked.ask.slice(cursor, cursor + extra.keys.length);
-      cursor += extra.keys.length;
-      return { extra, slice };
+    const result = await stepMessagingChannels(io, {}, () => {});
+
+    expect(io.asked.confirm[0]).toMatch(/also connect slack/i);
+    expect(result).toEqual({ slack: false });
+    expect(io.asked.ask).toHaveLength(0);
+  });
+
+  it('prints the full checklist (scopes, event, all 3 Request URLs, every slash command) before asking for credentials', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const { SLACK_BOT_SCOPES, SLACK_SLASH_COMMANDS } = require('../../bot/scripts/setup/fields');
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
     });
-    const { slice: slackQuestions } = questionsByExtra.find(({ extra }) => extra === slackExtra);
 
-    expect(slackQuestions).toHaveLength(2);
-    expect(slackQuestions[0].secret).toBe(true); // SLACK_SIGNING_SECRET
-    expect(slackQuestions[1].secret).toBe(true); // SLACK_BOT_TOKEN — the bug this fixes
+    await stepMessagingChannels(io, {}, () => {});
+
+    for (const scope of SLACK_BOT_SCOPES) expect(log.text).toContain(scope);
+    for (const cmd of SLACK_SLASH_COMMANDS) expect(log.text).toContain(cmd);
+    expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/events');
+    expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/interactions');
+    expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/commands');
+    expect(log.text).toContain('message.im');
+    expect(log.text).toMatch(/Socket Mode OFF/i);
+  });
+
+  it('walks the app config as 6 separate screens, one Press Enter between each, not one wall of text', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    // 6 app-config screens (create app, scopes, events, interactivity, slash
+    // commands, install) — the credential prompts afterward are `ask`, not
+    // `pressEnter`, so this count is exactly the config walkthrough's length.
+    expect(io.asked.pressEnter).toBe(6);
+  });
+
+  it('presents the checklist in Slack\'s own sidebar order: create app -> scopes -> events -> interactivity -> slash commands -> install', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    const order = ['Create the app', 'Bot Token Scopes', 'Event Subscriptions', 'Interactivity & Shortcuts', 'Slash Commands', 'Install the app']
+      .map((label) => log.text.indexOf(label));
+    expect(order.every((i) => i !== -1)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it('masks both Slack credentials — the signing secret AND the bot token', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    // ask[0] is the base-URL prompt; the two Slack credential prompts follow.
+    expect(io.asked.ask[1].secret).toBe(true); // Signing Secret
+    expect(io.asked.ask[2].secret).toBe(true); // Bot User OAuth Token
+  });
+
+  it('saves both credentials once the live scope check passes', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const saved = {};
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'a-signing-secret', 'xoxb-a-bot-token'],
+    });
+
+    const result = await stepMessagingChannels(io, {}, (vars) => Object.assign(saved, vars));
+
+    expect(saved.SLACK_SIGNING_SECRET).toBe('a-signing-secret');
+    expect(saved.SLACK_BOT_TOKEN).toBe('xoxb-a-bot-token');
+    expect(result).toEqual({ slack: true });
+  });
+
+  it('reports exactly which scopes are missing rather than a generic failure, and lets the user retry', async () => {
+    const scopeCheck = jest.fn()
+      .mockResolvedValueOnce({ ok: false, detail: 'token works, but is missing scopes: files:read, files:write' })
+      .mockResolvedValueOnce({ ok: true, detail: 'connected as My Workspace, all required scopes present' });
+    const { stepMessagingChannels } = loadWizard({ probes: { slack: scopeCheck } });
+    const io = fakeIo({
+      confirm: [true, true], // connect Slack, then "try again" after the failure
+      ask: [
+        'https://my-tunnel.ngrok-free.dev',
+        'signing-secret', 'xoxb-bot-token-1', // first attempt — missing scopes
+        'signing-secret', 'xoxb-bot-token-2', // retry — succeeds
+      ],
+    });
+
+    const result = await stepMessagingChannels(io, {}, () => {});
+
+    expect(scopeCheck).toHaveBeenCalledTimes(2);
+    expect(log.text).toContain('missing scopes: files:read, files:write');
+    expect(result).toEqual({ slack: true });
+  });
+
+  it('gives up cleanly if the user declines to retry after a failed check', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: { slack: async () => ({ ok: false, detail: 'HTTP 401' }) } });
+    const io = fakeIo({
+      confirm: [true, false], // connect Slack, then decline the retry
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    const result = await stepMessagingChannels(io, {}, () => {});
+    expect(result).toEqual({ slack: false });
+  });
+
+  it('rejects a non-https base URL — Slack refuses anything else', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['http://not-secure.example.com', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    expect(io.validationFailures.some((f) => /https:\/\//.test(f.reason))).toBe(true);
+  });
+
+  it('skips straight through when Slack is already configured and still working', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const env = { SLACK_SIGNING_SECRET: 'already-set', SLACK_BOT_TOKEN: 'xoxb-already-set' };
+    const io = fakeIo();
+
+    const result = await stepMessagingChannels(io, env, () => {});
+
+    expect(result).toEqual({ slack: true });
+    expect(io.asked.confirm).toHaveLength(0); // never even asked "also connect Slack?"
   });
 });
 

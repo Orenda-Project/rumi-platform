@@ -52,7 +52,8 @@ const FEATURES = [
   {
     name: 'Slack channel (Bot + Events API)',
     keys: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'],
-    notes: 'Runs alongside your WhatsApp driver, in both sandbox and production — set via `rumi setup`\'s optional Slack step.',
+    notes: 'Runs alongside your WhatsApp driver, in both sandbox and production — set via `rumi setup`\'s messaging channels step.',
+    probe: 'slack',
   },
   { name: 'Spoken replies (text-to-speech, ElevenLabs)', keys: ['ELEVENLABS_API_KEY'] },
   { name: 'Urdu / regional voices (Uplift)', keys: ['UPLIFT_API_KEY'] },
