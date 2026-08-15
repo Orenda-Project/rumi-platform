@@ -1173,10 +1173,12 @@ async function handleVoiceMessage(message, from, user = null) {
     if (error.userNotified) {
       logToFile('↩️ Voice failure already reported to the user — not repeating it', {});
     } else {
-      await WhatsAppService.sendMessage(
-        from,
-        'معذرت، آواز پیغام پر کارروائی کرتے وقت خرابی آ گئی۔' // Sorry, error processing voice message
-      );
+      const errorMessages = {
+        en: 'Sorry, there was an error processing your voice message.',
+        ur: 'معذرت، آواز پیغام پر کارروائی کرتے وقت خرابی آ گئی۔'
+      };
+      const userLanguage = user?.preferred_language || 'en';
+      await WhatsAppService.sendMessage(from, errorMessages[userLanguage] || errorMessages.en);
     }
   } finally {
     // CRITICAL: Always stop typing indicator, even if function exits early or throws
