@@ -360,6 +360,17 @@ async function connect(opts = {}) {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
+        // A shutdown already in progress (close() has set this) must not
+        // render, or act on, a fresh QR — Baileys' own reconnect/QR-refresh
+        // cycle keeps running on the socket close() is trying to tear down
+        // until this event fires, and printing a new QR here is what makes a
+        // deliberate Ctrl+C look like it did nothing.
+        if (shuttingDown) {
+          try { sock.end(new Error('shutting down — ignoring QR')); } catch { /* already closing */ }
+          if (!settled) { settled = true; reject(new Error('Baileys: shutting down')); }
+          return;
+        }
+
         // A QR when we ALREADY had credentials is not a pairing opportunity —
         // the session was invalidated (WhatsApp reports this as
         // "Stream Errored (conflict)", typically because two processes shared one
@@ -461,17 +472,26 @@ function isConnected() {
  * @param {object}  [opts]
  * @param {number}  [opts.flushMs=500] grace period for pending auth-state writes.
  */
-async function close({ flushMs = 500 } = {}) {
+async function close({ flushMs = 500, pendingTimeoutMs = 2000 } = {}) {
   shuttingDown = true;
   const pending = socketPromise;
   socketPromise = null;
 
   if (pending) {
     try {
-      const sock = await pending;
+      // `pending` only settles once the socket reaches 'open' or 'close' —
+      // a socket still waiting on an unscanned QR (never paired) reaches
+      // neither, so awaiting it unconditionally can hang shutdown forever.
+      // The QR-branch's shuttingDown guard above handles the common case
+      // (a QR event arrives and self-terminates), but nothing GUARANTEES
+      // that event fires promptly, so this timeout is the real backstop.
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timed out waiting for socket')), pendingTimeoutMs));
+      const sock = await Promise.race([pending, timeout]);
       sock.end(undefined); // undefined = clean close, NOT a logout
     } catch {
-      // Never reached "open" (or already rejected) — nothing to close.
+      // Never reached "open" (or already rejected, or timed out) — nothing
+      // reachable to close cleanly; shuttingDown is already true, so any
+      // late settlement of `pending` is a no-op from here on.
     }
   }
 

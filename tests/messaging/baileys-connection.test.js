@@ -524,6 +524,50 @@ describe('baileys-connection', () => {
     await expect(conn.close({ flushMs: 0 })).resolves.toBeUndefined();
   });
 
+  it('close() does not hang forever on a socket stuck pre-open/pre-close (unpaired, waiting on an unscanned QR)', async () => {
+    // Real-world bug this fixes: Ctrl+C while Baileys is showing a QR that was
+    // never scanned. getSocket()'s promise only settles on 'open' or 'close' —
+    // neither ever fires for a socket just sitting on an unscanned QR, so
+    // close()'s old unconditional `await pending` hung forever, and the
+    // process never called process.exit().
+    jest.resetModules();
+    const { sockEventHandlers } = mockBaileysPackage();
+    const conn = require('../../bot/shared/services/messaging/baileys-connection');
+
+    const socketPromise = conn.getSocket();
+    await waitForHandler(sockEventHandlers);
+    sockEventHandlers['connection.update']({ qr: 'QR-NEVER-SCANNED' });
+    // Neither 'open' nor 'close' ever fires — this promise stays pending forever.
+    socketPromise.catch(() => {}); // avoid an unhandled-rejection warning once shuttingDown rejects it below
+
+    await expect(conn.close({ flushMs: 0, pendingTimeoutMs: 20 })).resolves.toBeUndefined();
+  });
+
+  it('close() sets shuttingDown so a QR event that fires DURING shutdown is ignored — not rendered, not treated as a new pairing opportunity', async () => {
+    // Real-world bug this fixes: after Ctrl+C, Baileys' own retry/refresh cycle
+    // on the still-alive (unpaired) socket kept firing new 'qr' events, and the
+    // QR branch had no shuttingDown check at all — so a fresh QR code printed
+    // to the terminal well after the user asked the process to exit.
+    jest.resetModules();
+    const { sockEventHandlers } = mockBaileysPackage();
+    const qrTerminal = require('qrcode-terminal');
+    const conn = require('../../bot/shared/services/messaging/baileys-connection');
+
+    const socketPromise = conn.getSocket();
+    await waitForHandler(sockEventHandlers);
+    socketPromise.catch(() => {});
+
+    const closing = conn.close({ flushMs: 0, pendingTimeoutMs: 20 });
+
+    // A QR fires AFTER close() has set shuttingDown = true, but before the
+    // pendingTimeoutMs backstop elapses — simulates Baileys' own QR-refresh
+    // cycle racing with shutdown.
+    sockEventHandlers['connection.update']({ qr: 'QR-DURING-SHUTDOWN' });
+
+    await closing;
+    expect(qrTerminal.generate).not.toHaveBeenCalled();
+  });
+
   it('does NOT reconnect on a logout close (statusCode === 401), and rejects this attempt cleanly', async () => {
     jest.resetModules();
     const { sockEventHandlers, makeWASocket } = mockBaileysPackage();
