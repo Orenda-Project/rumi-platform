@@ -126,6 +126,12 @@ describe('slack-channel.service — media', () => {
     expect(info).toEqual({ url: 'https://files.slack.com/x', mime_type: 'image/png', file_size: 42 });
   });
 
+  it('getMediaInfo strips a "slack:" prefixed media id before calling the Slack API — the inbound adapter mints ids this way so the messaging router dispatches here instead of the WhatsApp driver', async () => {
+    const { service, client } = loadService();
+    await service.getMediaInfo('slack:F0123FILE');
+    expect(client.files.info).toHaveBeenCalledWith({ file: 'F0123FILE' });
+  });
+
   it('sendImage rejects a bare media-id (no file path/URL) — Slack has no reusable media-id upload step', async () => {
     const { service, client } = loadService();
     const result = await service.sendImage(TO, 'F0123FILE_no_slash');

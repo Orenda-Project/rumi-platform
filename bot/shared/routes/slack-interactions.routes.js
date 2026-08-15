@@ -4,6 +4,7 @@
  *   POST /api/slack/events        - Events API (plain messages)
  *   POST /api/slack/interactions  - Interactivity (button clicks, select
  *                                   menus, AND modal view_submission)
+ *   POST /api/slack/commands      - Slash Commands (/quiz, /settings, ...)
  *
  * Every request here is HMAC-signature-verified (slack-signature.service.js)
  * BEFORE any dispatch — mirrors flow-endpoint.routes.js's own shape (route
@@ -13,13 +14,20 @@
  * whatsapp-bot.js mounts a raw-body-capturing middleware ahead of this
  * router (see its own header comment) so req.rawBody holds the exact bytes
  * Slack signed — required for signature verification to succeed at all.
+ *
+ * /commands is a SEPARATE route from /interactions even though both carry
+ * form-encoded bodies: Slack's Slash Command payload puts command/text/
+ * user_id at the TOP LEVEL of the body, whereas /interactions' block_actions/
+ * view_submission payloads are JSON-encoded inside a single `payload` field.
+ * Each Slash Command is registered in the Slack app config with its own
+ * Request URL — point every one of them at this same /commands URL.
  */
 
 const express = require('express');
 const router = express.Router();
 const SlackSignatureService = require('../services/slack-signature.service');
 const { logToFile } = require('../utils/logger');
-const { makeEventsHandler, makeInteractionsHandler } = require('../services/messaging/inbound/slack-events.adapter');
+const { makeEventsHandler, makeInteractionsHandler, makeSlashCommandHandler } = require('../services/messaging/inbound/slack-events.adapter');
 const modalInteractions = require('./slack-modal-interactions.handler');
 
 /**
@@ -117,6 +125,7 @@ function makeRoutedInteractionsHandler(dispatch) {
 function mount(dispatch) {
   router.post('/events', verifyAndParse('json'), makeEventsHandler(dispatch));
   router.post('/interactions', verifyAndParse('form'), makeRoutedInteractionsHandler(dispatch));
+  router.post('/commands', verifyAndParse('form'), makeSlashCommandHandler(dispatch));
   return router;
 }
 

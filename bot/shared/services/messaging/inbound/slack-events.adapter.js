@@ -35,6 +35,55 @@ function toPrefixedIdentity(slackUserId) {
   return `${SLACK_PREFIX}:${slackUserId}`;
 }
 
+// Media ids need the same "slack:" prefix as user identities — messaging/index.js's
+// router (channel-registry.js#driverForIdentifier) dispatches getMediaInfo/downloadMedia
+// calls by inspecting the id argument itself for a channel prefix. A bare Slack file id
+// (e.g. "F0123FILE") has no colon, so without this prefix those calls would silently fall
+// through to the WhatsApp-family driver instead of Slack's. slack-channel.service.js
+// strips this same prefix before calling the real Slack Web API.
+function toPrefixedMediaId(slackFileId) {
+  return `${SLACK_PREFIX}:${slackFileId}`;
+}
+
+// Slack's audio-representable mimetypes — used only to pick "audio" vs "voice" the
+// same way Meta's own message.type does; both map to handleVoiceMessage either way
+// (see whatsapp-bot.js's messageType dispatch), so this only affects downstream framing.
+const AUDIO_MIME_RE = /^audio\//i;
+const IMAGE_MIME_RE = /^image\//i;
+
+/**
+ * Maps a Slack `file_share` message event's first file into a Meta-shaped
+ * audio/image/document message — mirrors baileys-socket.adapter.js's own
+ * mapToMetaShape for the same three types. Only the first file is handled
+ * (matching Meta's own one-attachment-per-message model); a multi-file share
+ * is otherwise ignored beyond that first file, same as Baileys' adapter.
+ *
+ * @param {object} event - Slack's inner `event` object (subtype 'file_share')
+ * @returns {object|null} Meta-shaped message, or null to skip
+ */
+function mapFileShareToMetaShape(event) {
+  if (!event || event.bot_id) return null;
+  const file = event.files?.[0];
+  if (!event.user || !file) return null;
+
+  const from = toPrefixedIdentity(event.user);
+  const timestamp = event.ts ? Math.floor(Number(event.ts)) : Math.floor(Date.now() / 1000);
+  const id = event.ts || String(timestamp);
+  const mediaId = toPrefixedMediaId(file.id);
+  const mimeType = file.mimetype || 'application/octet-stream';
+
+  if (AUDIO_MIME_RE.test(mimeType)) {
+    return { from, id, timestamp, type: 'audio', audio: { id: mediaId, mime_type: mimeType } };
+  }
+  if (IMAGE_MIME_RE.test(mimeType)) {
+    return { from, id, timestamp, type: 'image', image: { id: mediaId, mime_type: mimeType, caption: event.text || '' } };
+  }
+  return {
+    from, id, timestamp, type: 'document',
+    document: { id: mediaId, mime_type: mimeType, filename: file.name || 'file' },
+  };
+}
+
 // Slack occasionally redelivers the identical event (its own documented
 // at-least-once retry behavior, e.g. on a slow ack) — the same redelivery
 // class Baileys' adapter guards against, same fix shape: an in-memory,
@@ -93,7 +142,10 @@ function buildSyntheticResponse() {
  * @returns {object|null} Meta-shaped message, or null to skip
  */
 function mapEventToMetaShape(event) {
-  if (!event || event.bot_id || event.subtype) return null;
+  if (!event || event.bot_id) return null;
+  // file_share carries the file(s), not text — dispatched separately, below.
+  if (event.subtype && event.subtype !== 'file_share') return null;
+  if (event.subtype === 'file_share') return mapFileShareToMetaShape(event);
   if (!event.user || !event.text) return null;
 
   const from = toPrefixedIdentity(event.user);
@@ -235,12 +287,86 @@ function makeInteractionsHandler(dispatch) {
   };
 }
 
+/**
+ * Maps a Slack Slash Command payload into the same Meta-shaped TEXT message
+ * every `/command` in text-message.handler.js already parses via
+ * `trimmedMessage === '/x'` / `.startsWith('/x ')` checks — no new command
+ * vocabulary, this just reconstructs the plain-text form a WhatsApp/Baileys
+ * user would have typed, so the existing ~2000-line waterfall of command
+ * checks needs zero changes.
+ *
+ * Slack's Slash Command request is a DIFFERENT payload shape than
+ * block_actions/view_submission: the command/text/user fields arrive at the
+ * TOP LEVEL of the form-encoded body (no `payload` JSON wrapper), which is
+ * why this is routed separately in slack-interactions.routes.js rather than
+ * through makeInteractionsHandler's `JSON.parse(req.body.payload)` path.
+ *
+ * `/readingtest` is special-cased: text-message.handler.js matches it via an
+ * EXACT string check (`'/reading test'` or `'/readingtest'`, no trailing-arg
+ * parsing, unlike `/quiz`/`/video`), so any trailing free text after the
+ * Slack command is intentionally dropped rather than appended.
+ *
+ * @param {object} body - the parsed top-level Slack Slash Command form body
+ *   (fields: command, text, user_id, ...)
+ * @returns {object|null} Meta-shaped text message, or null to skip
+ */
+function mapSlashCommandToMetaShape(body) {
+  if (!body || !body.command || !body.user_id) return null;
+
+  const command = String(body.command).trim(); // Slack always includes the leading "/"
+  const trailingText = String(body.text || '').trim();
+  const from = toPrefixedIdentity(body.user_id);
+  const timestamp = Math.floor(Date.now() / 1000);
+
+  const messageText = command === '/readingtest'
+    ? '/readingtest'
+    : (trailingText ? `${command} ${trailingText}` : command);
+
+  return {
+    from,
+    id: `slash-${timestamp}-${body.user_id}`,
+    timestamp,
+    type: 'text',
+    text: { body: messageText },
+  };
+}
+
+/**
+ * Express handler for Slack's Slash Command Request URL(s). Slack requires a
+ * response within 3s same as Events API/Interactivity — acks immediately
+ * with an empty 200 (no visible slash-command response bubble; Rumi's real
+ * reply arrives moments later as an ordinary message, same UX as every other
+ * async command reply on this channel).
+ *
+ * @param {(req: object, res: object) => Promise<void>} dispatch
+ */
+function makeSlashCommandHandler(dispatch) {
+  return async function handleSlackSlashCommand(req, res) {
+    res.status(200).send('');
+
+    try {
+      const metaMessage = mapSlashCommandToMetaShape(req.body);
+      if (!metaMessage) return;
+
+      const dispatchReq = buildSyntheticRequest(metaMessage);
+      const dispatchRes = buildSyntheticResponse();
+      await dispatch(dispatchReq, dispatchRes);
+    } catch (error) {
+      logToFile('❌ Slack inbound: error processing slash command', { error: error.message, stack: error.stack });
+    }
+  };
+}
+
 module.exports = {
   makeEventsHandler,
   makeInteractionsHandler,
+  makeSlashCommandHandler,
   mapEventToMetaShape,
+  mapFileShareToMetaShape,
   mapBlockActionToMetaShape,
+  mapSlashCommandToMetaShape,
   toPrefixedIdentity,
+  toPrefixedMediaId,
   isDuplicateDelivery,
   _resetSeenEventsForTests,
 };

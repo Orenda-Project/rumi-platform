@@ -64,6 +64,12 @@ function slackUserId(to) {
   return raw.startsWith(withPrefix) ? raw.slice(withPrefix.length) : raw;
 }
 
+// Media ids carry the same "slack:" prefix as user identities (minted by
+// slack-events.adapter.js#toPrefixedMediaId) so the messaging router can tell
+// a Slack file id apart from a WhatsApp media id with no DB lookup. Stripped
+// here, once, before ever touching the real Slack Web API.
+const stripSlackPrefix = slackUserId;
+
 // ── Slack Web API client (lazy) ──────────────────────────────────────────────
 // Mirrors baileys-connection.js's lazy-require convention: nothing touches
 // @slack/web-api until a send actually happens, and tests can jest.doMock
@@ -236,7 +242,8 @@ function startContinuousTypingIndicator() {
 
 async function getMediaInfo(mediaId) {
   const client = getClient();
-  const result = await client.files.info({ file: mediaId });
+  const fileId = stripSlackPrefix(mediaId);
+  const result = await client.files.info({ file: fileId });
   const file = result?.file;
   if (!file) throw new Error(`Slack: no file info for id "${mediaId}"`);
   return { url: file.url_private, mime_type: file.mimetype, file_size: file.size };

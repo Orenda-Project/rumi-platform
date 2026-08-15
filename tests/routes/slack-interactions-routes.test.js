@@ -103,6 +103,48 @@ describe('slack-interactions.routes — /events', () => {
   });
 });
 
+describe('slack-interactions.routes — /commands', () => {
+  it('verifies the signature, parses the top-level form-encoded command body, and dispatches', async () => {
+    const { router, dispatch } = loadRouter();
+    const rawBody = 'command=%2Fquiz&text=fractions+for+grade+5&user_id=U0123ABC';
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const req = {
+      headers: {
+        'x-slack-request-timestamp': timestamp,
+        'x-slack-signature': sign(timestamp, rawBody),
+      },
+      rawBody: Buffer.from(rawBody),
+      path: '/commands',
+    };
+
+    const { calls } = await invokeRoute(router, 'post', '/commands', req);
+    expect(calls.status).toEqual([200]);
+    expect(calls.send).toEqual(['']);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    const [dispatchReq] = dispatch.mock.calls[0];
+    expect(dispatchReq.body.entry[0].changes[0].value.messages[0]).toEqual(
+      expect.objectContaining({ from: 'slack:U0123ABC', type: 'text', text: { body: '/quiz fractions for grade 5' } })
+    );
+  });
+
+  it('rejects an incorrectly-signed slash command request with 401, never dispatching', async () => {
+    const { router, dispatch } = loadRouter();
+    const rawBody = 'command=%2Fmenu&text=&user_id=U0123ABC';
+    const req = {
+      headers: {
+        'x-slack-request-timestamp': String(Math.floor(Date.now() / 1000)),
+        'x-slack-signature': 'v0=deadbeef',
+      },
+      rawBody: Buffer.from(rawBody),
+      path: '/commands',
+    };
+
+    const { calls } = await invokeRoute(router, 'post', '/commands', req);
+    expect(calls.status).toEqual([401]);
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+});
+
 describe('slack-interactions.routes — /interactions', () => {
   it('verifies the signature, parses the form-encoded payload, and dispatches', async () => {
     const { router, dispatch } = loadRouter();

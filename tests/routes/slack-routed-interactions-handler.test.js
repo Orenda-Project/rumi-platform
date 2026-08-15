@@ -29,6 +29,7 @@ function loadRoutedHandler() {
   jest.doMock('../../bot/shared/services/messaging/inbound/slack-events.adapter', () => ({
     makeEventsHandler: jest.fn(() => async (req, res) => res.status(200).send('')),
     makeInteractionsHandler: jest.fn(() => chatHandler),
+    makeSlashCommandHandler: jest.fn(() => async (req, res) => res.status(200).send('')),
   }));
 
   const mount = require('../../bot/shared/routes/slack-interactions.routes');
