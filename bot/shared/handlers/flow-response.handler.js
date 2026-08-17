@@ -47,11 +47,10 @@
  */
 
 const supabase = require('../config/supabase');
-const PassageGenerationService = require('../services/reading/passage-generation.service');
-const AutoLevelOrchestratorService = require('../services/reading/auto-level-orchestrator.service');
 const WhatsAppService = require('../services/whatsapp.service');
 const AttendanceFlowHandler = require('./attendance-flow.handler');
 const AttendanceDeliveryService = require('../services/attendance-delivery.service');
+const { startAssessment } = require('../routes/reading-assessment-endpoint');
 const { logToFile } = require('../utils/logger');
 
 // Flow IDs - configure via environment variables. Canonical list lives in
@@ -263,147 +262,20 @@ async function handleReadingAssessmentFlow(message, phoneNumber, userId) {
       throw new Error('Missing required field: Level/Grade');
     }
 
-    // Map level index to passage type
-    // levelIndex: 0→letters, 1→words, 2→sentences, 3→paragraph
-    // For auto mode: always start at story
-    let passageType, gradeNumeric;
-
-    if (isAutoMode) {
-      // Auto mode: Start at story level (highest complexity)
-      passageType = 'story';
-      gradeNumeric = 4; // Story level
-    } else {
-      // Manual mode: Use selected level
-      const levelMapping = {
-        '0': { passageType: 'letters', gradeNumeric: 0 },    // Kindergarten
-        '1': { passageType: 'words', gradeNumeric: 1 },      // Grade 1
-        '2': { passageType: 'sentences', gradeNumeric: 2 },  // Grade 1-2
-        '3': { passageType: 'paragraph', gradeNumeric: 3 }   // Grade 3-5
-      };
-
-      const mapped = levelMapping[levelIndex] || { passageType: 'paragraph', gradeNumeric: 2 };
-      passageType = mapped.passageType;
-      gradeNumeric = mapped.gradeNumeric;
-    }
-
-    logToFile('✅ Validated and mapped:', {
-      studentName,
-      language,
-      levelIndex,
-      levelRaw,
-      passageType,
-      gradeNumeric,
-      comprehensionRequired,
-      isAutoMode
+    logToFile('✅ Validated fields:', {
+      studentName, language, levelIndex, levelRaw, comprehensionRequired, isAutoMode,
     });
 
-    // Map passage type to word count (based on existing gradeMap)
-    const wordCountMap = {
-      'letters': 14,
-      'words': 14,
-      'sentences': 40,
-      'paragraph': 60,
-      'story': 100
-    };
-
-    const wordCount = wordCountMap[passageType] || 50;
-
-    // Create passageConfig for passage generation service
-    const passageConfig = {
-      type: passageType,
-      wordCount: wordCount,
-      grade: gradeNumeric
-    };
-
-    // Create assessment record FIRST (required for passage generation)
-    const { data: assessment, error: insertError } = await supabase
-      .from('reading_assessments')
-      .insert({
-        user_id: userId,
-        student_identifier: studentName,
-        grade_level: gradeNumeric,
-        language: language,
-        passage_type: passageType,
-        passage_word_count: wordCount,
-        passage_text: '', // Empty string (will be updated by generateAndSendPassage)
-        comprehension_requested: comprehensionRequired,
-        assessment_mode: isAutoMode ? 'auto' : 'manual',
-        starting_level: isAutoMode ? 'story' : passageType,
-        status: 'initiated',
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      logToFile('❌ Error creating assessment record', {
-        error: insertError.message
-      });
-      throw insertError;
-    }
-
-    logToFile('✅ Assessment record created', {
-      assessmentId: assessment.id,
-      studentName,
-      passageConfig,
-      isAutoMode
+    // Creates the assessment record + generates/delivers the first passage —
+    // the same pipeline Discord's onFinish hook (discord-flow-registry.js)
+    // triggers from its own modal-workaround screens, extracted so both
+    // channels share one implementation (see reading-assessment-endpoint.js's
+    // own header comment on why this split exists).
+    const { assessmentId } = await startAssessment(userId, phoneNumber, {
+      studentName, language, isAutoMode, levelIndex, comprehensionRequired,
     });
 
-    // For auto mode, use the auto-level orchestrator
-    if (isAutoMode) {
-      // Start auto-level assessment (sends welcome message and first passage)
-      const autoConfig = await AutoLevelOrchestratorService.startAutoAssessment(
-        assessment.id,
-        userId,
-        phoneNumber,
-        language,
-        gradeNumeric,
-        language // userLanguage
-      );
-
-      // Generate and send first passage (story level)
-      await PassageGenerationService.generateAndSendPassage(
-        assessment.id,
-        userId,
-        phoneNumber,
-        language,
-        { type: autoConfig.passageType, wordCount: autoConfig.wordCount, grade: autoConfig.gradeLevel },
-        language
-      );
-    } else {
-      // Manual mode: Generate and send passage directly
-      await PassageGenerationService.generateAndSendPassage(
-        assessment.id,
-        userId,
-        phoneNumber,
-        language,
-        passageConfig,
-        language // userLanguage for instructions
-      );
-    }
-
-    logToFile('✅ Passage generation and delivery complete', {
-      assessmentId: assessment.id
-    });
-
-    // Update conversation state. Comprehension/assessment context lives in Redis
-    // (see redis-comprehension.service), not a conversations column — writing a
-    // non-existent context_data column here previously failed the whole update,
-    // so current_state never persisted.
-    const { error: updateError } = await supabase
-      .from('conversations')
-      .update({
-        current_state: 'AWAITING_READING_AUDIO'
-      })
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (updateError) {
-      logToFile('⚠️ Warning: Could not update conversation state', {
-        error: updateError.message
-      });
-    }
+    logToFile('✅ Passage generation and delivery complete', { assessmentId });
 
     return true;
 
