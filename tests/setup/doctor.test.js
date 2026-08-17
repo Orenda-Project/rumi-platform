@@ -318,6 +318,45 @@ describe('the real Slack probe — a token that authenticates is not the same as
   });
 });
 
+describe('the real Discord probe — lighter than Slack\'s, no per-scope breakdown', () => {
+  // Discord has no clean single-call equivalent to Slack's x-oauth-scopes
+  // response header, so this probe only confirms the bot token authenticates
+  // (and, as a bonus, that the application id it returns matches
+  // DISCORD_APPLICATION_ID) — deliberately not a per-permission check.
+  const { defaultProbes } = require('../../bot/scripts/setup/doctor');
+  const ENV = { DISCORD_BOT_TOKEN: 'test-bot-token', DISCORD_APPLICATION_ID: 'app-123' };
+
+  let realFetch;
+  beforeEach(() => { realFetch = global.fetch; });
+  afterEach(() => { global.fetch = realFetch; });
+
+  it('passes when the token authenticates and the application id matches', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ id: 'app-123', name: 'Rumi' }) });
+    const result = await defaultProbes.discord(ENV);
+    expect(result.ok).toBe(true);
+    expect(result.detail).toMatch(/Rumi/);
+  });
+
+  it('fails on a non-2xx HTTP response (e.g. an invalid/revoked token)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 401 });
+    const result = await defaultProbes.discord(ENV);
+    expect(result).toEqual({ ok: false, detail: 'HTTP 401' });
+  });
+
+  it('fails when the returned application id does not match DISCORD_APPLICATION_ID', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ id: 'a-different-app', name: 'Someone Else\'s App' }) });
+    const result = await defaultProbes.discord(ENV);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/does not match/);
+  });
+
+  it('passes even without DISCORD_APPLICATION_ID set — the id check only runs when there is something to compare against', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ id: 'app-123', name: 'Rumi' }) });
+    const result = await defaultProbes.discord({ DISCORD_BOT_TOKEN: 'test-bot-token' });
+    expect(result.ok).toBe(true);
+  });
+});
+
 describe('the real OpenRouter probe — a valid key is not the same as a usable one', () => {
   // Live finding: doctor reported "✅ OpenRouter (LLM) — HTTP 200" and "All
   // required services are configured and reachable" on an account with zero

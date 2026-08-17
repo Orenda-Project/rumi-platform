@@ -399,7 +399,7 @@ describe('stepMessagingChannels', () => {
     const result = await stepMessagingChannels(io, {}, () => {});
 
     expect(io.asked.confirm[0]).toMatch(/also connect slack/i);
-    expect(result).toEqual({ slack: false });
+    expect(result).toEqual({ slack: false, discord: false });
     expect(io.asked.ask).toHaveLength(0);
   });
 
@@ -478,7 +478,7 @@ describe('stepMessagingChannels', () => {
 
     expect(saved.SLACK_SIGNING_SECRET).toBe('a-signing-secret');
     expect(saved.SLACK_BOT_TOKEN).toBe('xoxb-a-bot-token');
-    expect(result).toEqual({ slack: true });
+    expect(result).toEqual({ slack: true, discord: false });
   });
 
   it('reports exactly which scopes are missing rather than a generic failure, and lets the user retry', async () => {
@@ -499,7 +499,7 @@ describe('stepMessagingChannels', () => {
 
     expect(scopeCheck).toHaveBeenCalledTimes(2);
     expect(log.text).toContain('missing scopes: files:read, files:write');
-    expect(result).toEqual({ slack: true });
+    expect(result).toEqual({ slack: true, discord: false });
   });
 
   it('gives up cleanly if the user declines to retry after a failed check', async () => {
@@ -510,7 +510,7 @@ describe('stepMessagingChannels', () => {
     });
 
     const result = await stepMessagingChannels(io, {}, () => {});
-    expect(result).toEqual({ slack: false });
+    expect(result).toEqual({ slack: false, discord: false });
   });
 
   it('rejects a non-https base URL — Slack refuses anything else', async () => {
@@ -532,8 +532,102 @@ describe('stepMessagingChannels', () => {
 
     const result = await stepMessagingChannels(io, env, () => {});
 
-    expect(result).toEqual({ slack: true });
-    expect(io.asked.confirm).toHaveLength(0); // never even asked "also connect Slack?"
+    expect(result).toEqual({ slack: true, discord: false });
+    // Never asked "also connect Slack?" (Slack's own live check short-circuited
+    // that) — the one confirm() call that DOES happen is Discord's own
+    // "Also connect Discord?" question, asked unconditionally afterward.
+    expect(io.asked.confirm).toEqual(['Also connect Discord?']);
+  });
+});
+
+describe('stepDiscordChannel', () => {
+  const discordPass = { discord: async () => ({ ok: true, detail: 'connected as My App' }) };
+
+  function loadWizardWithDiscordCommands(registerImpl) {
+    jest.doMock('../../bot/scripts/setup/discord-register-commands', () => ({
+      registerDiscordCommands: registerImpl || jest.fn().mockResolvedValue({ registered: 9, guildScoped: false, commands: [] }),
+    }));
+    return loadWizard({ probes: discordPass });
+  }
+
+  it('defaults to declining Discord — WhatsApp alone is a complete setup', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    const io = fakeIo({ confirm: [false] });
+
+    const result = await stepDiscordChannel(io, {}, () => {});
+
+    expect(io.asked.confirm[0]).toMatch(/also connect discord/i);
+    expect(result).toEqual({ discord: false });
+    expect(io.asked.ask).toHaveLength(0);
+  });
+
+  it('walks the app config as 5 separate screens, one Press Enter between each', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    const io = fakeIo({ confirm: [true], ask: ['bot-token', 'app-id'] });
+
+    await stepDiscordChannel(io, {}, () => {});
+
+    expect(io.asked.pressEnter).toBe(5);
+  });
+
+  it('saves both credentials, registers slash commands, and reports success once the live check passes', async () => {
+    const registerImpl = jest.fn().mockResolvedValue({ registered: 9, guildScoped: false, commands: ['portal'] });
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands(registerImpl);
+    const saved = {};
+    const io = fakeIo({ confirm: [true], ask: ['a-bot-token', 'an-app-id'] });
+
+    const result = await stepDiscordChannel(io, {}, (vars) => Object.assign(saved, vars));
+
+    expect(saved.DISCORD_BOT_TOKEN).toBe('a-bot-token');
+    expect(saved.DISCORD_APPLICATION_ID).toBe('an-app-id');
+    expect(registerImpl).toHaveBeenCalledWith({ token: 'a-bot-token', applicationId: 'an-app-id', guildId: undefined });
+    expect(result).toEqual({ discord: true });
+  });
+
+  it('masks the bot token but not the application id', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    const io = fakeIo({ confirm: [true], ask: ['a-bot-token', 'an-app-id'] });
+
+    await stepDiscordChannel(io, {}, () => {});
+
+    expect(io.asked.ask[0].secret).toBe(true); // Bot Token
+    expect(io.asked.ask[1].secret).toBeFalsy(); // Application ID
+  });
+
+  it('still reports success even if slash-command registration itself fails — that is retriable separately', async () => {
+    const registerImpl = jest.fn().mockRejectedValue(new Error('network error'));
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands(registerImpl);
+    const io = fakeIo({ confirm: [true], ask: ['a-bot-token', 'an-app-id'] });
+
+    const result = await stepDiscordChannel(io, {}, () => {});
+
+    expect(result).toEqual({ discord: true });
+  });
+
+  it('gives up cleanly if the user declines to retry after a failed check', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    jest.resetModules();
+    jest.doMock('../../bot/scripts/setup/discord-register-commands', () => ({ registerDiscordCommands: jest.fn() }));
+    jest.doMock('../../bot/scripts/setup/doctor', () => ({
+      defaultProbes: { discord: async () => ({ ok: false, detail: 'HTTP 401' }) },
+      runDoctor: jest.fn(),
+    }));
+    const wizard = require(WIZARD);
+    const io = fakeIo({ confirm: [true, false], ask: ['bad-token', 'an-app-id'] });
+
+    const result = await wizard.stepDiscordChannel(io, {}, () => {});
+    expect(result).toEqual({ discord: false });
+  });
+
+  it('skips straight through when Discord is already configured and still working', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    const env = { DISCORD_BOT_TOKEN: 'already-set', DISCORD_APPLICATION_ID: 'already-set' };
+    const io = fakeIo();
+
+    const result = await stepDiscordChannel(io, env, () => {});
+
+    expect(result).toEqual({ discord: true });
+    expect(io.asked.confirm).toHaveLength(0); // never even asked "also connect Discord?"
   });
 });
 

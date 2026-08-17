@@ -253,6 +253,29 @@ const defaultProbes = {
 
     return { ok: true, detail: `connected as ${body.team || 'your workspace'}, all required scopes present` };
   },
+  /**
+   * Lighter than the Slack probe — confirms the bot token authenticates (and,
+   * as a bonus, that the returned application id matches DISCORD_APPLICATION_ID)
+   * with no per-permission breakdown. Discord has no clean single-call
+   * equivalent to Slack's x-oauth-scopes response header, so this is close
+   * to the only cheap verification option available, not just a shortcut.
+   */
+  async discord(env) {
+    const res = await fetch('https://discord.com/api/v10/applications/@me', {
+      headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` },
+    });
+    if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
+
+    const body = await res.json();
+    if (env.DISCORD_APPLICATION_ID && body.id && body.id !== env.DISCORD_APPLICATION_ID) {
+      return {
+        ok: false,
+        detail: `token authenticates, but its application id (${body.id}) does not match DISCORD_APPLICATION_ID (${env.DISCORD_APPLICATION_ID})`,
+      };
+    }
+
+    return { ok: true, detail: `connected as ${body.name || 'your application'}` };
+  },
   async redis(env) {
     // Lazy require so the bot's redis lib is optional at doctor time.
     const IORedis = require('ioredis');
