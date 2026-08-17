@@ -16,30 +16,33 @@ const DRIVERS = {
   meta: './meta-channel.service',
   baileys: './baileys-channel.service',
   slack: './slack-channel.service',
-  // discord: './discord-channel.service' — added in the Discord phase.
+  discord: './discord-channel.service',
 };
 
 const DEFAULT_DRIVER = 'baileys';
 
 // Drivers that require a formal business registration / app-review process —
 // the thing that actually makes a channel "production-grade" here. Every
-// driver NOT in this list is sandbox-tier by default. Slack has no such
-// process (a Slack app install has no review gate like WhatsApp Business
-// verification), so it is listed here — usable in BOTH sandbox and
-// production, per the original ask, unlike Baileys which stays sandbox-only.
-const PRODUCTION_TIER_DRIVERS = ['meta', 'slack'];
+// driver NOT in this list is sandbox-tier by default. Slack and Discord have
+// no such process (neither has a review gate like WhatsApp Business
+// verification for the permission scopes this bot needs), so both are
+// listed here — usable in BOTH sandbox and production, unlike Baileys which
+// stays sandbox-only. (Discord's MESSAGE_CONTENT privileged intent does need
+// Discord's own Bot Verification once a bot is in 100+ servers — a separate,
+// later operational concern, not a blocker at this deployment's scale.)
+const PRODUCTION_TIER_DRIVERS = ['meta', 'slack', 'discord'];
 
 // Additive-channel drivers (Slack, Discord, ...) are never selected via
 // CHANNEL_DRIVER — they run alongside whichever WhatsApp-family driver
 // (meta|baileys) is active, gated by their own env-var presence (see
 // feature-availability.js#resolveActiveChannels). Each gets a wire prefix so
-// messaging/index.js's router can tell "slack:U0123ABC" apart from a bare
-// WhatsApp phone number without any DB/session lookup. WhatsApp itself is
-// intentionally NOT in this map — a bare phone number has no prefix and
-// falls through to the single resolved CHANNEL_DRIVER, unchanged.
+// messaging/index.js's router can tell "slack:U0123ABC" / "discord:9182..."
+// apart from a bare WhatsApp phone number without any DB/session lookup.
+// WhatsApp itself is intentionally NOT in this map — a bare phone number has
+// no prefix and falls through to the single resolved CHANNEL_DRIVER, unchanged.
 const CHANNEL_PREFIXES = {
   slack: 'slack',
-  // discord: 'discord' — added in the Discord phase.
+  discord: 'discord',
 };
 
 function isKnownDriver(name) {

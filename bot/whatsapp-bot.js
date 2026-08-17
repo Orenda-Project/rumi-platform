@@ -1831,8 +1831,22 @@ const PERSISTENT_CONNECTION_DRIVERS = {
     },
     close: () => require('./shared/services/messaging/baileys-connection').close(),
   },
-  // discord: { isActive, attachInbound, onLogoutExit: null, close } — added
-  // once a Discord Gateway driver ships; nothing above needs to change.
+  discord: {
+    isActive: (env) => require('./shared/config/feature-availability').resolveActiveChannels(env).includes('discord'),
+    attachInbound: async (dispatch) => {
+      const discordEventsAdapter = require('./shared/services/messaging/inbound/discord-events.adapter');
+      await discordEventsAdapter.attach(dispatch);
+    },
+    // Unlike Baileys, there is no mid-session "you have been logged out"
+    // event for a bot token — a revoked/regenerated DISCORD_BOT_TOKEN
+    // surfaces as a LOGIN failure (at connect() time), not a live-session
+    // event, so there is nothing for onLogoutExit to subscribe to here.
+    // The login-failure path is already handled by attachInbound's own
+    // try/catch below (logs and continues — Discord being down must never
+    // take WhatsApp down), so this intentionally stays null.
+    onLogoutExit: null,
+    close: () => require('./shared/services/messaging/discord-connection').close(),
+  },
 };
 
 /**

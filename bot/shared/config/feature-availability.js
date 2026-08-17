@@ -43,7 +43,15 @@ const CHANNEL_REQUIRED_VARS = {
 // one of its listed vars is present, same presence-gate shape as FEATURES.
 const ADDITIVE_CHANNEL_REQUIRED_VARS = {
   slack: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'],
-  // discord: [...] — added in the Discord phase.
+  // Deliberately no DISCORD_PUBLIC_KEY here: that var (+ Ed25519 signature
+  // verification) is only needed for a bot using a separate HTTP
+  // "Interactions Endpoint URL" instead of the Gateway. This bot runs the
+  // Gateway (persistent WebSocket) for full message support, and with no
+  // Interactions Endpoint URL configured in the Developer Portal, Discord
+  // delivers slash commands/buttons/modals over that SAME Gateway
+  // connection too — see discord-events.adapter.js. There is no HTTP route
+  // to sign-verify at all for this driver, unlike Slack's webhook-based design.
+  discord: ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID'],
 };
 
 // Optional features → the env key(s) that switch each one on.
@@ -54,6 +62,14 @@ const FEATURES = [
     keys: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'],
     notes: 'Runs alongside your WhatsApp driver, in both sandbox and production — set via `rumi setup`\'s messaging channels step.',
     probe: 'slack',
+  },
+  {
+    name: 'Discord channel (Gateway)',
+    keys: ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID'],
+    notes: 'Runs alongside your WhatsApp driver via a persistent Gateway connection — set via `rumi setup`\'s '
+      + 'messaging channels step. MESSAGE_CONTENT is a privileged intent; needs Discord\'s own Bot Verification '
+      + 'once the bot is in 100+ servers.',
+    probe: 'discord',
   },
   { name: 'Spoken replies (text-to-speech, ElevenLabs)', keys: ['ELEVENLABS_API_KEY'] },
   { name: 'Urdu / regional voices (Uplift)', keys: ['UPLIFT_API_KEY'] },
