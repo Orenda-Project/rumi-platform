@@ -167,8 +167,18 @@ class VideoAssemblyService {
       const VideoSessionService = require('./video-session.service');
       const messages = VideoSessionService.getProgressMessages(language);
 
-      await WhatsAppService.sendVideo(from, fs.readFileSync(finalVideoPath), tempDir, messages.complete);
-      logToFile('Video sent to user', { videoRequestId, from });
+      // Prefer the durable R2 URL already uploaded above — avoids a wasted
+      // raw-buffer upload whenever it succeeded, and sidesteps every
+      // channel's own per-upload size limits (e.g. Discord's ~8MB safe
+      // ceiling on a bot DM channel). Only fall back to the raw-buffer
+      // sendVideo() when R2 upload failed after all retries (finalVideoUrl
+      // is null in that case).
+      if (finalVideoUrl) {
+        await WhatsAppService.sendVideoFromUrl(from, finalVideoUrl, messages.complete);
+      } else {
+        await WhatsAppService.sendVideo(from, fs.readFileSync(finalVideoPath), tempDir, messages.complete);
+      }
+      logToFile('Video sent to user', { videoRequestId, from, deliveredViaUrl: Boolean(finalVideoUrl) });
 
       // Issue #7: Send portal prompt after video delivery (using user's preferred language)
       const userPreferredLanguage = userId ? await getUserLanguage(userId) : language;

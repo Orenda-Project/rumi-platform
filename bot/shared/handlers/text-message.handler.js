@@ -461,6 +461,20 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         logToFile('📹 First-use intro video sent for reading assessment', { userId: user.id });
       }
 
+      // Discord has a real modal-workaround renderer for reading_assessment
+      // (see discord-flow-registry.js) — a Slack renderer is deliberately not
+      // built yet (see reading-assessment-endpoint.js's own header comment),
+      // so Slack falls through to sendFlow()'s text-conversation degrade below
+      // exactly as it did before this feature existed on Discord.
+      if (driverForIdentifier(from) === 'discord') {
+        await WhatsAppService.sendInteractiveButtons(from, {
+          body: 'Let\'s set up a reading assessment for your student. This will help measure their reading fluency and comprehension.',
+          buttons: [{ id: 'discord_start_flow:reading_assessment', title: 'Start Assessment' }],
+        });
+        await FeatureIntroService.markFeatureUsed(user.id, 'reading');
+        return;
+      }
+
       // Send WhatsApp Flow for reading assessment setup. On a channel with no
       // Flow support this becomes the equivalent text conversation (same
       // fields, same submission shape) — see messaging/text-flow-definitions.js.
@@ -1196,6 +1210,19 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       return;
     }
 
+    // Slack/Discord have a real modal-workaround registration form (see
+    // feature-registration.service.js#sendNameQuestion) that works fine on
+    // its own, with no need to have used a feature first — that gate below
+    // exists only for WhatsApp's plain-text fallback, where asking for a name
+    // out of nowhere reads as spam. Without this branch, a brand-new
+    // Slack/Discord user typing /register with zero feature usage fell
+    // through to that WhatsApp-flavored "try a feature first" guide message
+    // instead of ever seeing the actual registration form.
+    if (user?.id && (driverForIdentifier(from) === 'slack' || driverForIdentifier(from) === 'discord')) {
+      await FeatureRegistrationService.sendNameQuestion(user.id, from, responseLanguage, 'text');
+      return;
+    }
+
     // Check if user has features but missed registration (recovery path)
     // This handles users who used features but never got asked for name
     if (user?.id) {
@@ -1291,6 +1318,22 @@ async function handleTextMessage(message, from, messageBody, user = null) {
           sw: 'Sasisha mapendeleo yako ya lugha na zana ya uchunguzi.',
         })[responseLanguage] || 'Update your language and observation tool preferences.',
         buttons: [{ id: 'open_modal:settings', title: 'Open Settings' }],
+      });
+      return;
+    }
+
+    // Discord has no Slack-style trigger_id letting a button proactively open
+    // a modal — every flow (including its first screen) needs a real, current
+    // interaction to directly acknowledge. discord-modal-interactions.handler.js's
+    // tryHandleStartFlow() is what actually fires on this button's click,
+    // recognizing it by the "discord_start_flow:<kind>" customId prefix.
+    if (driverForIdentifier(from) === 'discord') {
+      await WhatsAppService.sendInteractiveButtons(from, {
+        body: ({
+          ur: 'اپنی زبان اور آبزرویشن ٹول کی ترجیحات اپ ڈیٹ کریں۔',
+          sw: 'Sasisha mapendeleo yako ya lugha na zana ya uchunguzi.',
+        })[responseLanguage] || 'Update your language and observation tool preferences.',
+        buttons: [{ id: 'discord_start_flow:settings', title: 'Open Settings' }],
       });
       return;
     }
@@ -1664,6 +1707,25 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     logToFile('📋 Add class keyword detected', { userId: user.id, keyword: addClassDetection.keyword });
     typingController.stop();
 
+    // Slack/Discord have a real Flow-equivalent (attendance's modal-workaround
+    // renderer — see slack-flow-registry.js / discord-flow-registry.js), not
+    // sendFlow()'s Meta/Baileys-shaped {flowId, flowToken} contract. Same
+    // driverForIdentifier() branch shape as /settings above.
+    if (driverForIdentifier(from) === 'slack') {
+      await WhatsAppService.sendInteractiveButtons(from, {
+        body: "Let's set up a new class for attendance tracking!",
+        buttons: [{ id: 'open_modal:attendance', title: 'Add Class' }],
+      });
+      return;
+    }
+    if (driverForIdentifier(from) === 'discord') {
+      await WhatsAppService.sendInteractiveButtons(from, {
+        body: "Let's set up a new class for attendance tracking!",
+        buttons: [{ id: 'discord_start_flow:attendance', title: 'Add Class' }],
+      });
+      return;
+    }
+
     const addClassSent = await WhatsAppService.sendFlow(from, {
       flowId: ATTENDANCE_SETUP_FLOW_ID,
       flowKind: 'class-setup',
@@ -1692,6 +1754,24 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       const result = await AttendanceConversationService.startAttendanceSession(user.id);
 
       if (result.action === 'SEND_SETUP_FLOW') {
+        // Slack/Discord have a real Flow-equivalent for attendance/class-setup
+        // — same driverForIdentifier() branch shape as /settings and the
+        // "add class" keyword branch above.
+        if (driverForIdentifier(from) === 'slack') {
+          await WhatsAppService.sendInteractiveButtons(from, {
+            body: result.message,
+            buttons: [{ id: 'open_modal:attendance', title: 'Set Up Class' }],
+          });
+          return;
+        }
+        if (driverForIdentifier(from) === 'discord') {
+          await WhatsAppService.sendInteractiveButtons(from, {
+            body: result.message,
+            buttons: [{ id: 'discord_start_flow:attendance', title: 'Set Up Class' }],
+          });
+          return;
+        }
+
         // User has no classes — set one up, as a Flow or as the text equivalent.
         const setupSent = await WhatsAppService.sendFlow(from, {
           flowId: ATTENDANCE_SETUP_FLOW_ID,
@@ -1738,6 +1818,14 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     if (user?.first_name) {
       // User already registered - confirm and guide to menu
       await WhatsAppService.sendMessage(from, `✅ You're already registered, ${user.first_name}! Type /menu to see what I can help you with.`);
+      return;
+    }
+
+    // Slack/Discord's registration form works standalone, with no need to
+    // have used a feature first — see the identical branch on the /register
+    // command above for the full rationale.
+    if (user?.id && (driverForIdentifier(from) === 'slack' || driverForIdentifier(from) === 'discord')) {
+      await FeatureRegistrationService.sendNameQuestion(user.id, from, responseLanguage, 'text');
       return;
     }
 

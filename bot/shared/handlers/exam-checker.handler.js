@@ -12,6 +12,36 @@ const WhatsAppService = require('../services/whatsapp.service');
 const { uploadImageWithRetry } = require('../storage/r2');
 const { logToFile } = require('../utils/logger');
 const { runWithCorrelation, generateCorrelationId } = require('../utils/structured-logger');
+const { driverForIdentifier } = require('../services/messaging/channel-registry');
+
+/**
+ * Sends the exam-confirm student-confirmation screen on Slack/Discord's
+ * modal-workaround renderers, or falls through to the Meta sendFlow() path
+ * for WhatsApp/Baileys. Mirrors /settings's own driverForIdentifier() branch
+ * in text-message.handler.js — both channels' flow registries key
+ * exam_confirm's flowToken as the exam session's own session.id directly
+ * (never buildFlowToken()'s "userId:kind:timestamp"), matching how the Meta
+ * Flow already passes flowToken: session.id at sendFlow() time.
+ * @returns {Promise<boolean>} true if a Slack/Discord button was sent (caller should not also call sendFlow())
+ */
+async function trySendExamConfirmModalTrigger(from, flowResponse) {
+  const driverName = driverForIdentifier(from);
+  if (driverName !== 'slack' && driverName !== 'discord') return false;
+
+  const body = flowResponse.body || 'Tap below to confirm the student names before I grade them.';
+  if (driverName === 'slack') {
+    await WhatsAppService.sendInteractiveButtons(from, {
+      body,
+      buttons: [{ id: `open_modal:exam_confirm:${flowResponse.flowToken}`, title: flowResponse.buttonText || 'Confirm Students' }],
+    });
+  } else {
+    await WhatsAppService.sendInteractiveButtons(from, {
+      body,
+      buttons: [{ id: `discord_start_flow:exam_confirm:${flowResponse.flowToken}`, title: flowResponse.buttonText || 'Confirm Students' }],
+    });
+  }
+  return true;
+}
 
 // Trigger keywords for exam checking (English + Urdu + Arabic)
 const EXAM_CHECK_KEYWORDS = [
@@ -113,16 +143,22 @@ async function handleExamText(message, from, user) {
       if (response.interactive) {
         await WhatsAppService.sendInteractiveMessage(from, response.interactive);
       } else if (response.flow) {
-        // data_exchange flow — pass the flow_token; the endpoint serves the
-        // screen data on INIT. (Previously called a method that did not exist.)
-        await WhatsAppService.sendFlow(from, {
-          flowId: response.flow.id,
-          flowToken: response.flow.flowToken,
-          header: response.flow.header,
-          body: response.flow.body,
-          buttonText: response.flow.buttonText || 'Open',
-          footer: 'Powered by Rumi',
-        });
+        // Slack/Discord have a real modal-workaround renderer for
+        // exam_confirm — see the button-handler branch above for the full
+        // rationale (trySendExamConfirmModalTrigger's own doc comment).
+        const sentViaModal = await trySendExamConfirmModalTrigger(from, response.flow);
+        if (!sentViaModal) {
+          // data_exchange flow — pass the flow_token; the endpoint serves the
+          // screen data on INIT. (Previously called a method that did not exist.)
+          await WhatsAppService.sendFlow(from, {
+            flowId: response.flow.id,
+            flowToken: response.flow.flowToken,
+            header: response.flow.header,
+            body: response.flow.body,
+            buttonText: response.flow.buttonText || 'Open',
+            footer: 'Powered by Rumi',
+          });
+        }
       } else {
         await WhatsAppService.sendMessage(from, response.text);
       }
@@ -251,16 +287,24 @@ async function handleExamButton(buttonId, from, user) {
       if (response.interactive) {
         await WhatsAppService.sendInteractiveMessage(from, response.interactive);
       } else if (response.flow) {
-        // data_exchange flow — pass the flow_token; the endpoint serves the
-        // screen data on INIT. (Previously called a method that did not exist.)
-        await WhatsAppService.sendFlow(from, {
-          flowId: response.flow.id,
-          flowToken: response.flow.flowToken,
-          header: response.flow.header,
-          body: response.flow.body,
-          buttonText: response.flow.buttonText || 'Open',
-          footer: 'Powered by Rumi',
-        });
+        // Slack/Discord have a real modal-workaround renderer for
+        // exam_confirm (see slack-flow-registry.js / discord-flow-registry.js)
+        // — sendFlow()'s Meta/Baileys-shaped {flowId, flowToken} contract is a
+        // no-op stub on both. Tried first; falls through to sendFlow() only
+        // for WhatsApp/Baileys (or if the modal-workaround send itself fails).
+        const sentViaModal = await trySendExamConfirmModalTrigger(from, response.flow);
+        if (!sentViaModal) {
+          // data_exchange flow — pass the flow_token; the endpoint serves the
+          // screen data on INIT. (Previously called a method that did not exist.)
+          await WhatsAppService.sendFlow(from, {
+            flowId: response.flow.id,
+            flowToken: response.flow.flowToken,
+            header: response.flow.header,
+            body: response.flow.body,
+            buttonText: response.flow.buttonText || 'Open',
+            footer: 'Powered by Rumi',
+          });
+        }
       } else {
         await WhatsAppService.sendMessage(from, response.text);
       }
@@ -324,16 +368,22 @@ async function handleExamFlow(flowId, flowResponse, from, user) {
       if (response.interactive) {
         await WhatsAppService.sendInteractiveMessage(from, response.interactive);
       } else if (response.flow) {
-        // data_exchange flow — pass the flow_token; the endpoint serves the
-        // screen data on INIT. (Previously called a method that did not exist.)
-        await WhatsAppService.sendFlow(from, {
-          flowId: response.flow.id,
-          flowToken: response.flow.flowToken,
-          header: response.flow.header,
-          body: response.flow.body,
-          buttonText: response.flow.buttonText || 'Open',
-          footer: 'Powered by Rumi',
-        });
+        // Slack/Discord have a real modal-workaround renderer for
+        // exam_confirm — see the button-handler branch above for the full
+        // rationale (trySendExamConfirmModalTrigger's own doc comment).
+        const sentViaModal = await trySendExamConfirmModalTrigger(from, response.flow);
+        if (!sentViaModal) {
+          // data_exchange flow — pass the flow_token; the endpoint serves the
+          // screen data on INIT. (Previously called a method that did not exist.)
+          await WhatsAppService.sendFlow(from, {
+            flowId: response.flow.id,
+            flowToken: response.flow.flowToken,
+            header: response.flow.header,
+            body: response.flow.body,
+            buttonText: response.flow.buttonText || 'Open',
+            footer: 'Powered by Rumi',
+          });
+        }
       } else {
         await WhatsAppService.sendMessage(from, response.text);
       }
