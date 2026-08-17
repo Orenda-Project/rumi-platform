@@ -120,10 +120,58 @@ instead; and **they need a second phone number to message it from**, because Rum
 and `validate`; `WEBHOOK_VERIFY_TOKEN` has a `generate()`). Then `defaultProbes.whatsapp(env)`, then
 `META_REMAINING_STEPS` for what only they can do in Meta's console.
 
-### F. Finish
+### F. Connect Slack and Discord (optional, additive)
+
+Both run **alongside** WhatsApp, not instead of it — a teacher can reach Rumi on any combination of the
+three at once, on the same account. Neither is gated by `CHANNEL_DRIVER`; each turns on the moment its own
+env vars are present. Ask plainly:
+
+> Also connect Slack? Also connect Discord?
+
+If the answer is no to either, skip it — WhatsApp alone is a complete setup.
+
+**Slack.** Slack posts every event/interaction to a Request URL it calls, so the bot must be reachable at a
+public HTTPS address first (an `ngrok http <port>` tunnel while testing locally, the real host in
+production) — get that URL before starting the walkthrough. Then:
+
+```js
+const wizard = require('./bot/scripts/setup/interactive-setup');
+await wizard.walkSlackAppConfig(io, baseUrl);   // the app-creation checklist, one screen at a time
+```
+
+walks through creating the app, Bot Token Scopes, Event Subscriptions, Interactivity, and the 9 Slash
+Commands — each screen already has the exact values written into
+[bot/scripts/setup/fields.js](../../../bot/scripts/setup/fields.js) (`SLACK_BOT_SCOPES`,
+`SLACK_SLASH_COMMANDS`, `slackRequestUrls(baseUrl)`). Collect `SLACK_SIGNING_SECRET` and `SLACK_BOT_TOKEN`,
+write them, then verify with `defaultProbes.slack(env)` — it checks not just that the token authenticates
+but that it actually carries all 5 required scopes, naming any that are missing.
+
+**Discord.** No public URL needed at all — Discord uses a persistent Gateway connection the bot opens
+itself, not a webhook Discord calls. Shorter walkthrough:
+
+```js
+await wizard.walkDiscordAppConfig(io);   // create app, bot token, Message Content intent, invite, app id
+```
+
+Collect `DISCORD_BOT_TOKEN` and `DISCORD_APPLICATION_ID`, write them, verify with
+`defaultProbes.discord(env)` (lighter than Slack's — just confirms the token authenticates and the
+application id matches; Discord has no clean per-permission check the way Slack's `x-oauth-scopes` header
+gives one). Then register the slash commands — this is a script, not a manual per-command UI step like
+Slack's:
+
+```bash
+npm run discord:register-commands
+```
+
+Flag the one privileged setting explicitly: **Message Content Intent** must be turned on (Bot tab →
+Privileged Gateway Intents) or the bot will connect but never see what a teacher actually types. It's
+self-togglable with no review below 100 servers.
+
+### G. Finish
 
 Run `rumi doctor` and read it back in plain language. Then tell them: `rumi start`, message the number from
-their **second** number, and try `Hi`, `/menu`, `/reading test`.
+their **second** number, and try `Hi`, `/menu`, `/reading test` — and the same on Slack/Discord if either
+was connected, each in its own DM with the bot.
 
 ### What you add that the wizard cannot
 
