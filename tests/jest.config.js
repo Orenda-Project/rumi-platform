@@ -15,6 +15,7 @@ module.exports = {
   moduleNameMapper: {
     '^openai$': '<rootDir>/node_modules/openai',
     '^ioredis$': '<rootDir>/node_modules/ioredis',
+    '^discord\\.js$': '<rootDir>/node_modules/discord.js',
     // axios + form-data live in bot/node_modules (not root), and the root test
     // job runs before bot deps install — so source that requires them can't
     // resolve. Map to lightweight stubs (same pattern as pino/canvas above) so
