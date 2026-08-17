@@ -19,8 +19,10 @@ function loadRoutedHandler() {
   const modalInteractions = {
     isOpenModalAction: (id) => typeof id === 'string' && id.startsWith('open_modal:'),
     isBackAction: (id) => typeof id === 'string' && id.endsWith('_back'),
+    isAttendanceFinishAction: (id) => id === 'attendance_finish',
     handleOpenModal: jest.fn().mockResolvedValue(true),
     handleBackButton: jest.fn().mockResolvedValue(true),
+    handleAttendanceFinish: jest.fn().mockResolvedValue(true),
     handleViewSubmission: jest.fn().mockResolvedValue({ response_action: 'clear' }),
   };
   jest.doMock('../../bot/shared/routes/slack-modal-interactions.handler', () => modalInteractions);
@@ -87,6 +89,20 @@ describe('makeRoutedInteractionsHandler dispatch', () => {
 
     expect(modalInteractions.handleBackButton).toHaveBeenCalledTimes(1);
     expect(chatHandler).not.toHaveBeenCalled();
+  });
+
+  it('routes an attendance_finish block_actions to handleAttendanceFinish, acking 200 immediately', async () => {
+    const { routedHandler, modalInteractions, chatHandler } = loadRoutedHandler();
+    const req = { body: { payload: JSON.stringify({ type: 'block_actions', actions: [{ action_id: 'attendance_finish' }] }) } };
+    const res = fakeRes();
+
+    await routedHandler(req, res);
+
+    expect(modalInteractions.handleAttendanceFinish).toHaveBeenCalledTimes(1);
+    expect(modalInteractions.handleOpenModal).not.toHaveBeenCalled();
+    expect(modalInteractions.handleBackButton).not.toHaveBeenCalled();
+    expect(chatHandler).not.toHaveBeenCalled();
+    expect(res._calls.status).toEqual([200]);
   });
 
   it('falls through to the ordinary chat handler for a ordinary block_actions click', async () => {

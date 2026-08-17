@@ -61,6 +61,79 @@ function registerAll() {
       if (text) await slackWebClient.postMessage(ctx.slackUserId, text);
     },
   }));
+
+  // attendance-setup-endpoint.js's own exchange() drives ADD_STUDENT's "Add &
+  // Continue" loop by returning {screen: 'ADD_STUDENT', data: {...}} again
+  // (non-terminal) on every add — buildEndpointModal's generic handleSubmission
+  // already pushes that as the next view with no special-casing needed here,
+  // unlike Discord's modal-workaround (which needs onScreenLoop/loopScreens
+  // because showModal() must directly ack a fresh interaction, never a
+  // response_action push). The "I'm Done" action is NOT a view_submission at
+  // all — see slack-views/attendance.view.js's own header comment — it's a
+  // block_actions click on the `attendance_finish` button living inside the
+  // ADD_STUDENT view, handled by slack-modal-interactions.handler.js calling
+  // attendance.handleDoneAction(...) directly (bypassing exchange()'s
+  // screenData._action indirection entirely, since there's no view_submission
+  // state to read it from for a plain button click).
+  const attendance = require('./attendance-setup-endpoint');
+  const attendanceView = require('./slack-views/attendance.view');
+  register('attendance', buildEndpointModal({
+    kind: 'attendance',
+    init: (ctx) => attendance.handleSetupInit(ctx.userId),
+    exchange: (ctx, screen, screenData) => attendance.handleSetupDataExchange(ctx.userId, screen, screenData),
+    screenToView: attendanceView.screenToView,
+    viewToScreenData: attendanceView.viewToScreenData,
+    firstInputBlockId: attendanceView.FIRST_INPUT_BLOCK_ID,
+    metadataCarry: attendanceView.metadataCarry,
+    onFinish: async (response, ctx) => {
+      const { success_message: success } = response.data || {};
+      if (success) await slackWebClient.postMessage(ctx.slackUserId, success);
+    },
+  }));
+
+  // exam_confirm's flowToken IS the exam session's own session.id (embedded
+  // in the triggering button's action_id — see
+  // slack-modal-interactions.handler.js's parseOpenModalAction()), never
+  // buildFlowToken()'s minted "userId:kind:timestamp" token, matching
+  // discord-flow-registry.js's identical exception and how the Meta Flow
+  // already passes flowToken: session.id at sendFlow() time.
+  //
+  // exam-confirm-endpoint.js's own exchange() does NOT drive the exam
+  // workflow forward — it only returns the selected student ids in
+  // extension_message_response, matching the Meta Flow's NFM_REPLY shape. On
+  // Meta, flow-response.handler.js's EXAM_CONFIRM_FLOW_ID branch is what
+  // actually feeds that payload into ExamCheckerOrchestrator.process(), which
+  // drives confirm -> detect questions -> grade. onFinish here replicates
+  // that exact hand-off for Slack (mirroring discord-flow-registry.js's own
+  // exam_confirm onFinish verbatim), looking the session back up by id to
+  // recover the userId/from ExamCheckerOrchestrator.process() needs (ctx only
+  // carries the session id as flowToken).
+  const examConfirm = require('./exam-confirm-endpoint');
+  const examConfirmView = require('./slack-views/exam-confirm.view');
+  register('exam_confirm', buildEndpointModal({
+    kind: 'exam_confirm',
+    init: (ctx) => examConfirm.handleExamConfirmInit(ctx.flowToken),
+    exchange: (ctx, screen, screenData) => examConfirm.handleExamConfirmDataExchange(ctx.flowToken, screen, screenData),
+    back: (ctx) => examConfirm.handleExamConfirmBack(ctx.flowToken),
+    screenToView: examConfirmView.screenToView,
+    viewToScreenData: examConfirmView.viewToScreenData,
+    firstInputBlockId: examConfirmView.FIRST_INPUT_BLOCK_ID,
+    onFinish: async (response, ctx) => {
+      const confirmedStudents = response?.data?.extension_message_response?.params?.confirmed_students || [];
+      const ExamSessionService = require('../services/exam-checker/exam-session.service');
+      // exam-checker.orchestrator.js exports { ExamCheckerOrchestrator, SESSION_STATES }
+      // (a named export, not the class/object directly) — destructure it, or
+      // ExamCheckerOrchestrator.process below is undefined.
+      const { ExamCheckerOrchestrator } = require('../services/exam-checker/exam-checker.orchestrator');
+      const session = await ExamSessionService.getById(ctx.flowToken);
+      if (!session) return;
+      await ExamCheckerOrchestrator.process(
+        { type: 'flow', flowResponse: { confirmed_students: confirmedStudents } },
+        session.user_id,
+        session.recipient_identifier,
+      );
+    },
+  }));
 }
 
 let registered = false;

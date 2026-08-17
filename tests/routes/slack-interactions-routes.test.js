@@ -193,4 +193,31 @@ describe('slack-interactions.routes — /interactions', () => {
     expect(calls.status).toEqual([401]);
     expect(dispatch).not.toHaveBeenCalled();
   });
+
+  it('routes a block_actions "attendance_finish" click to the modal machinery instead of the ordinary chat handler', async () => {
+    const { router, dispatch } = loadRouter();
+    const payloadObj = {
+      type: 'block_actions',
+      user: { id: 'U0123ABC' },
+      view: { id: 'V0123VIEW', private_metadata: JSON.stringify({ kind: 'attendance', screen: 'ADD_STUDENT', flowToken: 'db-user-1:attendance:169' }) },
+      actions: [{ action_id: 'attendance_finish' }],
+    };
+    const rawBody = `payload=${encodeURIComponent(JSON.stringify(payloadObj))}`;
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const req = {
+      headers: {
+        'x-slack-request-timestamp': timestamp,
+        'x-slack-signature': sign(timestamp, rawBody),
+      },
+      rawBody: Buffer.from(rawBody),
+      path: '/interactions',
+    };
+
+    const { calls } = await invokeRoute(router, 'post', '/interactions', req);
+    // acked immediately, same as open_modal/back — the actual modal update is a separate API call.
+    expect(calls.status).toEqual([200]);
+    expect(calls.send).toEqual(['']);
+    // never falls through to the ordinary chat interactivity dispatch.
+    expect(dispatch).not.toHaveBeenCalled();
+  });
 });

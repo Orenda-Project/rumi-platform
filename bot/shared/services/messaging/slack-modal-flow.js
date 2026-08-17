@@ -27,8 +27,23 @@ function isTerminalScreen(screen) {
   return screen === 'SUCCESS';
 }
 
-function encodeMetadata(kind, screen, flowToken) {
-  return JSON.stringify({ kind, screen, flowToken });
+/**
+ * @param {string} kind
+ * @param {string} screen
+ * @param {string} flowToken
+ * @param {object} [carry] - optional renderer-chosen subset of the endpoint's
+ *   response `data` to round-trip verbatim to the NEXT interaction against
+ *   this view (or any view pushed/updated from it) — e.g. attendance's
+ *   ADD_STUDENT screen carries {list_id, class_display} here so a
+ *   non-view_submission block_actions click (the "I'm Done" button; see
+ *   slack-views/attendance.view.js) can still recover them, since Slack does
+ *   NOT round-trip a view's rendered `data` on a plain block_actions
+ *   interaction the way it round-trips private_metadata. Every other kind
+ *   omits this — private_metadata stays exactly {kind, screen, flowToken} for
+ *   registration/settings/exam_confirm, unchanged.
+ */
+function encodeMetadata(kind, screen, flowToken, carry) {
+  return JSON.stringify(carry ? { kind, screen, flowToken, carry } : { kind, screen, flowToken });
 }
 
 function decodeMetadata(privateMetadata) {
@@ -47,12 +62,13 @@ function decodeMetadata(privateMetadata) {
  * @param {(ctx: object, screen: string, screenData: object) => Promise<{screen: string, data: object} | {data: {error: {message: string}}}>} config.exchange
  * @param {(ctx: object, screen: string) => Promise<{screen: string, data: object}>} [config.back]
  * @param {(screen: string, data: object, ctx: object) => object} config.screenToView - builds a Slack `view` object for a screen
- * @param {(screen: string, stateValues: object) => object} config.viewToScreenData - extracts screenData from a view_submission's state.values
+ * @param {(screen: string, stateValues: object, carried: object) => object} config.viewToScreenData - extracts screenData from a view_submission's state.values, plus whatever was carried in private_metadata (see metadataCarry below)
  * @param {Object<string, string>} config.firstInputBlockId - per-screen block_id to attach a validation error to (screen -> blockId)
  * @param {(response: {screen: string, data: object}, ctx: object) => Promise<void>} [config.onFinish] - called once, on the terminal screen
+ * @param {(screen: string, data: object) => (object|undefined)} [config.metadataCarry] - optional: pick a subset of a screen's response `data` to round-trip in private_metadata's `carry` field, for kinds whose endpoint needs data back that view_submission's own state.values can't carry (e.g. attendance's ADD_STUDENT needs {list_id, class_display} back on every submission — see slack-views/attendance.view.js)
  */
 function buildEndpointModal(config) {
-  const { kind, init, exchange, back, screenToView, viewToScreenData, firstInputBlockId, onFinish } = config;
+  const { kind, init, exchange, back, screenToView, viewToScreenData, firstInputBlockId, onFinish, metadataCarry } = config;
 
   if (!kind || typeof init !== 'function' || typeof exchange !== 'function'
       || typeof screenToView !== 'function' || typeof viewToScreenData !== 'function') {
@@ -65,7 +81,8 @@ function buildEndpointModal(config) {
     /** Called when a shortcut/button opens the FIRST modal. Returns a Slack `views.open` `view` argument. */
     async buildInitialView(ctx) {
       const response = await init(ctx);
-      const metadata = encodeMetadata(kind, response.screen, ctx.flowToken);
+      const carry = metadataCarry ? metadataCarry(response.screen, response.data) : undefined;
+      const metadata = encodeMetadata(kind, response.screen, ctx.flowToken, carry);
       return screenToView(response.screen, response.data, { ...ctx, metadata });
     },
 
@@ -76,8 +93,8 @@ function buildEndpointModal(config) {
      *   {response_action: 'clear'}      — the flow finished (terminal screen)
      *   {response_action: 'errors', errors: {blockId: message}} — validation failure, modal stays open
      */
-    async handleSubmission(ctx, screen, stateValues) {
-      const screenData = viewToScreenData(screen, stateValues);
+    async handleSubmission(ctx, screen, stateValues, carried) {
+      const screenData = viewToScreenData(screen, stateValues, carried || {});
       const response = await exchange(ctx, screen, screenData);
 
       if (response?.data?.error) {
@@ -93,7 +110,8 @@ function buildEndpointModal(config) {
         return { response_action: 'clear' };
       }
 
-      const metadata = encodeMetadata(kind, response.screen, ctx.flowToken);
+      const carry = metadataCarry ? metadataCarry(response.screen, response.data) : undefined;
+      const metadata = encodeMetadata(kind, response.screen, ctx.flowToken, carry);
       const nextView = screenToView(response.screen, response.data, { ...ctx, metadata });
       return { response_action: 'push', view: nextView };
     },

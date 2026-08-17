@@ -101,11 +101,17 @@ function makeRoutedInteractionsHandler(dispatch) {
 
     if (payload.type === 'block_actions') {
       const action = payload?.actions?.[0];
-      if (modalInteractions.isOpenModalAction(action?.action_id) || modalInteractions.isBackAction(action?.action_id)) {
+      if (
+        modalInteractions.isOpenModalAction(action?.action_id)
+        || modalInteractions.isBackAction(action?.action_id)
+        || modalInteractions.isAttendanceFinishAction(action?.action_id)
+      ) {
         res.status(200).send(''); // ack immediately — the modal update is a separate API call
         try {
           if (modalInteractions.isOpenModalAction(action.action_id)) {
             await modalInteractions.handleOpenModal(payload);
+          } else if (modalInteractions.isAttendanceFinishAction(action.action_id)) {
+            await modalInteractions.handleAttendanceFinish(payload);
           } else {
             await modalInteractions.handleBackButton(payload);
           }
