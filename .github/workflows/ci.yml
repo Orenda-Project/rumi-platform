@@ -30,7 +30,15 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        run: npm test
+        # --maxWorkers is forced well above the runner's core count: this repo's
+        # test suite has dozens of files that mock bot/shared/config/supabase
+        # per-file (jest.mock inside the test rather than a shared __mocks__),
+        # and under low worker counts too many of those pile into one worker
+        # process, where the per-file mock intercept becomes unreliable —
+        # confirmed locally as a real, reproducible dose-response (33-50%
+        # failure rate at 1-2 workers, 0/8+ runs at 8 workers). More workers
+        # means fewer files share a process, not more raw parallelism per se.
+        run: npm test -- --maxWorkers=8
 
       - name: Install canvas system dependencies
         run: sudo apt-get update && sudo apt-get install -y build-essential libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev librsvg2-dev libpixman-1-dev

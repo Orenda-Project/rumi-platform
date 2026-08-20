@@ -98,6 +98,10 @@ const {
   getSendTargetsForUser,
 } = require('../../bot/shared/database/bot-helpers');
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe('getOrCreateUserByChannel', () => {
   beforeEach(() => {
     mockState.existingWhatsappUser = null;
