@@ -20,9 +20,11 @@ function loadRoutedHandler() {
     isOpenModalAction: (id) => typeof id === 'string' && id.startsWith('open_modal:'),
     isBackAction: (id) => typeof id === 'string' && id.endsWith('_back'),
     isAttendanceFinishAction: (id) => id === 'attendance_finish',
+    isCountryBucketAction: (id) => id === 'country_bucket_select',
     handleOpenModal: jest.fn().mockResolvedValue(true),
     handleBackButton: jest.fn().mockResolvedValue(true),
     handleAttendanceFinish: jest.fn().mockResolvedValue(true),
+    handleCountryBucketChange: jest.fn().mockResolvedValue(true),
     handleViewSubmission: jest.fn().mockResolvedValue({ response_action: 'clear' }),
   };
   jest.doMock('../../bot/shared/routes/slack-modal-interactions.handler', () => modalInteractions);
@@ -101,6 +103,21 @@ describe('makeRoutedInteractionsHandler dispatch', () => {
     expect(modalInteractions.handleAttendanceFinish).toHaveBeenCalledTimes(1);
     expect(modalInteractions.handleOpenModal).not.toHaveBeenCalled();
     expect(modalInteractions.handleBackButton).not.toHaveBeenCalled();
+    expect(chatHandler).not.toHaveBeenCalled();
+    expect(res._calls.status).toEqual([200]);
+  });
+
+  it('routes a country_bucket_select block_actions to handleCountryBucketChange, acking 200 immediately', async () => {
+    const { routedHandler, modalInteractions, chatHandler } = loadRoutedHandler();
+    const req = { body: { payload: JSON.stringify({ type: 'block_actions', actions: [{ action_id: 'country_bucket_select', selected_option: { value: 'europe' } }] }) } };
+    const res = fakeRes();
+
+    await routedHandler(req, res);
+
+    expect(modalInteractions.handleCountryBucketChange).toHaveBeenCalledTimes(1);
+    expect(modalInteractions.handleOpenModal).not.toHaveBeenCalled();
+    expect(modalInteractions.handleBackButton).not.toHaveBeenCalled();
+    expect(modalInteractions.handleAttendanceFinish).not.toHaveBeenCalled();
     expect(chatHandler).not.toHaveBeenCalled();
     expect(res._calls.status).toEqual([200]);
   });

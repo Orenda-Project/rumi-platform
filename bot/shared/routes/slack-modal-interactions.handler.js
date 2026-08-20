@@ -18,6 +18,15 @@
  *     button click, NOT a view_submission — see slack-views/attendance.view.js's
  *     own header comment for why this can't just be the modal's native
  *     submit). Calls attendance-setup-endpoint.js's handleDoneAction directly.
+ *   - block_actions with a `country_bucket_select` action_id — registration's
+ *     PERSONAL_INFO screen's region-bucket picker (see
+ *     slack-views/registration.view.js's own header comment: Slack's
+ *     static_select caps at 100 options, so the 164-country field is split
+ *     into a region-bucket picker + a country picker filtered to that
+ *     bucket). Picking a region live-updates the SAME open modal via
+ *     views.update, re-rendering the country field's options — a real bug
+ *     fix (registration on Slack failed 100% of the time before this), not
+ *     a pre-emptive design choice.
  */
 
 const { logToFile } = require('../utils/logger');
@@ -25,6 +34,8 @@ const flowRegistry = require('./slack-flow-registry');
 const slackWebClient = require('./../services/messaging/slack-web-client');
 const { decodeMetadata } = require('../services/messaging/slack-modal-flow');
 const { getOrCreateUserByChannel } = require('../database/bot-helpers');
+const registrationView = require('./slack-views/registration.view');
+const { COUNTRIES_DROPDOWN } = require('../config/registration-data');
 
 const OPEN_MODAL_PREFIX = 'open_modal:';
 const BACK_ACTION_SUFFIX = '_back';
@@ -40,6 +51,10 @@ function isBackAction(actionId) {
 
 function isAttendanceFinishAction(actionId) {
   return actionId === ATTENDANCE_FINISH_ACTION;
+}
+
+function isCountryBucketAction(actionId) {
+  return actionId === registrationView.COUNTRY_BUCKET_ACTION_ID;
 }
 
 function kindFromBackAction(actionId) {
@@ -165,6 +180,43 @@ async function handleAttendanceFinish(payload) {
 }
 
 /**
+ * A `block_actions` payload whose action is registration's PERSONAL_INFO
+ * region-bucket picker (`country_bucket_select`). Live-updates the SAME open
+ * modal so the country field's options refresh to the newly-picked region —
+ * Slack's standard "dependent select menus" pattern. The countries list
+ * itself is a static, region-agnostic dropdown (registration-endpoint.js
+ * always returns COUNTRIES_DROPDOWN verbatim, never filtered per-user), so
+ * reading it directly here instead of re-calling init() is safe and matches
+ * what screenToView() would receive either way. The already-typed full_name
+ * value is preserved via payload.view.state.values, since Slack's
+ * views.update fully replaces the view — without this, picking a region
+ * would silently wipe out anything the teacher had already typed.
+ * Returns true if this payload was handled here.
+ */
+async function handleCountryBucketChange(payload) {
+  const action = payload?.actions?.[0];
+  if (!action || !isCountryBucketAction(action.action_id)) return false;
+
+  const { kind, screen, flowToken } = decodeMetadata(payload.view?.private_metadata);
+  if (kind !== 'registration' || screen !== 'PERSONAL_INFO') return true;
+
+  const ctx = buildCtx(payload.user?.id, flowToken);
+  const selectedCountryBucket = action.selected_option?.value || null;
+  const fullNameValue = payload.view?.state?.values?.full_name_block?.full_name?.value || '';
+
+  try {
+    const metadata = payload.view.private_metadata;
+    const view = registrationView.screenToView('PERSONAL_INFO', { countries: COUNTRIES_DROPDOWN }, {
+      ...ctx, metadata, selectedCountryBucket, fullNameValue,
+    });
+    await slackWebClient.updateView(payload.view.id, view);
+  } catch (error) {
+    logToFile('❌ Slack modal: country bucket change handling failed', { error: error.message, stack: error.stack });
+  }
+  return true;
+}
+
+/**
  * A `block_actions` payload whose action is a modal's own Back button
  * (`<kind>_back`). Returns true if this payload was handled here.
  */
@@ -220,10 +272,12 @@ module.exports = {
   handleOpenModal,
   handleBackButton,
   handleAttendanceFinish,
+  handleCountryBucketChange,
   handleViewSubmission,
   isOpenModalAction,
   isBackAction,
   isAttendanceFinishAction,
+  isCountryBucketAction,
   parseOpenModalAction,
   OPEN_MODAL_PREFIX,
   ATTENDANCE_FINISH_ACTION,

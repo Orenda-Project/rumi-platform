@@ -9,11 +9,39 @@
  * multi_static_select rather than checkboxes. Lives next to the endpoint it
  * renders, same principle as docs/flows/ keeping sanitized JSON next to the
  * Flow it documents.
+ *
+ * PERSONAL_INFO's `country` field is a REAL, confirmed bug fix, not a
+ * pre-emptive design choice: Slack's static_select caps at 100 options
+ * (confirmed live — Slack's API itself rejects a 164-option static_select
+ * with "no more than 100 items allowed"), so registration on Slack failed
+ * every single time the modal tried to open. Fixed with the same 2-step
+ * region-bucket-then-country picker Discord's registration view already
+ * uses — reusing discord-country-regions.js's buildBuckets() (a pure,
+ * channel-agnostic function over a countries array, despite the file's
+ * name) rather than duplicating the bucket data a second time.
+ *
+ * Unlike Discord's sequential chat-message picker, Slack renders both
+ * selects in ONE modal screen at once (a modal can't sequence steps the way
+ * Discord's ordinary chat messages can), using Slack's standard "dependent
+ * select menus" pattern: picking a region fires a block_actions event
+ * immediately (Slack always sends one for a static_select pick, even inside
+ * an open modal, with no special config needed), which
+ * slack-modal-interactions.handler.js#handleCountryBucketChange answers with
+ * a live views.update — re-rendering this same screenToView() with the
+ * newly-picked bucket, so the country field's options refresh to match.
  */
+
+const { buildBuckets } = require('../../config/discord-country-regions');
+
+const COUNTRY_BUCKET_ACTION_ID = 'country_bucket_select';
 
 function toOption(row) {
   // Block Kit option text is capped at 75 chars; Flow dropdown rows are {id, title}.
   return { text: { type: 'plain_text', text: String(row.title).slice(0, 75) }, value: String(row.id) };
+}
+
+function bucketOption(bucket) {
+  return { text: { type: 'plain_text', text: String(bucket.title).slice(0, 75) }, value: bucket.id };
 }
 
 function backButton() {
@@ -28,6 +56,11 @@ function screenToView(screen, data, ctx) {
   const metadata = ctx.metadata;
 
   if (screen === 'PERSONAL_INFO') {
+    const buckets = buildBuckets(data.countries);
+    const selectedBucketId = ctx.selectedCountryBucket || null;
+    const activeBucket = buckets.find((b) => b.id === selectedBucketId) || buckets[0];
+    const selectedBucketOption = buckets.find((b) => b.id === selectedBucketId);
+
     return {
       type: 'modal',
       callback_id: 'registration',
@@ -38,12 +71,36 @@ function screenToView(screen, data, ctx) {
         {
           type: 'input', block_id: 'full_name_block',
           label: { type: 'plain_text', text: 'Full name' },
-          element: { type: 'plain_text_input', action_id: 'full_name' },
+          element: {
+            type: 'plain_text_input', action_id: 'full_name',
+            ...(ctx.fullNameValue ? { initial_value: ctx.fullNameValue } : {}),
+          },
+        },
+        {
+          // dispatch_action: true is REQUIRED here — confirmed live, not a
+          // guess: without it, an `input` block's element behaves like an
+          // ordinary, inert form field (Slack updates its own displayed
+          // value locally, but never sends the block_actions event this
+          // live-update mechanism depends on). `actions` blocks (like the
+          // Back button below) fire block_actions on interaction by
+          // default; `input` blocks do not, unless told to.
+          type: 'input', block_id: 'country_bucket_block', dispatch_action: true,
+          label: { type: 'plain_text', text: 'Region' },
+          element: {
+            type: 'static_select', action_id: COUNTRY_BUCKET_ACTION_ID,
+            placeholder: { type: 'plain_text', text: 'Pick a region' },
+            options: buckets.map(bucketOption),
+            ...(selectedBucketOption ? { initial_option: bucketOption(selectedBucketOption) } : {}),
+          },
         },
         {
           type: 'input', block_id: 'country_block',
           label: { type: 'plain_text', text: 'Country' },
-          element: { type: 'static_select', action_id: 'country', options: data.countries.map(toOption) },
+          element: {
+            type: 'static_select', action_id: 'country',
+            placeholder: { type: 'plain_text', text: 'Pick a country' },
+            options: activeBucket.countries.map(toOption),
+          },
         },
       ],
     };
@@ -156,4 +213,4 @@ const FIRST_INPUT_BLOCK_ID = {
   ORG_DETAILS: 'organization_other_block',
 };
 
-module.exports = { screenToView, viewToScreenData, FIRST_INPUT_BLOCK_ID, toOption };
+module.exports = { screenToView, viewToScreenData, FIRST_INPUT_BLOCK_ID, toOption, COUNTRY_BUCKET_ACTION_ID };

@@ -105,6 +105,7 @@ function makeRoutedInteractionsHandler(dispatch) {
         modalInteractions.isOpenModalAction(action?.action_id)
         || modalInteractions.isBackAction(action?.action_id)
         || modalInteractions.isAttendanceFinishAction(action?.action_id)
+        || modalInteractions.isCountryBucketAction(action?.action_id)
       ) {
         res.status(200).send(''); // ack immediately — the modal update is a separate API call
         try {
@@ -112,6 +113,8 @@ function makeRoutedInteractionsHandler(dispatch) {
             await modalInteractions.handleOpenModal(payload);
           } else if (modalInteractions.isAttendanceFinishAction(action.action_id)) {
             await modalInteractions.handleAttendanceFinish(payload);
+          } else if (modalInteractions.isCountryBucketAction(action.action_id)) {
+            await modalInteractions.handleCountryBucketChange(payload);
           } else {
             await modalInteractions.handleBackButton(payload);
           }

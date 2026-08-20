@@ -220,4 +220,34 @@ describe('slack-interactions.routes — /interactions', () => {
     // never falls through to the ordinary chat interactivity dispatch.
     expect(dispatch).not.toHaveBeenCalled();
   });
+
+  it('routes a block_actions "country_bucket_select" click to the modal machinery instead of the ordinary chat handler', async () => {
+    // Regression coverage for the registration country-picker fix (Slack's
+    // static_select 100-option cap made registration fail every time) —
+    // confirms the route layer recognizes and dispatches this action_id at
+    // all; handleCountryBucketChange's own behavior is covered by
+    // slack-modal-interactions-handler.test.js.
+    const { router, dispatch } = loadRouter();
+    const payloadObj = {
+      type: 'block_actions',
+      user: { id: 'U0123ABC' },
+      view: { id: 'V0123VIEW', private_metadata: JSON.stringify({ kind: 'registration', screen: 'PERSONAL_INFO', flowToken: 'db-user-1:registration:169' }) },
+      actions: [{ action_id: 'country_bucket_select', selected_option: { value: 'europe' } }],
+    };
+    const rawBody = `payload=${encodeURIComponent(JSON.stringify(payloadObj))}`;
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const req = {
+      headers: {
+        'x-slack-request-timestamp': timestamp,
+        'x-slack-signature': sign(timestamp, rawBody),
+      },
+      rawBody: Buffer.from(rawBody),
+      path: '/interactions',
+    };
+
+    const { calls } = await invokeRoute(router, 'post', '/interactions', req);
+    expect(calls.status).toEqual([200]);
+    expect(calls.send).toEqual(['']);
+    expect(dispatch).not.toHaveBeenCalled();
+  });
 });

@@ -45,6 +45,13 @@ describe('isOpenModalAction / isBackAction / isAttendanceFinishAction', () => {
     expect(handler.isAttendanceFinishAction('open_modal:attendance')).toBe(false);
     expect(handler.isAttendanceFinishAction('attendance_finish_extra')).toBe(false);
   });
+
+  it('recognizes exactly the country_bucket_select action_id, nothing else', () => {
+    const { handler } = loadHandler();
+    expect(handler.isCountryBucketAction('country_bucket_select')).toBe(true);
+    expect(handler.isCountryBucketAction('country')).toBe(false);
+    expect(handler.isCountryBucketAction('registration_back')).toBe(false);
+  });
 });
 
 describe('parseOpenModalAction', () => {
@@ -210,6 +217,76 @@ describe('handleAttendanceFinish', () => {
       actions: [{ action_id: 'attendance_finish' }],
     };
     await expect(handler.handleAttendanceFinish(payload)).resolves.toBe(true);
+  });
+});
+
+describe('handleCountryBucketChange', () => {
+  // Regression coverage for a real, confirmed bug: registration's PERSONAL_INFO
+  // country field had a single static_select over all 164 countries, exceeding
+  // Slack's 100-option cap — registration failed 100% of the time. This
+  // handler is the live-update side of the fix (see slack-views/registration.view.js).
+
+  it('returns false for a payload whose action is not country_bucket_select', async () => {
+    const { handler } = loadHandler();
+    const handled = await handler.handleCountryBucketChange({ actions: [{ action_id: 'menu_lesson_plan' }] });
+    expect(handled).toBe(false);
+  });
+
+  it('is a no-op (but still handled) for any kind/screen other than registration/PERSONAL_INFO', async () => {
+    const { handler, slackWebClient } = loadHandler();
+    const metadata = JSON.stringify({ kind: 'attendance', screen: 'CLASS_INFO', flowToken: 't' });
+    const payload = {
+      user: { id: 'U1' },
+      view: { id: 'V1', private_metadata: metadata },
+      actions: [{ action_id: 'country_bucket_select', selected_option: { value: 'europe' } }],
+    };
+    const handled = await handler.handleCountryBucketChange(payload);
+    expect(handled).toBe(true);
+    expect(slackWebClient.updateView).not.toHaveBeenCalled();
+  });
+
+  it('live-updates the open modal with the country field filtered to the newly-picked bucket, preserving the typed full name', async () => {
+    const { handler, slackWebClient } = loadHandler();
+    const metadata = JSON.stringify({ kind: 'registration', screen: 'PERSONAL_INFO', flowToken: 'db-user-1:registration:169' });
+    const payload = {
+      user: { id: 'U0123ABC' },
+      view: {
+        id: 'V0123VIEW',
+        private_metadata: metadata,
+        state: { values: { full_name_block: { full_name: { value: 'Ayesha Khan' } } } },
+      },
+      actions: [{ action_id: 'country_bucket_select', selected_option: { value: 'europe' } }],
+    };
+    const handled = await handler.handleCountryBucketChange(payload);
+
+    expect(handled).toBe(true);
+    expect(slackWebClient.updateView).toHaveBeenCalledTimes(1);
+    const [viewId, view] = slackWebClient.updateView.mock.calls[0];
+    expect(viewId).toBe('V0123VIEW');
+    expect(view.private_metadata).toBe(metadata); // unchanged — flowToken/kind/screen still round-trip
+
+    const nameBlock = view.blocks.find((b) => b.block_id === 'full_name_block');
+    expect(nameBlock.element.initial_value).toBe('Ayesha Khan');
+
+    const bucketBlock = view.blocks.find((b) => b.block_id === 'country_bucket_block');
+    expect(bucketBlock.element.initial_option.value).toBe('europe');
+
+    const countryBlock = view.blocks.find((b) => b.block_id === 'country_block');
+    expect(countryBlock.element.options.length).toBeGreaterThan(0);
+    expect(countryBlock.element.options.length).toBeLessThanOrEqual(100);
+    expect(countryBlock.element.options.find((o) => o.value === 'DE')).toBeTruthy(); // Germany is in the europe bucket
+  });
+
+  it('does not throw when the live update itself fails', async () => {
+    const { handler, slackWebClient } = loadHandler();
+    slackWebClient.updateView.mockRejectedValueOnce(new Error('boom'));
+    const metadata = JSON.stringify({ kind: 'registration', screen: 'PERSONAL_INFO', flowToken: 't' });
+    const payload = {
+      user: { id: 'U1' },
+      view: { id: 'V1', private_metadata: metadata, state: { values: {} } },
+      actions: [{ action_id: 'country_bucket_select', selected_option: { value: 'europe' } }],
+    };
+    await expect(handler.handleCountryBucketChange(payload)).resolves.toBe(true);
   });
 });
 
