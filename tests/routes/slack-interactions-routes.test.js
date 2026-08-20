@@ -28,7 +28,7 @@ function loadRouter() {
   // `npm test` runs (see CLAUDE.md's "TDD" note). Mocking supabase here, same
   // as every other suite that touches bot-helpers.js, keeps this test from
   // needing that package installed at all.
-  jest.doMock('../../bot/shared/config/supabase', () => ({ from: jest.fn() }));
+  jest.doMock('../../bot/shared/config/supabase', () => ({ from: jest.fn() }), { virtual: true });
   const dispatch = jest.fn().mockResolvedValue(undefined);
   const mountSlackRoutes = require('../../bot/shared/routes/slack-interactions.routes');
   const router = mountSlackRoutes(dispatch);
