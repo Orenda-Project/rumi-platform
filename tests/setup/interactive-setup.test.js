@@ -403,7 +403,15 @@ describe('stepMessagingChannels', () => {
     expect(io.asked.ask).toHaveLength(0);
   });
 
-  it('prints the full checklist (scopes, event, all 3 Request URLs, every slash command) before asking for credentials', async () => {
+  it('prints the full checklist (scopes, event, all 3 Request URLs, every ADDABLE slash command) before asking for credentials', async () => {
+    // /status is deliberately excluded from what this step tells the user to
+    // add — confirmed live: Slack rejects it outright as a reserved word, no
+    // matter what. Telling a user to add it here would send them straight
+    // into that wall. The feature stays reachable on Slack via the
+    // natural-language alternative text-message.handler.js added for this
+    // (see its own /status branch's comment) — this step must say so instead
+    // of silently omitting it, which is why the second assertion checks for
+    // an explicit note, not just the command's absence.
     const { stepMessagingChannels } = loadWizard({ probes: slackPass });
     const { SLACK_BOT_SCOPES, SLACK_SLASH_COMMANDS } = require('../../bot/scripts/setup/fields');
     const io = fakeIo({
@@ -414,7 +422,10 @@ describe('stepMessagingChannels', () => {
     await stepMessagingChannels(io, {}, () => {});
 
     for (const scope of SLACK_BOT_SCOPES) expect(log.text).toContain(scope);
-    for (const cmd of SLACK_SLASH_COMMANDS) expect(log.text).toContain(cmd);
+    for (const cmd of SLACK_SLASH_COMMANDS.filter((c) => c !== '/status')) expect(log.text).toContain(cmd);
+    // /status itself is still mentioned, but only inside the explanatory
+    // note below — never as a numbered row the user is told to go add.
+    expect(log.text).toMatch(/status.*reserve|reserve.*status/is);
     expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/events');
     expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/interactions');
     expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/commands');

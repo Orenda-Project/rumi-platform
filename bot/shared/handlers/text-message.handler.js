@@ -1371,8 +1371,22 @@ async function handleTextMessage(message, from, messageBody, user = null) {
 
   // ============================================================
   // /status COMMAND: cross-feature snapshot of what's running + cancel
+  //
+  // "/status" is confirmed live to be a Slack-reserved word — Slack rejects
+  // it outright if registered as a Slash Command ("is a reserved word"),
+  // AND its own client intercepts any plain message starting with "/"
+  // client-side before it ever reaches the bot, the same way it rejected
+  // "/settings" before that command existed in this Slack app's config (see
+  // the live test that first surfaced this). Net effect: a Slack user had
+  // NO way to ever reach this feature at all — not via a registered
+  // command (Slack blocks the name), and not as typed text either (Slack
+  // blocks anything starting with "/"). The natural-language alternative
+  // below is what makes this reachable on Slack; Discord/WhatsApp keep
+  // using the real "/status" slash command unaffected (Discord has no such
+  // reservation — confirmed via discord-register-commands.js already
+  // registering it with zero rename needed).
   // ============================================================
-  if (/^\/status\b/i.test(trimmedMessage)) {
+  if (/^\/status\b/i.test(trimmedMessage) || /^(my status|show (my )?status|what'?s running)$/i.test(trimmedMessage)) {
     logToFile('📋 /status command detected', { userId: user?.id, phoneNumber: from });
     if (!user) {
       await WhatsAppService.sendMessage(from,
