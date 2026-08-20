@@ -174,6 +174,31 @@ describe('slack-channel.service — interactive components (real Block Kit, not 
     const result = await service.sendInteractiveMessage(TO, { header: 'Empty', action: { sections: [] } });
     expect(result).toBe(false);
   });
+
+  it('sendInteractiveMessage renders Meta\'s interactive.type:"button" shape (action.buttons) as real Slack buttons, not a select-menu list', async () => {
+    // Regression test for a real, confirmed bug: exam-checker.orchestrator.js sends this exact
+    // button shape (never sections/rows), and the old code silently dropped it — logging "no
+    // options provided for interactive list" and returning false — because it only ever read
+    // action.sections. Exam-checker was completely non-functional on Slack as a result.
+    const { service, client } = loadService();
+    const result = await service.sendInteractiveMessage(TO, {
+      body: { text: 'You have 0 images.' },
+      action: {
+        buttons: [
+          { type: 'reply', reply: { id: 'ech_add_more', title: '📷 Add more' } },
+          { type: 'reply', reply: { id: 'ech_process_now', title: '✅ Process now' } },
+        ],
+      },
+    });
+    expect(result).toBe(true);
+    const call = client.chat.postMessage.mock.calls[0][0];
+    const actionsBlock = call.blocks.find((b) => b.type === 'actions');
+    expect(actionsBlock.elements).toHaveLength(2);
+    expect(actionsBlock.elements[0]).toMatchObject({ type: 'button', value: 'ech_add_more', action_id: 'ech_add_more' });
+    expect(actionsBlock.elements[1]).toMatchObject({ type: 'button', value: 'ech_process_now', action_id: 'ech_process_now' });
+    // never falls into the static_select path when buttons are present
+    expect(actionsBlock.elements.some((e) => e.type === 'static_select')).toBe(false);
+  });
 });
 
 describe('slack-channel.service — stubbed Flow', () => {

@@ -457,13 +457,7 @@ async function sendInteractiveMessage(to, listData) {
     const client = getClient();
     const channel = await getDmChannelId(slackUserId(to));
     const { header, body, footer, action } = listData;
-    const { sections } = action || {};
-    const options = (sections || []).flatMap((s) => s.rows || []);
-
-    if (!options.length) {
-      logToFile('⚠️ Slack: no options provided for interactive list', { listData });
-      return false;
-    }
+    const { sections, buttons } = action || {};
 
     const headerText = header?.text || header;
     const bodyText = body?.text || body;
@@ -472,18 +466,45 @@ async function sendInteractiveMessage(to, listData) {
     const blocks = [];
     if (headerText) blocks.push({ type: 'header', text: { type: 'plain_text', text: String(headerText).slice(0, 150) } });
     if (bodyText) blocks.push({ type: 'section', text: { type: 'mrkdwn', text: bodyText } });
-    blocks.push({
-      type: 'actions',
-      elements: [{
-        type: 'static_select',
-        action_id: 'list_select',
-        placeholder: { type: 'plain_text', text: action?.button || 'Choose an option' },
-        options: options.slice(0, 100).map((opt) => ({
-          text: { type: 'plain_text', text: String(opt.title).slice(0, 75) },
-          value: opt.id,
-        })),
-      }],
-    });
+
+    // Meta's interactive.type: 'button' shape (action.buttons: [{type:'reply', reply:{id,title}}],
+    // e.g. exam-checker.orchestrator.js's "Add more"/"Process now" prompt) needs real Slack buttons,
+    // not a select-menu list — the two shapes are mutually exclusive on Meta and must stay so here,
+    // matching sendInteractiveButtons' own block-building exactly so a click round-trips the same way.
+    if (buttons?.length) {
+      blocks.push({
+        type: 'actions',
+        elements: buttons.map((btn) => {
+          const id = btn.reply?.id ?? btn.id;
+          const title = btn.reply?.title ?? btn.title;
+          return {
+            type: 'button',
+            text: { type: 'plain_text', text: String(title).substring(0, 75) },
+            value: id,
+            action_id: id,
+          };
+        }),
+      });
+    } else {
+      const options = (sections || []).flatMap((s) => s.rows || []);
+      if (!options.length) {
+        logToFile('⚠️ Slack: no options provided for interactive list', { listData });
+        return false;
+      }
+      blocks.push({
+        type: 'actions',
+        elements: [{
+          type: 'static_select',
+          action_id: 'list_select',
+          placeholder: { type: 'plain_text', text: action?.button || 'Choose an option' },
+          options: options.slice(0, 100).map((opt) => ({
+            text: { type: 'plain_text', text: String(opt.title).slice(0, 75) },
+            value: opt.id,
+          })),
+        }],
+      });
+    }
+
     if (footerText) blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: footerText }] });
 
     await client.chat.postMessage({ channel, text: bodyText || headerText || 'Please choose an option', blocks });
