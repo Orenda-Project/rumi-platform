@@ -24,7 +24,6 @@ const {
   AnnotationService,
   DeliveryService
 } = require('../shared/services/exam-checker');
-const supabase = require('../shared/config/supabase');
 const { logToFile } = require('../shared/utils/logger');
 const { runWithCorrelation, generateCorrelationId } = require('../shared/utils/structured-logger');
 
@@ -105,12 +104,16 @@ async function process(payload) {
         error_message: error.message
       });
 
-      // Notify user of failure
+      // Notify user of failure. Reads recipient_identifier off the session
+      // row (the exact channel this request originated on — a bare WhatsApp
+      // phone number, or "slack:<id>") rather than users.phone_number, which
+      // is WhatsApp-only and would misdeliver a Slack-originated session's
+      // failure notice.
       try {
-        const user = await getUser(userId);
-        if (user?.phone_number) {
+        const failedSession = await ExamSessionService.getById(sessionId);
+        if (failedSession?.recipient_identifier) {
           await DeliveryService.sendErrorNotification(
-            user.phone_number,
+            failedSession.recipient_identifier,
             sessionId,
             error.message
           );
@@ -179,8 +182,9 @@ async function processGradingPhase(session, sessionId, userId) {
     studentCount: session.confirmed_students.length
   });
 
-  // Get user phone for progress updates
-  const user = await getUser(userId);
+  // recipient_identifier (not users.phone_number) is the channel this
+  // session originated on — see exam-session.service.js#_createSession.
+  const recipientIdentifier = session.recipient_identifier;
 
   // Grade all students
   const gradingResults = await GradingService.gradeBatch(session, {
@@ -189,9 +193,9 @@ async function processGradingPhase(session, sessionId, userId) {
       logToFile('📊 Grading progress', { sessionId, ...progress });
 
       // Send progress update at milestones
-      if (user?.phone_number && [25, 50, 75].includes(progress.percentage)) {
+      if (recipientIdentifier && [25, 50, 75].includes(progress.percentage)) {
         try {
-          await DeliveryService.sendProgressUpdate(user.phone_number, progress);
+          await DeliveryService.sendProgressUpdate(recipientIdentifier, progress);
         } catch (e) {
           // Ignore progress notification failures
         }
@@ -258,24 +262,6 @@ async function processDeliveryPhase(session, sessionId, userId) {
   await ExamSessionService.updateStatus(sessionId, 'delivering_results');
 
   logToFile('✅ Delivery Phase complete', { sessionId });
-}
-
-/**
- * Get user from database
- */
-async function getUser(userId) {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, phone_number, preferred_language')
-    .eq('id', userId)
-    .single();
-
-  if (error) {
-    logToFile('⚠️ Failed to get user', { userId, error: error.message });
-    return null;
-  }
-
-  return data;
 }
 
 /**

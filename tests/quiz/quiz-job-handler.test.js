@@ -72,24 +72,41 @@ describe('handleQuizReport', () => {
     expect(quizReport.generateReport).not.toHaveBeenCalled();
   });
 
-  it('fires the report when all sessions terminal and a teacher phone resolves', async () => {
+  it('fires the report when all sessions terminal and payload.teacherPhone is present', async () => {
     const h = load();
     supabaseTables.quizzes = { single: { data: { id: 'q1', teacher_id: 't1', created_at: new Date().toISOString(), status: 'sent' } } };
     supabaseTables.quiz_sessions = { list: { data: [{ status: 'completed' }] } };
-    supabaseTables.users = { single: { data: { phone_number: '12025550100' } } };
-    const r = await h.handleQuizReport({ groupId: 'q1', payload: {} });
+    const r = await h.handleQuizReport({ groupId: 'q1', payload: { teacherPhone: '12025550100' } });
     expect(r).toEqual({ ok: true });
     expect(quizReport.generateReport).toHaveBeenCalledTimes(1);
+    expect(quizReport.generateReport).toHaveBeenCalledWith('q1', expect.objectContaining({ teacherPhone: '12025550100' }));
     expect(redis.set).toHaveBeenCalledWith('quiz_report_sent:q1', '1', 86400);
   });
 
-  it('does NOT set the sent flag when no teacher phone resolves', async () => {
+  it('fires the report when payload.teacherPhone is a Slack identifier — delivers to the SAME channel the quiz was requested on, never a re-derived WhatsApp number', async () => {
     const h = load();
-    supabaseTables.quizzes = { single: { data: { id: 'q1', teacher_id: null, created_at: new Date().toISOString(), status: 'sent' } } };
+    supabaseTables.quizzes = { single: { data: { id: 'q1', teacher_id: 't1', created_at: new Date().toISOString(), status: 'sent' } } };
     supabaseTables.quiz_sessions = { list: { data: [{ status: 'completed' }] } };
+    // Deliberately leave supabaseTables.users unset/absent — if any fallback
+    // to a users.phone_number lookup still existed, this would either throw
+    // or silently substitute a different (wrong) channel.
+    const r = await h.handleQuizReport({ groupId: 'q1', payload: { teacherPhone: 'slack:U0123ABC' } });
+    expect(r).toEqual({ ok: true });
+    expect(quizReport.generateReport).toHaveBeenCalledWith('q1', expect.objectContaining({ teacherPhone: 'slack:U0123ABC' }));
+  });
+
+  it('does NOT set the sent flag when payload.teacherPhone is absent, and NEVER falls back to a users.phone_number lookup', async () => {
+    const h = load();
+    supabaseTables.quizzes = { single: { data: { id: 'q1', teacher_id: 't1', created_at: new Date().toISOString(), status: 'sent' } } };
+    supabaseTables.quiz_sessions = { list: { data: [{ status: 'completed' }] } };
+    // A users row IS present here — if the removed fallback ever regressed
+    // back in, this test would start passing on the old (wrong) behavior
+    // instead of skipping, which is exactly the bug this guards against.
+    supabaseTables.users = { single: { data: { phone_number: '12025550100' } } };
     const r = await h.handleQuizReport({ groupId: 'q1', payload: {} });
     expect(r.reason).toBe('no_teacher_phone');
     expect(redis.set).not.toHaveBeenCalled();
+    expect(quizReport.generateReport).not.toHaveBeenCalled();
   });
 });
 

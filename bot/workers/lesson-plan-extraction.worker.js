@@ -435,11 +435,15 @@ Return JSON with these fields:
     try {
       const { data, error } = await supabase
         .from('coaching_sessions')
-        .select('id, lesson_plan_format, users:users(first_name, phone_number)')
+        // recipient_identifier (not users.phone_number) is the channel this
+        // session actually originated on — a WhatsApp-only join here would
+        // silently misdeliver (or fail to deliver) for a Slack-originated
+        // session. See coaching-session.service.js#initiateSession.
+        .select('id, lesson_plan_format, recipient_identifier, users:users(first_name)')
         .eq('id', coachingSessionId)
         .single();
 
-      if (error || !data?.users?.phone_number) {
+      if (error || !data?.recipient_identifier) {
         logToFile('⚠️ Unable to notify teacher about LP format issue', {
           coachingSessionId,
           error: error?.message
@@ -447,7 +451,7 @@ Return JSON with these fields:
         return;
       }
 
-      const teacherName = (data.users.first_name || 'Teacher').trim();
+      const teacherName = (data.users?.first_name || 'Teacher').trim();
       const message = `⚠️ ${teacherName}, I got your lesson plan but couldn’t read the file. It looks like the document was saved under the wrong format (for example, a Word file renamed as PDF). Please resend it as the original Word/DOCX file, a proper PDF export, or clear page photos so I can include it in your report.`;
 
       if (process.env.OFFLINE_REPLAY === 'true') {
@@ -455,7 +459,7 @@ Return JSON with these fields:
         return;
       }
 
-      await WhatsAppService.sendMessage(data.users.phone_number, message);
+      await WhatsAppService.sendMessage(data.recipient_identifier, message);
       logToFile('📣 Notified teacher about lesson plan format issue', { coachingSessionId });
     } catch (notifyError) {
       logToFile('⚠️ Failed to send LP format notification', {

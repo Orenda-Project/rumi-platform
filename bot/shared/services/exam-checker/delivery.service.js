@@ -13,7 +13,10 @@ class DeliveryService {
   /**
    * Send grading results to user
    * @param {object} session - Exam session with grading results
-   * @param {string} userId - User ID for looking up phone
+   * @param {string} userId - User ID (for logging only — delivery targets
+   *   session.recipient_identifier, the exact channel this session
+   *   originated on, never a users.phone_number re-derivation, which is
+   *   WhatsApp-only and would misdeliver a Slack-originated session)
    */
   static async sendResults(session, userId) {
     logToFile('📤 Starting result delivery', {
@@ -24,10 +27,9 @@ class DeliveryService {
     const gradingResults = session.grading_results || { successful: [], failed: [], summary: {} };
     const annotatedImages = session.annotated_images || [];
 
-    // Get user's phone number
-    const phoneNumber = await this._getUserPhone(userId);
+    const phoneNumber = session.recipient_identifier;
     if (!phoneNumber) {
-      throw new Error('User phone number not found');
+      throw new Error('Session has no recipient_identifier — cannot deliver results');
     }
 
     // 1. Send summary message
@@ -168,26 +170,6 @@ class DeliveryService {
     await whatsappService.sendMessage(phoneNumber, message, {
       preview_url: true
     });
-  }
-
-  /**
-   * Get user's phone number from database
-   */
-  static async _getUserPhone(userId) {
-    const supabase = require('../../config/supabase');
-
-    const { data, error } = await supabase
-      .from('users')
-      .select('phone_number')
-      .eq('id', userId)
-      .single();
-
-    if (error || !data) {
-      logToFile('⚠️ Failed to get user phone', { userId, error: error?.message });
-      return null;
-    }
-
-    return data.phone_number;
   }
 
   /**

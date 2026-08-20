@@ -60,6 +60,14 @@ function renderReadiness(doctor, opts = {}) {
     else rows.push(['WhatsApp', ui.paint('brand', 'linked')]);
   }
 
+  if (doctor.activeChannels && doctor.activeChannels.includes('slack')) {
+    rows.push(['Slack', ui.paint('brand', 'connected')]);
+  }
+
+  if (doctor.activeChannels && doctor.activeChannels.includes('discord')) {
+    rows.push(['Discord', ui.paint('brand', 'connected')]);
+  }
+
   const on = doctor.featureResults.filter((f) => f.status === 'on');
   const off = doctor.featureResults.filter((f) => f.status !== 'on');
 
@@ -98,6 +106,17 @@ function detailSuffix(detail) {
  */
 function renderNextSteps(opts) {
   const lines = [];
+
+  if (opts.slack) {
+    lines.push(ui.aside('Slack is connected too — message the bot in a Slack DM the same way, on the same account.'));
+    lines.push('');
+  }
+
+  if (opts.discord) {
+    lines.push(ui.aside('Discord is connected too — message the bot in a Discord DM the same way, on the same account.'));
+    lines.push('');
+  }
+
   lines.push(ui.bold('  Start Rumi'));
   // `rumi start` rather than `cd bot && npm start`: the latter runs the bot from
   // bot/, where a relative .env and a relative session folder both resolved to

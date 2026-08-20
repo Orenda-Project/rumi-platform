@@ -29,14 +29,52 @@ const constants = require('./shared/utils/constants');
 const { setUserLanguage, setLanguageLock } = require('./shared/utils/language-cache');
 
 // Import Database helpers
-const { getOrCreateUser, trackChatStart } = require('./shared/database/bot-helpers');
+const { getOrCreateUser, getOrCreateUserByChannel, trackChatStart } = require('./shared/database/bot-helpers');
 const supabase = require('./shared/config/supabase');
 
 // Import Routes (Flow encryption endpoints)
 const flowEndpointRoutes = require('./shared/routes/flow-endpoint.routes');
 
+// The channel-registry map from additive-driver name -> the `channel` value
+// user_channels/getOrCreateUserByChannel expects (registry driver names are
+// per-implementation — meta/baileys both mean 'whatsapp' as an identity
+// family; slack/discord map 1:1). See driverForIdentity() below.
+const { driverForIdentifier } = require('./shared/services/messaging/channel-registry');
+const CHANNEL_FAMILY = { slack: 'slack', discord: 'discord' };
+
+/**
+ * Resolves the (channel, channelUserId) pair for a `from` identifier, or null
+ * for a bare WhatsApp phone number — the one place identity resolution needs
+ * to know about additive channels at all; every other line below already
+ * operates on the resolved `user`/`message`/`messageType`, never re-deriving
+ * identity from `from` itself.
+ */
+function resolveChannelIdentity(from) {
+  const driverName = driverForIdentifier(from);
+  if (!driverName) return null;
+  const prefix = `${driverName}:`; // CHANNEL_PREFIXES value happens to equal the driver name today
+  return { channel: CHANNEL_FAMILY[driverName] || driverName, channelUserId: String(from).slice(prefix.length) };
+}
+
 // Create Express app
 const app = express();
+
+// Slack's request signature is an HMAC over the EXACT raw bytes it sent —
+// must be captured before ANY body parser (including the global
+// express.json() below) reconstructs the body, since a reconstruction can
+// differ in whitespace/key order from the wire bytes. Mounted first, and
+// scoped to the Slack path only so every other route's body-parsing is
+// untouched.
+app.use('/api/slack', express.raw({ type: '*/*' }), (req, res, next) => {
+  req.rawBody = req.body; // a Buffer, from express.raw() above
+  next();
+});
+// handleWebhookPost is a hoisted function declaration defined further down
+// this file — safe to reference here since this code only ever RUNS at
+// require-time, after every top-level declaration has already been hoisted.
+const mountSlackRoutes = require('./shared/routes/slack-interactions.routes');
+app.use('/api/slack', mountSlackRoutes(handleWebhookPost));
+
 app.use(express.json());
 
 // Mount routes (Flow encryption endpoints)
@@ -358,10 +396,15 @@ async function handleWebhookPost(req, res) {
     // Show typing indicator
     await WhatsAppService.showTypingIndicator(from, message.id);
 
-    // Get or create user in database
+    // Get or create user in database — a bare phone number goes through the
+    // untouched legacy path; a prefixed additive-channel identifier
+    // (e.g. "slack:U0123ABC") resolves through the multi-homed path instead.
     let user = null;
     try {
-      user = await getOrCreateUser(from);
+      const channelIdentity = resolveChannelIdentity(from);
+      user = channelIdentity
+        ? await getOrCreateUserByChannel(channelIdentity.channel, channelIdentity.channelUserId)
+        : await getOrCreateUser(from);
       logToFile('User retrieved/created', { userId: user.id, phoneNumber: from });
     } catch (error) {
       logToFile('⚠️ Error with database user operation', { error: error.message });
@@ -1750,26 +1793,6 @@ Si no solicitaste esto, ignora este mensaje.`
 });
 
 /**
- * If CHANNEL_DRIVER resolves to `baileys`, attaches the Baileys inbound
- * listener (shared/services/messaging/inbound/baileys-socket.adapter.js) so
- * incoming WhatsApp Web messages reach handleWebhookPost the same way a real
- * Meta webhook POST does. No-op for the `meta` channel (Express's own
- * /webhook route already handles that). Failures here are logged, never
- * thrown — a Baileys connection problem must not crash server boot.
- */
-async function wireBaileysInboundIfSelected() {
-  const { resolveChannelDriver } = require('./shared/config/feature-availability');
-  if (resolveChannelDriver(process.env) !== 'baileys') return;
-
-  try {
-    const baileysSocketAdapter = require('./shared/services/messaging/inbound/baileys-socket.adapter');
-    await baileysSocketAdapter.attach(handleWebhookPost);
-  } catch (error) {
-    logToFile('❌ Failed to attach Baileys inbound listener', { error: error.message, stack: error.stack });
-  }
-}
-
-/**
  * Exit code for "the WhatsApp session is gone; a human must re-pair". Chosen as
  * sysexits.h's EX_CONFIG — conventionally "don't just restart me, fix the
  * configuration" — so it reads as deliberate rather than a random crash.
@@ -1777,7 +1800,77 @@ async function wireBaileysInboundIfSelected() {
 const EXIT_CODE_CHANNEL_LOGGED_OUT = 78;
 
 /**
- * Treat a logged-out channel session as a TERMINAL failure.
+ * Registry of drivers that hold a persistent connection (a socket/Gateway,
+ * not an HTTP webhook) and therefore need boot-time wiring + graceful
+ * shutdown — as opposed to Meta/Slack-style drivers, which are plain
+ * request/response and need nothing here beyond mounting their route.
+ *
+ * Today this has exactly one entry (baileys). Adding a second
+ * persistent-connection driver (e.g. a future Discord Gateway driver) is a
+ * new entry here, not a rewrite of wireInboundListeners/exitOnChannelLogout/
+ * registerChannelShutdownHandlers below — each of those now loops this
+ * registry instead of hardcoding a single driver-name check.
+ */
+const PERSISTENT_CONNECTION_DRIVERS = {
+  baileys: {
+    isActive: (env) => require('./shared/config/feature-availability').resolveChannelDriver(env) === 'baileys',
+    attachInbound: async (dispatch) => {
+      const baileysSocketAdapter = require('./shared/services/messaging/inbound/baileys-socket.adapter');
+      await baileysSocketAdapter.attach(dispatch);
+    },
+    onLogoutExit: (exitFn) => {
+      const connection = require('./shared/services/messaging/baileys-connection');
+      connection.events.on('close', ({ loggedOut }) => {
+        if (!loggedOut) return;
+        logToFile('🔒 WhatsApp session is logged out — re-pairing is required, exiting', {
+          remedy: `delete ${connection.authDir()} and run: npm run pair:baileys`,
+          exitCode: EXIT_CODE_CHANNEL_LOGGED_OUT,
+        });
+        exitFn();
+      });
+    },
+    close: () => require('./shared/services/messaging/baileys-connection').close(),
+  },
+  discord: {
+    isActive: (env) => require('./shared/config/feature-availability').resolveActiveChannels(env).includes('discord'),
+    attachInbound: async (dispatch) => {
+      const discordEventsAdapter = require('./shared/services/messaging/inbound/discord-events.adapter');
+      await discordEventsAdapter.attach(dispatch);
+    },
+    // Unlike Baileys, there is no mid-session "you have been logged out"
+    // event for a bot token — a revoked/regenerated DISCORD_BOT_TOKEN
+    // surfaces as a LOGIN failure (at connect() time), not a live-session
+    // event, so there is nothing for onLogoutExit to subscribe to here.
+    // The login-failure path is already handled by attachInbound's own
+    // try/catch below (logs and continues — Discord being down must never
+    // take WhatsApp down), so this intentionally stays null.
+    onLogoutExit: null,
+    close: () => require('./shared/services/messaging/discord-connection').close(),
+  },
+};
+
+/**
+ * Attaches every active persistent-connection driver's inbound listener
+ * (e.g. shared/services/messaging/inbound/baileys-socket.adapter.js) so
+ * incoming messages reach handleWebhookPost the same way a real Meta webhook
+ * POST does. No-op for any driver not in PERSISTENT_CONNECTION_DRIVERS
+ * (Express's own routes already handle those). Failures here are logged,
+ * never thrown — a connection problem must not crash server boot.
+ */
+async function wireBaileysInboundIfSelected() {
+  for (const driver of Object.values(PERSISTENT_CONNECTION_DRIVERS)) {
+    if (!driver.isActive(process.env)) continue;
+    try {
+      await driver.attachInbound(handleWebhookPost);
+    } catch (error) {
+      logToFile('❌ Failed to attach persistent-connection inbound listener', { error: error.message, stack: error.stack });
+    }
+  }
+}
+
+/**
+ * Treat a logged-out persistent-connection channel session as a TERMINAL
+ * failure, for every active driver that defines onLogoutExit.
  *
  * baileys-connection.js already refuses to auto-reconnect on
  * DisconnectReason.loggedOut (401) — but that only protects the current
@@ -1789,45 +1882,42 @@ const EXIT_CODE_CHANNEL_LOGGED_OUT = 78;
  *
  * So: say plainly what happened and exit with a distinctive code, letting the
  * supervisor's backoff/alerting surface it to a human instead of spinning
- * silently. No-op for `meta`, which holds no local session.
+ * silently. No-op for any driver without a local session concept.
  */
 function exitOnChannelLogout() {
-  const { resolveChannelDriver } = require('./shared/config/feature-availability');
-  if (resolveChannelDriver(process.env) !== 'baileys') return;
-
-  const connection = require('./shared/services/messaging/baileys-connection');
-  connection.events.on('close', ({ loggedOut }) => {
-    if (!loggedOut) return;
-    logToFile('🔒 WhatsApp session is logged out — re-pairing is required, exiting', {
-      remedy: `delete ${connection.authDir()} and run: npm run pair:baileys`,
-      exitCode: EXIT_CODE_CHANNEL_LOGGED_OUT,
-    });
-    process.exit(EXIT_CODE_CHANNEL_LOGGED_OUT);
-  });
+  for (const driver of Object.values(PERSISTENT_CONNECTION_DRIVERS)) {
+    if (!driver.isActive(process.env) || !driver.onLogoutExit) continue;
+    driver.onLogoutExit(() => process.exit(EXIT_CODE_CHANNEL_LOGGED_OUT));
+  }
 }
 
 /**
- * Close the Baileys socket cleanly on SIGTERM/SIGINT before the process dies.
+ * Close every active persistent-connection driver's socket cleanly on
+ * SIGTERM/SIGINT before the process dies.
  *
  * Without this, an abrupt exit loses Baileys' not-yet-flushed Signal session
  * state (see baileys-connection.js's close()). A PaaS redeploy sends SIGTERM on
  * every release, so this runs on the normal deploy path, not just on manual
- * stops. No-op for the `meta` channel, which holds no local session state.
+ * stops. No-op for any driver without local session state to flush.
  */
 function registerChannelShutdownHandlers() {
-  const { resolveChannelDriver } = require('./shared/config/feature-availability');
-  if (resolveChannelDriver(process.env) !== 'baileys') return;
+  const activeDrivers = Object.values(PERSISTENT_CONNECTION_DRIVERS).filter((d) => d.isActive(process.env));
+  if (activeDrivers.length === 0) return;
 
   let shuttingDown = false;
   const shutdown = async (signal) => {
     if (shuttingDown) return; // a second signal must not cut the flush short
     shuttingDown = true;
-    logToFile(`Received ${signal} — closing Baileys connection before exit`, {});
-    try {
-      await require('./shared/services/messaging/baileys-connection').close();
-    } catch (error) {
-      logToFile('❌ Baileys shutdown failed', { error: error.message });
-    }
+    logToFile(`Received ${signal} — closing active channel connections before exit`, {});
+    await Promise.all(
+      activeDrivers.map(async (driver) => {
+        try {
+          await driver.close();
+        } catch (error) {
+          logToFile('❌ Channel shutdown failed', { error: error.message });
+        }
+      })
+    );
     process.exit(0);
   };
 

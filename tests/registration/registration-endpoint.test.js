@@ -9,11 +9,23 @@
  * Bead: bd-396
  */
 
-// Mock redis before requiring the module
+// Mock redis before requiring the module. get() parses JSON and returns the
+// deserialized value (falling back to the raw string) — matching the REAL
+// railway-redis.service.js#get() contract exactly. A mock that instead
+// returned the raw stored string (as this one previously did) hid a real
+// bug: registration-endpoint.js's own getRegData() called JSON.parse() a
+// SECOND time on top of that, which throws once get() returns the real
+// service's already-parsed object, silently discarding full_name/country
+// on every screen after PERSONAL_INFO. Confirmed live against a real
+// Discord workspace, not a guess.
 jest.mock('../../bot/shared/services/cache/railway-redis.service', () => {
   const store = {};
   return {
-    get: jest.fn(async (key) => store[key] || null),
+    get: jest.fn(async (key) => {
+      const raw = store[key];
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return raw; }
+    }),
     set: jest.fn(async (key, value) => { store[key] = value; }),
     _store: store,
     _clear: () => { Object.keys(store).forEach(k => delete store[k]); }

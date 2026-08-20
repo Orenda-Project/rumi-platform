@@ -17,8 +17,10 @@
     "validate:env": "node bot/scripts/validate-env.js",
     "validate:connections": "node infrastructure/scripts/test-connections.js",
     "bootstrap:db": "node infrastructure/scripts/bootstrap-db.js",
+    "backfill:user-channels": "node infrastructure/scripts/backfill-user-channels.js",
     "doctor": "node bot/scripts/setup/doctor.js",
     "setup:flows": "node bot/scripts/setup/run-full-setup.js",
+    "discord:register-commands": "node bot/scripts/setup/discord-register-commands.js",
     "setup:interactive": "node bot/scripts/setup/interactive-setup.js",
     "pair:baileys": "node bot/scripts/setup/baileys-pair.js",
     "graduate": "node bot/scripts/setup/graduate.js",
@@ -52,6 +54,7 @@
     "jest-environment-node": "^29.7.0"
   },
   "dependencies": {
+    "discord.js": "^14.27.0",
     "express": "^5.2.1",
     "ioredis": "^5.9.2",
     "openai": "^6.16.0"

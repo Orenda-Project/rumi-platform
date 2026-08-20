@@ -378,8 +378,14 @@ async function storeRegData(flowToken, data) {
 
 async function getRegData(flowToken) {
   try {
-    const raw = await redisService.get(`${REDIS_PREFIX}${flowToken}`);
-    return raw ? JSON.parse(raw) : {};
+    // railway-redis.service.js's get() already JSON.parses internally and
+    // returns the deserialized value — parsing it again here always threw
+    // ("[object Object]" is not valid JSON), silently discarding every
+    // teacher's full_name/country/region on every screen after PERSONAL_INFO.
+    // Confirmed live, not a guess: registration completed but greeted
+    // "Welcome, Teacher!" instead of the name actually collected.
+    const data = await redisService.get(`${REDIS_PREFIX}${flowToken}`);
+    return data || {};
   } catch (error) {
     logToFile('⚠️ Redis get failed for registration', { flowToken, error: error.message });
     return {};

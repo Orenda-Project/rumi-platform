@@ -776,7 +776,7 @@ async function recoverStaleVideoRequests() {
 
     const { data: staleRequests, error } = await supabase
       .from('video_requests')
-      .select('id, user_id, topic, language, customization, style, retry_count, session_id')
+      .select('id, user_id, topic, language, customization, style, retry_count, session_id, recipient_identifier')
       .eq('status', 'processing')
       .lt('started_at', staleThreshold);
 
@@ -805,14 +805,12 @@ async function recoverStaleVideoRequests() {
         });
 
         try {
-          // Get user's phone number
-          const { data: user } = await supabase
-            .from('users')
-            .select('phone_number')
-            .eq('id', request.user_id)
-            .single();
-
-          if (user?.phone_number) {
+          // recipient_identifier (not users.phone_number) is the exact
+          // channel this request originated on — a WhatsApp-only join would
+          // misdeliver (or silently drop) this apology for a
+          // Slack-originated request. See video-orchestrator.service.js
+          // #startGeneration, which stores it.
+          if (request.recipient_identifier) {
             const apologyMessages = {
               en: "I'm sorry, there was a problem creating your video about \"" + request.topic + "\". Please try again by sending /video.",
               ur: "معذرت، آپ کی ویڈیو \"" + request.topic + "\" بنانے میں مسئلہ ہوا۔ براہ کرم /video بھیج کر دوبارہ کوشش کریں۔",
@@ -820,7 +818,7 @@ async function recoverStaleVideoRequests() {
               es: "Lo siento, hubo un problema al crear tu video sobre \"" + request.topic + "\". Por favor intenta de nuevo enviando /video."
             };
             await WhatsAppService.sendMessage(
-              user.phone_number,
+              request.recipient_identifier,
               apologyMessages[request.language] || apologyMessages.en
             );
           }
@@ -864,6 +862,12 @@ async function recoverStaleVideoRequests() {
             {
               videoRequestId: request.id,
               userId: request.user_id,
+              // Preserve `from` across the re-queue — video-generation.worker.js
+              // reads it directly off the job data for the happy-path
+              // completion message, and previously this re-queue silently
+              // dropped it, so a video job re-queued after a restart could
+              // never deliver its completion message at all.
+              from: request.recipient_identifier,
               topic: request.topic,
               language: request.language,
               customization: request.customization,
@@ -947,4 +951,4 @@ if (require.main === module) {
 }
 
 // Export for testing
-module.exports = { SQSCoachingWorker, WORKER_ID, startWorker };
+module.exports = { SQSCoachingWorker, WORKER_ID, startWorker, recoverStaleVideoRequests };

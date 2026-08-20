@@ -36,9 +36,41 @@ const CHANNEL_REQUIRED_VARS = {
   baileys: [],
 };
 
+// Additive channels (Slack, Discord, ...) run ALONGSIDE whichever
+// CHANNEL_DRIVER is resolved below — they are never selected by
+// CHANNEL_DRIVER, and their vars are never boot-blocking (never folded into
+// requiredVarsFor/missingRequired). A channel here turns on the moment every
+// one of its listed vars is present, same presence-gate shape as FEATURES.
+const ADDITIVE_CHANNEL_REQUIRED_VARS = {
+  slack: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'],
+  // Deliberately no DISCORD_PUBLIC_KEY here: that var (+ Ed25519 signature
+  // verification) is only needed for a bot using a separate HTTP
+  // "Interactions Endpoint URL" instead of the Gateway. This bot runs the
+  // Gateway (persistent WebSocket) for full message support, and with no
+  // Interactions Endpoint URL configured in the Developer Portal, Discord
+  // delivers slash commands/buttons/modals over that SAME Gateway
+  // connection too — see discord-events.adapter.js. There is no HTTP route
+  // to sign-verify at all for this driver, unlike Slack's webhook-based design.
+  discord: ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID'],
+};
+
 // Optional features → the env key(s) that switch each one on.
 const FEATURES = [
   { name: 'Voice notes (speech-to-text, Soniox)', keys: ['SONIOX_API_KEY'] },
+  {
+    name: 'Slack channel (Bot + Events API)',
+    keys: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'],
+    notes: 'Runs alongside your WhatsApp driver, in both sandbox and production — set via `rumi setup`\'s messaging channels step.',
+    probe: 'slack',
+  },
+  {
+    name: 'Discord channel (Gateway)',
+    keys: ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID'],
+    notes: 'Runs alongside your WhatsApp driver via a persistent Gateway connection — set via `rumi setup`\'s '
+      + 'messaging channels step. MESSAGE_CONTENT is a privileged intent; needs Discord\'s own Bot Verification '
+      + 'once the bot is in 100+ servers.',
+    probe: 'discord',
+  },
   { name: 'Spoken replies (text-to-speech, ElevenLabs)', keys: ['ELEVENLABS_API_KEY'] },
   { name: 'Urdu / regional voices (Uplift)', keys: ['UPLIFT_API_KEY'] },
   { name: 'Lesson-plan generation (Gamma)', keys: ['GAMMA_API_KEY'] },
@@ -121,12 +153,28 @@ function availableFeatures(env = process.env) {
   return FEATURES.filter((f) => isFeatureAvailable(f, env)).map((f) => f.name);
 }
 
+/**
+ * Which additive channels (Slack, Discord, ...) are active — i.e. every var
+ * ADDITIVE_CHANNEL_REQUIRED_VARS lists for that channel is present. Distinct
+ * from resolveChannelDriver: that resolves the ONE mutually-exclusive
+ * WhatsApp-family driver (meta|baileys); this resolves the SET of additional
+ * channels running concurrently alongside it. A deployment with none
+ * configured gets [] — byte-identical behavior to before this existed.
+ */
+function resolveActiveChannels(env = process.env) {
+  return Object.keys(ADDITIVE_CHANNEL_REQUIRED_VARS).filter((name) =>
+    ADDITIVE_CHANNEL_REQUIRED_VARS[name].every((k) => isSet(env[k]))
+  );
+}
+
 module.exports = {
   REQUIRED_VARS,
   CHANNEL_REQUIRED_VARS,
+  ADDITIVE_CHANNEL_REQUIRED_VARS,
   FEATURES,
   isSet,
   resolveChannelDriver,
+  resolveActiveChannels,
   requiredVarsFor,
   missingRequired,
   isFeatureAvailable,

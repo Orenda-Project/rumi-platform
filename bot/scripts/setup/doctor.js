@@ -26,6 +26,7 @@ const fs = require('fs');
 const path = require('path');
 const {
   REQUIRED_VARS, CHANNEL_REQUIRED_VARS, FEATURES, isSet, requiredVarsFor, resolveChannelDriver,
+  resolveActiveChannels,
 } = require('../../shared/config/feature-availability');
 const { DRIVERS, isProductionTier } = require('../../shared/services/messaging/channel-registry');
 const { FLOW_CONFIGS } = require('./flow-configs');
@@ -52,6 +53,8 @@ const KEY_SOURCES = {
   AZURE_SPEECH_REGION: 'portal.azure.com → Speech resource',
   KIE_API_KEY: 'kie.ai → API Key',
   MISTRAL_API_KEY: 'console.mistral.ai → API Keys',
+  SLACK_SIGNING_SECRET: 'api.slack.com/apps → your app → Basic Information → App Credentials',
+  SLACK_BOT_TOKEN: 'api.slack.com/apps → your app → OAuth & Permissions → Bot User OAuth Token',
   AXIOM_DATASET: 'axiom.co → Datasets',
   AXIOM_TOKEN: 'axiom.co → Settings → API tokens',
 };
@@ -99,6 +102,11 @@ function analyzeEnv(env) {
   const requiredPresent = requiredVars.filter((k) => isSet(env[k]));
   const missingRequired = requiredVars.filter((k) => !isSet(env[k]));
 
+  // Additive channels (Slack, Discord, ...) run ALONGSIDE the one resolved
+  // `channel` above — never boot-blocking, purely informational here, same
+  // presence-gate shape as FEATURES.
+  const activeChannels = resolveActiveChannels(env);
+
   const features = FEATURES.map((f) => {
     // Features may declare keys two ways:
     //   - `keys`     → ALL required (the default, conjunctive)
@@ -125,7 +133,7 @@ function analyzeEnv(env) {
   });
 
   return {
-    requiredPresent, missingRequired, features, channel, channelDriverTypo,
+    requiredPresent, missingRequired, features, channel, channelDriverTypo, activeChannels,
   };
 }
 
@@ -209,6 +217,64 @@ const defaultProbes = {
       `https://graph.facebook.com/v21.0/${env.PHONE_NUMBER_ID}?access_token=${env.WHATSAPP_TOKEN}`,
     );
     return { ok: res.ok, detail: `HTTP ${res.status}` };
+  },
+  /**
+   * Checks the bot token AND that it actually carries every scope Rumi's
+   * Slack driver needs (chat:write, im:write, reactions:write, files:read,
+   * files:write). A token that authenticates but lacks one is the single most
+   * common Slack setup failure — the scope error only ever surfaces later,
+   * mid-conversation, as an opaque "missing_scope" with no indication of
+   * which of the five is absent. auth.test succeeding is not enough on its
+   * own: Slack reports the token's granted scopes in the `x-oauth-scopes`
+   * response header, not in the JSON body, so that header is what this reads.
+   */
+  async slack(env) {
+    const REQUIRED_SCOPES = ['chat:write', 'im:write', 'reactions:write', 'files:read', 'files:write'];
+    const res = await fetch('https://slack.com/api/auth.test', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.SLACK_BOT_TOKEN}` },
+    });
+    if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
+
+    const body = await res.json();
+    if (!body.ok) {
+      return { ok: false, detail: `Slack rejected the token: ${body.error || 'unknown error'}` };
+    }
+
+    const granted = (res.headers.get('x-oauth-scopes') || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const missing = REQUIRED_SCOPES.filter((s) => !granted.includes(s));
+    if (missing.length) {
+      return {
+        ok: false,
+        detail: `token works, but is missing ${missing.length === 1 ? 'scope' : 'scopes'}: ${missing.join(', ')} `
+          + '— add them under OAuth & Permissions → Scopes → Bot Token Scopes, then reinstall the app',
+      };
+    }
+
+    return { ok: true, detail: `connected as ${body.team || 'your workspace'}, all required scopes present` };
+  },
+  /**
+   * Lighter than the Slack probe — confirms the bot token authenticates (and,
+   * as a bonus, that the returned application id matches DISCORD_APPLICATION_ID)
+   * with no per-permission breakdown. Discord has no clean single-call
+   * equivalent to Slack's x-oauth-scopes response header, so this is close
+   * to the only cheap verification option available, not just a shortcut.
+   */
+  async discord(env) {
+    const res = await fetch('https://discord.com/api/v10/applications/@me', {
+      headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` },
+    });
+    if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
+
+    const body = await res.json();
+    if (env.DISCORD_APPLICATION_ID && body.id && body.id !== env.DISCORD_APPLICATION_ID) {
+      return {
+        ok: false,
+        detail: `token authenticates, but its application id (${body.id}) does not match DISCORD_APPLICATION_ID (${env.DISCORD_APPLICATION_ID})`,
+      };
+    }
+
+    return { ok: true, detail: `connected as ${body.name || 'your application'}` };
   },
   async redis(env) {
     // Lazy require so the bot's redis lib is optional at doctor time.
@@ -316,6 +382,7 @@ async function runDoctor({
     flowResults,
     channel: analysis.channel,
     channelDriverTypo: analysis.channelDriverTypo,
+    activeChannels: analysis.activeChannels,
   };
 }
 
@@ -344,6 +411,9 @@ function formatReport(result) {
       `⚠️  CHANNEL_DRIVER="${result.channelDriverTypo}" is not a recognized driver (valid: meta | baileys) —`
       + ` falling back to ${result.channel}.`
     );
+  }
+  if (result.activeChannels && result.activeChannels.length) {
+    lines.push(`Additional channels active: ${result.activeChannels.join(', ')}`);
   }
   lines.push('');
   if (result.missingRequired.length) {

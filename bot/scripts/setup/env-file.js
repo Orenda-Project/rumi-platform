@@ -26,6 +26,26 @@ function keyOf(line) {
   return trimmed.slice(0, eq).trim();
 }
 
+// Returns the KEY for a COMMENTED-OUT `# KEY=VALUE` line specifically (e.g.
+// `.env.template`'s own placeholders, or a var a user temporarily disabled by
+// prefixing it with `#`) — distinct from an ordinary prose comment line, which
+// has no `=` at all right after its own leading `#`. Used only to find where
+// to UNCOMMENT + patch a key that has no active line, instead of appending a
+// second, live copy at the end of the file while the commented placeholder
+// sits above it, stale and confusing to read.
+function commentedKeyOf(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('#')) return null;
+  const withoutHash = trimmed.slice(1).trim();
+  const eq = withoutHash.indexOf('=');
+  if (eq === -1) return null;
+  const key = withoutHash.slice(0, eq).trim();
+  // A real KEY is a plain identifier (letters/digits/underscore) — this is
+  // what actually distinguishes `# SLACK_BOT_TOKEN=xoxb-...` from prose like
+  // `# note: this only applies if CHANNEL_DRIVER=meta`.
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(key) ? key : null;
+}
+
 /**
  * @param {string} envPath
  * @returns {Record<string,string>} parsed KEY=VALUE pairs (best-effort; lines
@@ -75,22 +95,43 @@ function writeEnvVars(envPath, updates, opts = {}) {
   const lines = readLines(envPath);
   const remaining = new Set(Object.keys(updates));
 
+  // An ACTIVE line always wins over a commented-out one for a given key — if
+  // both exist (e.g. a stale disabled copy above a real one below), the
+  // active line is where dotenv's value actually comes from, so that is the
+  // one patched; the commented line is left alone as ordinary text.
   const lastIndexForKey = new Map();
+  const lastCommentedIndexForKey = new Map();
   lines.forEach((line, i) => {
     const key = keyOf(line);
-    if (key !== null && remaining.has(key)) lastIndexForKey.set(key, i);
+    if (key !== null && remaining.has(key)) { lastIndexForKey.set(key, i); return; }
+    const commentedKey = commentedKeyOf(line);
+    if (commentedKey !== null && remaining.has(commentedKey)) lastCommentedIndexForKey.set(commentedKey, i);
   });
 
   const patched = [];
   lines.forEach((line, i) => {
     const key = keyOf(line);
-    if (key === null || !remaining.has(key)) {
-      patched.push(line);
+    if (key !== null && remaining.has(key)) {
+      if (i !== lastIndexForKey.get(key)) return; // drop an earlier duplicate of this key
+      patched.push(`${key}=${updates[key]}`);
+      remaining.delete(key);
       return;
     }
-    if (i !== lastIndexForKey.get(key)) return; // drop an earlier duplicate of this key
-    patched.push(`${key}=${updates[key]}`);
-    remaining.delete(key);
+
+    // No active line for this key anywhere in the file, but THIS is its
+    // commented-out placeholder — uncomment it in place instead of appending
+    // a second, live copy at the end while the disabled one sits above it.
+    const commentedKey = commentedKeyOf(line);
+    if (
+      commentedKey !== null && remaining.has(commentedKey)
+      && !lastIndexForKey.has(commentedKey) && i === lastCommentedIndexForKey.get(commentedKey)
+    ) {
+      patched.push(`${commentedKey}=${updates[commentedKey]}`);
+      remaining.delete(commentedKey);
+      return;
+    }
+
+    patched.push(line);
   });
 
   for (const key of remaining) {

@@ -382,6 +382,264 @@ describe('optional extras', () => {
     expect(saved.SONIOX_API_KEY).toBe('soniox-key');
     expect(saved.AZURE_SPEECH_KEY).toBeUndefined();
   });
+
+  it('no longer lists Slack — it has its own step, not a single "Key" prompt (a whole channel with app-side config needs more than one field)', () => {
+    const { OPTIONAL_EXTRAS } = require('../../bot/scripts/setup/fields');
+    expect(OPTIONAL_EXTRAS.some((e) => e.keys.includes('SLACK_BOT_TOKEN'))).toBe(false);
+  });
+});
+
+describe('stepMessagingChannels', () => {
+  const slackPass = { slack: async () => ({ ok: true, detail: 'connected as My Workspace, all required scopes present' }) };
+
+  it('defaults to declining Slack — WhatsApp alone is a complete setup', async () => {
+    const { stepMessagingChannels } = loadWizard();
+    const io = fakeIo({ confirm: [false] });
+
+    const result = await stepMessagingChannels(io, {}, () => {});
+
+    expect(io.asked.confirm[0]).toMatch(/also connect slack/i);
+    expect(result).toEqual({ slack: false, discord: false });
+    expect(io.asked.ask).toHaveLength(0);
+  });
+
+  it('prints the full checklist (scopes, event, all 3 Request URLs, every ADDABLE slash command) before asking for credentials', async () => {
+    // /status is deliberately excluded from what this step tells the user to
+    // add — confirmed live: Slack rejects it outright as a reserved word, no
+    // matter what. Telling a user to add it here would send them straight
+    // into that wall. The feature stays reachable on Slack via the
+    // natural-language alternative text-message.handler.js added for this
+    // (see its own /status branch's comment) — this step must say so instead
+    // of silently omitting it, which is why the second assertion checks for
+    // an explicit note, not just the command's absence.
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const { SLACK_BOT_SCOPES, SLACK_SLASH_COMMANDS } = require('../../bot/scripts/setup/fields');
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    for (const scope of SLACK_BOT_SCOPES) expect(log.text).toContain(scope);
+    for (const cmd of SLACK_SLASH_COMMANDS.filter((c) => c !== '/status')) expect(log.text).toContain(cmd);
+    // /status itself is still mentioned, but only inside the explanatory
+    // note below — never as a numbered row the user is told to go add.
+    expect(log.text).toMatch(/status.*reserve|reserve.*status/is);
+    expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/events');
+    expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/interactions');
+    expect(log.text).toContain('https://my-tunnel.ngrok-free.dev/api/slack/commands');
+    expect(log.text).toContain('message.im');
+    expect(log.text).toMatch(/Socket Mode OFF/i);
+  });
+
+  it('walks the app config as 6 separate screens, one Press Enter between each, not one wall of text', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    // 6 app-config screens (create app, scopes, events, interactivity, slash
+    // commands, install) — the credential prompts afterward are `ask`, not
+    // `pressEnter`, so this count is exactly the config walkthrough's length.
+    expect(io.asked.pressEnter).toBe(6);
+  });
+
+  it('presents the checklist in Slack\'s own sidebar order: create app -> scopes -> events -> interactivity -> slash commands -> install', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    const order = ['Create the app', 'Bot Token Scopes', 'Event Subscriptions', 'Interactivity & Shortcuts', 'Slash Commands', 'Install the app']
+      .map((label) => log.text.indexOf(label));
+    expect(order.every((i) => i !== -1)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it('masks both Slack credentials — the signing secret AND the bot token', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    // ask[0] is the base-URL prompt; the two Slack credential prompts follow.
+    expect(io.asked.ask[1].secret).toBe(true); // Signing Secret
+    expect(io.asked.ask[2].secret).toBe(true); // Bot User OAuth Token
+  });
+
+  it('saves both credentials once the live scope check passes', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const saved = {};
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['https://my-tunnel.ngrok-free.dev', 'a-signing-secret', 'xoxb-a-bot-token'],
+    });
+
+    const result = await stepMessagingChannels(io, {}, (vars) => Object.assign(saved, vars));
+
+    expect(saved.SLACK_SIGNING_SECRET).toBe('a-signing-secret');
+    expect(saved.SLACK_BOT_TOKEN).toBe('xoxb-a-bot-token');
+    expect(result).toEqual({ slack: true, discord: false });
+  });
+
+  it('reports exactly which scopes are missing rather than a generic failure, and lets the user retry', async () => {
+    const scopeCheck = jest.fn()
+      .mockResolvedValueOnce({ ok: false, detail: 'token works, but is missing scopes: files:read, files:write' })
+      .mockResolvedValueOnce({ ok: true, detail: 'connected as My Workspace, all required scopes present' });
+    const { stepMessagingChannels } = loadWizard({ probes: { slack: scopeCheck } });
+    const io = fakeIo({
+      confirm: [true, true], // connect Slack, then "try again" after the failure
+      ask: [
+        'https://my-tunnel.ngrok-free.dev',
+        'signing-secret', 'xoxb-bot-token-1', // first attempt — missing scopes
+        'signing-secret', 'xoxb-bot-token-2', // retry — succeeds
+      ],
+    });
+
+    const result = await stepMessagingChannels(io, {}, () => {});
+
+    expect(scopeCheck).toHaveBeenCalledTimes(2);
+    expect(log.text).toContain('missing scopes: files:read, files:write');
+    expect(result).toEqual({ slack: true, discord: false });
+  });
+
+  it('gives up cleanly if the user declines to retry after a failed check', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: { slack: async () => ({ ok: false, detail: 'HTTP 401' }) } });
+    const io = fakeIo({
+      confirm: [true, false], // connect Slack, then decline the retry
+      ask: ['https://my-tunnel.ngrok-free.dev', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    const result = await stepMessagingChannels(io, {}, () => {});
+    expect(result).toEqual({ slack: false, discord: false });
+  });
+
+  it('rejects a non-https base URL — Slack refuses anything else', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const io = fakeIo({
+      confirm: [true],
+      ask: ['http://not-secure.example.com', 'signing-secret', 'xoxb-bot-token'],
+    });
+
+    await stepMessagingChannels(io, {}, () => {});
+
+    expect(io.validationFailures.some((f) => /https:\/\//.test(f.reason))).toBe(true);
+  });
+
+  it('skips straight through when Slack is already configured and still working', async () => {
+    const { stepMessagingChannels } = loadWizard({ probes: slackPass });
+    const env = { SLACK_SIGNING_SECRET: 'already-set', SLACK_BOT_TOKEN: 'xoxb-already-set' };
+    const io = fakeIo();
+
+    const result = await stepMessagingChannels(io, env, () => {});
+
+    expect(result).toEqual({ slack: true, discord: false });
+    // Never asked "also connect Slack?" (Slack's own live check short-circuited
+    // that) — the one confirm() call that DOES happen is Discord's own
+    // "Also connect Discord?" question, asked unconditionally afterward.
+    expect(io.asked.confirm).toEqual(['Also connect Discord?']);
+  });
+});
+
+describe('stepDiscordChannel', () => {
+  const discordPass = { discord: async () => ({ ok: true, detail: 'connected as My App' }) };
+
+  function loadWizardWithDiscordCommands(registerImpl) {
+    jest.doMock('../../bot/scripts/setup/discord-register-commands', () => ({
+      registerDiscordCommands: registerImpl || jest.fn().mockResolvedValue({ registered: 9, guildScoped: false, commands: [] }),
+    }));
+    return loadWizard({ probes: discordPass });
+  }
+
+  it('defaults to declining Discord — WhatsApp alone is a complete setup', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    const io = fakeIo({ confirm: [false] });
+
+    const result = await stepDiscordChannel(io, {}, () => {});
+
+    expect(io.asked.confirm[0]).toMatch(/also connect discord/i);
+    expect(result).toEqual({ discord: false });
+    expect(io.asked.ask).toHaveLength(0);
+  });
+
+  it('walks the app config as 5 separate screens, one Press Enter between each', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    const io = fakeIo({ confirm: [true], ask: ['bot-token', 'app-id'] });
+
+    await stepDiscordChannel(io, {}, () => {});
+
+    expect(io.asked.pressEnter).toBe(5);
+  });
+
+  it('saves both credentials, registers slash commands, and reports success once the live check passes', async () => {
+    const registerImpl = jest.fn().mockResolvedValue({ registered: 9, guildScoped: false, commands: ['portal'] });
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands(registerImpl);
+    const saved = {};
+    const io = fakeIo({ confirm: [true], ask: ['a-bot-token', 'an-app-id'] });
+
+    const result = await stepDiscordChannel(io, {}, (vars) => Object.assign(saved, vars));
+
+    expect(saved.DISCORD_BOT_TOKEN).toBe('a-bot-token');
+    expect(saved.DISCORD_APPLICATION_ID).toBe('an-app-id');
+    expect(registerImpl).toHaveBeenCalledWith({ token: 'a-bot-token', applicationId: 'an-app-id', guildId: undefined });
+    expect(result).toEqual({ discord: true });
+  });
+
+  it('masks the bot token but not the application id', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    const io = fakeIo({ confirm: [true], ask: ['a-bot-token', 'an-app-id'] });
+
+    await stepDiscordChannel(io, {}, () => {});
+
+    expect(io.asked.ask[0].secret).toBe(true); // Bot Token
+    expect(io.asked.ask[1].secret).toBeFalsy(); // Application ID
+  });
+
+  it('still reports success even if slash-command registration itself fails — that is retriable separately', async () => {
+    const registerImpl = jest.fn().mockRejectedValue(new Error('network error'));
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands(registerImpl);
+    const io = fakeIo({ confirm: [true], ask: ['a-bot-token', 'an-app-id'] });
+
+    const result = await stepDiscordChannel(io, {}, () => {});
+
+    expect(result).toEqual({ discord: true });
+  });
+
+  it('gives up cleanly if the user declines to retry after a failed check', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    jest.resetModules();
+    jest.doMock('../../bot/scripts/setup/discord-register-commands', () => ({ registerDiscordCommands: jest.fn() }));
+    jest.doMock('../../bot/scripts/setup/doctor', () => ({
+      defaultProbes: { discord: async () => ({ ok: false, detail: 'HTTP 401' }) },
+      runDoctor: jest.fn(),
+    }));
+    const wizard = require(WIZARD);
+    const io = fakeIo({ confirm: [true, false], ask: ['bad-token', 'an-app-id'] });
+
+    const result = await wizard.stepDiscordChannel(io, {}, () => {});
+    expect(result).toEqual({ discord: false });
+  });
+
+  it('skips straight through when Discord is already configured and still working', async () => {
+    const { stepDiscordChannel } = loadWizardWithDiscordCommands();
+    const env = { DISCORD_BOT_TOKEN: 'already-set', DISCORD_APPLICATION_ID: 'already-set' };
+    const io = fakeIo();
+
+    const result = await stepDiscordChannel(io, env, () => {});
+
+    expect(result).toEqual({ discord: true });
+    expect(io.asked.confirm).toHaveLength(0); // never even asked "also connect Discord?"
+  });
 });
 
 describe('the template is a set of suggestions, not answers', () => {

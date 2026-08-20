@@ -122,26 +122,22 @@ async function handleQuizReport(body) {
     return { skipped: true, reason: 'requeued', ageMs };
   }
 
-  // Resolve teacherPhone before firing the report. Two sources in priority
-  // order: payload.teacherPhone → quiz.teacher_id → users.phone_number.
-  // If both miss, we MUST NOT set quiz_report_sent below — otherwise the
-  // sibling 15-min cascade message (which DOES carry teacherPhone) will hit
-  // the flag and skip with reason='already_fired'.
-  let teacherPhone = payload.teacherPhone;
-  if (!teacherPhone && quiz.teacher_id) {
-    const { data: teacher } = await supabase
-      .from('users')
-      .select('phone_number')
-      .eq('id', quiz.teacher_id)
-      .single();
-    if (teacher && teacher.phone_number) {
-      const raw = String(teacher.phone_number);
-      teacherPhone = raw.startsWith('+') ? raw : `+${raw}`;
-    }
-  }
+  // teacherPhone must come from the job payload — it is the exact channel
+  // identifier (a bare WhatsApp phone number, or "slack:<id>") captured when
+  // the quiz was originally requested (see quiz-delivery.service.js#deliverQuiz),
+  // and it survives every 15-min cascade re-queue unchanged (this function
+  // re-queues the SAME payload object above). A users.phone_number fallback
+  // used to exist here, keyed off quiz.teacher_id — removed deliberately: it
+  // silently guesses a DIFFERENT channel than the one the quiz was requested
+  // on (always WhatsApp, formatted with a "+" prefix that would corrupt a
+  // Slack identifier if it were ever reached), which is exactly the
+  // cross-channel misdelivery this fix exists to prevent. If teacherPhone is
+  // genuinely missing, that is a real bug to surface, not paper over with a
+  // guess at a possibly-wrong channel.
+  const teacherPhone = payload.teacherPhone;
 
   if (!teacherPhone) {
-    logToFile('⚠️ quiz_report: no teacher phone could be resolved — skipping (retry stays alive, idempotency flag NOT set)', { quizId, teacherIdPresent: !!quiz.teacher_id });
+    logToFile('⚠️ quiz_report: no teacherPhone in payload — skipping (retry stays alive, idempotency flag NOT set)', { quizId, teacherIdPresent: !!quiz.teacher_id });
     logEvent('quiz.report.skipped', { quizId, reason: 'no_teacher_phone' });
     return { skipped: true, reason: 'no_teacher_phone' };
   }

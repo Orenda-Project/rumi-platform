@@ -727,7 +727,8 @@ Keep your responses relatively short as they will be sent via WhatsApp messages.
    - OR mention a subject + grade in a way that suggests they want teaching materials
 2. "presentation" - ONLY if they explicitly ask to CREATE, GENERATE, or MAKE a presentation/slides
 3. "video" - if they ask for a video, educational video, or want to watch/see a video on a topic (for any grade or subject)
-4. "general" - for questions, advice, guidance, or any other conversation (including "how to teach X")
+4. "quiz" - if they ask to CREATE, GENERATE, or MAKE a quiz, test, or set of questions, or ask to be quizzed/tested on a topic
+5. "general" - for questions, advice, guidance, or any other conversation (including "how to teach X")
 
 IMPORTANT: Distinguish carefully:
 - "Create a lesson plan about X" → lesson_plan
@@ -739,6 +740,9 @@ IMPORTANT: Distinguish carefully:
 - "Do you have a video on fractions?" → video
 - "I want to watch a video about photosynthesis" → video
 - "Video dikhao on multiplication" → video
+- "Create a quiz on X" → quiz (explicit quiz request always wins, even with a topic/grade)
+- "Quiz on X for grade Y" → quiz
+- "Quiz me on X" → quiz
 - "How do I teach X?" → general (they want advice, not a document)
 - "Help me figure out how to teach X" → general (they want guidance)
 - "What's the best way to teach X?" → general (they want advice)
@@ -757,12 +761,15 @@ Examples:
 - "ویڈیو چاہیے" (need video) → video
 - "Show me a grade 3 maths video" → video
 - "Do you have videos on science?" → video
+- "Create a quiz on operating systems for grade 12" → quiz
+- "quiz banao" (make a quiz) → quiz
+- "کوئز بنائیں" (make a quiz) → quiz
 - "یہ کیسے کام کرتا ہے؟" (how does this work?) → general
 - "How do I teach photosynthesis?" → general
 - "Figure out how to teach X" → general
 - "What's a good way to explain X?" → general
 
-Return ONLY one word: lesson_plan, presentation, video, or general`
+Return ONLY one word: lesson_plan, presentation, video, quiz, or general`
           },
           {
             role: 'user',
@@ -782,6 +789,8 @@ Return ONLY one word: lesson_plan, presentation, video, or general`
         return { type: 'presentation', message };
       } else if (intent === 'video') {
         return { type: 'video', message };
+      } else if (intent === 'quiz') {
+        return { type: 'quiz', message };
       } else {
         return { type: 'general', message };
       }
@@ -815,6 +824,20 @@ Return ONLY one word: lesson_plan, presentation, video, or general`
       'video', 'videos', 'watch', 'ویڈیو', 'ویڈیوز',
       'dikhao', 'dekho', 'دکھاؤ', 'دیکھو'
     ];
+
+    const quizKeywords = [
+      'quiz', 'کوئز'
+    ];
+
+    // Checked before lessonPlanKeywords: "quiz" is a more specific request
+    // than the generic "lesson"/"lesson plan" keywords, and isQuizIntent()
+    // (the real gate in text-message.handler.js) already applies its own
+    // "lesson plan" negative-dominance check before this fallback ever runs.
+    for (const keyword of quizKeywords) {
+      if (lowerMessage.includes(keyword.toLowerCase())) {
+        return { type: 'quiz', message };
+      }
+    }
 
     for (const keyword of lessonPlanKeywords) {
       if (lowerMessage.includes(keyword.toLowerCase())) {

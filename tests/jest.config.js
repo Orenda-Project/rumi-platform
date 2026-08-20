@@ -15,6 +15,7 @@ module.exports = {
   moduleNameMapper: {
     '^openai$': '<rootDir>/node_modules/openai',
     '^ioredis$': '<rootDir>/node_modules/ioredis',
+    '^discord\\.js$': '<rootDir>/node_modules/discord.js',
     // axios + form-data live in bot/node_modules (not root), and the root test
     // job runs before bot deps install — so source that requires them can't
     // resolve. Map to lightweight stubs (same pattern as pino/canvas above) so
@@ -22,6 +23,7 @@ module.exports = {
     '^axios$': '<rootDir>/tests/__mocks__/axios.js',
     '^form-data$': '<rootDir>/tests/__mocks__/form-data.js',
     // bot-only optional/native packages — use lightweight mocks for OSS test suite
+    '^@supabase/supabase-js$': '<rootDir>/tests/__mocks__/supabase-js.js',
     '^@aws-sdk/client-s3$': '<rootDir>/tests/__mocks__/aws-sdk-client-s3.js',
     '^@aws-sdk/s3-request-presigner$': '<rootDir>/tests/__mocks__/aws-sdk-s3-request-presigner.js',
     '^pino$': '<rootDir>/tests/__mocks__/pino.js',

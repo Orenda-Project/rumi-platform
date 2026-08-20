@@ -30,6 +30,7 @@ const { logToFile } = require('../../utils/logger');
 const PENDING_INTENT_KEY = (userId) => `quiz_intent_pending:${userId}`;
 const PENDING_RESUME_KEY = (userId) => `pending_quiz_resume:${userId}`;
 const RESUME_TTL_SEC = 30 * 60;
+const PENDING_INTENT_TTL_SEC = 30 * 60;
 
 const COPY = {
   no_class: {
@@ -51,6 +52,14 @@ const COPY = {
   show_in_chat_intro: {
     en: (topic) => `Generating a 5-question preview quiz on "${topic}"…`,
     ur: (topic) => `"${topic}" پر 5 سوالات کا پیش نظری کوئز تیار کر رہی ہوں…`
+  },
+  confirm: {
+    en: (topic) => (topic
+      ? `Want a quiz on "${topic}"? I can send it to your class, or show a preview here in chat.`
+      : 'Want a quiz? I can send it to your class, or show a preview here in chat.'),
+    ur: (topic) => (topic
+      ? `کیا آپ "${topic}" پر کوئز چاہتے ہیں؟ میں اسے آپ کی کلاس کو بھیج سکتی ہوں، یا یہاں چیٹ میں ایک جھلک دکھا سکتی ہوں۔`
+      : 'کیا آپ کوئز چاہتے ہیں؟ میں اسے آپ کی کلاس کو بھیج سکتی ہوں، یا یہاں چیٹ میں ایک جھلک دکھا سکتی ہوں۔')
   }
 };
 
@@ -281,6 +290,76 @@ async function _handleShowInChat(user, from, intent) {
 }
 
 /**
+ * Extracts the quiz topic (if any) from a natural-language message, e.g.
+ * "create a quiz on operating systems for grade 12" -> "operating systems".
+ * Mirrors VideoOrchestrator.extractTopicFromMessage's shape (a small,
+ * cheap LLM call, null on anything that doesn't look like a clear topic) —
+ * this is a courtesy for pre-filling the confirmation copy and the eventual
+ * Quiz Manager Flow, not a gate: a null topic still shows the two buttons.
+ */
+async function extractQuizTopic(message) {
+  try {
+    // eslint-disable-next-line global-require -- lazy, avoids a require cycle with text-message.handler.js
+    const OpenAIService = require('../openai.service');
+    const response = await OpenAIService.createChatCompletion({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Extract the quiz topic from the user message. Return ONLY the topic, nothing else. '
+            + 'If no clear topic is found, return null. Examples:\n'
+            + '- "create a quiz on operating systems for grade 12" -> "operating systems"\n'
+            + '- "quiz on photosynthesis for grade 5" -> "photosynthesis"\n'
+            + '- "quiz me on fractions" -> "fractions"\n'
+            + '- "کوئز بنائیں اسلامیات پر" -> "اسلامیات"'
+        },
+        { role: 'user', content: message }
+      ],
+      max_tokens: 50,
+      temperature: 0.3
+    });
+    const topic = response.choices[0].message.content.trim();
+    if (!topic || topic.toLowerCase() === 'null') return null;
+    return topic;
+  } catch (error) {
+    logToFile('⚠️ Quiz topic extraction failed — proceeding with no topic', { error: error.message });
+    return null;
+  }
+}
+
+/**
+ * Called from text-message.handler.js when isQuizIntent(messageBody) is true.
+ * Stashes { topic, language } under quiz_intent_pending:<userId> (consumed
+ * by handleConfirmationButton below) and shows the two-button confirmation.
+ *
+ * @param {Object} user - users row (must be present)
+ * @param {string} from - recipient identifier (phone or a channel-prefixed id)
+ * @param {string} messageBody - the raw inbound message
+ * @param {string} language - the user's response language ('en' | 'ur')
+ */
+async function promptQuizConfirmation(user, from, messageBody, language) {
+  if (!user || !user.id) {
+    logToFile('⚠️ quiz intent detected without a resolved user — ignoring', { from });
+    return;
+  }
+
+  const lang = language || 'en';
+  const topic = await extractQuizTopic(messageBody);
+
+  await _redisSet(PENDING_INTENT_KEY(user.id), JSON.stringify({ topic: topic || '', language: lang }), PENDING_INTENT_TTL_SEC);
+
+  await WhatsAppService.sendInteractiveButtons(from, {
+    body: _copy('confirm', lang)(topic),
+    buttons: [
+      { id: 'quiz_send_to_class', title: lang === 'ur' ? 'کلاس کو بھیجیں' : 'Send to class' },
+      { id: 'quiz_show_in_chat', title: lang === 'ur' ? 'چیٹ میں دکھائیں' : 'Show in chat' }
+    ]
+  });
+
+  logToFile('✅ Quiz intent confirmation shown', { userId: user.id, topic, language: lang });
+}
+
+/**
  * Public entry called from whatsapp-bot.js button-reply branch.
  *
  * @param {string} buttonId — 'quiz_send_to_class' | 'quiz_show_in_chat'
@@ -342,11 +421,14 @@ async function tryResumeAfterClassFlow(user, from) {
 }
 
 module.exports = {
+  promptQuizConfirmation,
   handleConfirmationButton,
   tryResumeAfterClassFlow,
   // Exposed for tests
   _PENDING_INTENT_KEY: PENDING_INTENT_KEY,
   _PENDING_RESUME_KEY: PENDING_RESUME_KEY,
   _RESUME_TTL_SEC: RESUME_TTL_SEC,
-  _COPY: COPY
+  _PENDING_INTENT_TTL_SEC: PENDING_INTENT_TTL_SEC,
+  _COPY: COPY,
+  _extractQuizTopic: extractQuizTopic
 };

@@ -145,6 +145,46 @@ class FeatureRegistrationService {
    * @param {string} format - 'text' | 'voice'
    */
   static async sendNameQuestion(userId, phoneNumber, language = 'en', format = 'text') {
+    // Slack/Discord have a real Flow-equivalent (a modal-workaround renderer,
+    // opened by button click — see slack-flow-registry.js /
+    // discord-flow-registry.js), not sendFlow()'s Meta/Baileys-shaped
+    // {flowId, flowToken} contract, which is a no-op stub on both. Previously
+    // this branch didn't exist at all, so Slack/Discord users silently fell
+    // through to the plain-text name-capture path below instead of getting
+    // the polished registration form — fixed here for both channels, matching
+    // how /settings already branches on driverForIdentifier() in
+    // text-message.handler.js.
+    const { driverForIdentifier } = require('./messaging/channel-registry');
+    const driverName = driverForIdentifier(phoneNumber);
+
+    if (driverName === 'slack') {
+      try {
+        await WhatsAppService.sendInteractiveButtons(phoneNumber, {
+          body: 'Quick setup — tell us a little about you.',
+          buttons: [{ id: 'open_modal:registration', title: 'Get started' }],
+        });
+        logToFile('Registration modal button sent (Slack)', { userId, phoneNumber });
+        return;
+      } catch (error) {
+        logToFile('Slack registration button send failed; falling back to name question', { userId, error: error.message });
+        // fall through to the conversational path
+      }
+    }
+
+    if (driverName === 'discord') {
+      try {
+        await WhatsAppService.sendInteractiveButtons(phoneNumber, {
+          body: 'Quick setup — tell us a little about you.',
+          buttons: [{ id: 'discord_start_flow:registration', title: 'Get started' }],
+        });
+        logToFile('Registration modal button sent (Discord)', { userId, phoneNumber });
+        return;
+      } catch (error) {
+        logToFile('Discord registration button send failed; falling back to name question', { userId, error: error.message });
+        // fall through to the conversational path
+      }
+    }
+
     // Presence-gated: if a registration Flow is configured, open the polished
     // form instead of the conversational name question. Unset (default) → the
     // conversational path below. The Flow completes via

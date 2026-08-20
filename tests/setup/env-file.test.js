@@ -88,6 +88,49 @@ describe('writeEnvVars', () => {
     expect(readEnvFile(p).CHANNEL_DRIVER).toBe('PATCHED');
   });
 
+  it('uncomments and patches a commented-out placeholder IN PLACE, rather than appending a second live copy at the end', () => {
+    // Real bug this fixes: a user (or a fresh .env.template) commented out
+    // `# SLACK_SIGNING_SECRET=...` in its intended spot, right after the
+    // WhatsApp block. Running the wizard's Slack step patched the value by
+    // APPENDING SLACK_SIGNING_SECRET=<real value> at the very end of the
+    // file instead — leaving the original commented placeholder sitting
+    // above, stale and confusing, while the real, active line lived
+    // hundreds of lines away in the Optional section.
+    const p = tempEnvPath();
+    fs.writeFileSync(p, '# keep me\n# SLACK_SIGNING_SECRET=CHANGEME\nOTHER=untouched\n');
+
+    writeEnvVars(p, { SLACK_SIGNING_SECRET: 'real-secret' });
+
+    const lines = fs.readFileSync(p, 'utf-8').split('\n');
+    expect(lines[0]).toBe('# keep me');
+    expect(lines[1]).toBe('SLACK_SIGNING_SECRET=real-secret'); // uncommented, in place
+    expect(lines[2]).toBe('OTHER=untouched');
+    expect(lines.filter((l) => l.includes('SLACK_SIGNING_SECRET'))).toHaveLength(1); // no duplicate at the end
+  });
+
+  it('prefers an ACTIVE line over a commented-out one when both exist for the same key', () => {
+    const p = tempEnvPath();
+    fs.writeFileSync(p, '# FOO=commented-stale\nFOO=CHANGEME\n');
+
+    writeEnvVars(p, { FOO: 'real-value' });
+
+    const lines = fs.readFileSync(p, 'utf-8').trim().split('\n');
+    expect(lines).toEqual(['# FOO=commented-stale', 'FOO=real-value']);
+  });
+
+  it('does not mistake an ordinary prose comment for a commented-out key', () => {
+    const p = tempEnvPath();
+    fs.writeFileSync(p, '# note: this only applies if CHANNEL_DRIVER=meta\nFOO=bar\n');
+
+    writeEnvVars(p, { CHANNEL_DRIVER: 'meta' });
+
+    const lines = fs.readFileSync(p, 'utf-8').trim().split('\n');
+    // The prose comment is untouched; CHANNEL_DRIVER is appended fresh, since
+    // there was no real commented-out placeholder for it to uncomment.
+    expect(lines[0]).toBe('# note: this only applies if CHANNEL_DRIVER=meta');
+    expect(lines).toContain('CHANNEL_DRIVER=meta');
+  });
+
   it('normalizes CRLF line endings to LF on write (no mixed-EOL file)', () => {
     const p = tempEnvPath();
     fs.writeFileSync(p, 'FOO=bar\r\nBAZ=CHANGEME\r\n');

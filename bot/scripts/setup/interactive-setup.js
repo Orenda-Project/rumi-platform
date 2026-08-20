@@ -50,7 +50,7 @@ const summary = require('./summary');
 const ROOT = path.resolve(__dirname, '../../..');
 const ENV_PATH = path.join(ROOT, '.env');
 const ENV_TEMPLATE_PATH = path.join(ROOT, '.env.template');
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 const LOCAL_REDIS = { url: 'redis://localhost:6379', container: 'rumi-redis', image: 'redis:7-alpine' };
 
 // ── Shared plumbing ──────────────────────────────────────────────────────────
@@ -488,8 +488,15 @@ async function stepExtras(io, env, save, opts = {}) {
       // The label is the env var only for the odd second field (a region, say)
       // where there is no plainer name for it than the thing itself.
       const label = key === extra.keys[0] ? 'Key' : key.replace(/_/g, ' ').toLowerCase();
+      // extra.secret may be a bare boolean (masks only the first key — the
+      // shape every single-secret extra uses today) or an array naming which
+      // keys are actually sensitive (an entry with MULTIPLE real secrets,
+      // e.g. Slack's signing secret AND bot token, both of which must never
+      // echo to the terminal — masking only the first would silently type
+      // the second one in the clear).
+      const isSecret = Array.isArray(extra.secret) ? extra.secret.includes(key) : Boolean(extra.secret) && key === extra.keys[0];
       // eslint-disable-next-line no-await-in-loop -- one question at a time, by design
-      const value = await io.ask(label, { secret: Boolean(extra.secret) && key === extra.keys[0], fallback: prefill(env, key) });
+      const value = await io.ask(label, { secret: isSecret, fallback: prefill(env, key) });
       if (!value) break;
       collected[key] = value;
     }
@@ -657,6 +664,232 @@ async function stepChannel(io, env, save, opts = {}) {
   return { channel, ...outcome };
 }
 
+// ── Step 6: additional messaging channels (Slack, later Discord) ────────────
+
+/**
+ * Walks the Slack app-configuration checklist one screen at a time, in the
+ * exact order the app's own sidebar is laid out — Press Enter to move from
+ * each section to the next, rather than a single screen listing every
+ * requirement at once.
+ *
+ * This exists because the alternative (discover each requirement from a live
+ * failure — Socket Mode, then App Home, then a missing scope, then another
+ * missing scope) is what actually happened testing this by hand: eight
+ * separate rounds of trial and error, each one a different error message with
+ * no indication of what else was still missing. One section per screen, done
+ * in order with nothing to skip ahead to, turns that into one pass.
+ */
+async function walkSlackAppConfig(io, baseUrl) {
+  const urls = fields.slackRequestUrls(baseUrl);
+
+  console.log('');
+  console.log(ui.say('Slack apps are configured on Slack\'s own site — nothing here can do that part for you. This walks through it one section at a time, in the order Slack\'s own sidebar lists them.'));
+  console.log('');
+  console.log(ui.bold('  1. Create the app'));
+  console.log(ui.steps(fields.SLACK_APP_WALKTHROUGH_INTRO));
+  await io.pressEnter('Press Enter once the app exists and Socket Mode is off');
+
+  console.log('');
+  console.log(ui.bold('  2. Bot Token Scopes') + ui.dim('  (OAuth & Permissions → Scopes → Bot Token Scopes)'));
+  console.log(ui.say('Click "Add an OAuth Scope" and add each of these:'));
+  console.log(ui.box(fields.SLACK_BOT_SCOPES, { role: 'accent' }));
+  await io.pressEnter('Press Enter once all five scopes are added');
+
+  console.log('');
+  console.log(ui.bold('  3. Event Subscriptions'));
+  console.log(ui.steps([
+    'Turn Event Subscriptions on',
+    'Set the Request URL below',
+    'Under "Subscribe to bot events", add: message.im — this one event covers both plain messages and file/voice uploads in a DM',
+  ]));
+  console.log(ui.box([urls.events], { title: 'Request URL', role: 'accent' }));
+  await io.pressEnter('Press Enter once the Request URL is verified and message.im is subscribed');
+
+  console.log('');
+  console.log(ui.bold('  4. Interactivity & Shortcuts'));
+  console.log(ui.steps([
+    'Turn Interactivity on',
+    'Set the Request URL below',
+  ]));
+  console.log(ui.box([urls.interactions], { title: 'Request URL', role: 'accent' }));
+  await io.pressEnter('Press Enter once that Request URL is saved');
+
+  console.log('');
+  console.log(ui.bold('  5. Slash Commands'));
+  console.log(ui.say('Add each of these as its own Slash Command, every one pointing at the same Request URL:'));
+  console.log(ui.box([urls.commands], { title: 'Request URL (same one, every time)', role: 'accent' }));
+  // /status is confirmed to be a Slack-reserved word — Slack rejects it
+  // outright ("is a reserved word") the moment you try to add it, no matter
+  // the Request URL. Skip it here rather than sending the user into a wall;
+  // the feature itself still works on Slack via the natural-language
+  // alternative text-message.handler.js added for exactly this reason
+  // ("my status" / "show status" / "what's running").
+  const slackAddableCommands = fields.SLACK_SLASH_COMMANDS.filter((cmd) => cmd !== '/status');
+  console.log(ui.table(slackAddableCommands.map((cmd) => [cmd, ''])));
+  console.log(ui.aside('/readingtest is one word — Slack command names cannot contain a space.'));
+  console.log(ui.aside('/status is skipped — Slack reserves that name and refuses to register it. Teachers reach the same feature on Slack by typing "my status" instead.'));
+  await io.pressEnter(`Press Enter once all ${slackAddableCommands.length} commands are added`);
+
+  console.log('');
+  console.log(ui.bold('  6. Install the app'));
+  console.log(ui.steps([
+    'Go to OAuth & Permissions',
+    'Click "Install to Workspace" (or "Reinstall" if you changed scopes after installing once already)',
+  ]));
+  await io.pressEnter('Press Enter once it is installed — the next two questions come from that page');
+}
+
+/**
+ * Walks the Discord application-configuration checklist, mirroring
+ * walkSlackAppConfig's one-section-at-a-time shape — but shorter: Discord's
+ * setup has no Request-URL-per-feature concept to configure at all, since
+ * this bot uses Discord's Gateway (a persistent connection) rather than a
+ * signed HTTP endpoint. Ends with registering the 9 slash commands directly
+ * (a REST call this wizard can make itself, unlike Slack's manual
+ * app-config-UI step for each command).
+ */
+async function walkDiscordAppConfig(io) {
+  console.log('');
+  console.log(ui.say('Discord apps are configured on Discord\'s own site too — this walks through it one section at a time.'));
+  console.log('');
+  console.log(ui.bold('  1. Create the application'));
+  console.log(ui.steps([
+    'Open https://discord.com/developers/applications → New Application',
+    'Give it any name',
+  ]));
+  await io.pressEnter('Press Enter once the application exists');
+
+  console.log('');
+  console.log(ui.bold('  2. Bot token'));
+  console.log(ui.steps(['Bot tab → Reset Token → copy it (this is the value the next question asks for)']));
+  await io.pressEnter('Press Enter once you have copied the token');
+
+  console.log('');
+  console.log(ui.bold('  3. Privileged Gateway Intents'));
+  console.log(ui.steps([
+    'Bot tab → Privileged Gateway Intents → enable "Message Content Intent"',
+  ]));
+  console.log(ui.aside('Self-togglable with no review while the bot is in under 100 servers — Discord requires its own Bot Verification above that threshold.'));
+  await io.pressEnter('Press Enter once Message Content Intent is enabled');
+
+  console.log('');
+  console.log(ui.bold('  4. Invite the bot to a server'));
+  console.log(ui.steps([
+    'OAuth2 → URL Generator → scopes: bot, applications.commands',
+    'Bot Permissions: Send Messages, Read Message History, Attach Files, Use Slash Commands, Embed Links',
+    'Copy the generated URL, open it, and add the bot to a test server',
+  ]));
+  await io.pressEnter('Press Enter once the bot is in a server');
+
+  console.log('');
+  console.log(ui.bold('  5. Application ID'));
+  console.log(ui.steps(['General Information tab → copy the Application ID (this is the value the question after next asks for)']));
+  await io.pressEnter('Press Enter once you have copied the Application ID');
+}
+
+async function stepMessagingChannels(io, env, save, opts = {}) {
+  beginStep(6, 'Other places teachers can reach Rumi');
+
+  const slackConfigured = hasAll(env, ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET']);
+  if (slackConfigured && !opts.reconfigure) {
+    const check = await checkLive('Checking the Slack connection you already have…', 'slack', env, (d) => `Slack already connected ${ui.dim(d)}`);
+    if (check.ok) return { slack: true, ...(await stepDiscordChannel(io, env, save, opts)) };
+    console.log(ui.say('That token is not working. Let\'s set Slack up again.'));
+  }
+
+  console.log(ui.say('WhatsApp is set up. A teacher can also reach Rumi on Slack, at the same time, on the same account — nobody has to choose.'));
+  console.log('');
+
+  const wantsSlack = await io.confirm('Also connect Slack?', false);
+  if (!wantsSlack) return { slack: false, ...(await stepDiscordChannel(io, env, save, opts)) };
+
+  const baseUrl = await io.ask('Public URL Slack should send requests to', {
+    hint: 'The https address your bot is reachable at — an ngrok URL while testing locally (run `ngrok http <port>` in another terminal), or your deployed address in production.',
+    validate: (input) => {
+      const value = String(input || '').trim().replace(/\/+$/, '');
+      if (!value) return { ok: false, reason: 'This can\'t be empty.' };
+      if (!/^https:\/\//.test(value)) return { ok: false, reason: 'Slack requires https:// — an http:// or bare host will be rejected when you try to save it.' };
+      return { ok: true, value };
+    },
+  });
+
+  await walkSlackAppConfig(io, baseUrl);
+
+  for (;;) {
+    const signingSecret = await io.ask('Signing Secret', {
+      secret: true,
+      fallback: prefill(env, 'SLACK_SIGNING_SECRET'),
+      hint: 'Basic Information → App Credentials → Signing Secret.',
+    });
+    const botToken = await io.ask('Bot User OAuth Token', {
+      secret: true,
+      fallback: prefill(env, 'SLACK_BOT_TOKEN'),
+      hint: 'OAuth & Permissions → Bot User OAuth Token — starts with xoxb-.',
+    });
+
+    save({ SLACK_SIGNING_SECRET: signingSecret, SLACK_BOT_TOKEN: botToken });
+    const check = await checkLive('Checking the token and its scopes…', 'slack', env, (d) => `Slack connected ${ui.dim(d)}`);
+    if (check.ok) return { slack: true, ...(await stepDiscordChannel(io, env, save, opts)) };
+    console.log(ui.aside(check.detail));
+    const retry = await io.confirm('Try those two values again?', true);
+    if (!retry) return { slack: false, ...(await stepDiscordChannel(io, env, save, opts)) };
+  }
+}
+
+/**
+ * Discord's own confirm-then-configure-then-live-check block, structurally
+ * identical to the Slack block above but run as its own function — Discord
+ * is independent of Slack (a teacher's account can have neither, either, or
+ * both), so this always runs regardless of the Slack outcome above it.
+ */
+async function stepDiscordChannel(io, env, save, opts = {}) {
+  const discordConfigured = hasAll(env, ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID']);
+  if (discordConfigured && !opts.reconfigure) {
+    const check = await checkLive('Checking the Discord connection you already have…', 'discord', env, (d) => `Discord already connected ${ui.dim(d)}`);
+    if (check.ok) return { discord: true };
+    console.log(ui.say('That token is not working. Let\'s set Discord up again.'));
+  }
+
+  console.log('');
+  console.log(ui.say('A teacher can also reach Rumi on Discord, at the same time as WhatsApp and Slack — nobody has to choose.'));
+  console.log('');
+
+  const wantsDiscord = await io.confirm('Also connect Discord?', false);
+  if (!wantsDiscord) return { discord: false };
+
+  await walkDiscordAppConfig(io);
+
+  for (;;) {
+    const botToken = await io.ask('Bot Token', {
+      secret: true,
+      fallback: prefill(env, 'DISCORD_BOT_TOKEN'),
+      hint: 'Bot tab → Reset Token.',
+    });
+    const applicationId = await io.ask('Application ID', {
+      fallback: prefill(env, 'DISCORD_APPLICATION_ID'),
+      hint: 'General Information tab.',
+    });
+
+    save({ DISCORD_BOT_TOKEN: botToken, DISCORD_APPLICATION_ID: applicationId });
+    const check = await checkLive('Checking the bot token…', 'discord', env, (d) => `Discord connected ${ui.dim(d)}`);
+    if (check.ok) {
+      const spin = ui.spinner('Registering the 9 slash commands…');
+      try {
+        const { registerDiscordCommands } = require('./discord-register-commands');
+        const result = await registerDiscordCommands({ token: botToken, applicationId, guildId: env.DISCORD_TEST_GUILD_ID });
+        spin.succeed(`Registered ${result.registered} slash commands (${result.guildScoped ? 'guild-scoped, instant' : 'global, up to ~1hr to propagate'})`);
+      } catch (err) {
+        spin.fail(ui.paint('danger', `Slash command registration failed: ${err.message}`));
+        console.log(ui.aside('You can retry later with `npm run discord:register-commands`.'));
+      }
+      return { discord: true };
+    }
+    console.log(ui.aside(check.detail));
+    const retry = await io.confirm('Try those two values again?', true);
+    if (!retry) return { discord: false };
+  }
+}
+
 // ── Screens ──────────────────────────────────────────────────────────────────
 
 function welcome(env) {
@@ -680,7 +913,7 @@ function welcome(env) {
 }
 
 async function finish(env, channelResult) {
-  const { channel, number, linked } = channelResult;
+  const { channel, number, linked, slack, discord } = channelResult;
   console.log('');
   console.log(ui.rule());
   const spin = ui.spinner('One last check of everything…');
@@ -698,7 +931,7 @@ async function finish(env, channelResult) {
   console.log('');
   console.log(ui.rule());
   console.log('');
-  console.log(summary.renderNextSteps({ channel, number }));
+  console.log(summary.renderNextSteps({ channel, number, slack, discord }));
   console.log('');
   if (!doctor.ok) {
     console.log(ui.aside('Run `rumi doctor` for the detail on what is not working yet.'));
@@ -735,8 +968,10 @@ async function main(argv = process.argv) {
     await stepExtras(io, env, save, opts);
     finishStep('Optional abilities');
     const channelResult = await stepChannel(io, env, save, opts);
+    finishStep('Connecting WhatsApp');
+    const messagingResult = await stepMessagingChannels(io, env, save, opts);
 
-    await finish(env, channelResult);
+    await finish(env, { ...channelResult, ...messagingResult });
   } catch (err) {
     if (err instanceof PromptAbortError || err.aborted) {
       console.log('');
@@ -757,9 +992,9 @@ if (require.main === module) {
 
 module.exports = {
   main, welcome, finish,
-  stepDatabase, stepBrain, stepMemory, stepExtras, stepChannel,
+  stepDatabase, stepBrain, stepMemory, stepExtras, stepChannel, stepMessagingChannels, stepDiscordChannel,
   ensureTables, chooseChannelDriver, collectMetaCredentials, linkSandbox, channelAlreadyWorking,
   createSaver, hasAll, isProvided, prefill, isTemplateSuggestion, startLocalRedis, dockerAvailable, probe,
-  beginStep, finishStep,
+  beginStep, finishStep, walkSlackAppConfig, walkDiscordAppConfig,
   TOTAL_STEPS, LOCAL_REDIS,
 };
