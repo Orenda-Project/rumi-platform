@@ -36,9 +36,12 @@ jobs:
         # and under low worker counts too many of those pile into one worker
         # process, where the per-file mock intercept becomes unreliable —
         # confirmed locally as a real, reproducible dose-response (33-50%
-        # failure rate at 1-2 workers, 0/8+ runs at 8 workers). More workers
-        # means fewer files share a process, not more raw parallelism per se.
-        run: npm test -- --maxWorkers=8
+        # failure rate at 1-2 workers, occasional residual flakes still seen
+        # at 8 workers, 0/5+ runs at 16 workers). More workers means fewer
+        # files share a process, not more raw parallelism per se — safe to
+        # over-provision well past the runner's core count for a suite this
+        # lightweight (full run finishes in ~17s even at 16 workers).
+        run: npm test -- --maxWorkers=16
 
       - name: Install canvas system dependencies
         run: sudo apt-get update && sudo apt-get install -y build-essential libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev librsvg2-dev libpixman-1-dev

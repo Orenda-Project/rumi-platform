@@ -17,6 +17,22 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '../..');
 
+// Other test suites legitimately create and remove real directories under
+// the repo root while these tree-walkers run concurrently in a different
+// Jest worker (e.g. tests/setup/graduate.test.js's repo-anchored
+// .rumi-test-state fixture) — a directory listed at readdirSync time can be
+// gone by the time a walker recurses into it. That's not a real hygiene
+// violation, just a benign race; treat a vanished directory as empty rather
+// than letting ENOENT fail an unrelated test. Confirmed live in CI.
+function safeReaddirSync(d) {
+  try {
+    return fs.readdirSync(d, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return [];
+    throw error;
+  }
+}
+
 // Internal ticket namespaces. Includes the dashboard's own `plt-*` / `etv-*` bead
 // prefixes (they leaked through `Bead:` comment headers + SQL migration headers because
 // the original guard only knew bd-/BUG-/PROJ-/FEAT-/TASK- and never scanned .sql).
@@ -46,7 +62,7 @@ function collectAgentDocs() {
     if (fs.existsSync(p)) docs.push(p);
   }
   const walk = (d) => {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    for (const e of safeReaddirSync(d)) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) {
         if (['node_modules', '.git', 'dist', 'build', 'coverage'].includes(e.name)) continue;
@@ -61,7 +77,7 @@ function collectAgentDocs() {
   const claudeDir = path.join(ROOT, '.claude');
   if (fs.existsSync(claudeDir)) {
     const walkMd = (d) => {
-      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      for (const e of safeReaddirSync(d)) {
         const p = path.join(d, e.name);
         if (e.isDirectory()) { if (e.name !== 'node_modules') walkMd(p); }
         else if (e.name.endsWith('.md')) docs.push(p);
@@ -76,7 +92,7 @@ function collectAgentDocs() {
 function collectAllMarkdown() {
   const out = [];
   const walk = (d) => {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    for (const e of safeReaddirSync(d)) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) {
         if (['node_modules', '.git', 'dist', 'build', 'coverage'].includes(e.name)) continue;
@@ -96,7 +112,7 @@ function collect(dir, exts) {
   const abs = path.join(ROOT, dir);
   if (!fs.existsSync(abs)) return out;
   const walk = (d) => {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    for (const e of safeReaddirSync(d)) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) {
         if (['node_modules', '.git', 'dist', 'build', 'coverage', 'tests', '__tests__'].includes(e.name)) continue;
