@@ -337,7 +337,11 @@ describe('attach', () => {
     };
     await handlers.interactionCreate(interaction);
 
-    expect(interaction.deferReply).toHaveBeenCalledWith({ ephemeral: true });
+    // Regression test: discord.js deprecated the `ephemeral: true` shorthand
+    // in favor of `flags: MessageFlags.Ephemeral` — using the old shape
+    // logged a deprecation warning on every single slash command.
+    const { MessageFlags } = require('discord.js');
+    expect(interaction.deferReply).toHaveBeenCalledWith({ flags: MessageFlags.Ephemeral });
     expect(dispatch).toHaveBeenCalledTimes(1);
   });
 

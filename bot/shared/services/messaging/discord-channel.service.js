@@ -203,6 +203,14 @@ async function sendTextReturningId(to, message, opts = {}) {
 }
 
 async function sendReaction(to, messageId, emoji = '❤️') {
+  // Slash-command interactions have no real Discord message to react to —
+  // the inbound adapter mints a synthetic "slash-<timestamp>-<userId>" id
+  // for them (discord-events.adapter.js), which Discord's API rejects with
+  // a "not snowflake" Invalid Form Body error on every single slash command.
+  // Confirmed live, not a guess: harmless (caught, returns false either way)
+  // but a wasted round-trip and a scary-looking error log on every command.
+  if (!/^\d+$/.test(String(messageId))) return false;
+
   try {
     const user = await getDiscordUser(discordUserId(to));
     const dmChannel = user.dmChannel || await user.createDM();

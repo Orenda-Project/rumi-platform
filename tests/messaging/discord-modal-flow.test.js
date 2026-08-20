@@ -269,10 +269,20 @@ describe('buildEndpointModal', () => {
     const selectInteraction = { values: ['en'], deferUpdate: jest.fn().mockResolvedValue(undefined) };
     const dmChannel = { send: jest.fn().mockResolvedValue({ awaitMessageComponent: jest.fn().mockResolvedValue(selectInteraction) }) };
     const user = { id: 'U1', dmChannel, createDM: jest.fn() };
-    const trigger = { client: { users: { fetch: jest.fn().mockResolvedValue(user) } }, user: { id: 'U1' } };
+    const trigger = {
+      client: { users: { fetch: jest.fn().mockResolvedValue(user) } },
+      user: { id: 'U1' },
+      deferUpdate: jest.fn().mockResolvedValue(undefined),
+    };
 
     const result = await renderer.startFlow({ userId: 'u1', discordUserId: 'U1', flowToken: 'u1:settings:1' }, trigger);
 
+    // Regression test: the triggering "Get started" interaction is abandoned
+    // by collectEnumAnswers (it sends a brand new message and awaits a click
+    // on THAT instead) — left un-acked, Discord shows the teacher "Rumi
+    // didn't respond in time" even though the flow keeps working underneath.
+    // Confirmed live against a real Discord workspace, not a guess.
+    expect(trigger.deferUpdate).toHaveBeenCalledTimes(1);
     expect(selectInteraction.deferUpdate).toHaveBeenCalledTimes(1); // acked since no modal follows
     expect(exchange).toHaveBeenCalledWith(expect.any(Object), 'SETTINGS_MAIN', { language: 'en' });
     expect(onFinish).toHaveBeenCalledTimes(1);
@@ -317,6 +327,59 @@ describe('buildEndpointModal', () => {
     expect(exchange).toHaveBeenCalledTimes(1); // SCREEN_A's exchange only — SCREEN_B needs its OWN submission
     expect(submitResult).toBe('awaiting_modal'); // recursed into SCREEN_B's own runScreen, which opened a 2nd modal
     expect(modalSubmit.showModal).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not double-ack the modal-submit interaction when the NEXT screen has enum steps (regression)', async () => {
+    // Real bug, caught live against Discord (not a guess): runScreen()'s ack
+    // of an abandoned enum-collector trigger must be skipped when the
+    // interaction is already deferred/replied — otherwise recursing from a
+    // just-submitted modal (already deferUpdate()'d by handleModalSubmit)
+    // into a next screen with its OWN enum steps throws
+    // DiscordjsError[InteractionAlreadyReplied], exactly what happened live
+    // going from registration's PERSONAL_INFO (a modal) into REGION_INFO
+    // (an enum-only region/state picker).
+    const { mod } = loadModule();
+    const init = jest.fn().mockResolvedValue({ screen: 'SCREEN_A', data: {} });
+    const exchange = jest.fn()
+      .mockResolvedValueOnce({ screen: 'SCREEN_B', data: {} })
+      .mockResolvedValueOnce({ screen: 'SUCCESS', data: {} });
+    const screenToSteps = jest.fn((screen) => (screen === 'SCREEN_A'
+      ? { steps: [], textFields: [{ name: 'field_a', label: 'A' }], title: 'A' }
+      : { steps: [{ fieldName: 'region', promptText: 'Pick', buildMenu: () => ({}) }], textFields: [], title: 'B' }));
+    const mergeScreenData = jest.fn(() => ({}));
+
+    const renderer = mod.buildEndpointModal({ kind: 'test', init, exchange, screenToSteps, mergeScreenData });
+    const trigger = fakeTriggerInteraction();
+
+    await renderer.startFlow({ userId: 'u1', discordUserId: 'U1', flowToken: 'u1:test:1' }, trigger);
+    const [modal] = trigger.showModal.mock.calls[0];
+    const { token } = mod.decodeCustomId(modal.customId);
+    const state = await mod.loadModalState(token);
+
+    const regionInteraction = { deferUpdate: jest.fn().mockResolvedValue(undefined) };
+    const dmChannel = { send: jest.fn().mockResolvedValue({ awaitMessageComponent: jest.fn().mockResolvedValue(regionInteraction) }) };
+    const discordUser = { id: 'U1', dmChannel, createDM: jest.fn() };
+
+    const modalSubmit = {
+      customId: modal.customId,
+      user: { id: 'U1' },
+      client: { users: { fetch: jest.fn().mockResolvedValue(discordUser) } },
+      fields: { fields: new Map([['field_a', { value: 'answer' }]]) },
+      replied: false,
+      deferred: false,
+      // Mirrors real discord.js: deferUpdate() flips .deferred to true, so a
+      // second deferUpdate() call on the SAME interaction is detectable.
+      deferUpdate: jest.fn().mockImplementation(async function deferUpdate() {
+        this.deferred = true;
+      }),
+    };
+
+    const result = await renderer.handleModalSubmit(modalSubmit, state);
+
+    expect(modalSubmit.deferUpdate).toHaveBeenCalledTimes(1); // only handleModalSubmit's own ack — runScreen must not re-ack
+    expect(regionInteraction.deferUpdate).toHaveBeenCalledTimes(1); // SCREEN_B's own enum-step interaction acks itself
+    expect(exchange).toHaveBeenCalledTimes(2); // SCREEN_A's submit, then SCREEN_B's region answer
+    expect(result).toBe('finished');
   });
 
   it('threads the screen\'s own init()/exchange() response data through to mergeScreenData as carriedData — e.g. attendance\'s _list_id/_class_display, never collected from the teacher', async () => {
@@ -425,7 +488,11 @@ describe('buildEndpointModal', () => {
 
     const dmChannel = { send: jest.fn().mockResolvedValue({ awaitMessageComponent: jest.fn().mockRejectedValue(new Error('time')) }) };
     const user = { id: 'U1', dmChannel, createDM: jest.fn() };
-    const trigger = { client: { users: { fetch: jest.fn().mockResolvedValue(user) } }, user: { id: 'U1' } };
+    const trigger = {
+      client: { users: { fetch: jest.fn().mockResolvedValue(user) } },
+      user: { id: 'U1' },
+      deferUpdate: jest.fn().mockResolvedValue(undefined),
+    };
 
     const result = await renderer.startFlow({ userId: 'u1', discordUserId: 'U1', flowToken: 'u1:settings:1' }, trigger);
     expect(result).toBe('timed_out');

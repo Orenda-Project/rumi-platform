@@ -309,6 +309,21 @@ function buildEndpointModal(config) {
       let enumAnswers = {};
       let ackInteraction = triggerInteraction;
       if (steps.length) {
+        // collectEnumAnswers below sends a BRAND NEW message and awaits a
+        // component click on that, never touching triggerInteraction again —
+        // left un-acked, it silently fails Discord's ~3s window and the
+        // teacher sees "Rumi didn't respond in time" on every flow start,
+        // even though the flow itself keeps working underneath. Confirmed
+        // live, not a guess: this ack must happen here, immediately.
+        //
+        // Guarded: runScreen() is also reached via _advance() with an
+        // ALREADY-acked interaction (e.g. a just-submitted modal, deferred by
+        // handleModalSubmit before calling _advance) — calling deferUpdate()
+        // again there throws DiscordjsError[InteractionAlreadyReplied].
+        // Also confirmed live, immediately after fixing the bug above.
+        if (!triggerInteraction.replied && !triggerInteraction.deferred) {
+          await triggerInteraction.deferUpdate();
+        }
         const user = await triggerInteraction.client.users.fetch(ctx.discordUserId);
         const collected = await collectEnumAnswers(user, steps);
         if (!collected) return 'timed_out';

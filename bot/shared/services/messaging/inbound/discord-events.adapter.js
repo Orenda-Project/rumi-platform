@@ -291,7 +291,9 @@ async function attach(dispatch) {
     try {
       if (interaction.isChatInputCommand?.()) {
         if (isDuplicateDelivery(interaction.id)) return;
-        await interaction.deferReply({ ephemeral: true });
+        // eslint-disable-next-line global-require -- lazy: avoids requiring discord.js at module load
+        const { MessageFlags } = require('discord.js');
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const metaMessage = mapSlashCommandToMetaShape(interaction);
         if (metaMessage) await dispatch(buildSyntheticRequest(metaMessage), buildSyntheticResponse());
         return;

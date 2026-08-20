@@ -92,9 +92,20 @@ describe('discord-channel.service — outbound', () => {
 
   it('sendReaction reacts with the literal unicode emoji — no shortcode translation needed', async () => {
     const { service, message } = loadService();
-    const result = await service.sendReaction(TO, '169.001', '❤️');
+    const result = await service.sendReaction(TO, '1163925485556015134', '❤️');
     expect(result).toBe(true);
     expect(message.react).toHaveBeenCalledWith('❤️');
+  });
+
+  it('sendReaction no-ops on a synthetic slash-command message id (not a real snowflake) — never calls the Discord API', async () => {
+    // Regression test for a real bug, caught live: slash commands have no
+    // reactable Discord message. Reacting to their synthetic
+    // "slash-<timestamp>-<userId>" id (discord-events.adapter.js) fails
+    // every time with a "not snowflake" Invalid Form Body error.
+    const { service, dmChannel } = loadService();
+    const result = await service.sendReaction(TO, 'slash-1787245324-755705811669352490', '❤️');
+    expect(result).toBe(false);
+    expect(dmChannel.messages.fetch).not.toHaveBeenCalled();
   });
 
   it('showTypingIndicator is a REAL implementation — calls the DM channel\'s sendTyping', async () => {

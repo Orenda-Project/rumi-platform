@@ -471,8 +471,8 @@ class PassageGenerationService {
 1. Show this alphabet grid to the student
 2. Ask the student to read the letters aloud going ${directionText} across each row, starting from row 1 at the top
 3. The numbers with arrows (1→, 2→, etc.) show the reading direction for each row
-4. Record the student reading with WhatsApp voice message
-5. Send the recording back to me
+4. Record the student reading as a voice message
+5. Send the recording back to me, right here in this chat
 6. Use encouraging, supportive tone
 7. Maximum 4-5 sentences
 8. NO markdown, NO meta-commentary`;
@@ -481,8 +481,8 @@ class PassageGenerationService {
         instructionsPrompt = `Generate a brief message in language code "${userLanguage}" instructing the teacher to:
 1. Show this passage to the student
 2. Ask the student to read it aloud
-3. Record the student reading with WhatsApp voice message
-4. Send the recording back to me
+3. Record the student reading as a voice message
+4. Send the recording back to me, right here in this chat
 5. Use encouraging, supportive tone
 6. Maximum 3-4 sentences
 7. NO markdown, NO meta-commentary`;
