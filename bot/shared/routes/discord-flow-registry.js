@@ -97,6 +97,53 @@ function registerAll() {
     },
   }));
 
+  // attendance_mark reuses the SAME endpoint Slack registers
+  // (attendance-marking-endpoint.js is channel-agnostic — it only reads the
+  // roster already sitting in AttendanceConversationService's Redis session,
+  // keyed by userId, never anything Slack- or Discord-shaped). MARK_ABSENT
+  // is a one-shot all-enum screen (zero textFields, see
+  // discord-views/attendance-marking.view.js) so it never opens a Modal and
+  // needs no loopScreens/onScreenLoop — straight to exchange() -> SUCCESS.
+  const attendanceMarking = require('./attendance-marking-endpoint');
+  const attendanceMarkingView = require('./discord-views/attendance-marking.view');
+  register('attendance_mark', buildEndpointModal({
+    kind: 'attendance_mark',
+    init: (ctx) => attendanceMarking.handleMarkingInit(ctx.userId),
+    exchange: (ctx, screen, screenData) => attendanceMarking.handleMarkingExchange(ctx.userId, screen, screenData),
+    screenToSteps: attendanceMarkingView.screenToSteps,
+    mergeScreenData: attendanceMarkingView.mergeScreenData,
+    onFinish: async (response, ctx) => {
+      const { success_message: success, selectedClass, selectedListId, records, stats, sessionDate, sessionType } = response.data || {};
+      const recipientIdentifier = `discord:${ctx.discordUserId}`;
+      if (success) await discordChannel.sendMessage(recipientIdentifier, success);
+
+      const AttendanceDeliveryService = require('../services/attendance-delivery.service');
+      const AttendanceConversationService = require('../services/attendance-conversation.service');
+
+      try {
+        const deliveryResult = await AttendanceDeliveryService.processAndDeliver(ctx.userId, recipientIdentifier, {
+          selectedClass,
+          selectedListId,
+          records,
+          markingMethod: 'tap',
+          summary: {
+            present: stats?.present,
+            absent: stats?.absent,
+            attendancePercentage: parseFloat(stats?.attendanceRate) || 0,
+          },
+          sessionDate,
+          sessionType,
+        });
+
+        if (!deliveryResult.success && !deliveryResult.isDuplicate) {
+          await discordChannel.sendMessage(recipientIdentifier, `Sorry, there was an error generating your attendance file: ${deliveryResult.error}`);
+        }
+      } finally {
+        await AttendanceConversationService.clearSessionState(ctx.userId);
+      }
+    },
+  }));
+
   // exam_confirm is the one kind whose flowToken IS the exam session's own
   // session.id (set by the orchestrator at sendFlow-time), never a
   // buildFlowToken() "userId:kind:timestamp" token — the endpoint keys

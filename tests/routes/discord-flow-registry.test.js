@@ -24,6 +24,28 @@ jest.mock('../../bot/shared/routes/attendance-setup-endpoint', () => ({
   })),
   handleDoneAction: jest.fn(async () => ({ screen: 'SUCCESS', data: { success_message: 'Class ready with 3 students.' } })),
 }));
+jest.mock('../../bot/shared/routes/attendance-marking-endpoint', () => ({
+  handleMarkingInit: jest.fn(async () => ({
+    screen: 'MARK_ABSENT',
+    data: { class_display: 'Grade 3 - A', students: [{ id: 's1', title: 'Zara Abdul' }] },
+  })),
+  handleMarkingExchange: jest.fn(async () => ({
+    screen: 'SUCCESS',
+    data: {
+      success_message: 'Attendance Recorded — Present: 1, Absent: 0',
+      selectedClass: { class_name: 'Grade 3', section: 'A' },
+      selectedListId: 'list-1',
+      records: [{ studentId: 's1', studentName: 'Zara Abdul', status: 'present', confidence: 1 }],
+      stats: { total: 1, present: 1, absent: 0, attendanceRate: '100%' },
+    },
+  })),
+}));
+jest.mock('../../bot/shared/services/attendance-delivery.service', () => ({
+  processAndDeliver: jest.fn(async () => ({ success: true, sessionId: 'sess-1' })),
+}));
+jest.mock('../../bot/shared/services/attendance-conversation.service', () => ({
+  clearSessionState: jest.fn(async () => true),
+}));
 jest.mock('../../bot/shared/routes/exam-confirm-endpoint', () => ({
   handleExamConfirmInit: jest.fn(async () => ({ screen: 'CONFIRM_STUDENTS', data: { students: [{ id: '0', title: '1. Zara' }] } })),
   handleExamConfirmDataExchange: jest.fn(async () => ({
@@ -77,12 +99,13 @@ function fakeTrigger() {
 }
 
 describe('discord-flow-registry', () => {
-  it('ensureRegistered() registers all five renderers', () => {
+  it('ensureRegistered() registers all six renderers', () => {
     const registry = load();
     registry.ensureRegistered();
     expect(registry.get('registration')).toBeTruthy();
     expect(registry.get('settings')).toBeTruthy();
     expect(registry.get('attendance')).toBeTruthy();
+    expect(registry.get('attendance_mark')).toBeTruthy();
     expect(registry.get('exam_confirm')).toBeTruthy();
     expect(registry.get('reading_assessment')).toBeTruthy();
     expect(registry.get('nonexistent')).toBeUndefined();
@@ -185,6 +208,60 @@ describe('discord-flow-registry', () => {
       await renderer._advance(ctx, { deferUpdate: jest.fn() }, 'ADD_STUDENT', {});
 
       expect(discordChannel.sendMessage).toHaveBeenCalledWith('discord:D0123', 'Class ready with 3 students.');
+    });
+  });
+
+  describe('attendance_mark renderer', () => {
+    it('calls handleMarkingInit with the resolved userId', async () => {
+      const registry = load();
+      registry.ensureRegistered();
+      const { handleMarkingInit } = require('../../bot/shared/routes/attendance-marking-endpoint');
+
+      const renderer = registry.get('attendance_mark');
+      await renderer.startFlow(
+        { userId: 'u1', discordUserId: 'D0123', flowToken: 'u1:attendance_mark:169' },
+        fakeTrigger(),
+      );
+
+      expect(handleMarkingInit).toHaveBeenCalledWith('u1');
+    });
+
+    it('MARK_ABSENT is a one-shot screen — reaching SUCCESS calls onFinish directly, no loop/modal involved', async () => {
+      const registry = load();
+      registry.ensureRegistered();
+      const discordChannel = require('../../bot/shared/services/messaging/discord-channel.service');
+      const AttendanceDeliveryService = require('../../bot/shared/services/attendance-delivery.service');
+      const AttendanceConversationService = require('../../bot/shared/services/attendance-conversation.service');
+
+      const renderer = registry.get('attendance_mark');
+      const ctx = { userId: 'u1', discordUserId: 'D0123', flowToken: 'u1:attendance_mark:169' };
+      const result = await renderer._advance(ctx, { deferUpdate: jest.fn() }, 'MARK_ABSENT', {});
+
+      expect(result).toBe('finished');
+      expect(discordChannel.sendMessage).toHaveBeenCalledWith('discord:D0123', 'Attendance Recorded — Present: 1, Absent: 0');
+      expect(AttendanceDeliveryService.processAndDeliver).toHaveBeenCalledWith('u1', 'discord:D0123', expect.objectContaining({
+        selectedListId: 'list-1',
+        markingMethod: 'tap',
+        records: [{ studentId: 's1', studentName: 'Zara Abdul', status: 'present', confidence: 1 }],
+        summary: { present: 1, absent: 0, attendancePercentage: 100 },
+      }));
+      expect(AttendanceConversationService.clearSessionState).toHaveBeenCalledWith('u1');
+    });
+
+    it('onFinish sends an error message and still clears session state when delivery fails', async () => {
+      const registry = load();
+      registry.ensureRegistered();
+      const AttendanceDeliveryService = require('../../bot/shared/services/attendance-delivery.service');
+      AttendanceDeliveryService.processAndDeliver.mockResolvedValueOnce({ success: false, error: 'R2 upload failed' });
+      const discordChannel = require('../../bot/shared/services/messaging/discord-channel.service');
+      const AttendanceConversationService = require('../../bot/shared/services/attendance-conversation.service');
+
+      const renderer = registry.get('attendance_mark');
+      const ctx = { userId: 'u1', discordUserId: 'D0123', flowToken: 'u1:attendance_mark:169' };
+      await renderer._advance(ctx, { deferUpdate: jest.fn() }, 'MARK_ABSENT', {});
+
+      expect(discordChannel.sendMessage).toHaveBeenCalledWith('discord:D0123', expect.stringContaining('R2 upload failed'));
+      expect(AttendanceConversationService.clearSessionState).toHaveBeenCalledWith('u1');
     });
   });
 

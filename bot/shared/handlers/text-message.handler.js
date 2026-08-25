@@ -1648,6 +1648,11 @@ async function handleTextMessage(message, from, messageBody, user = null) {
               body: result.message,
               buttons: [{ id: 'open_modal:attendance_mark', title: 'Mark Attendance' }],
             });
+          } else if (driverForIdentifier(from) === 'discord') {
+            await WhatsAppService.sendInteractiveButtons(from, {
+              body: result.message,
+              buttons: [{ id: 'discord_start_flow:attendance_mark', title: 'Mark Attendance' }],
+            });
           } else if (ATTENDANCE_MARKING_FLOW_ID) {
             const sessionState = await AttendanceConversationService.getSessionState(user.id);
             const today = new Date().toISOString().split('T')[0];
