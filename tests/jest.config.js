@@ -35,6 +35,10 @@ module.exports = {
     '^fluent-ffmpeg$': '<rootDir>/tests/__mocks__/fluent-ffmpeg.js',
     '^@ffmpeg-installer/ffmpeg$': '<rootDir>/tests/__mocks__/ffmpeg-installer.js',
     '^@ffprobe-installer/ffprobe$': '<rootDir>/tests/__mocks__/ffmpeg-installer.js',
+    // exceljs: bot-only dep pulled in transitively by attendance-generator.service.js
+    // (via attendance-flow.handler.js) — anything reaching it needs this mapped
+    // for the root-suite-first CI pass, same rationale as ffmpeg/canvas above.
+    '^exceljs$': '<rootDir>/tests/__mocks__/exceljs.js',
   },
   setupFiles: ['<rootDir>/tests/setup.js'],
   testEnvironment: 'node',
