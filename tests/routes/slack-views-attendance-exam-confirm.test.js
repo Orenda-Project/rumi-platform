@@ -52,6 +52,36 @@ describe('attendance.view — screenToView', () => {
     expect(blockIds).toEqual(['first_name_block', 'last_name_block', 'attendance_finish_block']);
   });
 
+  // Regression: handleDoneAction rejects "I'm Done" with 0 students by
+  // re-returning this same ADD_STUDENT screen with data.error — but this
+  // view never rendered it, so the reopened modal looked pixel-identical to
+  // before and the rejection was invisible to the teacher.
+  it('ADD_STUDENT renders the error block when data.error is present (0-student "I\'m Done" rejection)', () => {
+    const view = attendanceView.screenToView('ADD_STUDENT', {
+      heading: 'Add Student #1',
+      error: { message: 'Please add at least one student before finishing.' },
+    }, { metadata: METADATA });
+
+    const errorBlock = view.blocks.find((b) => b.block_id === 'add_student_error_block');
+    expect(errorBlock).toBeTruthy();
+    expect(errorBlock.text.text).toBe('⚠️ Please add at least one student before finishing.');
+  });
+
+  it('ADD_STUDENT omits the error block when data.error is absent', () => {
+    const view = attendanceView.screenToView('ADD_STUDENT', { heading: 'Add Student #1' }, { metadata: METADATA });
+    expect(view.blocks.find((b) => b.block_id === 'add_student_error_block')).toBeUndefined();
+  });
+
+  it('SUCCESS renders the success_message as a closeable, submit-less confirmation screen', () => {
+    const view = attendanceView.screenToView('SUCCESS', {
+      success_message: 'Your class Grade 3 - A has been created with 3 students.',
+    }, { metadata: METADATA });
+
+    expect(view.submit).toBeUndefined();
+    const successBlock = view.blocks.find((b) => b.block_id === 'success_block');
+    expect(successBlock.text.text).toBe('Your class Grade 3 - A has been created with 3 students.');
+  });
+
   it('throws for an unmapped screen', () => {
     expect(() => attendanceView.screenToView('NOT_A_SCREEN', {}, { metadata: METADATA })).toThrow(/no view mapping/);
   });

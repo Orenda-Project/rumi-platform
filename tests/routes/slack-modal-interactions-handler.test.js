@@ -180,9 +180,18 @@ describe('handleAttendanceFinish', () => {
     expect(handled).toBe(true);
     expect(handleDoneAction).toHaveBeenCalledWith('list-1', 'Grade 3 - A');
     expect(slackWebClient.postMessage).toHaveBeenCalledWith('U0123ABC', 'Class ready with 2 students.');
+    // Regression: a real success DM used to leave the stale ADD_STUDENT
+    // modal open behind it, looking broken even though the DM landed. The
+    // modal itself must now also reflect completion.
+    expect(slackWebClient.updateView).toHaveBeenCalledWith('V0123VIEW', expect.objectContaining({
+      title: expect.objectContaining({ text: 'All set!' }),
+      blocks: expect.arrayContaining([
+        expect.objectContaining({ block_id: 'success_block', text: expect.objectContaining({ text: 'Class ready with 2 students.' }) }),
+      ]),
+    }));
   });
 
-  it('reopens ADD_STUDENT with the error when handleDoneAction rejects (no students added yet)', async () => {
+  it('reopens ADD_STUDENT with the error VISIBLE when handleDoneAction rejects (no students added yet)', async () => {
     const handleDoneAction = jest.fn().mockResolvedValue({
       screen: 'ADD_STUDENT',
       data: { list_id: 'list-1', class_display: 'Grade 3 - A', heading: 'Add Student #1', error: { message: 'Please add at least one student.' } },
@@ -203,7 +212,17 @@ describe('handleAttendanceFinish', () => {
 
     expect(handled).toBe(true);
     expect(slackWebClient.postMessage).not.toHaveBeenCalled();
-    expect(slackWebClient.updateView).toHaveBeenCalledWith('V0123VIEW', expect.objectContaining({ title: expect.objectContaining({ text: 'Add Student #1' }) }));
+    // Regression: the title alone was never enough — the reopened view used
+    // to be pixel-identical to before because attendance.view.js never
+    // rendered data.error into any block, so this same title assertion
+    // passed even while the bug was live. Assert the error text itself
+    // actually appears in the re-rendered modal's blocks.
+    expect(slackWebClient.updateView).toHaveBeenCalledWith('V0123VIEW', expect.objectContaining({
+      title: expect.objectContaining({ text: 'Add Student #1' }),
+      blocks: expect.arrayContaining([
+        expect.objectContaining({ block_id: 'add_student_error_block', text: expect.objectContaining({ text: '⚠️ Please add at least one student.' }) }),
+      ]),
+    }));
   });
 
   it('does not throw if handleDoneAction itself throws', async () => {

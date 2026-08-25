@@ -78,6 +78,12 @@ function screenToView(screen, data, ctx) {
       blocks: [
         ...(data?.class_info ? [{ type: 'section', block_id: 'class_info_block', text: { type: 'plain_text', text: data.class_info } }] : []),
         ...(data?.students_list ? [{ type: 'section', block_id: 'students_list_block', text: { type: 'plain_text', text: data.students_list } }] : []),
+        // handleDoneAction rejects "I'm Done" with 0 students by re-returning
+        // this same ADD_STUDENT screen with a `data.error`. Without this block
+        // the reopened modal was pixel-identical to before, so the rejection
+        // was invisible — see slack-modal-interactions.handler.js's
+        // handleAttendanceFinish for the other half of this fix.
+        ...(data?.error ? [{ type: 'section', block_id: 'add_student_error_block', text: { type: 'plain_text', text: `⚠️ ${data.error.message}` } }] : []),
         {
           type: 'input', block_id: 'first_name_block',
           label: { type: 'plain_text', text: 'Student first name' },
@@ -92,6 +98,24 @@ function screenToView(screen, data, ctx) {
           type: 'actions', block_id: 'attendance_finish_block',
           elements: [{ type: 'button', action_id: 'attendance_finish', style: 'primary', text: { type: 'plain_text', text: "I'm Done" } }],
         },
+      ],
+    };
+  }
+
+  if (screen === 'SUCCESS') {
+    // Terminal confirmation, shown via views.update after handleDoneAction
+    // succeeds — replaces the stale ADD_STUDENT form so the modal itself
+    // reflects completion rather than relying solely on the separate DM
+    // (see slack-modal-interactions.handler.js's handleAttendanceFinish).
+    // No `submit` — this is a dead-end screen, closeable via the modal's
+    // native X only.
+    return {
+      type: 'modal',
+      callback_id: 'attendance',
+      private_metadata: metadata,
+      title: { type: 'plain_text', text: 'All set!' },
+      blocks: [
+        { type: 'section', block_id: 'success_block', text: { type: 'plain_text', text: data?.success_message || 'Class created.' } },
       ],
     };
   }
