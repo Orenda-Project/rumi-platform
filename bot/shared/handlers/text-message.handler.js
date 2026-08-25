@@ -1533,6 +1533,21 @@ async function handleTextMessage(message, from, messageBody, user = null) {
 
         let result;
 
+        // A fresh attendance trigger ("attendance", "حاضری", ...) sent while
+        // already mid-flow means the teacher wants to start over, not answer
+        // whatever state-specific prompt is pending — without this, a stuck
+        // or half-abandoned session (e.g. a channel that silently dropped a
+        // step) has no way back in except explicitly typing "cancel" first,
+        // and instead gets misread as an answer to that prompt (e.g.
+        // AWAITING_VERIFICATION's yes/edit/cancel check). Excluded from
+        // PROCESSING, which already has its own wait/timeout handling and
+        // shouldn't be interrupted mid-generation by this.
+        const attendanceRetrigger = AttendanceDetectorService.detectAttendanceIntent(messageBody);
+        if (sessionState.state !== AttendanceConversationService.STATES.PROCESSING && attendanceRetrigger.detected) {
+          logToFile('📋 Attendance trigger received mid-session, restarting', { userId: user.id, previousState: sessionState.state });
+          await AttendanceConversationService.clearSessionState(user.id);
+          result = await AttendanceConversationService.startAttendanceSession(user.id);
+        } else {
         // Route based on current state
         switch (sessionState.state) {
           case AttendanceConversationService.STATES.AWAITING_CLASS_SELECTION:
@@ -1610,6 +1625,7 @@ async function handleTextMessage(message, from, messageBody, user = null) {
               action: 'ERROR',
               message: 'Something went wrong with attendance. Say "attendance" to start again.'
             };
+        }
         }
 
         typingController.stop();
