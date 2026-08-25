@@ -6,6 +6,7 @@
 
 const attendanceView = require('../../bot/shared/routes/slack-views/attendance.view');
 const examConfirmView = require('../../bot/shared/routes/slack-views/exam-confirm.view');
+const attendanceMarkingView = require('../../bot/shared/routes/slack-views/attendance-marking.view');
 
 const METADATA = JSON.stringify({ kind: 'attendance', screen: 'CLASS_INFO', flowToken: 'u1:attendance:169' });
 
@@ -209,5 +210,77 @@ describe('exam-confirm.view — viewToScreenData', () => {
 describe('exam-confirm.view — FIRST_INPUT_BLOCK_ID', () => {
   it('names the checkboxes block for CONFIRM_STUDENTS', () => {
     expect(examConfirmView.FIRST_INPUT_BLOCK_ID.CONFIRM_STUDENTS).toBe('confirmed_students_block');
+  });
+});
+
+describe('attendance-marking.view — screenToView', () => {
+  const students = [
+    { id: 's1', title: 'Zara Abdul' },
+    { id: 's2', title: 'Ahmed Khan' },
+  ];
+
+  it('MARK_ABSENT renders the roster as an optional checkboxes input, nothing pre-checked', () => {
+    const view = attendanceMarkingView.screenToView('MARK_ABSENT', {
+      class_display: 'Grade 3 - A', students,
+    }, { metadata: 'meta' });
+
+    expect(view.type).toBe('modal');
+    expect(view.title.text).toBe('Grade 3 - A');
+    expect(view.submit.text).toBe('Mark Attendance');
+
+    const block = view.blocks.find((b) => b.block_id === 'absent_students_block');
+    expect(block.optional).toBe(true);
+    expect(block.element.type).toBe('checkboxes');
+    expect(block.element.options).toEqual([
+      { text: { type: 'plain_text', text: 'Zara Abdul' }, value: 's1' },
+      { text: { type: 'plain_text', text: 'Ahmed Khan' }, value: 's2' },
+    ]);
+    // unlike exam-confirm's all-pre-checked "confirmed" semantics, a checked
+    // box here means ABSENT — nobody should be pre-selected.
+    expect(block.element.initial_options).toBeUndefined();
+  });
+
+  it('does not chunk a 40-student roster — same no-cap Block Kit checkboxes element as exam-confirm', () => {
+    const bigRoster = Array.from({ length: 40 }, (_, i) => ({ id: String(i), title: `Student ${i}` }));
+    const view = attendanceMarkingView.screenToView('MARK_ABSENT', { students: bigRoster }, { metadata: 'meta' });
+    const block = view.blocks.find((b) => b.block_id === 'absent_students_block');
+    expect(block.element.options).toHaveLength(40);
+  });
+
+  it('SUCCESS renders the success_message as a submit-less confirmation screen', () => {
+    const view = attendanceMarkingView.screenToView('SUCCESS', {
+      success_message: 'Attendance Recorded — Present: 18, Absent: 2',
+    }, { metadata: 'meta' });
+
+    expect(view.submit).toBeUndefined();
+    const successBlock = view.blocks.find((b) => b.block_id === 'success_block');
+    expect(successBlock.text.text).toBe('Attendance Recorded — Present: 18, Absent: 2');
+  });
+
+  it('throws for an unmapped screen', () => {
+    expect(() => attendanceMarkingView.screenToView('NOT_A_SCREEN', {}, { metadata: 'meta' })).toThrow(/no view mapping/);
+  });
+});
+
+describe('attendance-marking.view — viewToScreenData', () => {
+  it('extracts absent_student_ids from the checkboxes selection', () => {
+    const stateValues = {
+      absent_students_block: { absent_students: { selected_options: [{ value: 's1' }] } },
+    };
+    expect(attendanceMarkingView.viewToScreenData('MARK_ABSENT', stateValues)).toEqual({ absent_student_ids: ['s1'] });
+  });
+
+  it('defaults to an empty array when nobody is checked (everyone present)', () => {
+    expect(attendanceMarkingView.viewToScreenData('MARK_ABSENT', {})).toEqual({ absent_student_ids: [] });
+  });
+
+  it('returns {} for an unrecognized screen', () => {
+    expect(attendanceMarkingView.viewToScreenData('UNKNOWN', {})).toEqual({});
+  });
+});
+
+describe('attendance-marking.view — FIRST_INPUT_BLOCK_ID', () => {
+  it('names the checkboxes block for MARK_ABSENT', () => {
+    expect(attendanceMarkingView.FIRST_INPUT_BLOCK_ID.MARK_ABSENT).toBe('absent_students_block');
   });
 });

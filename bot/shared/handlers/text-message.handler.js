@@ -1620,8 +1620,19 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         } else if (result.action === 'AWAIT_VOICE_INPUT' || result.action === 'PROMPT_VOICE') {
           await WhatsAppService.sendMessage(from, result.message);
         } else if (result.action === 'SEND_MARKING_FLOW') {
-          // Send the WhatsApp Flow for marking attendance (encryption endpoint implemented)
-          if (ATTENDANCE_MARKING_FLOW_ID) {
+          // Slack has a real Flow-equivalent (attendance_mark's checkbox
+          // modal — see slack-flow-registry.js), not sendFlow()'s Meta/
+          // Baileys-shaped {flowId, flowToken} contract. Same
+          // driverForIdentifier() branch shape as the addClassDetection
+          // block below and /settings above. The roster this modal needs
+          // is already sitting in the Redis session handleMarkingMethodSelection
+          // just saved — the modal's own INIT reads it back by userId.
+          if (driverForIdentifier(from) === 'slack') {
+            await WhatsAppService.sendInteractiveButtons(from, {
+              body: result.message,
+              buttons: [{ id: 'open_modal:attendance_mark', title: 'Mark Attendance' }],
+            });
+          } else if (ATTENDANCE_MARKING_FLOW_ID) {
             const sessionState = await AttendanceConversationService.getSessionState(user.id);
             const today = new Date().toISOString().split('T')[0];
             // Flow token format: userId:classId:date:sessionType:className - all data for response handling
