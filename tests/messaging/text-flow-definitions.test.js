@@ -59,9 +59,9 @@ async function run(textFlow, kind, replies, ctx = CTX) {
 }
 
 describe('registration', () => {
-  it('registers the three flows a sandbox needs, and is idempotent', () => {
+  it('registers the five flows a sandbox needs, and is idempotent', () => {
     const { definitions, textFlow } = load();
-    for (const kind of ['student-videos', 'settings', 'reading-assessment']) {
+    for (const kind of ['student-videos', 'settings', 'reading-assessment', 'class-setup', 'attendance-mark']) {
       expect(textFlow.getDefinition(kind)).toBeTruthy();
     }
     definitions.ensureRegistered(); // second call must not throw or duplicate
@@ -214,5 +214,150 @@ describe('endpoint-backed definitions are wired to the real endpoints', () => {
       'user-7', 'SETTINGS_MAIN', { language: 'en', observation_framework: 'oecd' }, 'user-7:settings:1'
     );
     expect(outcome.text).toContain('Saved.');
+  });
+});
+
+describe('attendance-mark: WhatsApp Baileys tap-to-mark, degraded to one free-text reply', () => {
+  const ATTENDANCE_CTX = { _ctx: { userId: 'user-7', flowToken: 'user-7:attendance-mark:1', phone: PHONE } };
+
+  // Both AttendanceConversationService's session AND text-flow.js's OWN
+  // step-tracking state persist through this SAME mocked Redis client — a
+  // blanket mockResolvedValue would make text-flow.js read back the
+  // attendance session object as if it were its own {kind, stepIndex,
+  // answers} state, breaking multi-step advancement entirely. Route by key
+  // instead: the attendance session key returns the fixture, everything
+  // else (text-flow.js's own key) goes through a real in-memory store.
+  function mockSession(session) {
+    const redis = require('../../bot/shared/services/cache/railway-redis.service');
+    const sessionKey = 'attendance:session:user-7';
+    const store = new Map();
+    redis.get.mockImplementation(async (key) => {
+      if (key === sessionKey) return session ? JSON.stringify(session) : null;
+      return store.has(key) ? store.get(key) : null;
+    });
+    redis.set.mockImplementation(async (key, value) => { store.set(key, value); return true; });
+    redis.delete.mockImplementation(async (key) => { store.delete(key); return true; });
+  }
+
+  const SESSION = {
+    selectedClass: { class_name: 'Grade 3', section: 'A' },
+    selectedListId: 'list-1',
+    selectedDate: '2026-08-25',
+    sessionType: 'morning',
+    students: [
+      { id: 's1', student_name: 'Zara Abdul' },
+      { id: 's2', student_name: 'Ahmed Khan' },
+      { id: 's3', student_name: 'Fatima Noor' },
+    ],
+  };
+
+  it('lists the roster by number and asks who is absent', async () => {
+    mockSession(SESSION);
+    const { textFlow } = load();
+
+    const first = await textFlow.start(PHONE, 'attendance-mark', {}, ATTENDANCE_CTX);
+    expect(first.kind).toBe('text');
+    expect(first.prompt.body).toContain('1. Zara Abdul');
+    expect(first.prompt.body).toContain('2. Ahmed Khan');
+    expect(first.prompt.body).toContain('3. Fatima Noor');
+  });
+
+  it('shows a "no students yet" prompt instead of an empty roster', async () => {
+    mockSession({ ...SESSION, students: [] });
+    const { textFlow } = load();
+
+    const first = await textFlow.start(PHONE, 'attendance-mark', {}, ATTENDANCE_CTX);
+    expect(first.prompt.body).toMatch(/no students yet/i);
+  });
+
+  it('produces an nfm_reply that flow-type-detector routes to attendance_marking', async () => {
+    mockSession(SESSION);
+    const { textFlow } = load();
+    const definition = textFlow.getDefinition('attendance-mark');
+
+    const done = await run(textFlow, 'attendance-mark', ['2, 3'], ATTENDANCE_CTX);
+    expect(done.status).toBe('complete');
+
+    const { metaMessage } = await definition.onComplete(PHONE, done.answers, done.context);
+    const responseJson = JSON.parse(metaMessage.interactive.nfm_reply.response_json);
+    const { detectFlowType } = require('../../bot/shared/utils/flow-type-detector');
+    expect(detectFlowType(responseJson)).toBe('attendance_marking');
+  });
+
+  it('carries the exact fields+formats AttendanceFlowHandler/flow-response.handler.js parse', async () => {
+    mockSession(SESSION);
+    const { textFlow } = load();
+    const definition = textFlow.getDefinition('attendance-mark');
+
+    const done = await run(textFlow, 'attendance-mark', ['2'], ATTENDANCE_CTX);
+    const { metaMessage } = await definition.onComplete(PHONE, done.answers, done.context);
+    const responseJson = JSON.parse(metaMessage.interactive.nfm_reply.response_json);
+
+    // flow_token format flow-response.handler.js splits on ':' —
+    // userId:listId:date:sessionType:encodedClassName
+    expect(responseJson.flow_token).toBe('user-7:list-1:2026-08-25:morning:Grade%203');
+    expect(responseJson.absent_students).toEqual(['s2']);
+    expect(responseJson.class_name).toBe('Grade 3');
+    expect(responseJson.date_display).toBe('2026-08-25');
+    expect(responseJson.session_type).toBe('morning');
+  });
+
+  it('"none" marks everyone present (an empty absent_students list)', async () => {
+    mockSession(SESSION);
+    const { textFlow } = load();
+    const definition = textFlow.getDefinition('attendance-mark');
+
+    const done = await run(textFlow, 'attendance-mark', ['none'], ATTENDANCE_CTX);
+    const { metaMessage } = await definition.onComplete(PHONE, done.answers, done.context);
+    const responseJson = JSON.parse(metaMessage.interactive.nfm_reply.response_json);
+    expect(responseJson.absent_students).toEqual([]);
+  });
+
+  it('onComplete rejects with a clear message when no session exists (stale/expired)', async () => {
+    mockSession(null);
+    const { textFlow } = load();
+    const definition = textFlow.getDefinition('attendance-mark');
+
+    const done = await run(textFlow, 'attendance-mark', ['none'], ATTENDANCE_CTX);
+    const outcome = await definition.onComplete(PHONE, done.answers, done.context);
+    expect(outcome.text).toMatch(/no attendance session/i);
+    expect(outcome.metaMessage).toBeUndefined();
+  });
+});
+
+describe('parseAbsentAttendanceReply', () => {
+  const { parseAbsentAttendanceReply } = require('../../bot/shared/services/messaging/text-flow-definitions');
+  const students = [{ id: 's1' }, { id: 's2' }, { id: 's3' }];
+
+  it('parses comma-separated numbers into the matching student ids', () => {
+    expect(parseAbsentAttendanceReply('2, 3', students)).toEqual(['s2', 's3']);
+  });
+
+  it('parses space-separated numbers with no commas', () => {
+    expect(parseAbsentAttendanceReply('1 3', students)).toEqual(['s1', 's3']);
+  });
+
+  it.each(['none', 'No One', 'NOBODY', 'everyone present', ''])('treats %j as everyone present', (reply) => {
+    expect(parseAbsentAttendanceReply(reply, students)).toEqual([]);
+  });
+
+  it('ignores out-of-range numbers rather than throwing', () => {
+    expect(parseAbsentAttendanceReply('1, 99', students)).toEqual(['s1']);
+  });
+});
+
+describe('attendance-mark: the fields are the ones the real handler actually reads', () => {
+  it('flow-response.handler.js + attendance-flow.handler.js reference each synthesised field name', () => {
+    // flow_token/absent_students/class_name are read in flow-response.handler.js
+    // (the flow_token split + the marking-flow dispatch); date_display/session_type
+    // are read one level down, in AttendanceFlowHandler.parseMarkingFlowResponse.
+    const combined = [
+      path.resolve(__dirname, '../../bot/shared/handlers/flow-response.handler.js'),
+      path.resolve(__dirname, '../../bot/shared/handlers/attendance-flow.handler.js'),
+    ].map((p) => fs.readFileSync(p, 'utf-8')).join('\n');
+
+    for (const field of ['absent_students', 'flow_token', 'class_name', 'date_display', 'session_type']) {
+      expect(combined).toContain(field);
+    }
   });
 });

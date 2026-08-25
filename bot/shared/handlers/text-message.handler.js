@@ -1653,7 +1653,7 @@ async function handleTextMessage(message, from, messageBody, user = null) {
               body: result.message,
               buttons: [{ id: 'discord_start_flow:attendance_mark', title: 'Mark Attendance' }],
             });
-          } else if (ATTENDANCE_MARKING_FLOW_ID) {
+          } else {
             const sessionState = await AttendanceConversationService.getSessionState(user.id);
             const today = new Date().toISOString().split('T')[0];
             // Flow token format: userId:classId:date:sessionType:className - all data for response handling
@@ -1664,8 +1664,17 @@ async function handleTextMessage(message, from, messageBody, user = null) {
             // Dynamic header with class + section (e.g., "5A Attendance")
             const displayName = section ? `${className}${section}` : className;
 
-            await WhatsAppService.sendFlow(from, {
+            // Baileys has no real Flow support at all — sendFlow() degrades
+            // to the 'attendance-mark' text-flow definition
+            // (text-flow-definitions.js) via flowKind, exactly like
+            // class-setup's own sendFlow() call above already does. Meta
+            // simply ignores flowKind and uses flowId for the real Flow.
+            // Called unconditionally (not gated behind ATTENDANCE_MARKING_FLOW_ID)
+            // so Baileys gets tap-to-mark even with no Meta Flow registered —
+            // the boolean return value decides whether to fall back.
+            const markingSent = await WhatsAppService.sendFlow(from, {
               flowId: ATTENDANCE_MARKING_FLOW_ID,
+              flowKind: 'attendance-mark',
               header: `📋 ${displayName} Attendance`,
               body: result.message,
               buttonText: 'Mark Attendance',
@@ -1673,17 +1682,19 @@ async function handleTextMessage(message, from, messageBody, user = null) {
               // The endpoint determines first screen via INIT response
               flowToken: flowToken
             });
-            logToFile('📋 Sent attendance marking flow', {
-              userId: user.id,
-              flowId: ATTENDANCE_MARKING_FLOW_ID,
-              classId: sessionState?.selectedListId,
-              studentCount: result.students?.length,
-              className: className
-            });
-          } else {
-            // Fallback if flow not configured
-            await WhatsAppService.sendMessage(from, 'The marking form is not configured. Please use voice marking instead.\n\nSay something like: "Everyone is here except Ali and Sara"');
-            logToFile('⚠️ ATTENDANCE_MARKING_FLOW_ID not configured', { userId: user.id });
+
+            if (markingSent) {
+              logToFile('📋 Sent attendance marking flow', {
+                userId: user.id,
+                flowId: ATTENDANCE_MARKING_FLOW_ID,
+                classId: sessionState?.selectedListId,
+                studentCount: result.students?.length,
+                className: className
+              });
+            } else {
+              await WhatsAppService.sendMessage(from, 'The marking form is not configured. Please use voice marking instead.\n\nSay something like: "Everyone is here except Ali and Sara"');
+              logToFile('⚠️ Attendance marking flow unavailable on this channel', { userId: user.id });
+            }
           }
         } else if (result.action === 'GENERATE_ATTENDANCE') {
           // Send initial "generating" message
