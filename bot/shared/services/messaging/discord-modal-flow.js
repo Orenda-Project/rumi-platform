@@ -400,6 +400,21 @@ function buildEndpointModal(config) {
      */
     async startFlow(ctx, triggerInteraction) {
       const response = await init(ctx);
+      if (response?.data?.error) {
+        // init() can legitimately fail for a kind whose first screen depends
+        // on state a prior async step must have already populated (e.g.
+        // attendance_mark's roster, sitting in a Redis session a different
+        // flow wrote) — unlike every other kind's init(), which always
+        // unconditionally returns a screen. Without this check, runScreen()
+        // crashes on screenToSteps(undefined, ...) BEFORE ever acking
+        // triggerInteraction, which is exactly what "the application didn't
+        // respond in time" looks like — confirmed live, not a guess.
+        logToFile('⚠️ Discord modal-flow: init() returned an error with no screen to render', { kind, error: response.data.error.message });
+        await triggerInteraction.deferUpdate();
+        const discordChannel = require('./discord-channel.service');
+        await discordChannel.sendMessage(`discord:${ctx.discordUserId}`, response.data.error.message);
+        return 'finished';
+      }
       return this.runScreen(ctx, triggerInteraction, response.screen, response.data);
     },
 

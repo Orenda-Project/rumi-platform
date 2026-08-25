@@ -6,6 +6,9 @@
  */
 
 jest.mock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+jest.mock('../../bot/shared/services/messaging/slack-web-client', () => ({
+  postMessage: jest.fn().mockResolvedValue(undefined),
+}));
 
 const { buildEndpointModal, encodeMetadata, decodeMetadata } = require('../../bot/shared/services/messaging/slack-modal-flow');
 
@@ -54,6 +57,28 @@ describe('buildEndpointModal', () => {
     expect(endpoint.init).toHaveBeenCalledWith({ userId: 'u1', flowToken: 'u1:fake:169' });
     expect(view.screen).toBe('STEP_ONE');
     expect(decodeMetadata(view.private_metadata)).toEqual({ kind: 'fake', screen: 'STEP_ONE', flowToken: 'u1:fake:169' });
+  });
+
+  // Regression: an endpoint whose init() depends on state a prior async step
+  // must have already populated (attendance_mark's Redis roster is the real
+  // example) can legitimately return {data: {error}} with no screen. Without
+  // this check, buildInitialView called screenToView(undefined, ...) and
+  // threw — confirmed live on Discord's equivalent (startFlow), which is
+  // worse there since it crashes BEFORE acking the triggering interaction
+  // ("the application didn't respond in time"). Slack's failure mode is
+  // milder (no crash, just silently never opens a modal) but still broken.
+  it('buildInitialView DMs the error and returns null (nothing to open) when init() returns an error with no screen', async () => {
+    const endpoint = fakeEndpoint();
+    endpoint.init.mockResolvedValue({ data: { error: { message: 'No attendance session found. Say "attendance" to start again.' } } });
+    const renderer = buildEndpointModal({
+      kind: 'fake', ...endpoint, screenToView: fakeScreenToView, viewToScreenData: fakeViewToScreenData,
+    });
+    const slackWebClient = require('../../bot/shared/services/messaging/slack-web-client');
+
+    const view = await renderer.buildInitialView({ userId: 'u1', flowToken: 'u1:fake:169', slackUserId: 'U0123ABC' });
+
+    expect(view).toBeNull();
+    expect(slackWebClient.postMessage).toHaveBeenCalledWith('U0123ABC', 'No attendance session found. Say "attendance" to start again.');
   });
 
   it('handleSubmission on a non-terminal screen returns response_action: push with the next screen view', async () => {

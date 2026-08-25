@@ -111,6 +111,23 @@ describe('handleOpenModal', () => {
     expect(handled).toBe(true);
   });
 
+  // Regression: buildInitialView returns null when the endpoint's init()
+  // itself errored (e.g. attendance_mark with no active session) — it
+  // already DMed the teacher itself in that case, so there's no view left to
+  // open. Calling openView(trigger_id, null) would be a second, spurious
+  // failure on top of the real one; this must be skipped instead.
+  it('skips openView when buildInitialView returns null (init() already handled its own error)', async () => {
+    const renderer = { buildInitialView: jest.fn().mockResolvedValue(null) };
+    const { handler, slackWebClient } = loadHandler({ renderer });
+
+    const handled = await handler.handleOpenModal({
+      trigger_id: 'trigger-999', user: { id: 'U0123ABC' }, actions: [{ action_id: 'open_modal:attendance_mark' }],
+    });
+
+    expect(handled).toBe(true);
+    expect(slackWebClient.openView).not.toHaveBeenCalled();
+  });
+
   it('exam_confirm: uses the embedded sessionId directly as flowToken, never calling buildFlowToken or getOrCreateUserByChannel', async () => {
     const renderer = { buildInitialView: jest.fn().mockResolvedValue({ type: 'modal' }) };
     const { handler, getOrCreateUserByChannel, slackWebClient, flowRegistry } = loadHandler({ renderer });

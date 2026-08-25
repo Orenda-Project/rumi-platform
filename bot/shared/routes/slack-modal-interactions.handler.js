@@ -127,7 +127,9 @@ async function handleOpenModal(payload) {
 
   try {
     const view = await renderer.buildInitialView(ctx);
-    await slackWebClient.openView(payload.trigger_id, view);
+    // null means buildInitialView already handled an init() error itself
+    // (DMed the teacher — see slack-modal-flow.js) — nothing left to open.
+    if (view) await slackWebClient.openView(payload.trigger_id, view);
   } catch (error) {
     logToFile('❌ Slack modal: failed to open initial view', { kind, error: error.message, stack: error.stack });
   }
