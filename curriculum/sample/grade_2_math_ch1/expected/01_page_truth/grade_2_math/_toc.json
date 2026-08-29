@@ -1,0 +1,23 @@
+{
+  "book_stem": "grade_2_math", "offset": 5,
+  "offset_note": "Footer-authoritative offset=5, verified at pdf6/7/8 (printed 1/2/3, Ch1 start) AND at pdf300/305 (printed 295/300, deep into and at the very end of Ch15) — no shift detected across the whole book. All pdf_start below = printed_start + 5. Only Chapter 1's start is directly footer-confirmed by a capture agent; chapters 2-15 pdf_start are DERIVED from the printed ToC (pdf4/pdf5) using the stable offset — must be footer-verified at each chapter's own capture per the standing rule (mid-book shift still theoretically possible even though none was seen at the two off-start checkpoints).",
+  "chapters": [
+    {"number": 1,  "title": "Numberland Adventures: Up to 999",        "printed_start": 1,   "pdf_start": 6,   "verified": "footer-confirmed pp1-3 = pdf6-8"},
+    {"number": 2,  "title": "Add-It-Up Island",                        "printed_start": 32,  "pdf_start": 37,  "verified": "derived"},
+    {"number": 3,  "title": "Take-Away Jungle",                        "printed_start": 59,  "pdf_start": 64,  "verified": "derived"},
+    {"number": 4,  "title": "Currency Quest: Understanding Value",     "printed_start": 86,  "pdf_start": 91,  "verified": "derived"},
+    {"number": 5,  "title": "The Magic of Multiplying",                "printed_start": 100, "pdf_start": 105, "verified": "derived"},
+    {"number": 6,  "title": "Divide and Conquer: The Power of Sharing","printed_start": 121, "pdf_start": 126, "verified": "derived"},
+    {"number": 7,  "title": "Fraction Frenzy: A Slice of Math",        "printed_start": 135, "pdf_start": 140, "verified": "derived"},
+    {"number": 8,  "title": "Measuring the World: The Journey of Length", "printed_start": 156, "pdf_start": 161, "verified": "derived"},
+    {"number": 9,  "title": "The Weighty Matters of Mass",             "printed_start": 177, "pdf_start": 182, "verified": "derived"},
+    {"number": 10, "title": "Volume Ventures: Exploring Capacity",     "printed_start": 194, "pdf_start": 199, "verified": "derived"},
+    {"number": 11, "title": "Thermometer Tales: The Heat is On",       "printed_start": 211, "pdf_start": 216, "verified": "derived"},
+    {"number": 12, "title": "Chrono Quest: The Mystery of Time",       "printed_start": 223, "pdf_start": 228, "verified": "derived"},
+    {"number": 13, "title": "Shapes and Spaces: A Geometric Journey",  "printed_start": 242, "pdf_start": 247, "verified": "derived"},
+    {"number": 14, "title": "Pattern Parade: The Rhythm of Numbers",   "printed_start": 269, "pdf_start": 274, "verified": "derived"},
+    {"number": 15, "title": "Data Detectives: Unraveling the Numbers", "printed_start": 287, "pdf_start": 292, "verified": "derived (offset independently confirmed nearby at pdf300=printed295 and pdf305=printed300, both inside/after this chapter)"}
+  ],
+  "toc_source": "Table of Contents spans TWO pdf pages: pdf4 (chapters 01-08) and pdf5 (chapters 09-15). 150-DPI overview read, recon agent 2026-08-01. Chapter titles verbatim from the printed ToC.",
+  "note": "15 chapters total, printed pages 1-300, book ends exactly on the last pdf page (no back matter). No missing/duplicate printed pages observed at the 5 spot-checked pages (pdf6,7,8,300,305)."
+}

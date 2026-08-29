@@ -1,0 +1,53 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 12, "printed_page_number": 7,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Discovery Playground", "Guess the number!"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 Discovery Playground Guess the number! Work with your partner to draw OR make each number using coloured paper. The first one has been done for you. 246 300 + 10 + 2 209 7 hundreds + 1 ten + 3 ones 470 7",
+  "exercises": [
+    {"label": "Guess the number! - Row 1 (worked example)",
+     "instruction_verbatim": "The first one has been done for you.",
+     "items": ["base-ten block drawing for 246"],
+     "answer_key": "246 = 2 hundreds + 4 tens + 6 ones (shown as the worked example: 2 hundred-flats, 4 ten-rods, 6 unit-cubes).",
+     "answer_confidence": "high"},
+    {"label": "Guess the number! - Row 2",
+     "instruction_verbatim": "Work with your partner to draw OR make each number using coloured paper.",
+     "items": ["300 + 10 + 2"],
+     "answer_key": "300 + 10 + 2 = 312 -> draw 3 hundred-flats + 1 ten-rod + 2 unit-cubes.",
+     "answer_confidence": "high"},
+    {"label": "Guess the number! - Row 3",
+     "instruction_verbatim": "Work with your partner to draw OR make each number using coloured paper.",
+     "items": ["209"],
+     "answer_key": "209 = 2 hundreds + 0 tens + 9 ones -> draw 2 hundred-flats + 0 ten-rods + 9 unit-cubes.",
+     "answer_confidence": "high"},
+    {"label": "Guess the number! - Row 4",
+     "instruction_verbatim": "Work with your partner to draw OR make each number using coloured paper.",
+     "items": ["7 hundreds + 1 ten + 3 ones"],
+     "answer_key": "7 hundreds + 1 ten + 3 ones = 713 -> draw 7 hundred-flats + 1 ten-rod + 3 unit-cubes.",
+     "answer_confidence": "high"},
+    {"label": "Guess the number! - Row 5",
+     "instruction_verbatim": "Work with your partner to draw OR make each number using coloured paper.",
+     "items": ["470"],
+     "answer_key": "470 = 4 hundreds + 7 tens + 0 ones -> draw 4 hundred-flats + 7 ten-rods + 0 unit-cubes.",
+     "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Blue circular icon of a telescope, next to the 'Discovery Playground' heading.", "objects": ["telescope icon"], "pedagogical_role": "section icon for Discovery Playground (hands-on partner activity)", "text_in_image": null},
+    {"description": "Small black graduation-cap outline icon next to 'Guess the number!' sub-heading.", "objects": ["graduation cap icon"], "pedagogical_role": "activity-type marker", "text_in_image": null},
+    {"description": "Row 1 of the table: base-ten block drawing showing 2 blue hundred-flats (each a 10x10 grid of unit squares), 4 orange ten-rods (each a stack of 10 unit segments), and 6 red unit-cubes arranged 3-over-3.", "objects": ["hundred-flats x2", "ten-rods x4", "unit-cubes x6"], "pedagogical_role": "worked example of base-ten block representation for the number 246", "text_in_image": null, "counts": {"hundreds": 2, "tens": 4, "ones": 6}, "count_method": "300dpi-crop-double-count", "count_verified": {"count_pass_1": {"hundreds": 2, "tens": 4, "ones": 6}, "count_pass_2": {"hundreds": 2, "tens": 4, "ones": 6}, "agreement": true, "cross_check": "2 hundreds + 4 tens + 6 ones = 246, matches the printed answer in the same row"}}
+  ],
+  "tables": [
+    {"description": "2-column, 5-row table. Left column = base-ten block picture (blank for rows 2-5, an example drawing in row 1). Right column = the number/expression to represent.", "rows": [
+      {"left": "base-ten blocks: 2 hundreds, 4 tens, 6 ones (worked example)", "right": "246"},
+      {"left": "(blank - student draws)", "right": "300 + 10 + 2"},
+      {"left": "(blank - student draws)", "right": "209"},
+      {"left": "(blank - student draws)", "right": "7 hundreds + 1 ten + 3 ones"},
+      {"left": "(blank - student draws)", "right": "470"}
+    ]}
+  ],
+  "visual_layout_notes": "Header top-right 'Chapter 1 / Numberland Adventures: Up to 999'. 'Discovery Playground' title with telescope icon. 'Guess the number!' bold sub-heading with graduation-cap icon, followed by two lines of instruction. Below, a bordered 2-column x 5-row table (left=picture cell, right=number/expression cell); row 1 is filled in as the worked example, rows 2-5 are blank picture cells for the student to complete. Footer page number '7' centered at bottom, confirming printed page 7 = pdf 12 - 5.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

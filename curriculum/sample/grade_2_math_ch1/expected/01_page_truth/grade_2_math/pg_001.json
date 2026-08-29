@@ -1,0 +1,20 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 6, "printed_page_number": 1,
+  "page_type": "chapter_opener",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Explorer's Pathway"],
+  "text_verbatim": "1 Numberland Adventures: Up to 999 Explorer's Pathway 1 I can count numbers up to and across 999 (3- digit numbers) forwards and backwards, beginning from zero or one, or from any given number. 2 I can read and write numbers up to 999 in numerals and up to 99 in words. 3 I can recognise the place value of each digit in 3-digit numbers (hundreds, tens, ones/units). 4 I can compare and order numbers up to 999 using appropriate language and <, > and = signs. 5 I can round numbers to the nearest tens using different concrete objects and pictorial representations. 6 I can round numbers to the nearest tens using different concrete objects and pictorial representations. 7 I can recognise the position of objects and write it using ordinal numbers up to 20. 8 I can read and write roman numbers up to 12. 1",
+  "exercises": [],
+  "illustrations": [
+    {"description": "Chapter banner: a blue rounded rectangle with an orange ribbon/bookmark tag on the left containing the white chapter number '1', and the chapter title 'Numberland Adventures: Up to 999' in white bubble-style text on the blue background.", "objects": ["orange ribbon tag", "chapter number 1", "blue banner"], "pedagogical_role": "chapter opener title banner", "text_in_image": "1 / Numberland Adventures: Up to 999"},
+    {"description": "A round blue-and-white compass icon (N/E/S/W marked, gold star centre) sitting beside the 'Explorer's Pathway' heading.", "objects": ["compass icon"], "pedagogical_role": "section icon for Explorer's Pathway", "text_in_image": "N E S W"},
+    {"description": "A winding light-purple/lavender path (like a ribbon road with white speed-line marks) snaking down the page in an S-shape, connecting 8 numbered star-shaped waypoints (stars numbered 1-8, each a black-outlined white star). Each star sits beside a white speech-bubble-style rounded rectangle containing one SLO (student learning outcome) statement in dark text. The road winds left-to-right then right-to-left across roughly three horizontal bands, finishing at an open treasure chest at the bottom-right.", "objects": ["winding path", "8 numbered stars", "SLO text callout boxes"], "pedagogical_role": "visual device mapping the chapter's 8 SLOs as a game-like path/journey, matching the 'Explorer' theme", "text_in_image": "1 through 8 (star numbers); SLO texts as listed in text_verbatim"},
+    {"description": "An open brown wooden treasure chest overflowing with gold coins and gold stars/sparkles, positioned at the end of the winding path after star 8, bottom-right of the page.", "objects": ["treasure chest", "gold coins", "gold stars"], "pedagogical_role": "visual reward/goal marker signalling the end of the SLO pathway (finishing the chapter's learning journey)", "text_in_image": null}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Chapter-opener page: blue title banner at top with orange ribbon chapter-number tag, 'Explorer's Pathway' heading with compass icon below it, then a full-page winding path diagram with 8 numbered SLO callout boxes leading to a treasure chest. Footer number '1' centered at bottom of page.",
+  "confidence": "high",
+  "flags": ["Source content duplication: SLO star #5 and SLO star #6 print the IDENTICAL sentence verbatim ('I can round numbers to the nearest tens using different concrete objects and pictorial representations.') — kept verbatim per faithfulness rule, flagged as a likely source/printing error (a distinct SLO, e.g. for hundreds rounding, may have been intended for one of the two slots)."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

@@ -85,6 +85,23 @@ function collectAgentDocs() {
     };
     walkMd(claudeDir);
   }
+  // The curriculum/ package docs are public agent-native content too — guard them the same way.
+  // ALLOWLIST: curriculum/sample/ ships the disclosed source textbook (one chapter, with
+  // attribution in its NOTICE). The source publisher's OWN name legitimately appears in that
+  // textbook's content, so the sample dir is intentionally exempt from the internal-name scan.
+  const curriculumDir = path.join(ROOT, 'curriculum');
+  if (fs.existsSync(curriculumDir)) {
+    const walkMd = (d) => {
+      for (const e of safeReaddirSync(d)) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) {
+          if (e.name === 'sample' || e.name === 'node_modules') continue;  // sample = disclosed content
+          walkMd(p);
+        } else if (e.name.endsWith('.md')) docs.push(p);
+      }
+    };
+    walkMd(curriculumDir);
+  }
   return [...new Set(docs)];
 }
 

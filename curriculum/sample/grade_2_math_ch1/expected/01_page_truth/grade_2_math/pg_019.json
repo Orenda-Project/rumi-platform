@@ -1,0 +1,53 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 24, "printed_page_number": 19,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Topic 4: Ordinal Numbers", "Adventure Begins!"],
+  "text_verbatim": "4. Now round the numbers in question 3 to the nearest 10. a. ___ to the nearest 10 is ___ b. ___ to the nearest 10 is ___ c. ___ to the nearest 10 is ___ d. ___ to the nearest 10 is ___ Topic 4 Ordinal Numbers Adventure Begins! I'll describe stall items, and you have to guess which stall number (ordinal position) it belongs to. 1st 2nd 3rd 4th 5th 6th 7th 8th 9th 10th 1. Which stall has colourful clothes hanging beautifully? 2. Which stall has a ring toss game set up? 3. Which stall has Jalebis? 19",
+  "exercises": [
+    {
+      "label": "Rounding continuation - Question 4 (fill-in-the-blank, a-d)",
+      "instruction_verbatim": "Now round the numbers in question 3 to the nearest 10.",
+      "items": ["a. ___ to the nearest 10 is ___", "b. ___ to the nearest 10 is ___", "c. ___ to the nearest 10 is ___", "d. ___ to the nearest 10 is ___"],
+      "answer_key": "This question rounds \"the numbers in question 3\", printed on the PRECEDING page (printed 18, pg_018.json — now captured and present in this corpus). Q3 on printed 18 was 'Which numbers do these arrows show?' with 4 arrows on a 30-80 number line, answered (measured twice, two independent pixel methods, both agreed): arrow a=38, b=55, c=62, d=79. Rounded to the nearest 10: a. 38 -> 40; b. 55 -> 60 (round-half-up convention, standard in this curriculum); c. 62 -> 60; d. 79 -> 80.",
+      "answer_confidence": "medium (arithmetic itself is certain; confidence is medium only on whether this page's a/b/c/d order matches printed-18 Q3's arrow 1-4 left-to-right order, which is the natural reading — the blanks themselves are unlabelled fill-in lines with no numbers printed on this page)"
+    },
+    {
+      "label": "Adventure Begins! — Guess the stall by ordinal position",
+      "instruction_verbatim": "I'll describe stall items, and you have to guess which stall number (ordinal position) it belongs to. 1. Which stall has colourful clothes hanging beautifully? 2. Which stall has a ring toss game set up? 3. Which stall has Jalebis?",
+      "items": [
+        "1st stall: a clay pot (matka)",
+        "2nd stall: a bowl of food (biryani/rice dish with a chicken drumstick)",
+        "3rd stall: a ring-toss game (yellow peg with coloured rings)",
+        "4th stall: a red-and-blue shirt (hanging clothes)",
+        "5th stall: a drum with drumsticks",
+        "6th stall: a glass jar of green pickles (achaar)",
+        "7th stall: a mehndi/henna cone on a stick",
+        "8th stall: a folded green checkered cloth/notebook",
+        "9th stall: a stack of black-and-white patterned bangles",
+        "10th stall: jalebis (orange coiled sweet)"
+      ],
+      "answer_key": "1. 4th stall (the red-and-blue shirt). 2. 3rd stall (the ring-toss game). 3. 10th stall (the jalebis).",
+      "answer_confidence": "high"
+    }
+  ],
+  "illustrations": [
+    {"description": "Row of 10 colourful market stalls with striped awnings labelled 1st-10th, each holding one item, laid out for an ordinal-number guessing game.", "objects": ["10 market stalls"], "pedagogical_role": "visual anchor for the 'Adventure Begins!' ordinal-number guessing activity", "text_in_image": "1st 2nd 3rd 4th 5th 6th 7th 8th 9th 10th"},
+    {"description": "1st stall (teal banner, pink-striped awning): a brown clay pot (matka) with a decorative pattern.", "objects": ["clay pot"], "pedagogical_role": "item to identify by ordinal position", "text_in_image": "1st"},
+    {"description": "2nd stall (yellow-green banner, orange-striped awning): a brown bowl heaped with rice/biryani with a chicken drumstick sticking out.", "objects": ["bowl of biryani with drumstick"], "pedagogical_role": "item to identify by ordinal position", "text_in_image": "2nd"},
+    {"description": "3rd stall (blue banner, mint-striped awning): a yellow peg with several coloured rings threaded on it (ring-toss game).", "objects": ["ring-toss peg and rings"], "pedagogical_role": "item to identify by ordinal position; answer to Q2", "text_in_image": "3rd"},
+    {"description": "4th stall (orange banner, green-striped awning): a red-and-blue T-shirt hanging.", "objects": ["shirt"], "pedagogical_role": "item to identify by ordinal position; answer to Q1", "text_in_image": "4th"},
+    {"description": "5th stall (purple banner, blue-striped awning): a yellow-and-white drum with two drumsticks.", "objects": ["drum", "drumsticks"], "pedagogical_role": "item to identify by ordinal position", "text_in_image": "5th"},
+    {"description": "6th stall (gold banner, orange-striped awning): a glass jar containing green pickled vegetables (achaar).", "objects": ["pickle jar"], "pedagogical_role": "item to identify by ordinal position", "text_in_image": "6th"},
+    {"description": "7th stall (light-blue banner, yellow-striped awning): a brown cone on a stick with a drip at the tip (mehndi/henna cone).", "objects": ["henna cone"], "pedagogical_role": "item to identify by ordinal position", "text_in_image": "7th"},
+    {"description": "8th stall (orange banner, purple-striped awning): a folded green checkered cloth or notebook.", "objects": ["folded cloth/notebook"], "pedagogical_role": "item to identify by ordinal position", "text_in_image": "8th"},
+    {"description": "9th stall (magenta banner, pink-striped awning): a vertical stack of black-and-white patterned bangles.", "objects": ["bangles"], "pedagogical_role": "item to identify by ordinal position", "text_in_image": "9th"},
+    {"description": "10th stall (pink banner, green-striped awning): a pile of orange coiled jalebis.", "objects": ["jalebis"], "pedagogical_role": "item to identify by ordinal position; answer to Q3", "text_in_image": "10th"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Top of page: leftover fill-in-the-blank rounding question (a-d) from the previous topic, no image. Below it, a blue 'Topic 4 / Ordinal Numbers' banner, then the 'Adventure Begins!' heading with a compass-style character icon and a speech instruction. Two rows of 5 stalls each (1st-5th on row 1, 6th-10th on row 2), each stall a striped-awning kiosk with a coloured banner and one item. Three guessing questions below the stalls. Footer '19' centred at bottom.",
+  "confidence": "high",
+  "flags": ["Q4 answer_key backfilled 2026-08-02 using pg_018.json (printed 18, Q3 arrow values) which was not yet in the corpus when this page was first captured — see Q4 exercise entry."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

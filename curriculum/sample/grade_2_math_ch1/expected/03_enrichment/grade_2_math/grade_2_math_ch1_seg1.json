@@ -1,0 +1,204 @@
+{
+  "lesson_id": "grade_2_math_ch1_seg1",
+  "lp_type": "content",
+  "model": "openai/gpt-5.6-terra",
+  "generated": {
+    "segment_id": "1",
+    "slo_refs": [
+      "M-02-NS-03",
+      "M-02-NS-01"
+    ],
+    "bloom": "understand",
+    "slo_statement": "By the end of the lesson, students will recognise the place value of each digit in a 3-digit number (hundreds, tens, ones) and count forward and backward across 3-digit numbers (M-02-NS-03, M-02-NS-01).",
+    "scope_declaration": "ONE lesson, ONE class period of 30 minutes, ONE SLO cluster: place value in 3-digit numbers, using the book's own worked examples (123, 342) and Practice Questions (602), textbook pp.2-4.",
+    "duration_min": 30,
+    "materials": [
+      "chalk",
+      "board",
+      "textbook pp.2-4",
+      "notebook",
+      "sticks or twigs the class gathers (for bundles)",
+      "rubber bands (to tie ten sticks into one bundle, and ten bundles into one big hundred-bundle)"
+    ],
+    "warmUp": {
+      "minutes": 4,
+      "script": "Chorus with me: count by tens together from 10 to 100. Now partner-check: how many tens make 100?",
+      "items": [
+        {
+          "prompt": "Count by tens from 10 to 100.",
+          "mode": "choral",
+          "expected": "10, 20, 30, 40, 50, 60, 70, 80, 90, 100."
+        },
+        {
+          "prompt": "How many tens make 100?",
+          "mode": "pair-check",
+          "expected": "10 tens make 100."
+        }
+      ]
+    },
+    "hookStory": "Taleemabad's library is 999 days old! Look at these big numbers on the spin wheel: 531, 342, 482, 123. Have YOU ever seen a number this big -- on a bus, a price tag, a house number? Tell your partner where.",
+    "keyWords": [
+      {
+        "term": "hundreds",
+        "urdu_gloss": "سینکڑے",
+        "syllables": "hun-dreds (2 syllables)",
+        "student_definition": "a group of 100."
+      },
+      {
+        "term": "tens",
+        "urdu_gloss": "دہائیاں",
+        "syllables": "tens (1 syllable)",
+        "student_definition": "a group of 10."
+      },
+      {
+        "term": "ones",
+        "urdu_gloss": "اکائیاں",
+        "syllables": "ones (1 syllable)",
+        "student_definition": "single units, fewer than a group of ten."
+      },
+      {
+        "term": "place value",
+        "urdu_gloss": "پوزیشن کی قیمت",
+        "syllables": "place val-ue (3 syllables)",
+        "student_definition": "what a digit is worth because of WHERE it sits in the number."
+      },
+      {
+        "term": "expanded form",
+        "urdu_gloss": "پھیلی ہوئی شکل",
+        "syllables": "ex-pand-ed form (4 syllables)",
+        "student_definition": "writing a number as the sum of its hundreds, tens and ones."
+      },
+      {
+        "term": "digit",
+        "urdu_gloss": "ہندسہ",
+        "syllables": "dig-it (2 syllables)",
+        "student_definition": "one single number symbol (0-9) inside a bigger number."
+      }
+    ],
+    "instance_ledger": {
+      "i_do_steps": "123 (the book's own first worked example, p.3)",
+      "worked_example": "342 (the book's own second worked example, p.3-4)",
+      "we_do": "256 (a fresh number, modelled together, never printed in the book)",
+      "you_do": "602 (the book's own Practice Questions, p.4, blanks solved)",
+      "exit_ticket": "470 vs 407 (a fresh same/different variation pair, new context)",
+      "disjoint": "i_do_steps=123 | steps[0].action | 'p.3's own 1 hundred+2 tens+3 ones'; worked_example=342 | workedExample | 'p.3-4's own 3 hundreds+4 tens+2 ones'; we_do=256 | steps[1].action | '2 hundred-bundles, 5 ten-bundles, 6 sticks'; you_do=602 | problems[0..4] | 'p.4's own H/T/O blanks and counting blanks'; exit_ticket=470/407 | exitTicket.task | 'is 470 the same as 407?'; pairwise: no number repeats -- 123/342/602 are the book's own three numbers, one per surface as the field-map requires, and 256/470 are fresh."
+    },
+    "element_map": {
+      "cumulative spaced-retrieval warm-up": "warmUp.script -- choral skip-counting by tens, general prior knowledge (Day 1, no prior lesson in this corpus)",
+      "topic-fit number-sense warm-up": "warmUp.items -- 'how many tens make 100?' ties directly into today's hundreds/tens/ones topic",
+      "anxiety-safe fact-fluency drill": "partnerActivity.structure -- the Digit Detective game, self-paced, each child tracks only their OWN streak, never timed or compared",
+      "mastery-check exit ticket with a same/different variation item": "exitTicket.task -- 'is 470 the same as 407?'",
+      "misconception pre-empt": "notes -- 'children read the digit itself as its value (says 2 for the tens digit, not 20)'; pre-empted in steps[0].cfu.if_struggle by covering the digit and counting the bundles",
+      "bilingual en/ur maths glossary": "keyWords -- hundreds/tens/ones/place value/expanded form/digit, each with an Urdu gloss"
+    },
+    "cpa_enactment": {
+      "phase": "pictorial",
+      "child_handles": "bundles of ten sticks (a ten) and single loose sticks (a one); ten bundles taped together make one big hundred-bundle",
+      "quantity_visible": "the actual bundles and sticks laid out in Hundreds/Tens/Ones columns, one drawn/handled item per unit -- never a bare digit alone"
+    },
+    "concrete_model": {
+      "name": "bundles of ten sticks (a ten), and ten bundles taped together into one big bundle (a hundred)",
+      "ten": "one bundle = ten sticks tied with a rubber band",
+      "one": "one loose stick",
+      "free_source": "ice-lolly sticks, broom sticks or dry twigs the class gathers from the yard; rubber bands from a shop bundle -- the teacher ties enough bundles once and reuses them all year"
+    },
+    "boardWork": {
+      "instruction": "Before class, draw a 3-column Hundreds | Tens | Ones chart on the board. Draw bundles and sticks for each example -- never write a bare digit alone.",
+      "content": [
+        "Hundreds | Tens | Ones",
+        "10 tens = 1 hundred-bundle",
+        "123 = 1 hundred-bundle + 2 ten-bundles + 3 sticks (drawn)"
+      ]
+    },
+    "steps": [
+      {
+        "phase": "I-Do",
+        "minutes": 7,
+        "action": "Draw/lay out 1 hundred-bundle, 2 ten-bundles and 3 loose sticks in the H/T/O chart for 123 (p.3's own example). Count each column aloud before writing any digit.",
+        "say": "Look: one big bundle of a hundred, two bundles of ten, three loose sticks. That is 1 hundred, 2 tens, 3 ones -- we write 123. In expanded form: 100 + 20 + 3.",
+        "cfu": {
+          "question": "What is the value of the digit 2 in 123?",
+          "pass_signal": "Says 20, pointing to the two ten-bundles (2 tens = 20), not just 'it's a 2'.",
+          "if_struggle": "Cover the digit 2 with your hand and ask: how many ten-bundles are still there? Count them: 2 bundles = 20."
+        }
+      },
+      {
+        "phase": "We-Do",
+        "minutes": 10,
+        "action": "Together, help Zainab build 256 with bundles: 2 hundred-bundles, 5 ten-bundles, 6 loose sticks. Fill the H/T/O chart together, counting each column before writing.",
+        "say": "How many hundred-bundles does Zainab need for 256? Two. Tens? Five bundles. Ones? Six sticks. Let's write the expanded form together: 200 + 50 + 6.",
+        "cfu": {
+          "question": "Which digit in 256 tells us the TENS, and what is its value?",
+          "pass_signal": "Points to the 5 and says tens place, value 50 (not just 5)."
+        }
+      },
+      {
+        "phase": "You-Do",
+        "minutes": 9,
+        "action": "Independently complete p.4's Practice Questions on 602: the H/T/O blanks, expanded form, each digit's place and value, and count backward/forward.",
+        "say": "Now build 602 on your own. Remember: an empty tens column still gets a 0 written down.",
+        "cfu": {
+          "question": "Why does 602 have NO ten-bundles at all?",
+          "pass_signal": "Says the tens digit is 0, so zero bundles of ten are needed, and the tens column stays empty."
+        }
+      }
+    ],
+    "workedExample": "342 (the book's own second worked example, p.3-4). Draw 3 hundred-bundles, 4 ten-bundles and 2 loose sticks FIRST, then write the notation: 342 = 300 + 40 + 2. The digit 3 is in the hundreds place, value 300; digit 4 is in the tens place, value 40; digit 2 is in the ones place, value 2. (A different number from the 123 used in I-Do and the 256 used in We-Do.)",
+    "partnerActivity": {
+      "structure": "Digit Detective (anxiety-safe, no timer, 3-5 min): Partner A names a 3-digit number, Partner B says its hundreds/tens/ones digits and their values; swap. Each child tracks only their OWN correct-in-a-row streak, never compared to a classmate.",
+      "dialogueFrameA": "My number is ___. What are its hundreds, tens and ones?",
+      "dialogueFrameB": "Hundreds: ___. Tens: ___. Ones: ___.",
+      "teacher_role": "circulate, listening for VALUE not just digit-naming (e.g. 'tens = 40', not just 'tens = 4'); reset a pair's streak with encouragement, never a penalty."
+    },
+    "problems": [
+      {
+        "prompt": "602 = ___ hundreds, ___ tens and ___ ones.",
+        "status": "solved",
+        "solution": "6 hundreds, 0 tens, 2 ones (p.4, confirmed by the 6 hundred-bundles / empty tens column / 2 sticks picture)."
+      },
+      {
+        "prompt": "In expanded form, 602 = ___ + ___ + ___.",
+        "status": "solved",
+        "solution": "600 + 0 + 2 (p.4)."
+      },
+      {
+        "prompt": "The digit 6 in 602 is in ___ place. The digit 0 is in ___ place. The digit 2 is in ___ place.",
+        "status": "solved",
+        "solution": "6 = hundreds place; 0 = tens place; 2 = ones place (p.4)."
+      },
+      {
+        "prompt": "The value of 6 in 602 is ___. The value of 0 is ___. The value of 2 is ___.",
+        "status": "solved",
+        "solution": "6 = 600; 0 = 0; 2 = 2 (p.4)."
+      },
+      {
+        "prompt": "Count backwards from 602: ___, ___, ___, 598. Count forward from 602: ___, ___, ___, 606.",
+        "status": "solved",
+        "solution": "Backward: 601, 600, 599 (then 598). Forward: 603, 604, 605 (then 606) (p.4)."
+      }
+    ],
+    "weakLearnerSupport": "Named strategy: Bundle-Count-First. The struggling student physically lays out the bundles and sticks into the H/T/O chart BEFORE writing any digit, counts each column aloud, and only then writes the digit that matches the count -- never writes a digit first and justifies it afterward.",
+    "challengeExtension": "Ahead learners (Ayesha's group) take a number with a REPEATED digit, like 232, and explain out loud why the two '2's are worth different amounts (200 vs 2) even though they look the same.",
+    "exitTicket": {
+      "task": "Ahmed says 470 (4 hundreds + 7 tens + 0 ones) is the SAME number as 407 (4 hundreds + 0 tens + 7 ones). Is he right? Explain using place value.",
+      "success_criteria": "Correct if the student says DIFFERENT and explains that the 7 and 0 sit in different places (tens vs ones), so they are worth different amounts (70 vs 7).",
+      "self_prediction": "Before answering, draw ☺ or ☹ predicting whether 470 and 407 will turn out to be the same number."
+    },
+    "homework": "Bilal has the number 385: write how many hundreds, tens and ones, write it in expanded form, then count forward 3 numbers from it.",
+    "keyFact": "The SAME digit is worth a different amount depending on which place it sits in -- hundreds, tens, or ones.",
+    "cfuExplain": "If a student names the digit instead of its value (says '2' instead of '20'), ask them to count the bundles in that column out loud before answering again.",
+    "coachingReflection": "Notice whether children can state a digit's VALUE (not just its name) without being prompted to count the bundles first.",
+    "nextTopicPreview": "Next lesson learns how to say and write the NAMES of these 3-digit numbers in words.",
+    "subject_elements": {
+      "number_sense_warmup": "warmUp -- skip-counting by tens, tied directly to today's '10 tens = 1 hundred' rule",
+      "fluency_drill": "partnerActivity -- Digit Detective, self-paced, streak tracked only against the child's own prior round",
+      "mastery_criterion": "exitTicket.success_criteria -- states place value explicitly, not just the right/wrong label",
+      "variation_item": "exitTicket.task -- the 470-vs-407 same/different comparison",
+      "misconception_preempt": "notes + steps[0].cfu.if_struggle -- digit-name vs digit-value confusion, pre-empted by counting bundles before naming a value"
+    },
+    "notes": [
+      "gap: the page-truth's guide/narrator avatars on pp.2-4 (elderly man, boy, girl with megaphone) are not named in the supplied illustration descriptions, so hookCharacters is omitted rather than inventing names for them; Zainab, Ahmed, Ayesha and Bilal (this brief's standard Pakistani names, per rule 36 -- 2 named girls, 2 named boys) are used only in the fresh We-Do/exit-ticket/challenge/homework instances that are not tied to any page-truth character.",
+      "misconception (named for the AUTHOR stage): children read a digit's NAME as its VALUE -- saying '2' for the tens digit in 123 instead of '20'. Because both '342' and '256' place a digit in the tens column, this is why the value is asked explicitly at every surface, not just the digit's name."
+    ]
+  }
+}

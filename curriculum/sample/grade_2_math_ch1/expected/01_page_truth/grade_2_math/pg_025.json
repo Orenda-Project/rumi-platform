@@ -1,0 +1,26 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 30, "printed_page_number": 25,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Topic 5: Roman Numerals", "Adventure Begins!", "Leap and Learn"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 Topic 5 Roman Numerals Adventure Begins! Wow! Look at those numbers on the clock! They're not like the ones we usually use. 1. Have you ever seen a clock like this before? 2. Why do you think this clock has different numbers? 3. Can you recognise any of the symbols on the clock's face? 4. Do you know what this clock is called? Leap and Learn Such a clock is called a grandfather clock. Bunty and Babloo set up the grandfather clock and modern-day clock side by side. 25",
+  "exercises": [
+    {"label": "Adventure Begins! discussion questions", "instruction_verbatim": "1. Have you ever seen a clock like this before? 2. Why do you think this clock has different numbers? 3. Can you recognise any of the symbols on the clock's face? 4. Do you know what this clock is called?",
+     "items": ["Q1 (open, personal experience)", "Q2 (open, reasoning)", "Q3 (open, symbol recognition)", "Q4 (identify the clock type)"],
+     "answer_key": "Q1-Q3 are open-ended/discussion prompts with no single fixed answer (personal experience / reasoning / symbol recognition). Q4's answer is given by the page itself in the 'Leap and Learn' section immediately below: 'grandfather clock'.",
+     "answer_confidence": "high (for Q4 only, since it is stated verbatim on-page); Q1-Q3 have no computable answer key"}
+  ],
+  "illustrations": [
+    {"description": "Two children (a girl in a pink headscarf, a boy with dark hair) stand looking up at a tall brown grandfather-clock tower against a dark blue night-sky background, with a triangular yellow spotlight/torch beam shining onto the clock face which shows Roman numerals.", "objects": ["girl in pink headscarf", "boy", "clock tower", "yellow spotlight beam"], "pedagogical_role": "scene illustration for 'Adventure Begins!' discussion prompt, introducing the grandfather-clock/Roman-numeral hook", "text_in_image": "faint Roman numerals on the small distant clock face (not legible at this scale)"},
+    {"description": "A round blue-and-white compass icon (N/E/S/W marked, gold star centre) used as the small section icon next to the 'Adventure Begins!' heading.", "objects": ["compass icon"], "pedagogical_role": "section icon", "text_in_image": "N E S W"},
+    {"description": "A large brown wooden grandfather clock with an ornate pediment top, standing beside (to the left of) a small round blue-faced red-rimmed modern alarm clock. The grandfather clock's face is light-green with black Roman numerals XII, I, II, III, IV, V, VI, VII, VIII, IX, X, XI printed in the correct standard positions all the way around; its hour hand points roughly toward I and its minute hand points down toward V. The small alarm clock (partially at the page edge) shows ordinary Arabic numerals.", "objects": ["grandfather clock", "alarm clock"], "pedagogical_role": "side-by-side comparison of Roman-numeral clock face vs. ordinary Arabic-numeral clock face, the visual anchor for the 'Leap and Learn' text", "text_in_image": "XII, I, II, III, IV, V, VI, VII, VIII, IX, X, XI (all 12 Roman numerals, verified correct and correctly ordered around the dial)"},
+    {"description": "A round blue icon of a child in a blue/gold spacesuit-style hood, used as the dialogue avatar for the 'Wow! Look at those numbers...' speech line.", "objects": ["child avatar icon"], "pedagogical_role": "speaker avatar for dialogue text", "text_in_image": null},
+    {"description": "A round icon of an elderly man with grey hair/beard, used as the dialogue avatar for the 'Such a clock is called a grandfather clock' speech line.", "objects": ["elderly man avatar icon"], "pedagogical_role": "speaker avatar for dialogue text (the 'expert'/grandparent character)", "text_in_image": null}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Topic-opener style page for Topic 5 'Roman Numerals' within Chapter 1. Blue 'Topic 5 / Roman Numerals' banner at top. 'Adventure Begins!' heading with compass icon, dialogue line with avatar, 4 numbered discussion questions on the left, grandfather-clock-tower scene illustration on the right. Below: 'Leap and Learn' heading with a different avatar icon, dialogue text revealing the clock's name, and a large side-by-side grandfather-clock/alarm-clock illustration. Footer '25' centered at bottom.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

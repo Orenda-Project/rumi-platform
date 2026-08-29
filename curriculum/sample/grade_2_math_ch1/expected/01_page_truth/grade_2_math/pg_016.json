@@ -1,0 +1,26 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 21, "printed_page_number": 16,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Leap and Learn", "Practice Questions"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 92 rounded to the nearest ten is 90. 2. Basket of bananas = 85 85 is between 80 and 90. [number line 80-90, 85 marked] If the ones digit is less than five, we have to round down. If the ones digit is five or more, we have to round up. [number line 80-90 with round down/round up arrows split at 85] The ones digit in 85 is 5. We round up when we have five or more in ones place. [number line 80-90 with green arrow from 85 pointing right to 90] Practice Questions 3. Let's round off the basket of pears = 123 123 is between ______and ______ . [number line 120-130 with round down/round up arrows split at 125] The ones place in 123 is _____. Will we round up or round down? ______ 123 to the nearest ten is ______ . 16",
+  "exercises": [
+    {"label": "Practice Question 3 — round off 123",
+     "instruction_verbatim": "Let's round off the basket of pears = 123. 123 is between ______and ______ . The ones place in 123 is _____. Will we round up or round down? ______ 123 to the nearest ten is ______ .",
+     "items": ["123 is between __ and __", "ones place in 123 is __", "round up or down? __", "123 to nearest ten is __"],
+     "answer_key": "123 is between 120 and 130. The ones place in 123 is 3. Since 3 is less than five, we round down. 123 to the nearest ten is 120.",
+     "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Number line from 80 to 90 with tick marks at every unit; labelled ticks at 80, 85 (mid, orange), and 90.", "objects": ["number line 80-90"], "pedagogical_role": "shows where 85 sits between the two nearest tens", "text_in_image": "80, 85, 90"},
+    {"description": "Same 80-90 number line repeated, with two curved orange arrows: 'round down' pointing left from 85 to 80, and 'round up' pointing right from 85 to 90.", "objects": ["number line 80-90", "2 curved arrows"], "pedagogical_role": "visualises the round-down/round-up decision zones split at the midpoint 85", "text_in_image": "round down, round up, 80, 85, 90"},
+    {"description": "Same 80-90 number line a third time, with a single green curved arrow pointing right from 85 to 90 (85 relabelled in green), illustrating that 85 rounds UP (since ones digit = 5).", "objects": ["number line 80-90", "1 green arrow"], "pedagogical_role": "shows the concrete result: 85 rounds up to 90 (the five-rounds-up rule)", "text_in_image": "80, 85 (green), 90"},
+    {"description": "Number line from 120 to 130 with tick marks at every unit; labelled ticks at 120, 125 (mid, orange), and 130, with two curved orange arrows ('round down' left of 125, 'round up' right of 125) already drawn, but no green confirming arrow yet — left for the student to complete as Practice Question 3.", "objects": ["number line 120-130", "2 curved arrows"], "pedagogical_role": "scaffolded practice diagram for the student to apply the rounding rule to 123", "text_in_image": "round down, round up, 120, 125, 130"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Top line completes the previous page's oranges example ('92 rounded to the nearest ten is 90.'). Then a second worked example (bananas = 85, rounds UP because ones digit is exactly 5) with three stacked 80-90 number lines. Bold 'Practice Questions' label introduces Q3 (pears = 123) with fill-in-the-blank prompts and a 120-130 number line diagram (arrows drawn, answer not yet filled). Footer '16' centered at bottom.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

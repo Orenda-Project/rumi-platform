@@ -1,0 +1,44 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 15, "printed_page_number": 10,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Adventure begins!", "Leap and Learn"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 1. How many months old is Babloo's tree? 2. Which tree among Ammi, Abbu, and Lali is the youngest? 3. Which tree is the oldest and which one is the youngest? Leap and Learn When we compare numbers, we can use symbols as well. Bunty and Babloo decide to first compare Ammi's and Abbu's trees. Ammi's tree is 432 months and Abbu's tree is 438 months. 432 = 4 hundreds, 3 tens, and 2 ones 438 = 4 hundreds, 3 tens, and 8 ones We start comparing from the greater place value. Hundreds Tens Ones 4 3 2 4 3 8 4 hundreds = 4 hundreds, we move to the tens place. 3 tens = 3 tens, we move to the ones place. 8 ones are greater than 2 ones. 438 is greater than 432. 438 > 432 Now, let's compare Lali and Babloo's trees. Hundreds Tens Ones 1 9 2 1 2 0 10",
+  "exercises": [
+    {"label": "1. How many months old is Babloo's tree?",
+     "instruction_verbatim": "How many months old is Babloo's tree?",
+     "items": ["Babloo's tree (from the tree diagram on printed page 9)"],
+     "answer_key": "120 months.",
+     "answer_confidence": "high"},
+    {"label": "2. Which tree among Ammi, Abbu, and Lali is the youngest?",
+     "instruction_verbatim": "Which tree among Ammi, Abbu, and Lali is the youngest?",
+     "items": ["Ammi 432 months, Abbu 438 months, Lali 192 months"],
+     "answer_key": "Lali's tree (192 months) is the youngest of the three.",
+     "answer_confidence": "high"},
+    {"label": "3. Which tree is the oldest and which one is the youngest?",
+     "instruction_verbatim": "Which tree is the oldest and which one is the youngest?",
+     "items": ["Abbu 438, Ammi 432, Lali 192, Babloo 120, Bunty 108 (all 5 trees)"],
+     "answer_key": "Oldest = Abbu's tree (438 months). Youngest = Bunty's tree (108 months).",
+     "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Blue circular icon of a person's face wearing a striped hat/hood, next to the 'Leap and Learn' heading.", "objects": ["character icon"], "pedagogical_role": "section icon for Leap and Learn (worked-example teaching block)", "text_in_image": null},
+    {"description": "Speech-bubble callout (hand-drawn style) from a small character icon (child wearing a teal head-covering), reading the comparison-symbols tip.", "objects": ["character avatar", "speech bubble"], "pedagogical_role": "guiding-character tip introducing comparison symbols", "text_in_image": "When we compare numbers, we can use symbols as well."},
+    {"description": "Highlighted box at the bottom of the worked example containing the inequality statement in large text.", "objects": ["highlight box"], "pedagogical_role": "worked-example conclusion / key takeaway", "text_in_image": "438 > 432"}
+  ],
+  "tables": [
+    {"description": "Place-value comparison table, header row 'Hundreds | Tens | Ones' (blue/orange/red headers), comparing Ammi's 432 vs Abbu's 438.", "rows": [
+      {"hundreds": 4, "tens": 3, "ones": 2, "note": "Ammi's tree = 432 months"},
+      {"hundreds": 4, "tens": 3, "ones": 8, "note": "Abbu's tree = 438 months"}
+    ]},
+    {"description": "Second place-value comparison table (same header style) beginning the Lali vs Babloo comparison; the surrounding explanatory text continues onto the next page.", "rows": [
+      {"hundreds": 1, "tens": 9, "ones": 2, "note": "Lali's tree = 192 months"},
+      {"hundreds": 1, "tens": 2, "ones": 0, "note": "Babloo's tree = 120 months"}
+    ]}
+  ],
+  "visual_layout_notes": "Top of page: 3 leftover questions (Q1-3) about the 5 trees introduced on the previous page. Below, 'Leap and Learn' heading with character icon and a hand-drawn speech-bubble tip. Worked example compares Ammi (432) vs Abbu (438) using a 2-row place-value table, step-by-step reasoning text, and a highlighted '438 > 432' conclusion box. A second place-value table (Lali 192 vs Babloo 120) begins at the very bottom of the page - its accompanying explanation text is cut off here and continues on printed page 11. Footer page number '10' centered at bottom, confirming printed page 10 = pdf 15 - 5.",
+  "confidence": "high",
+  "flags": ["Second place-value table (Lali vs Babloo) starts at the bottom of this page; its explanatory text and conclusion continue on printed page 11 - captured there, cross-referenced here to avoid double-counting."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

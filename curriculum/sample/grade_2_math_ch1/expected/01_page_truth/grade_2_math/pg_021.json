@@ -1,0 +1,22 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 26, "printed_page_number": 21,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Leap and Learn"],
+  "text_verbatim": "They then see a stall with stationary items. Bunty says, \"Look, this is the 15th stall. It's 'fifteenth.'\" A stall with pretty pots is next. Bunty points and says, \"This is the 16th stall. We call it 'sixteenth.'\" They walk to a stall with nice clothes. Bunty explains, \"This one is 17th. It's 'seventeenth.'\" A stall with sweet treats catches their eye. Bunty says, \"Yum! This is the 18th stall. We say 'eighteenth.'\" They then see a stall with shiny jewellery. Bunty tells Babloo, \"This is the 19th stall. It's 'nineteenth.'\" Lastly, they reach a stall with storybooks. Bunty smiles and says, \"And this is the 20th stall. We call it 'twentieth.'\" 21",
+  "exercises": [],
+  "illustrations": [
+    {"description": "15th stall (blue/white striped awning, brown counter): a grey eraser/sharpener block and an orange pencil.", "objects": ["eraser/sharpener", "pencil"], "pedagogical_role": "illustrates the narrated 15th ('fifteenth') stationery stall", "text_in_image": "15th"},
+    {"description": "16th stall (pink/white striped awning, brown counter): a blue swirl-patterned pot/vase and a purple cup-shaped pot.", "objects": ["2 decorative pots"], "pedagogical_role": "illustrates the narrated 16th ('sixteenth') stall", "text_in_image": "16th"},
+    {"description": "17th stall (purple/white striped awning, brown counter): a pink/red T-shirt and a pair of green trousers.", "objects": ["shirt", "trousers"], "pedagogical_role": "illustrates the narrated 17th ('seventeenth') clothes stall", "text_in_image": "17th"},
+    {"description": "18th stall (red/white striped awning, brown counter): a blue-wrapped candy, a green-wrapped candy, and a yellow lollipop.", "objects": ["2 wrapped candies", "1 lollipop"], "pedagogical_role": "illustrates the narrated 18th ('eighteenth') sweets stall", "text_in_image": "18th"},
+    {"description": "19th stall (green/white striped awning, brown counter): a pink beaded necklace and a blue pendant necklace.", "objects": ["2 necklaces"], "pedagogical_role": "illustrates the narrated 19th ('nineteenth') jewellery stall", "text_in_image": "19th"},
+    {"description": "20th stall (blue/white striped awning, brown counter): an orange book and a purple book.", "objects": ["2 storybooks"], "pedagogical_role": "illustrates the narrated 20th ('twentieth') storybook stall", "text_in_image": "20th"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Continuation of the 'Leap and Learn' narrative from the previous page (no heading repeated on this page). 2-column x 3-row layout: left column narrates + shows the 15th, 17th, 19th stalls; right column narrates + shows the 16th, 18th, 20th stalls. Footer '21' centred at bottom.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

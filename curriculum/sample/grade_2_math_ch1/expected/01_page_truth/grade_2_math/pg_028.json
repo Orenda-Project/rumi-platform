@@ -1,0 +1,28 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 33, "printed_page_number": 28,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Mastery Challenge", "MCQs"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 Mastery Challenge MCQs 1. In the number 482, which digit is in the tens place? A) 4 B) 8 C) 2 D) None of the above 2. Which of the following numbers is the greatest? A) 321 B) 312 C) 231 D) 213 3. The ordinal number for 15 is: A) Fifteenth B) Fifth C) Fiveteen D) Fifty 4. Which of the following Roman numerals represents the number 9? A) VII B) IX C) XI D) IV 5. The word representation of 87 is: A) Eighty-seven B) Eight-seven C) Eighty D) Eight 28",
+  "exercises": [
+    {"label": "MCQ 1", "instruction_verbatim": "In the number 482, which digit is in the tens place? A) 4 B) 8 C) 2 D) None of the above",
+     "items": ["A) 4","B) 8","C) 2","D) None of the above"], "answer_key": "B) 8 (482: 4=hundreds, 8=tens, 2=ones)", "answer_confidence": "high"},
+    {"label": "MCQ 2", "instruction_verbatim": "Which of the following numbers is the greatest? A) 321 B) 312 C) 231 D) 213",
+     "items": ["A) 321","B) 312","C) 231","D) 213"], "answer_key": "A) 321 (321 > 312 > 231 > 213)", "answer_confidence": "high"},
+    {"label": "MCQ 3", "instruction_verbatim": "The ordinal number for 15 is: A) Fifteenth B) Fifth C) Fiveteen D) Fifty",
+     "items": ["A) Fifteenth","B) Fifth","C) Fiveteen","D) Fifty"], "answer_key": "A) Fifteenth", "answer_confidence": "high"},
+    {"label": "MCQ 4", "instruction_verbatim": "Which of the following Roman numerals represents the number 9? A) VII B) IX C) XI D) IV",
+     "items": ["A) VII","B) IX","C) XI","D) IV"], "answer_key": "B) IX", "answer_confidence": "high"},
+    {"label": "MCQ 5", "instruction_verbatim": "The word representation of 87 is: A) Eighty-seven B) Eight-seven C) Eighty D) Eight",
+     "items": ["A) Eighty-seven","B) Eight-seven","C) Eighty","D) Eight"], "answer_key": "A) Eighty-seven", "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Round blue icon of a gold trophy with sparkles, used as the section icon beside the 'Mastery Challenge' blue banner heading.", "objects": ["gold trophy icon", "sparkles"], "pedagogical_role": "section icon marking the chapter/topic-end review section", "text_in_image": null}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Chapter/topic-end review page opening with the blue 'Mastery Challenge' banner and trophy icon, then bold 'MCQs' sub-heading introducing 5 multiple-choice questions (each with 4 lettered options A-D, options laid out 2-per-row). Footer '28' centered at bottom. MCQs continue numbered 6-7 onto printed p.29.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

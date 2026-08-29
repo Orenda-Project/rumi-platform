@@ -1,0 +1,55 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 28, "printed_page_number": 23,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Skill Sharpener"],
+  "text_verbatim": "Skill Sharpener 1. Colour the box for the given position. 11th [20 blank circles] 19th [20 blank circles] 15th [20 blank circles] 20th [20 blank circles] 17th [20 blank circles] 2. Circle the correct ordinal number. fifteenth 15th 11th 19th sixteenth 20th 17th 16th seventeenth 14th 17th 18th eighteenth 18th 19th 20th 3. Read the instructions and fill in the boxes. a. Colour the fourth, eighteenth and twentieth box red. b. Colour the nineteenth, thirteenth and fourteenth box blue. c. Put a happy face in the first, sixth and sixteenth box. d. Put a red X on the seventeenth and fifteenth box. e. Colour the second, third and fifth box green. f. Put a red + in the seventh and ninth box. g. Put two happy faces in the eight and tenth box. 23",
+  "exercises": [
+    {
+      "label": "Question 1 — Colour the box for the given position",
+      "instruction_verbatim": "Colour the box for the given position.",
+      "items": ["Row '11th': 20 blank circles", "Row '19th': 20 blank circles", "Row '15th': 20 blank circles", "Row '20th': 20 blank circles", "Row '17th': 20 blank circles"],
+      "answer_key": "In each row, colour the single circle at the position named by the row label, counting left-to-right from the 1st circle: row '11th' -> colour circle #11; row '19th' -> colour circle #19; row '15th' -> colour circle #15; row '20th' -> colour circle #20 (the last circle in the row); row '17th' -> colour circle #17.",
+      "answer_confidence": "high",
+      "count_method": "300dpi-crop, horizontal-scanline edge-detection at 2 independent y-offsets per row (dark-pixel rising-edge count / 2)",
+      "count_verified": {
+        "11th_row": {"pass_1": 20, "pass_2": 20, "agreement": true},
+        "19th_row": {"pass_1": 20, "pass_2": 20, "agreement": true},
+        "15th_row": {"pass_1": 20, "pass_2": 20, "agreement": true},
+        "20th_row": {"pass_1": 20, "pass_2": 20, "agreement": true},
+        "17th_row": {"pass_1": 20, "pass_2": 20, "agreement": true}
+      }
+    },
+    {
+      "label": "Question 2 — Circle the correct ordinal number",
+      "instruction_verbatim": "Circle the correct ordinal number.",
+      "items": ["fifteenth: 15th / 11th / 19th", "sixteenth: 20th / 17th / 16th", "seventeenth: 14th / 17th / 18th", "eighteenth: 18th / 19th / 20th"],
+      "answer_key": "fifteenth -> 15th; sixteenth -> 16th; seventeenth -> 17th; eighteenth -> 18th.",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Question 3 — Read the instructions and fill in the boxes (a-g)",
+      "instruction_verbatim": "Read the instructions and fill in the boxes. a. Colour the fourth, eighteenth and twentieth box red. b. Colour the nineteenth, thirteenth and fourteenth box blue. c. Put a happy face in the first, sixth and sixteenth box. d. Put a red X on the seventeenth and fifteenth box. e. Colour the second, third and fifth box green. f. Put a red + in the seventh and ninth box. g. Put two happy faces in the eight and tenth box.",
+      "items": ["a-g instructions, no boxes printed on this page"],
+      "answer_key": "The 20-box answer grid for this question is printed on the NEXT page (printed 24, top of page) as a 5-column x 4-row grid of boxes numbered 1-20 in reading order (row1=1-5, row2=6-10, row3=11-15, row4=16-20). Mapping instructions a-g onto that grid: a. red = boxes 4,18,20. b. blue = boxes 19,13,14. c. happy face = boxes 1,6,16. d. red X = boxes 17,15. e. green = boxes 2,3,5. f. red + = boxes 7,9. g. two happy faces = boxes 8,10.",
+      "answer_confidence": "high"
+    }
+  ],
+  "illustrations": [
+    {"description": "5-row x 1-column table for Q1: each row has a bold ordinal-number label (11th, 19th, 15th, 20th, 17th) in a left cell, followed by a row of 20 identical blank oval/egg-shaped outlines (unfilled) for the student to colour one in.", "objects": ["5 rows of 20 blank ovals each"], "pedagogical_role": "student practises locating a specific ordinal position within a fixed row of 20 items", "text_in_image": "11th, 19th, 15th, 20th, 17th (row labels)", "counts": {"row_11th": 20, "row_19th": 20, "row_15th": 20, "row_20th": 20, "row_17th": 20}, "count_method": "300dpi horizontal-scanline edge-detection, 2 independent passes per row", "count_verified": {"agreement": true}},
+    {"description": "4-row x 4-column bordered table for Q2 matching an ordinal word (left column) against three numeral options (right three columns) for the student to circle the correct one.", "objects": ["4x4 grid table"], "pedagogical_role": "matching exercise: ordinal word to correct ordinal numeral", "text_in_image": "fifteenth/15th/11th/19th; sixteenth/20th/17th/16th; seventeenth/14th/17th/18th; eighteenth/18th/19th/20th"}
+  ],
+  "tables": [
+    {"description": "Q2 matching table", "rows": [
+      {"word": "fifteenth", "options": ["15th", "11th", "19th"], "correct": "15th"},
+      {"word": "sixteenth", "options": ["20th", "17th", "16th"], "correct": "16th"},
+      {"word": "seventeenth", "options": ["14th", "17th", "18th"], "correct": "17th"},
+      {"word": "eighteenth", "options": ["18th", "19th", "20th"], "correct": "18th"}
+    ]}
+  ],
+  "visual_layout_notes": "Blue 'Skill Sharpener' heading with a pencil/wrench icon at top. Q1 is a 5-row table of ordinal labels each paired with a row of 20 blank ovals. Q2 is a 4x4 bordered matching table. Q3 is plain instructional text (a-g) with NO boxes/grid printed on this page — the answer grid for Q3 is on the following printed page (24). Footer '23' centred at bottom.",
+  "confidence": "high",
+  "flags": ["Question 3's answer grid (the 20 numbered boxes it refers to) is physically printed on the NEXT page (printed 24), not this one — captured there and cross-referenced back to this page's instructions."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

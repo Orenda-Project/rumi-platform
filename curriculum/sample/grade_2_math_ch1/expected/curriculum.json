@@ -1,0 +1,8 @@
+{
+  "name": "grade_2_math (Chapter 1 sample)",
+  "universe": 31,
+  "_layout": "standard A-F",
+  "events_globs": [
+    "_fleet/*.events"
+  ]
+}
