@@ -40,13 +40,21 @@ curriculum/
 2. **Lessons live in clean, predictable folders** — `tools/curriculum_scaffold.py` creates and
    validates the one canonical layout, so a build is navigable and resumable.
 
-## Run the tools
+## Run it (thin CLI — the CI / non-agent front door)
 
 ```bash
-python3 curriculum/tools/curriculum_scaffold.py ./my-corpus            # scaffold the layout
-python3 curriculum/tools/curriculum_scaffold.py ./my-corpus --check    # validate the folder contract
-python3 curriculum/tools/segment_validate.py ./my-corpus/02_segmentation   # SLO-code gate
-python3 -m unittest discover curriculum/tools -p 'test_*.py'           # the tests
+python3 curriculum/cli.py init  ./my-corpus --name "My Curriculum"   # scaffold the A-F layout
+python3 curriculum/cli.py check ./my-corpus                          # BOTH gates, one verdict
+python3 curriculum/cli.py status ./my-corpus                         # stage-by-stage progress
+```
+
+`check` is hands-off — it reports folder-contract problems and SLO-code drift and never blocks
+(exit non-zero only so CI can choose to fail; `--soft` always exits 0). The individual tools are
+also runnable directly (`curriculum/tools/*.py`, `curriculum/gates/*.py`). Run the tests with:
+
+```bash
+python3 -m unittest discover curriculum/tools -p 'test_*.py'
+python3 curriculum/gates/test_qa_checks.py && python3 curriculum/test_cli.py
 ```
 
 ## Credentials
