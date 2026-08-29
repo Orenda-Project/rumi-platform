@@ -32,6 +32,7 @@ folder with a `SKILL.md` (+ optional reference files).
 | [ab-testing](skills/ab-testing/SKILL.md) | Thompson-sampling multi-armed bandit (ab_tests tables) |
 | [logging](skills/logging/SKILL.md) | Structured console logs, correlation IDs, semantic events, optional external backend |
 | [feature-tracer](skills/feature-tracer/SKILL.md) | Trace any feature end to end — the map of handler/service/worker/table per feature |
+| [curriculum-baked-lesson-plans](skills/curriculum-baked-lesson-plans/SKILL.md) | Turn your own textbooks into a gate-checked lesson-plan corpus — the 7-stage build pipeline (page-truth → segment → enrich → render); runnable tools in [`curriculum/`](../curriculum/) |
 
 > Skills are loaded **on demand** — an agent reads the one whose description matches the task. The set above
 > is the operational core (run / extend / debug the open bot); internal-ops skills from the production bot
