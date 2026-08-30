@@ -40,6 +40,19 @@ plans from these textbooks"*; you (the agent) run the spine below, calling the t
 2. **Lessons live in clean, predictable folders.** One layout, one manifest — so the run is
    navigable and resumable. Enforced by [`curriculum/tools/curriculum_scaffold.py`](../../../curriculum/tools/curriculum_scaffold.py).
 
+## The corpus is a knowledge graph
+
+Because every lesson carries validated SLO codes, the segmented corpus **is** a knowledge graph.
+[`curriculum/graph/`](../../../curriculum/graph/) builds it: lessons linked to the outcomes they
+teach, and the outcomes ordered into a per-strand DAG (`PRECEDES_SLO`) so you can see how they
+progress and trace any SLO back to its prerequisites — plus a self-contained HTML viewer (no CDN, no
+database) and an optional, literature-grounded semantic layer for cross-grade prerequisite inference
+(credential-free embeddings; see [`curriculum/research/education_kg_methods.md`](../../../curriculum/research/education_kg_methods.md)).
+
+```bash
+python3 curriculum/cli.py graph <corpus>     # → graph.json/.graphml/.cypher + explorer.html
+```
+
 ## Gates — automatic and HANDS-OFF
 
 A gate here **never halts the run.** It runs, stamps its verdict onto the output, and moves on — so a

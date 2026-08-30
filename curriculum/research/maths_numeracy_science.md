@@ -16,10 +16,10 @@
 
 ---
 
-**For:** the source curriculum K-5 Curriculum Ingestion (ICT / the deployment), Maths G1-G5 lane
+**For:** a K-5 primary curriculum, Maths G1-G5 lane
 **Author:** curriculum-research pass, 2026-08-01
 **Status:** proposal — pressure-tests the existing Maths CPA taxonomy (`concrete → pictorial → pictorial_abstract → word_problem → revision`) and specifies what each Maths lesson TYPE must contain
-**Context:** Pakistani Federal (ICT) primary; bilingual (English-medium maths, Urdu-L1 children). Sister document to `science_pedagogy_and_taxonomy.md` (the Science-5 / 5E lane).
+**Context:** a bilingual primary (a non-Latin L1 alongside an English-medium subject); English-medium maths, Urdu-L1 children. Sister document to `science_pedagogy_and_taxonomy.md` (the Science-5 / 5E lane).
 **Grounding:** citations inline; all URLs collected in Appendix C.
 
 ---
@@ -125,7 +125,7 @@ General NCETM misconception catalogue: [Misconceptions with the Key Objectives (
 
 **The crisis (why this is urgent, not academic).** ASER Pakistan 2023: nationally, the share of **Class 5** children who can do **two-digit division dropped from 51% (2021) to 46% (2023)** — i.e. **the majority of Grade 5 children cannot do a Grade-3-level division**, and it is getting *worse*. Regional floors are far lower (rural Sindh ~27%). Maths proficiency is described as "very low, and getting worse." ([Dawn — ASER dip in learning levels](https://www.dawn.com/news/1824238) · [Express Tribune — ASER primary numeracy](https://tribune.com.pk/story/2154226/pakistan-primary-students-struggle-literacy-numeracy-aser) · [PAL Network — ASER Pakistan](https://palnetwork.org/aser-pakistan/)). The ASER numeracy ladder itself (number recognition → 2-digit subtraction → 2-digit division) is the blunt national benchmark our LPs must actually move children up.
 
-**End-of-grade proficiency targets** (synthesised from Common-Core-style progressions, adapted to a Pakistani single-subject primary; [Savvy Learning — fluency benchmarks](https://savvylearning.com/blog/math-fluency-benchmarks-by-grade/) · [Rocket Math — benchmarks](https://www.rocketmath.com/2021/02/22/math-benchmarks-how-to-help-your-students-meet-them/)):
+**End-of-grade proficiency targets** (synthesised from Common-Core-style progressions, adapted to a single-subject primary; [Savvy Learning — fluency benchmarks](https://savvylearning.com/blog/math-fluency-benchmarks-by-grade/) · [Rocket Math — benchmarks](https://www.rocketmath.com/2021/02/22/math-benchmarks-how-to-help-your-students-meet-them/)):
 
 | End of | Number range | Fluent recall (automaticity) | New operations / concepts |
 |---|---|---|---|
@@ -245,7 +245,7 @@ Restated as *assessable* targets an LP set should be able to demonstrate a child
 
 # Part VI — Gaps between best practice and a typical textbook lesson
 
-What a typical primary-maths **textbook page** does vs what the evidence requires (the delta our LP layer must add on top of the source curriculum book):
+What a typical primary-maths **textbook page** does vs what the evidence requires (the delta our LP layer must add on top of the target curriculum book):
 
 | Best practice (this report) | Typical textbook lesson | The gap our LP must close |
 |---|---|---|
@@ -258,7 +258,7 @@ What a typical primary-maths **textbook page** does vs what the evidence require
 | Misconceptions **pre-empted** at the concrete stage | Misconceptions surface **after**, uncorrected | LP must name the **likely misconception + its concrete pre-empt** per concept |
 | Facts treated as the **load-bearing dependency** between grades | Fluency treated as incidental | LP progression must **hold the fluency gate** grade-to-grade |
 
-**Bottom line:** the source curriculum Maths book supplies the *content and sequence*; our LP layer must supply the **pedagogy the page omits** — the concrete front-end, the daily number-sense routine, the anxiety-safe fluency drill, the variation in practice, the mastery gate, the bilingual language scaffold, and the misconception pre-empts. Those seven additions are the difference between a page that *presents* maths and a lesson that *builds* numeracy.
+**Bottom line:** the target curriculum Maths book supplies the *content and sequence*; our LP layer must supply the **pedagogy the page omits** — the concrete front-end, the daily number-sense routine, the anxiety-safe fluency drill, the variation in practice, the mastery gate, the bilingual language scaffold, and the misconception pre-empts. Those seven additions are the difference between a page that *presents* maths and a lesson that *builds* numeracy.
 
 ---
 
@@ -300,4 +300,4 @@ What a typical primary-maths **textbook page** does vs what the evidence require
 **Bilingual / EMI (carried from Science lane):** https://www.colorincolorado.org/faq/what-are-bics-and-calp · https://files.eric.ed.gov/fulltext/EJ1216773.pdf
 
 ---
-*Grounding note: the six research areas above are cited to source. The per-grade benchmark table is synthesised from Common-Core-style progressions adapted to a single-subject Pakistani primary and should be reconciled against the actual the source curriculum Maths SLO openers (parse each chapter's SLO map into `M-0G-Ax-yy`) before the divider tags pages. Urdu glosses are starter values pending a native-speaker check (Rule 20).*
+*Grounding note: the six research areas above are cited to source. The per-grade benchmark table is synthesised from Common-Core-style progressions adapted to a single-subject primary and should be reconciled against the actual target curriculum Maths SLO openers (parse each chapter's SLO map into `M-0G-Ax-yy`) before the divider tags pages. Urdu glosses are starter values pending a native-speaker check (Rule 20).*

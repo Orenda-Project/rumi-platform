@@ -14,6 +14,7 @@ All are decision-grade, with citations inline and a full source list per file.
 | [urdu_aadhi_ashkaal_decoding.md](urdu_aadhi_ashkaal_decoding.md) | Urdu decoding+encoding | آدھی اشکال (half-forms) ARE Urdu's blending mechanism — the child transforms the *glyph*, not just the sound · the ~9 **non-joiners** (ا د ڈ ذ ر ڑ ز ژ و) break the chain into ligature chunks; teach WITH joining · the Qaida **توڑ/جوڑ** loop = glyph-level segment↔blend · adds `torDrill`/`jorDrill` + `isNonJoiner` to `arkaan_saazi`, and `markScheme:"connected-form-correct"` + تختی-in-4-positions to `takhleeqi_likhai` · half-forms secure end-G1, automatic end-G2 |
 | [maths_numeracy_science.md](maths_numeracy_science.md) | Maths | CPA (Bruner→Singapore) is the correct spine and our taxonomy already has it — but a bare CPA sequence guarantees none of: **daily number-sense warm-up** (the strongest single predictor), **anxiety-safe fact-fluency drill** (the Boaler-vs-retrieval debate resolves cleanly: short/frequent/low-stakes/spaced/interleaved YES, whole-class timed test NO), **mastery gate + variation** ("what's the same, what's different?") · misconception catalogue with concrete pre-empts · trap-words table · fluency is an ELEMENT, never a lesson type |
 | [science_pedagogy_and_taxonomy.md](science_pedagogy_and_taxonomy.md) | Science G4–5 | **Science-5 = a fixed 5E micro-cycle per topic** (`engage_hook → investigate_handson → concept_build → apply_connect → review_assess`), POE (Predict-Observe-Explain) inside Explore, **never concept before investigate** · 5E is a multi-day architecture, not a lesson template · the ESL layer (BICS/CALP, translanguaging policy per phase, bilingual term-of-record glossary) · maps 1:1 onto the source textbook's own section names · same taxonomy G4=G5, only the Bloom ceiling + fair-test rigour rise |
+| [education_kg_methods.md](education_kg_methods.md) | Knowledge graph | **Literature basis for the optional SLO semantic + prerequisite layer** (`../graph/semantic_slos.py`) — CASE/ASN vocab, RefD & prerequisite-inference methods, multilingual embedding models, evaluation · the invariant: **embeddings are symmetric (propose candidates only), a prerequisite is directional (a separate orienter directs), DAG-constrained** |
 
 ## How to reuse these in a new market
 
@@ -27,7 +28,7 @@ The **mechanisms** are universal; the **norms and the language pair are not**. P
 | BICS/CALP, translanguaging policy per phase | Which language is L1 vs medium-of-instruction, and the official language policy for maths/science |
 | The textbook-gap tables (what a typical book omits) | Verify against **this** market's actual book — the gap list is an expectation, not a finding |
 
-**Do not import another market's targets as if they were measured here.** The ICT numbers below the
-research (WCPM, cwpm, ASER rungs, automaticity ages) are design targets anchored to Pakistani
-evidence. A new market re-derives them from its own national assessment before the enrichment brief
-quotes them.
+**Do not import another market's targets as if they were measured here.** The reference numbers in
+the research (WCPM, cwpm, oral-reading rungs, automaticity ages) are design targets anchored to one
+market's evidence. A new market re-derives them from its own national assessment before the
+enrichment brief quotes them.

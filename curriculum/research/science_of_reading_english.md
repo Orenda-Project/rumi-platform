@@ -44,7 +44,7 @@
 
 ---
 
-**Context:** Pakistani Federal / ICT government primary. English is a **second language** (ESL/EFL) for children whose mother tongue is Urdu. Goal: children reach **grade-level reading proficiency**; teachers have science-backed methods they can actually run in a 25–30 minute government-textbook lesson.
+**Context:** a government primary curriculum. English is a **second language** (ESL/EFL) for children whose mother tongue is Urdu. Goal: children reach **grade-level reading proficiency**; teachers have science-backed methods they can actually run in a 25–30 minute government-textbook lesson.
 
 **Author:** Rumi research • **Date:** 2026-08-01 • **Status:** Decision-grade — drives real lesson design.
 

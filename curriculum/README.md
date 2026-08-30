@@ -26,9 +26,10 @@ A thin CLI does the same for CI / non-agent use (see each tool's `--help`).
 curriculum/
   tools/        runnable, deterministic tools (SLO validation, folder contract) + their tests
   gates/        the quality-scoring gate (score a lesson body; no external service)
+  graph/        the curriculum knowledge graph — lessons↔SLOs, SLO progression + a self-contained viewer
   method/       the stage-by-stage playbook + render laws + the failure catalogue
   briefs/       the swarm prompts you can fork
-  research/     the public pedagogy behind the enrichment elements
+  research/     the public pedagogy + the education-KG methods behind the graph
   sample/       one chapter, end to end — clone and run
 ```
 
@@ -39,6 +40,18 @@ curriculum/
    drift is flagged and quarantined, never shipped silently.
 2. **Lessons live in clean, predictable folders** — `tools/curriculum_scaffold.py` creates and
    validates the one canonical layout, so a build is navigable and resumable.
+
+## See the whole curriculum as a graph
+
+Because every lesson carries validated SLO codes, the corpus **is** a knowledge graph. `graph/` turns
+it into one — lessons linked to the outcomes they teach, and the outcomes ordered into a per-strand
+DAG so you can see how they progress and trace any SLO back to its prerequisites. It ships a
+self-contained viewer (no CDN, no database) and an optional literature-grounded semantic layer for
+cross-grade prerequisite inference. See [`graph/README.md`](graph/README.md).
+
+```bash
+python3 curriculum/cli.py graph ./my-corpus      # -> graph.json/.graphml/.cypher + explorer.html
+```
 
 ## Run it (thin CLI — the CI / non-agent front door)
 

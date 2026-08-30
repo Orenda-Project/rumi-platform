@@ -22,7 +22,7 @@
 
 ---
 
-**For:** the source curriculum K-5 Curriculum Ingestion (ICT / the deployment), Science G4-G5 lane
+**For:** a K-5 primary curriculum, Science G4-G5 lane
 **Author:** curriculum-research pass, 2026-07-31
 **Status:** proposal — decides the Science skill-type taxonomy the divider will tag pages against (the analogue of English's 6-competency walk and Maths' CPA)
 **Grounded against:** `grade_4_general_science.pdf` Ch1 "Green Guardians of Earth" (real page-truth, pdf p4-31 rendered and read), the source textbook's own named sections, and the science-education literature (citations inline).
@@ -153,7 +153,7 @@ Labelled diagrams, the recurring characters (Gul Rukh, Rani, Jojo), and the voca
 
 This is what lets the divider tag pages automatically. Confirmed against `grade_4_general_science` Ch1 page-truth:
 
-| the source curriculum section (verbatim) | 5E phase | → Science-5 `skill_key` | Notes for the divider |
+| the source textbook section (verbatim) | 5E phase | → Science-5 `skill_key` | Notes for the divider |
 |---|---|---|---|
 | **Explorer's Pathway** (chapter opener, winding SLO-map with stars) | frames the cycle | *(drives the SLO catalog)* + opens the first `engage_hook` | Not a standalone teaching lesson by itself — it is the **SLO source**. Parse each star into an `S-0G-Ax-yy` SLO. Its orientation folds into Day 1 `engage_hook`. |
 | **Adventure Begins** (comic hook w/ Gul Rukh, driving question) | Engage | `engage_hook` | One per topic. Short; the chapter's first one gets its own opening, later ones fold into that topic's `investigate_handson`. |

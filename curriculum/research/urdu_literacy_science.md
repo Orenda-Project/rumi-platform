@@ -22,7 +22,7 @@
 ---
 
 **Status:** proposal — decides what each Urdu lesson TYPE must contain, whether we add a standalone oral strand, and the G1–5 scope & sequence the divider tags pages against. Analogue of the English 6-competency walk, Maths CPA, and Science-5.
-**Context:** Pakistani Federal (ICT) primary. Urdu is these children's **mother tongue (L1)** — oral-rich, print-poor. Script is **Nastaliq**: RTL, cursive, letters change shape by position, disambiguated by dots. **Last verified:** 2026-08-01.
+**Context:** a government primary curriculum. Urdu is these children's **mother tongue (L1)** — oral-rich, print-poor. Script is **Nastaliq**: RTL, cursive, letters change shape by position, disambiguated by dots. **Last verified:** 2026-08-01.
 
 ---
 

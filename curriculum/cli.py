@@ -8,6 +8,7 @@ project and run the gates without knowing the internals.
     python3 curriculum/cli.py init  <dir> [--name "My Curriculum"]   # scaffold the A-F layout
     python3 curriculum/cli.py check <dir>                            # run BOTH gates, one verdict
     python3 curriculum/cli.py status <dir>                           # stage-by-stage progress
+    python3 curriculum/cli.py graph <dir>                            # build the knowledge graph + viewer
 
 `check` is HANDS-OFF: it reports (folder-contract problems + SLO-code drift) and never raises —
 matching the pipeline's hands-off gates. It exits non-zero only so CI can choose to fail on it;
@@ -31,6 +32,22 @@ def combined_check(root):
     slo = segment_validate.validate_segmentation(os.path.join(root, "02_segmentation"))
     ok = (not problems) and slo["status"] == "clean"
     return {"folder": folder, "slo": slo, "ok": ok}
+
+
+def cmd_graph(root, out_dir=None):
+    """Build the curriculum knowledge graph (nodes + derived SLO DAG) + the self-contained viewer."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "graph"))
+    import build_graph, explorer          # noqa: E402
+    out_dir = out_dir or os.path.join(root, "graph")
+    corpus = os.path.basename(os.path.normpath(root)) or "curriculum"
+    nodes, edges = build_graph.build(root)
+    paths = build_graph.export(nodes, edges, out_dir, corpus)
+    html_path, size, nb = explorer.build_html(paths["json"])
+    counts = {k: len(v) for k, v in nodes.items()}
+    print(f"graph: {counts} · {len(edges)} edges")
+    print(f"  wrote {paths['json']} (+ .graphml, .cypher)")
+    print(f"  wrote {html_path} — open it in a browser (self-contained, no network)")
+    return {"nodes": counts, "edges": len(edges), "explorer": html_path}
 
 
 def cmd_status(root):
@@ -66,6 +83,7 @@ def main(argv=None):
     pc = sub.add_parser("check"); pc.add_argument("dir"); pc.add_argument("--soft", action="store_true")
     pc.add_argument("--json", action="store_true")
     ps = sub.add_parser("status"); ps.add_argument("dir")
+    pg = sub.add_parser("graph"); pg.add_argument("dir"); pg.add_argument("--out", default=None)
     a = ap.parse_args(argv)
     root = os.path.abspath(os.path.expanduser(a.dir))
 
@@ -73,6 +91,8 @@ def main(argv=None):
         cmd_init(root, a.name); return 0
     if a.cmd == "status":
         cmd_status(root); return 0
+    if a.cmd == "graph":
+        cmd_graph(root, a.out); return 0
     if a.cmd == "check":
         v = combined_check(root)
         segment_validate.write_sidecar(os.path.join(root, "02_segmentation"), v["slo"])
