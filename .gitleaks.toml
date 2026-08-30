@@ -66,6 +66,10 @@ paths = [
   '''\.test\.js$''',
   '''\.gitleaks\.toml$''',
   '''(^|/)bot/fonts/''',
+  # Vendored third-party library (minified) + the self-contained graph viewer that embeds it.
+  # Minified JS trips the generic-api-key entropy rule on its own tokens — same class as bot/fonts.
+  '''(^|/)graph/vendor/''',
+  '''(^|/)graph/explorer\.html$''',
 ]
 regexes = [
   '''your-[a-z-]*-?(key|token|id|secret)''',
