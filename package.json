@@ -1,6 +1,6 @@
 {
   "name": "rumi-platform",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Rumi - AI Teaching Assistant for WhatsApp. Open-source platform for deploying AI-powered educational chatbots.",
   "private": true,
   "bin": {
