@@ -1,0 +1,31 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 22, "printed_page_number": 17,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Practice Questions", "Discovery Playground"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 4. Let's round off the basket of apples = 108. 108 is between ______and ______ . [number line 100-110] The ones place in 108 is ______ . Will we round up or round down? ______ 108 to the nearest ten is ______ . Discovery Playground - Pair up and work with your partner. - Take turns to complete the race from START to FINISH. - Round off each number to the nearest 10. - The team that finishes the race first and correctly wins! [oval racetrack board with START and FINISH markers and 29 numbered circles] 17",
+  "exercises": [
+    {"label": "Practice Question 4 — round off 108",
+     "instruction_verbatim": "Let's round off the basket of apples = 108. 108 is between ______and ______ . The ones place in 108 is ______ . Will we round up or round down? ______ 108 to the nearest ten is ______ .",
+     "items": ["108 is between __ and __", "ones place in 108 is __", "round up or down? __", "108 to nearest ten is __"],
+     "answer_key": "108 is between 100 and 110. The ones place in 108 is 8. Since 8 is five or more, we round up. 108 to the nearest ten is 110.",
+     "answer_confidence": "high"},
+    {"label": "Discovery Playground — racetrack rounding game",
+     "instruction_verbatim": "Pair up and work with your partner. Take turns to complete the race from START to FINISH. Round off each number to the nearest 10. The team that finishes the race first and correctly wins!",
+     "items": ["32","7","12","24","62","75","3","92","69","15","19","46","55","38","91","99","22","11","5","77","46","95","31","1","48","53","84","79","21"],
+     "answer_key": "Rounding each track number to the nearest ten (ties round up, per the rule taught on the two preceding pages): 32->30, 7->10, 12->10, 24->20, 62->60, 75->80, 3->0, 92->90, 69->70, 15->20, 19->20, 46->50, 55->60, 38->40, 91->90, 99->100, 22->20, 11->10, 5->10, 77->80, 46->50, 95->100, 31->30, 1->0, 48->50, 53->50, 84->80, 79->80, 21->20. Note '46' appears twice on the track (once on the right-hand side, once in the bottom row) — both instances round to 50.",
+     "answer_confidence": "high (arithmetic); the race WINNER/path order is a free-play partner-game outcome, not a fixed answer"}
+  ],
+  "illustrations": [
+    {"description": "Number line from 100 to 110 with tick marks at every unit; labelled ticks at 100 and 110 only (no midpoint number shown, unlike the two preceding worked examples).", "objects": ["number line 100-110"], "pedagogical_role": "scaffolded practice diagram for Q4 (108)", "text_in_image": "100, 110"},
+    {"description": "Circular icon (blue background) with a white spyglass/telescope shape, beside the 'Discovery Playground' title in large blue bold text.", "objects": ["spyglass icon"], "pedagogical_role": "section icon marking a game/collaborative-activity block", "text_in_image": null},
+    {"description": "Small black graduation-cap glyph inline after 'Pair up and work with your partner.'", "objects": ["graduation cap icon"], "pedagogical_role": "decorative bullet marker for the pair-work instruction", "text_in_image": null},
+    {"description": "A large orange oval racetrack (stadium shape) with a green infield. Along the track's outer lane sit 29 yellow circular tokens each printed with a number (mostly 2-digit, three single-digit: 7, 3, 1, 5), plus two white pill-shaped START and FINISH markers side-by-side at the top (START on the left, FINISH on the right, separated by a vertical divider line, FINISH's text rotated 180 degrees from START's — i.e. the two markers face opposite ways along the loop). Reading clockwise from START: 24, 62, 75, 3 (top-right), then down the right side 92, 69, 15, 19, 46, 55, 38, then along the bottom (right-to-left) 91, 99, 22, 11, 5, 77, 46, 95, 31, then up the left side 1, 48, 53, 84, 79, 21, then along the top back to 32, 7, 12 immediately before FINISH. Re-counted twice directly on the 300 DPI crop (pg22_track_crop.png): both counts = 29 tokens.", "objects": ["oval racetrack", "START marker", "FINISH marker", "29 numbered yellow tokens"], "pedagogical_role": "partner race-game board: players move along the track rounding each landed-on number to the nearest ten", "text_in_image": "START, FINISH, 32,7,12,24,62,75,3,92,69,15,19,46,55,38,91,99,22,11,5,77,46,95,31,1,48,53,84,79,21"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Top of page finishes the Practice Questions block (Q4, apples=108) with a bare 100-110 number line (no arrows drawn, unlike earlier examples). Below, a new 'Discovery Playground' section: bulleted game instructions followed by a full-width oval racetrack board game with 29 numbered stops circling from START to FINISH. Footer '17' centered at bottom.",
+  "confidence": "high",
+  "flags": ["Racetrack numbers double-read directly from the 300 DPI crop (pg22_track_crop.png) to confirm exact digits (e.g. 92 vs 69, 91 vs 99, 46 appearing twice) — both reads agreed.", "CORRECTION (2026-08-02 re-verification pass): illustration token count was mis-stated as '25' in the prior pass (described_at 2026-08-01); re-cropped + counted twice against the 29-item exercise answer key, both counts agree at 29. Fixed the '25'->'29' text in description/objects/visual_layout_notes; the exercises.items list (29 entries) and answer_key were already correct."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

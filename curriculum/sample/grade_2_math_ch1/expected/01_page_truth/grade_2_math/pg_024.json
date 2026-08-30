@@ -1,0 +1,51 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 29, "printed_page_number": 24,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Skill Sharpener"],
+  "text_verbatim": "[grid of 20 boxes, 5 columns x 4 rows, only some pre-printed: box1=1, box5=5, box11=11, box14=14, box20=20; rest blank] 4. Fill in the blanks with the ordinal number in words. a. Bunty stood in the ___________(12) position in the line. b. The ___________ (15) stall had the most delicious sweets. c. Bunty's favourite song was the ___________ (18) one played at the fair. d. The ___________ (11) book on the shelf is a mystery novel. e. Babloo's kite was the ___________ (20) to fly in the sky. 5. Identify the ordinal position of the following letters in ABC. The first one is done for you. a. H is the eighth letter b. T is the ___________ letter c. Q is the ___________ letter d. P is the ___________ letter e. K is the ___________ letter 24",
+  "exercises": [
+    {
+      "label": "Answer grid for Q3 on the previous page (printed 23) — 20 numbered boxes",
+      "instruction_verbatim": "(grid only; instructions a-g are printed on the previous page, printed 23)",
+      "items": ["5-column x 4-row grid of 20 boxes, reading-order numbered 1-20 (row1: 1,2,3,4,5; row2: 6,7,8,9,10; row3: 11,12,13,14,15; row4: 16,17,18,19,20); only boxes 1, 5, 11, 14, 20 have their numbers pre-printed, confirming the reading-order numbering scheme; the rest are blank for the student to mark per the previous page's instructions"],
+      "answer_key": "Per the previous page's Q3 instructions: a. colour red = box 4, box 18, box 20. b. colour blue = box 19, box 13, box 14. c. happy face = box 1, box 6, box 16. d. red X = box 17, box 15. e. colour green = box 2, box 3, box 5. f. red + = box 7, box 9. g. two happy faces = box 8, box 10.",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Question 4 — Fill in the blanks with the ordinal number in words",
+      "instruction_verbatim": "Fill in the blanks with the ordinal number in words.",
+      "items": [
+        "a. Bunty stood in the ___________(12) position in the line.",
+        "b. The ___________ (15) stall had the most delicious sweets.",
+        "c. Bunty's favourite song was the ___________ (18) one played at the fair.",
+        "d. The ___________ (11) book on the shelf is a mystery novel.",
+        "e. Babloo's kite was the ___________ (20) to fly in the sky."
+      ],
+      "answer_key": "a. twelfth (12). b. fifteenth (15). c. eighteenth (18). d. eleventh (11). e. twentieth (20).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Question 5 — Identify the ordinal position of letters in ABC",
+      "instruction_verbatim": "Identify the ordinal position of the following letters in ABC. The first one is done for you.",
+      "items": [
+        "a. H is the ___ letter (worked example, filled in blue: 'eighth')",
+        "b. T is the ___ letter",
+        "c. Q is the ___ letter",
+        "d. P is the ___ letter",
+        "e. K is the ___ letter"
+      ],
+      "answer_key": "Alphabet positions A=1...Z=26. a. H = eighth (8th, given as worked example). b. T = twentieth (20th). c. Q = seventeenth (17th). d. P = sixteenth (16th). e. K = eleventh (11th).",
+      "answer_confidence": "high"
+    }
+  ],
+  "illustrations": [
+    {"description": "A 5-column x 4-row grid of empty rectangular boxes at the top of the page. Only 5 of the 20 boxes have a printed number inside: top-left box = '1', top-right box (5th in row 1) = '5', 3rd-row-left box = '11', 3rd-row-4th-box = '14', bottom-right box = '20'. All other boxes are blank.", "objects": ["20-box grid"], "pedagogical_role": "answer surface for Q3 on the previous page (printed 23) — student colours/marks the numbered boxes per those instructions", "text_in_image": "1, 5, 11, 14, 20 (partial box numbers)"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "No new section heading on this page (continues 'Skill Sharpener' from printed 23). Large 5x4 box grid at top (answer surface for the previous page's Q3), followed by Q4 (fill-in-the-blank ordinal words with numeral hints in parentheses) and Q5 (ordinal position of letters in the alphabet, first one worked in blue handwriting-style text: 'eighth'). Footer '24' centred at bottom.",
+  "confidence": "high",
+  "flags": ["This page's box grid answers Question 3's instructions printed on the PREVIOUS page (printed 23); cross-referenced both directions."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

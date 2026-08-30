@@ -1,0 +1,43 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 16, "printed_page_number": 11,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Leap and Learn", "Practice Questions"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 192 = 1 hundred, 9 tens and 2 ones 120 = 1 hundred, 2 tens and 0 ones We start comparing from the greater place value. 1 hundred = 1 hundred, we move to the tens place. 2 tens is less than 9 tens. 120 is less than 192. 120 < 192 greater than equal to less than Did you notice that the crocodile mouth is ALWAYS open towards the bigger number! Practice Questions Let's compare a few numbers using these symbols. a. 738 379 b. 482 482 c. 648 846 d. 356 567 e. 256 267 Let's arrange numbers from smallest to largest. Look at hundreds place first: 108, 120, 192 have 1 in hundreds 432, 438 have 4 in hundreds For numbers with same hundreds (108, 120, 192): Compare tens: 0, 2, 9 So: 108 is smallest (0 tens) Then 120 (2 tens) Then 192 (9 tens) Hundreds Tens Ones 1 0 8 1 2 0 1 9 2 4 3 2 4 3 8 11",
+  "exercises": [
+    {"label": "Worked example completion: 192 vs 120",
+     "instruction_verbatim": "1 hundred = 1 hundred, we move to the tens place. 2 tens is less than 9 tens. 120 is less than 192.",
+     "items": ["192 (Lali)", "120 (Babloo)"],
+     "answer_key": "120 < 192.",
+     "answer_confidence": "high"},
+    {"label": "Practice Questions a-e: compare using >, =, or <",
+     "instruction_verbatim": "Let's compare a few numbers using these symbols. a. 738 ___ 379  b. 482 ___ 482  c. 648 ___ 846  d. 356 ___ 567  e. 256 ___ 267",
+     "items": ["a. 738, 379", "b. 482, 482", "c. 648, 846", "d. 356, 567", "e. 256, 267"],
+     "answer_key": "a. 738 > 379; b. 482 = 482; c. 648 < 846; d. 356 < 567; e. 256 < 267.",
+     "answer_confidence": "high"},
+    {"label": "Ordering worked example (ascending, part 1): 108, 120, 192 (same hundreds digit)",
+     "instruction_verbatim": "Let's arrange numbers from smallest to largest. Look at hundreds place first: 108, 120, 192 have 1 in hundreds. 432, 438 have 4 in hundreds. For numbers with same hundreds (108, 120, 192): Compare tens: 0, 2, 9. So: 108 is smallest (0 tens), then 120 (2 tens), then 192 (9 tens).",
+     "items": ["108", "120", "192"],
+     "answer_key": "Ascending sub-order so far: 108, 120, 192. (Where 432 and 438 fit is resolved on the next page.)",
+     "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Three cartoon crocodile-mouth icons illustrating the comparison symbols: left crocodile mouth open facing left labelled 'greater than'; middle icon is a closed/level pink double-bar shape with a smiling face and feet labelled 'equal to'; right crocodile mouth open facing right labelled 'less than'.", "objects": ["crocodile mouth (greater than)", "level bar character (equal to)", "crocodile mouth (less than)"], "pedagogical_role": "mnemonic for reading and drawing the >, =, < symbols", "text_in_image": "greater than / equal to / less than"},
+    {"description": "Character icon (child with headscarf) holding a megaphone, next to a hand-drawn speech-bubble tip about the crocodile-mouth mnemonic.", "objects": ["character avatar", "megaphone", "speech bubble"], "pedagogical_role": "guiding-character memory tip", "text_in_image": "Did you notice that the crocodile mouth is ALWAYS open towards the bigger number!"},
+    {"description": "Small character icon (repeated from earlier page) beside the 'Let's arrange numbers...' ordering-lesson paragraph.", "objects": ["character avatar"], "pedagogical_role": "guiding-character narration for the ordering lesson", "text_in_image": null}
+  ],
+  "tables": [
+    {"description": "Place-value table (Hundreds/Tens/Ones headers) listing all 5 tree values for the ordering exercise, in the order 108, 120, 192, 432, 438.", "rows": [
+      {"hundreds": 1, "tens": 0, "ones": 8, "note": "108 (Bunty)"},
+      {"hundreds": 1, "tens": 2, "ones": 0, "note": "120 (Babloo)"},
+      {"hundreds": 1, "tens": 9, "ones": 2, "note": "192 (Lali)"},
+      {"hundreds": 4, "tens": 3, "ones": 2, "note": "432 (Ammi)"},
+      {"hundreds": 4, "tens": 3, "ones": 8, "note": "438 (Abbu)"}
+    ]}
+  ],
+  "visual_layout_notes": "Top of page finishes the Lali(192)-vs-Babloo(120) worked example with '120 < 192' and the three crocodile-mouth comparison-symbol icons plus a character speech-bubble tip. 'Practice Questions' heading introduces 5 compare-with-symbol items (a-e), each printed as two numbers with an empty bordered box between them for the symbol. Below that, an ordering lesson begins ('Let's arrange numbers from smallest to largest'), reasoning through the hundreds-place and tens-place comparisons for 108/120/192, alongside a 5-row place-value table listing all five tree numbers. Footer page number '11' centered at bottom, confirming printed page 11 = pdf 16 - 5.",
+  "confidence": "high",
+  "flags": ["Ordering worked example is split across this page and printed page 12 - the ones-place comparison of 432 vs 438 and the final ascending list are captured on page 12."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+<key id="label" for="node" attr.name="label" attr.type="string"/>
+<key id="name" for="node" attr.name="name" attr.type="string"/>
+<key id="rel" for="edge" attr.name="rel" attr.type="string"/>
+<graph edgedefault="directed">
+<node id="n0"><data key="label">Book</data><data key="name">grade_2_math</data></node>
+<node id="n1"><data key="label">Chapter</data><data key="name">Numberland Adventures: Up to 999</data></node>
+<node id="n2"><data key="label">Lesson</data><data key="name">Place Value in 3-Digit Numbers (Hundreds, Tens, Ones)</data></node>
+<node id="n3"><data key="label">Lesson</data><data key="name">Reading &amp; Writing Numbers in Words (teen numbers, tens+ones)</data></node>
+<node id="n4"><data key="label">Lesson</data><data key="name">Representing &amp; Consolidating 3-Digit Numbers — Skill Sharpener</data></node>
+<node id="n5"><data key="label">Lesson</data><data key="name">Comparing Numbers using &lt;, &gt;, =</data></node>
+<node id="n6"><data key="label">Lesson</data><data key="name">Ordering Numbers (Ascending &amp; Descending) + Skill Sharpener</data></node>
+<node id="n7"><data key="label">Lesson</data><data key="name">Rounding to the Nearest Ten (number line)</data></node>
+<node id="n8"><data key="label">Lesson</data><data key="name">Rounding Practice + Skill Sharpener</data></node>
+<node id="n9"><data key="label">Lesson</data><data key="name">Ordinal Numbers up to 20 (position language)</data></node>
+<node id="n10"><data key="label">Lesson</data><data key="name">Ordinal Numbers — Skill Sharpener</data></node>
+<node id="n11"><data key="label">Lesson</data><data key="name">Roman Numerals up to 12</data></node>
+<node id="n12"><data key="label">Lesson</data><data key="name">Chapter 1 Assessment Worksheet — &#x27;Numberland Adventures: Up to 999&#x27; (student, fi</data></node>
+<node id="n13"><data key="label">Lesson</data><data key="name">Numberland Adventures: Up to 999 — Chapter Review (Mastery Challenge)</data></node>
+<node id="n14"><data key="label">SLO</data><data key="name">I can recognise the place value of each digit in 3-digit numbers (hundreds, tens</data></node>
+<node id="n15"><data key="label">SLO</data><data key="name">I can count numbers up to and across 999 (3-digit numbers) forwards and backward</data></node>
+<node id="n16"><data key="label">SLO</data><data key="name">I can read and write numbers up to 999 in numerals and up to 99 in words.</data></node>
+<node id="n17"><data key="label">SLO</data><data key="name">I can compare and order numbers up to 999 using appropriate language and &lt;, &gt; an</data></node>
+<node id="n18"><data key="label">SLO</data><data key="name">I can round numbers to the nearest tens using different concrete objects and pic</data></node>
+<node id="n19"><data key="label">SLO</data><data key="name">I can round numbers to the nearest tens using different concrete objects and pic</data></node>
+<node id="n20"><data key="label">SLO</data><data key="name">I can recognise the position of objects and write it using ordinal numbers up to</data></node>
+<node id="n21"><data key="label">SLO</data><data key="name">I can read and write roman numbers up to 12.</data></node>
+<node id="n22"><data key="label">SkillType</data><data key="name">pictorial</data></node>
+<node id="n23"><data key="label">SkillType</data><data key="name">pictorial_abstract</data></node>
+<node id="n24"><data key="label">SkillType</data><data key="name">assessment</data></node>
+<node id="n25"><data key="label">SkillType</data><data key="name">revision</data></node>
+<node id="n26"><data key="label">Bloom</data><data key="name">understand</data></node>
+<node id="n27"><data key="label">Bloom</data><data key="name">apply</data></node>
+<edge source="n0" target="n1"><data key="rel">CONTAINS</data></edge>
+<edge source="n1" target="n2"><data key="rel">CONTAINS</data></edge>
+<edge source="n2" target="n14"><data key="rel">TEACHES</data></edge>
+<edge source="n2" target="n15"><data key="rel">TEACHES</data></edge>
+<edge source="n2" target="n22"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n2" target="n26"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n1" target="n3"><data key="rel">CONTAINS</data></edge>
+<edge source="n3" target="n16"><data key="rel">TEACHES</data></edge>
+<edge source="n3" target="n23"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n3" target="n27"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n2" target="n3"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n4"><data key="rel">CONTAINS</data></edge>
+<edge source="n4" target="n15"><data key="rel">TEACHES</data></edge>
+<edge source="n4" target="n16"><data key="rel">TEACHES</data></edge>
+<edge source="n4" target="n14"><data key="rel">TEACHES</data></edge>
+<edge source="n4" target="n23"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n4" target="n27"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n3" target="n4"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n5"><data key="rel">CONTAINS</data></edge>
+<edge source="n5" target="n17"><data key="rel">TEACHES</data></edge>
+<edge source="n5" target="n22"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n5" target="n26"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n4" target="n5"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n6"><data key="rel">CONTAINS</data></edge>
+<edge source="n6" target="n17"><data key="rel">TEACHES</data></edge>
+<edge source="n6" target="n23"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n6" target="n27"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n5" target="n6"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n7"><data key="rel">CONTAINS</data></edge>
+<edge source="n7" target="n18"><data key="rel">TEACHES</data></edge>
+<edge source="n7" target="n19"><data key="rel">TEACHES</data></edge>
+<edge source="n7" target="n22"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n7" target="n26"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n6" target="n7"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n8"><data key="rel">CONTAINS</data></edge>
+<edge source="n8" target="n18"><data key="rel">TEACHES</data></edge>
+<edge source="n8" target="n19"><data key="rel">TEACHES</data></edge>
+<edge source="n8" target="n23"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n8" target="n27"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n7" target="n8"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n9"><data key="rel">CONTAINS</data></edge>
+<edge source="n9" target="n20"><data key="rel">TEACHES</data></edge>
+<edge source="n9" target="n22"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n9" target="n26"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n8" target="n9"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n10"><data key="rel">CONTAINS</data></edge>
+<edge source="n10" target="n20"><data key="rel">TEACHES</data></edge>
+<edge source="n10" target="n23"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n10" target="n27"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n9" target="n10"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n11"><data key="rel">CONTAINS</data></edge>
+<edge source="n11" target="n21"><data key="rel">TEACHES</data></edge>
+<edge source="n11" target="n23"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n11" target="n27"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n10" target="n11"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n12"><data key="rel">CONTAINS</data></edge>
+<edge source="n12" target="n15"><data key="rel">TEACHES</data></edge>
+<edge source="n12" target="n16"><data key="rel">TEACHES</data></edge>
+<edge source="n12" target="n14"><data key="rel">TEACHES</data></edge>
+<edge source="n12" target="n17"><data key="rel">TEACHES</data></edge>
+<edge source="n12" target="n18"><data key="rel">TEACHES</data></edge>
+<edge source="n12" target="n19"><data key="rel">TEACHES</data></edge>
+<edge source="n12" target="n20"><data key="rel">TEACHES</data></edge>
+<edge source="n12" target="n21"><data key="rel">TEACHES</data></edge>
+<edge source="n12" target="n24"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n12" target="n27"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n11" target="n12"><data key="rel">PRECEDES</data></edge>
+<edge source="n1" target="n13"><data key="rel">CONTAINS</data></edge>
+<edge source="n13" target="n15"><data key="rel">TEACHES</data></edge>
+<edge source="n13" target="n16"><data key="rel">TEACHES</data></edge>
+<edge source="n13" target="n14"><data key="rel">TEACHES</data></edge>
+<edge source="n13" target="n17"><data key="rel">TEACHES</data></edge>
+<edge source="n13" target="n18"><data key="rel">TEACHES</data></edge>
+<edge source="n13" target="n19"><data key="rel">TEACHES</data></edge>
+<edge source="n13" target="n20"><data key="rel">TEACHES</data></edge>
+<edge source="n13" target="n21"><data key="rel">TEACHES</data></edge>
+<edge source="n13" target="n25"><data key="rel">HAS_SKILL</data></edge>
+<edge source="n13" target="n27"><data key="rel">AT_BLOOM</data></edge>
+<edge source="n12" target="n13"><data key="rel">PRECEDES</data></edge>
+<edge source="n14" target="n15"><data key="rel">PRECEDES_SLO</data></edge>
+<edge source="n15" target="n16"><data key="rel">PRECEDES_SLO</data></edge>
+<edge source="n16" target="n17"><data key="rel">PRECEDES_SLO</data></edge>
+<edge source="n17" target="n18"><data key="rel">PRECEDES_SLO</data></edge>
+<edge source="n18" target="n19"><data key="rel">PRECEDES_SLO</data></edge>
+<edge source="n19" target="n20"><data key="rel">PRECEDES_SLO</data></edge>
+<edge source="n20" target="n21"><data key="rel">PRECEDES_SLO</data></edge>
+<edge source="n15" target="n16"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n17" target="n18"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n14" target="n17"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n16" target="n14"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n18" target="n20"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n15" target="n18"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n16" target="n17"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n18" target="n21"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n16" target="n20"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n16" target="n21"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n19" target="n20"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n16" target="n19"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n20" target="n21"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n17" target="n19"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n15" target="n17"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n14" target="n18"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n15" target="n14"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n15" target="n19"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n14" target="n19"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n17" target="n20"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n19" target="n21"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n14" target="n21"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n16" target="n18"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n15" target="n21"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n17" target="n21"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n14" target="n20"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n18" target="n19"><data key="rel">CO_TAUGHT_WITH</data></edge>
+<edge source="n15" target="n20"><data key="rel">CO_TAUGHT_WITH</data></edge>
+</graph>
+</graphml>

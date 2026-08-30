@@ -1,0 +1,35 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 19, "printed_page_number": 14,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Topic 3: Rounding Off", "Adventure Begins!"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 5. Put these numbers in order starting from the smallest. [444][404][440][414][441][144] 6. Use symbols to compare these numbers. a. 675 [ ] 657 b. 611 [ ] 590 c. 156 [ ] 266 d. 500 [ ] 500 e. 257 [ ] 157 f. 180 [ ] 210 Topic 3 Rounding Off Adventure Begins! The shopkeeper has written down the number of fruits. 1. Can you guess why there are two numbers on each basket? 2. What is different about both numbers? [fruit stall illustration] 108 (110) 85 (90) 92 (90) 123 (120) 14",
+  "exercises": [
+    {"label": "5. Order starting from the smallest",
+     "instruction_verbatim": "Put these numbers in order starting from the smallest.",
+     "items": ["444", "404", "440", "414", "441", "144"],
+     "answer_key": "144, 404, 414, 440, 441, 444",
+     "answer_confidence": "high"},
+    {"label": "6. Compare using symbols",
+     "instruction_verbatim": "Use symbols to compare these numbers.",
+     "items": ["a. 675 ? 657", "b. 611 ? 590", "c. 156 ? 266", "d. 500 ? 500", "e. 257 ? 157", "f. 180 ? 210"],
+     "answer_key": "a. 675 > 657; b. 611 > 590; c. 156 < 266; d. 500 = 500; e. 257 > 157; f. 180 < 210",
+     "answer_confidence": "high"},
+    {"label": "Adventure Begins! discussion questions",
+     "instruction_verbatim": "The shopkeeper has written down the number of fruits. 1. Can you guess why there are two numbers on each basket? 2. What is different about both numbers?",
+     "items": ["apples: 108 (110)", "bananas: 85 (90)", "oranges: 92 (90)", "pears: 123 (120)"],
+     "answer_key": "Conceptual/discussion, no single fixed answer — this previews rounding: the first number on each basket is the exact/actual count of fruit; the number in brackets is that count rounded off to the nearest ten (a simpler, close approximation). The two numbers differ because one is exact and one is rounded.",
+     "answer_confidence": "high (conceptual framing, matches Topic 3 'Rounding Off' that follows)"}
+  ],
+  "illustrations": [
+    {"description": "A blue rounded-rectangle banner spanning the page width reading 'Topic 3' (small) above 'Rounding Off' (large, bold, white text on blue).", "objects": ["blue topic banner"], "pedagogical_role": "topic/section divider introducing rounding", "text_in_image": "Topic 3 / Rounding Off"},
+    {"description": "Circular icon (blue background) with a gold/tan compass-or-pocket-watch-style emblem, beside the 'Adventure Begins!' title in large blue bold text.", "objects": ["circular emblem icon"], "pedagogical_role": "section icon marking a story/context-driven opener activity", "text_in_image": null},
+    {"description": "A hand-drawn illustration of a fruit stall with a striped orange-and-cream awning and colourful bunting above it. Two cartoon children/shopkeepers stand in front (one in a yellow top with a blue hood, one in a teal outfit with a magenta-outlined hood). The stall has four price/count tags: 'apples' row labelled '108 (110)' above a row of red apples; 'bananas' row labelled '85 (90)' above bunches of yellow bananas; a lower-left row labelled '92 (90)' above orange oranges; a lower-right row labelled '123 (120)' above green pears.", "objects": ["fruit stall", "2 cartoon characters", "apples", "bananas", "oranges", "pears", "4 number tags"], "pedagogical_role": "real-world context hook for the rounding-off topic — exact fruit counts paired with their rounded (nearest-ten) values", "text_in_image": "108 (110), 85 (90), 92 (90), 123 (120)"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Top half continues prior 'Skill Sharpener' items 5-6 (no heading repeated). Lower half opens Topic 3 'Rounding Off' with a blue banner, then the 'Adventure Begins!' story-hook section with two discussion questions and a full-width fruit-stall illustration carrying the four exact-vs-rounded number pairs. Footer '14' centered at bottom.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

@@ -1,0 +1,30 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 27, "printed_page_number": 22,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Discovery Playground"],
+  "text_verbatim": "Discovery Playground Pair up and work with your partner to complete this ordinal number crossword puzzle. [worked example, 1-Down] E L E V E N T H ← Example [worked example, 8-Across] N I N E T E E N T H Across 6. 13th 8. 19th (done as example) 9. 12th 10. 18th Down 1. 11th (done as example) 2. 20th 3. 14th 4. 17th 5. 16th 7. 15th 22",
+  "exercises": [
+    {
+      "label": "Discovery Playground — Ordinal number crossword puzzle",
+      "instruction_verbatim": "Pair up and work with your partner to complete this ordinal number crossword puzzle.",
+      "items": [
+        "Worked example (already filled in, struck through in clue list): 1-Down = 11th, 8-Across = 19th",
+        "Across 6 = 13th", "Across 9 = 12th", "Across 10 = 18th",
+        "Down 2 = 20th", "Down 3 = 14th", "Down 4 = 17th", "Down 5 = 16th", "Down 7 = 15th"
+      ],
+      "answer_key": "Worked examples (given): 1-Down = ELEVENTH, 8-Across = NINETEENTH. Remaining answers (computed): Across 6 (13th) = THIRTEENTH; Across 9 (12th) = TWELFTH; Across 10 (18th) = EIGHTEENTH; Down 2 (20th) = TWENTIETH; Down 3 (14th) = FOURTEENTH; Down 4 (17th) = SEVENTEENTH; Down 5 (16th) = SIXTEENTH; Down 7 (15th) = FIFTEENTH.",
+      "answer_confidence": "high"
+    }
+  ],
+  "illustrations": [
+    {"description": "Small circular icon of a character with a telescope, beside the 'Discovery Playground' heading.", "objects": ["character icon", "telescope"], "pedagogical_role": "section icon for the paired crossword activity", "text_in_image": null},
+    {"description": "A crossword-puzzle grid with numbered clue cells (1-10, though not all numbers are used) arranged in an irregular interlocking pattern. Cell 1 (vertical, 8 letters) is pre-filled 'E L E V E N T H' with a hand-drawn orange arrow and the word 'Example' pointing at it. Cell 8 (horizontal, 10 letters, sharing its 3rd letter with cell 1's 8th letter 'H') is pre-filled 'N I N E T E E N T H'. All other numbered cells (2,3,4,5,6,7,9,10) are empty for students to fill in.", "objects": ["crossword grid", "worked example word ELEVENTH", "worked example word NINETEENTH"], "pedagogical_role": "the puzzle itself; two answers are pre-solved as worked examples", "text_in_image": "ELEVENTH (1-down, filled); NINETEENTH (8-across, filled); numbers 1-10 as clue-cell labels; 'Example' hand-written callout"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Blue 'Discovery Playground' heading with telescope icon at top, instruction line below, then a large interlocking crossword grid roughly centred on the page, with 'Across' and 'Down' clue-number lists at the bottom (clue 1-Down and clue 8-Across are struck through as already-solved worked examples). Footer '22' centred at bottom.",
+  "confidence": "high",
+  "flags": ["Exact cell-by-cell grid geometry (which columns each Down word occupies, where each Across word starts/ends) was not reverse-engineered pixel-by-pixel; each clue's answer word was computed directly from its printed ordinal-number clue (e.g. '13th'->THIRTEENTH), which is authoritative and unambiguous regardless of grid layout."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

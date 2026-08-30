@@ -1,0 +1,19 @@
+{
+  "book_stem": "grade_2_math",
+  "title": "Mathematics Mysteries: Play, Solve and Master! (Grade 2 Math)",
+  "publisher": "Taleemabad", "subject": "Math", "grade": 2,
+  "medium": "en", "language": "en", "edition": "1st", "curriculum_year": 2023,
+  "total_pdf_pages": 305,
+  "offset": 5,
+  "offset_evidence": "Footer-confirmed at THREE points, no shift detected. Front matter is FIVE pdf pages: pdf1 blank/cover, pdf2 title/imprint, pdf3 Digital Resources, pdf4 Table of Contents (ch.1-8), pdf5 Table of Contents cont'd (ch.9-15, 2-page TOC). pdf6 = Ch1 'Numberland Adventures: Up to 999' opener with printed footer '1' (offset=6-1=5); pdf7 footer '2'; pdf8 footer '3' (offset confirmed x3 at start). Re-verified at the far end: pdf300 footer '295' (offset=5, mid-Ch15) and pdf305 (last pdf page) footer '300' (offset=5, book's final page, still Ch15 'Data Detectives'). Offset is stable across the FULL book span (pdf6-pdf305 / printed 1-300) on this evidence; no mid-book shift observed at the 3 checkpoints. Downstream page-truth should still re-verify per chapter per the standing rule.",
+  "front_matter_pages": ["pdf1 blank/cover", "pdf2 title/imprint", "pdf3 digital-resources", "pdf4 toc (ch1-8)", "pdf5 toc cont'd (ch9-15)"],
+  "content_span": {"printed_first": 1, "printed_last_est": 300, "pdf_first": 6, "missing_printed_pages": []},
+  "offset_shift": null,
+  "anomalies": [
+    "2-page Table of Contents (pdf4 + pdf5) — 15 chapters split 8+7 across the two TOC pages.",
+    "pdf1 is blank (cover placeholder), same pattern as grade_1_maths.",
+    "Book ends exactly on the last pdf page (305 = printed 300) — no back matter/glossary/answer-key pages, no trailing blank pages."
+  ],
+  "status": "recon_only_offset_and_toc_done; no content pages page-truthed",
+  "described_by": "sonnet-agent (ICT grade_2_math recon)", "described_at": "2026-08-01"
+}

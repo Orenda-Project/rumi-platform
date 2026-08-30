@@ -1,0 +1,34 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 32, "printed_page_number": 27,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Skill Sharpener"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 circle out of the cardboard to serve as the base for the clock. • Use toothpicks to make the Roman numbers and glue them on the cardboard. • Use markers to draw two clock hands on the cardboard. • Then decorate. Skill Sharpener 1. Circle the correct Roman numeral for the number 11: a. XI b. IX c. XII 2. Write the following numbers in Roman numerals: a. 3 = ___ b. 7 = ___ c. 10 = ___ d. 12 = ___ 3. Bunty wrote the Roman numeral VII on the board. What number did she write? 4. Babloo has X candies. How many candies does he have? 5. Bunty and Babloo played a game where they had to write numbers. Bunty wrote 8, and Babloo wrote VIII. Did they write the same number? (Yes/No) 6. In a book, the chapter number is written as IV. Which chapter number is it? 7. Ammi baked IX pies for a family gathering. How many pies did she bake? 27",
+  "exercises": [
+    {"label": "Roman Numeral Clock craft activity (continued from p.26)", "instruction_verbatim": "circle out of the cardboard to serve as the base for the clock. • Use toothpicks to make the Roman numbers and glue them on the cardboard. • Use markers to draw two clock hands on the cardboard. • Then decorate.",
+     "items": ["hands-on craft activity, no computable answer"], "answer_key": "N/A — hands-on craft activity, not a scored exercise.", "answer_confidence": "n/a"},
+    {"label": "Skill Sharpener Q1", "instruction_verbatim": "Circle the correct Roman numeral for the number 11: a. XI b. IX c. XII",
+     "items": ["a. XI","b. IX","c. XII"], "answer_key": "a. XI (11 = XI; IX = 9, XII = 12)", "answer_confidence": "high"},
+    {"label": "Skill Sharpener Q2", "instruction_verbatim": "Write the following numbers in Roman numerals: a. 3 = ___ b. 7 = ___ c. 10 = ___ d. 12 = ___",
+     "items": ["a. 3","b. 7","c. 10","d. 12"], "answer_key": "a. 3 = III; b. 7 = VII; c. 10 = X; d. 12 = XII", "answer_confidence": "high"},
+    {"label": "Skill Sharpener Q3", "instruction_verbatim": "Bunty wrote the Roman numeral VII on the board. What number did she write?",
+     "items": ["VII"], "answer_key": "7", "answer_confidence": "high"},
+    {"label": "Skill Sharpener Q4", "instruction_verbatim": "Babloo has X candies. How many candies does he have?",
+     "items": ["X candies"], "answer_key": "10 candies (X = 10)", "answer_confidence": "high"},
+    {"label": "Skill Sharpener Q5", "instruction_verbatim": "Bunty and Babloo played a game where they had to write numbers. Bunty wrote 8, and Babloo wrote VIII. Did they write the same number? (Yes/No)",
+     "items": ["8 vs VIII"], "answer_key": "Yes (VIII = 8, same number in two forms)", "answer_confidence": "high"},
+    {"label": "Skill Sharpener Q6", "instruction_verbatim": "In a book, the chapter number is written as IV. Which chapter number is it?",
+     "items": ["IV"], "answer_key": "Chapter 4 (IV = 4)", "answer_confidence": "high"},
+    {"label": "Skill Sharpener Q7", "instruction_verbatim": "Ammi baked IX pies for a family gathering. How many pies did she bake?",
+     "items": ["IX pies"], "answer_key": "9 pies (IX = 9)", "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Round blue icon of a wrench and screwdriver crossed, used as the section icon next to the 'Skill Sharpener' heading.", "objects": ["wrench and screwdriver icon"], "pedagogical_role": "section icon", "text_in_image": null}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Top of page continues the 'Roman Numeral Clock' craft-activity bullet list from printed p.26 (no heading text repeated). Below it, the 'Skill Sharpener' blue heading with wrench/screwdriver icon introduces 7 numbered practice questions (Q1 has sub-items a-c as a multiple-choice circle task; Q2 has sub-items a-d as a write-in-Roman-numerals task; Q3-Q7 are single word-problem style questions). Footer '27' centered at bottom.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

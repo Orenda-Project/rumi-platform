@@ -1,0 +1,30 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 31, "printed_page_number": 26,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Roman Numerals 1-12", "Practice Questions", "Discovery Playground", "Roman Numeral Clock"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 Look closely, Babloo. Our modern clock has numbers from 1 to 12, right? Yes, but the grandfather clock has symbols instead of numbers. Roman numerals use symbols instead of regular numbers: I stands for 1 V stands for 5 X stands for 10 To make other numbers, we combine these symbols: II = 2 (two ones) IV = 4 (one before five) VI = 6 (five and one) Roman Numerals 1-12 1 I One 2 II Two 3 III Three 4 IV Four 5 V Five 6 VI Six 7 VII Seven 8 VIII Eight 9 IX Nine 10 X Ten 11 XI Eleven 12 XII Twelve Practice Questions Let's change these numbers to the other form. a. IV = ___ b. 10 = ___ c. 7 = ___ d. XI = ___ Discovery Playground Roman Numeral Clock • Your teacher will provide you with a cardboard. Cut a large 26",
+  "exercises": [
+    {"label": "Practice Questions", "instruction_verbatim": "Let's change these numbers to the other form. a. IV = ___ b. 10 = ___ c. 7 = ___ d. XI = ___",
+     "items": ["a. IV =", "b. 10 =", "c. 7 =", "d. XI ="],
+     "answer_key": "a. IV = 4; b. 10 = X; c. 7 = VII; d. XI = 11",
+     "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Round avatar icon of a child in a blue/gold spacesuit-style hood, dialogue avatar for 'Look closely, Babloo...'.", "objects": ["child avatar icon"], "pedagogical_role": "speaker avatar", "text_in_image": null},
+    {"description": "Round avatar icon of a boy with dark hair, green shirt, dialogue avatar for 'Yes, but the grandfather clock has symbols instead of numbers.'.", "objects": ["boy avatar icon"], "pedagogical_role": "speaker avatar", "text_in_image": null},
+    {"description": "Round avatar icon of the same child-in-hood character, dialogue avatar for the 'Roman numerals use symbols instead of regular numbers...' explanation block.", "objects": ["child avatar icon"], "pedagogical_role": "speaker avatar for the teaching explanation", "text_in_image": null},
+    {"description": "Round blue icon of a telescope, used as the section icon next to the 'Discovery Playground' heading.", "objects": ["telescope icon"], "pedagogical_role": "section icon", "text_in_image": null},
+    {"description": "Small graduation-cap icon printed beside the 'Roman Numeral Clock' sub-heading, marking it as a hands-on/craft activity.", "objects": ["graduation cap icon"], "pedagogical_role": "activity-type marker", "text_in_image": null}
+  ],
+  "tables": [
+    {"title": "Roman Numerals 1-12", "columns": ["Number", "Roman Numeral", "Word"],
+     "rows": [[1,"I","One"],[2,"II","Two"],[3,"III","Three"],[4,"IV","Four"],[5,"V","Five"],[6,"VI","Six"],[7,"VII","Seven"],[8,"VIII","Eight"],[9,"IX","Nine"],[10,"X","Ten"],[11,"XI","Eleven"],[12,"XII","Twelve"]],
+     "verified_correct": true, "verification_note": "All 12 rows checked against standard Roman numeral values 1-12; all correct and correctly ordered, no errors."}
+  ],
+  "visual_layout_notes": "Continues the Bunty/Babloo dialogue from p.25 (no repeated 'Leap and Learn' heading text on this page). Teaching-explanation block (I/V/X values, how to combine), a black-banner reference table 'Roman Numerals 1-12' on the right side, then 'Practice Questions' with 4 fill-in items (a-d), then the 'Discovery Playground' blue banner heading with telescope icon, then 'Roman Numeral Clock' sub-heading with graduation-cap icon starting a hands-on craft activity whose instructions are cut off mid-sentence at the bottom of the page ('cardboard. Cut a large') and continue onto printed p.27. Footer '26' centered at bottom.",
+  "confidence": "high",
+  "flags": ["Activity instructions for 'Roman Numeral Clock' begin on this page and are cut off mid-sentence ('...Cut a large') continuing onto printed p.27 — captured in full there."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

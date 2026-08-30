@@ -1,0 +1,29 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 25, "printed_page_number": 20,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Adventure Begins!", "Leap and Learn"],
+  "text_verbatim": "4. What is being sold at the 2nd stall? Leap and Learn Bunty and Babloo continue walking. They see more stalls with numbers from 11th to 20th. They first stop at a stall with pretty paper lanterns. Bunty says, \"This is the 11th stall. We say it as 'eleventh.'\" Next, they see a stall with many spices. Bunty points and says, \"This is the 12th stall. We call it 'twelfth.'\" They move to a stall with wooden toys. Bunty explains, \"This one is 13th. It's 'thirteenth.'\" A stall with colourful kites is next. Bunty tells Babloo, \"This is the 14th stall. We say 'fourteenth.'\" 20",
+  "exercises": [
+    {
+      "label": "Question 4 (continuation of Adventure Begins!) — What is being sold at the 2nd stall?",
+      "instruction_verbatim": "What is being sold at the 2nd stall?",
+      "items": [],
+      "answer_key": "Food — a bowl of rice/biryani with a chicken drumstick, per the 2nd stall illustrated on the previous page (printed 19).",
+      "answer_confidence": "high"
+    }
+  ],
+  "illustrations": [
+    {"description": "Small circular icon of a character wearing a striped blue-and-white beanie, beside the 'Leap and Learn' heading.", "objects": ["character icon"], "pedagogical_role": "section icon for the Leap and Learn narrative", "text_in_image": null},
+    {"description": "11th stall (red/white striped awning, brown counter): three paper lanterns — a blue rectangular lantern, a green cylindrical lantern, and a red round lantern with hanging tassels.", "objects": ["3 paper lanterns"], "pedagogical_role": "illustrates the narrated 11th ('eleventh') stall", "text_in_image": "11th"},
+    {"description": "12th stall (yellow/white striped awning, brown counter): two spice mounds — a pink/red conical mound and a white conical mound.", "objects": ["2 spice mounds"], "pedagogical_role": "illustrates the narrated 12th ('twelfth') stall", "text_in_image": "12th"},
+    {"description": "13th stall (green/white striped awning, brown counter): two yellow-and-green wooden toy trains with red wheels.", "objects": ["2 toy trains"], "pedagogical_role": "illustrates the narrated 13th ('thirteenth') stall", "text_in_image": "13th"},
+    {"description": "14th stall (purple/white striped awning, brown counter): three kites — a purple/blue folded kite, a red kite on a string, and a yellow-and-green diamond kite.", "objects": ["3 kites"], "pedagogical_role": "illustrates the narrated 14th ('fourteenth') stall", "text_in_image": "14th"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Top of page: leftover Question 4 from the Adventure Begins! activity (no image, refers back to the previous page's 2nd stall). Below, the blue 'Leap and Learn' heading with a character icon, then a 2-column x 2-row layout: left column narrates + shows the 11th and 13th stalls, right column narrates + shows the 12th and 14th stalls. Footer '20' centred at bottom.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

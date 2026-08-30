@@ -1,0 +1,163 @@
+{
+  "book_stem": "grade_2_math",
+  "subject": "Math",
+  "grade": 2,
+  "medium": "en",
+  "language": "en",
+  "pdf_page_index": 36,
+  "printed_page_number": 31,
+  "page_type": "content",
+  "chapter": {
+    "number": 1,
+    "title": "Numberland Adventures: Up to 999"
+  },
+  "headings": [
+    "Connect and Create",
+    "Mystery Number Fun"
+  ],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 Connect and Create Mystery Number Fun 1. Look at the boxes below, and read the clues. 2. Think about the clues with a classmate, and circle the correct number. 3. Did you find all the answers? Well done! Now have some fun, and colour each box to make a colourful pattern. 45 25 10 53 It is more than 20 It has 5 in the Ones place It is less than 30 82 50 23 45 It is more than 60 It has 2 in the Ones place 62 31 18 20 It is less than 24 It is 5 groups of 4 84 102 408 48 It is more than 50 It has 0 in it When you add 100 to it you get 202 452 952 421 654 It is greater than 450 It has 5 in the Tens place It is greater than 950 127 307 67 142 It has a 7 in the Ones place It is greater than 100 It has a 0 in the Tens place 795 895 995 305 It has 5 in the Ones place It is more than 500 It is 5 less than 1000 199 47 124 109 It is greater than 100 It is 1 less than 200 429 381 364 533 It has a 3 in it It is greater than 300 The numbers add up to 12 31",
+  "exercises": [
+    {
+      "label": "Mystery Number Fun - Box 1 (45, 25, 10, 53)",
+      "instruction_verbatim": "It is more than 20 / It has 5 in the Ones place / It is less than 30",
+      "items": [
+        "45",
+        "25",
+        "10",
+        "53"
+      ],
+      "answer_key": "25 (more than 20 rules out 10; has 5 in Ones place narrows to 45 or 25; less than 30 rules out 45).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Mystery Number Fun - Box 2 (82, 50, 23, 45)",
+      "instruction_verbatim": "It is more than 60 / It has 2 in the Ones place",
+      "items": [
+        "82",
+        "50",
+        "23",
+        "45"
+      ],
+      "answer_key": "82 (only candidate more than 60; also the only one ending in 2).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Mystery Number Fun - Box 3 (62, 31, 18, 20)",
+      "instruction_verbatim": "It is less than 24 / It is 5 groups of 4",
+      "items": [
+        "62",
+        "31",
+        "18",
+        "20"
+      ],
+      "answer_key": "20 (less than 24 narrows to 18 or 20; 5 groups of 4 = 20).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Mystery Number Fun - Box 4 (84, 102, 408, 48)",
+      "instruction_verbatim": "It is more than 50 / It has 0 in it / When you add 100 to it you get 202",
+      "items": [
+        "84",
+        "102",
+        "408",
+        "48"
+      ],
+      "answer_key": "102 (more than 50 rules out 48; has 0 in it narrows to 102 or 408; 102 + 100 = 202).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Mystery Number Fun - Box 5 (452, 952, 421, 654)",
+      "instruction_verbatim": "It is greater than 450 / It has 5 in the Tens place / It is greater than 950",
+      "items": [
+        "452",
+        "952",
+        "421",
+        "654"
+      ],
+      "answer_key": "952 (greater than 450 rules out 421; has 5 in Tens place narrows to 452 or 952; greater than 950 selects 952).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Mystery Number Fun - Box 6 (127, 307, 67, 142)",
+      "instruction_verbatim": "It has a 7 in the Ones place / It is greater than 100 / It has a 0 in the Tens place",
+      "items": [
+        "127",
+        "307",
+        "67",
+        "142"
+      ],
+      "answer_key": "307 (7 in Ones place narrows to 127, 307, or 67; greater than 100 rules out 67, leaving 127 or 307; 0 in Tens place selects 307).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Mystery Number Fun - Box 7 (795, 895, 995, 305)",
+      "instruction_verbatim": "It has 5 in the Ones place / It is more than 500 / It is 5 less than 1000",
+      "items": [
+        "795",
+        "895",
+        "995",
+        "305"
+      ],
+      "answer_key": "995 (all four candidates have 5 in the Ones place, so this clue alone does not narrow; more than 500 rules out 305; 1000 - 5 = 995 selects the answer).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Mystery Number Fun - Box 8 (199, 47, 124, 109)",
+      "instruction_verbatim": "It is greater than 100 / It is 1 less than 200",
+      "items": [
+        "199",
+        "47",
+        "124",
+        "109"
+      ],
+      "answer_key": "199 (greater than 100 rules out 47; 200 - 1 = 199 selects the answer over 124/109).",
+      "answer_confidence": "high"
+    },
+    {
+      "label": "Mystery Number Fun - Box 9 (429, 381, 364, 533)",
+      "instruction_verbatim": "It has a 3 in it / It is greater than 300 / The numbers add up to 12",
+      "items": [
+        "429",
+        "381",
+        "364",
+        "533"
+      ],
+      "answer_key": "381 (has a 3 in it rules out 429, leaving 381/364/533, all already greater than 300; digit sum: 3+8+1=12, 3+6+4=13, 5+3+3=11 - only 381 sums to 12).",
+      "answer_confidence": "high"
+    }
+  ],
+  "illustrations": [
+    {
+      "description": "Small blue circular icon with a puzzle-piece/map graphic beside the 'Connect and Create' section title.",
+      "objects": [
+        "puzzle-piece icon"
+      ],
+      "pedagogical_role": "section icon for Connect and Create",
+      "text_in_image": null
+    },
+    {
+      "description": "Small black-outline graduation-cap icon beside the 'Mystery Number Fun' activity title.",
+      "objects": [
+        "graduation cap icon"
+      ],
+      "pedagogical_role": "activity icon for Mystery Number Fun (paired/group work)",
+      "text_in_image": null
+    },
+    {
+      "description": "A 3x3 grid of nine boxes (drawn as ruled table cells, two vertical dividers and two horizontal dividers), each box containing 4 candidate numbers on top and 2-3 bulleted clue sentences below, intended to be circled/coloured by students.",
+      "objects": [
+        "9 clue boxes in a 3x3 grid"
+      ],
+      "pedagogical_role": "logic-puzzle worksheet structure for narrowing 4 candidate numbers down to 1 via clues",
+      "text_in_image": "see text_verbatim for all box contents"
+    }
+  ],
+  "tables": [],
+  "visual_layout_notes": "Standard content page: running header 'Chapter 1 / Numberland Adventures: Up to 999' top-right. 'Connect and Create' section title in large blue text with a small icon. 'Mystery Number Fun' sub-heading with graduation-cap icon, followed by 3 numbered instructions. Below, a 3x3 ruled grid of 9 clue boxes (each with 4 numbers + clue bullets), meant to be solved and coloured by the student. Footer page number '31' centered at bottom.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent",
+  "described_at": "2026-08-01",
+  "reverified_by": "pagetruth-agent",
+  "reverified_at": "2026-08-02"
+}

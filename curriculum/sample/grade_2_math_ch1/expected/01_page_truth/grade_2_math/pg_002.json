@@ -1,0 +1,32 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 7, "printed_page_number": 2,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Topic 1", "Numbers upto 999", "Adventure Begins!", "Leap and Learn"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 Topic 1 Numbers upto 999 Adventure Begins! Taleemabad's library is 999 days old. 1. Can you see any big numbers? 2. Can you think of a place where you have seen such numbers? 3. Can you guess how many books there are? 999 Days Celebration 531 482 342 840 123 456 602 987 Leap and Learn How do numbers help us in our daily life? Let's learn about these big numbers on spin the wheel. These are called 3-digit numbers. Every 3-digit number is made up of hundreds, tens and ones. 10 tens make 1 hundred block. 10 20 30 40 50 60 70 80 90 100 100 2",
+  "exercises": [
+    {"label": "Adventure Begins! (discussion prompts)",
+     "instruction_verbatim": "Taleemabad's library is 999 days old. 1. Can you see any big numbers? 2. Can you think of a place where you have seen such numbers? 3. Can you guess how many books there are?",
+     "items": ["open-ended discussion question 1", "open-ended discussion question 2", "open-ended discussion question 3"],
+     "answer_key": "Open-ended/discussion — no single correct numeric answer; intended to activate prior knowledge of 3-digit numbers before the topic.",
+     "answer_confidence": "high"},
+    {"label": "Leap and Learn (discussion prompt)",
+     "instruction_verbatim": "How do numbers help us in our daily life?",
+     "items": ["open-ended discussion question"],
+     "answer_key": "Open-ended/discussion — no single correct answer.",
+     "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Section icon for 'Adventure Begins!': a circular badge with a blue treasure-map/compass-style icon (rolled scroll with a clock/spyglass motif) beside the blue heading text.", "objects": ["circular icon badge"], "pedagogical_role": "section marker icon", "text_in_image": null},
+    {"description": "A spin-the-wheel graphic: a circular prize wheel with alternating orange and white segments, blue rim studded with small gold bulbs/lights, a small orange pointer/arrow at the top. Below the wheel, a brown wooden library archway (two bookshelves stuffed with colourful books forming a doorway) with a gold ribbon banner reading '999 Days Celebration' draped across the top of the archway, tied to the wheel. Two small cartoon children stand under the archway — one wearing a pink/red party hat holding a red balloon, one holding up a book/card.", "objects": ["spin wheel with 8 segments", "library archway of bookshelves", "gold celebration banner", "two children"], "pedagogical_role": "illustrates 3-digit numbers in a real-world 'big numbers' celebration context, sets up the wheel numbers used for discussion", "text_in_image": "531, 342, 482, 123, 840, 456, 602, 987 (wheel segments); '999 Days Celebration' (banner)", "counts": {"wheel_segments": 8}, "count_method": "300dpi-crop-double-count of the wheel region; segment values read directly (printed labels, not tally objects)", "count_verified": {"segments_pass_1": 8, "segments_pass_2": 8, "agreement": true, "values_pass_1": ["531","342","482","123","840","456","602","987"], "values_pass_2": ["531","342","482","123","840","456","602","987"]}},
+    {"description": "Section icon for 'Leap and Learn': a circular badge with a blue frog/leaping icon beside the blue heading text.", "objects": ["circular icon badge"], "pedagogical_role": "section marker icon", "text_in_image": null},
+    {"description": "Small circular avatar of an elderly man (grey hair, red top) beside the teacher/guide dialogue text introducing 3-digit numbers.", "objects": ["character avatar"], "pedagogical_role": "guide/narrator character delivering the instructional dialogue", "text_in_image": null},
+    {"description": "Base-ten manipulative diagram: a row of 10 orange/yellow vertical 'ten-stick' blocks (each a stack of 10 unit cubes, isometric style), individually labelled above in tens from 10 up to 100 (10, 20, 30, 40, 50, 60, 70, 80, 90, 100). An arrow points from the row of ten sticks to a single flat orange/yellow 'hundred block' (a 10x10 grid flat, isometric) on the right, labelled 100.", "objects": ["10 ten-stick base-ten blocks", "1 hundred-flat base-ten block", "arrow"], "pedagogical_role": "CONCRETE/pictorial model demonstrating that 10 tens = 1 hundred, directly illustrating the line '10 tens make 1 hundred block'", "text_in_image": "10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 100", "counts": {"ten_sticks": 10, "hundred_flats": 1}, "count_method": "300dpi-crop-double-count of the block row and the flat; cross-checked against the ten printed running-total labels (10..100) and the stated rule '10 tens make 1 hundred block'", "count_verified": {"ten_sticks_pass_1": 10, "ten_sticks_pass_2": 10, "hundred_flats_pass_1": 1, "hundred_flats_pass_2": 1, "agreement": true}}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Running header top-right: 'Chapter 1 / Numberland Adventures: Up to 999'. Blue 'Topic 1 / Numbers upto 999' banner bar. 'Adventure Begins!' heading (blue, icon) with 3 discussion questions on the left and the spin-wheel/library-archway illustration on the right. Below, 'Leap and Learn' heading (blue, icon) with a discussion question, guide-character dialogue, and the base-ten blocks diagram (10 ten-sticks -> 1 hundred-flat) at the bottom. Footer '2' centered at bottom of page.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

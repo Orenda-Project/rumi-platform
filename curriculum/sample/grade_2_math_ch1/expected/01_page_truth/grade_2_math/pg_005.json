@@ -1,0 +1,18 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 10, "printed_page_number": 5,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": [],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 The single digits are named: 1 One 2 Two 3 Three 4 Four 5 Five 6 Six 7 Seven 8 Eight 9 Nine Numbers from 11 to 19 are called teen numbers. When we say these numbers, we can hear 'teen' in 11 Eleven 12 Twelve 13 Thir-teen 14 Four-teen 15 Fif-teen 16 Six-teen 17 Seven-teen 18 Eigh-teen 19 Nine-teen most of them: thirteen, fourteen, fifteen, sixteen, seventeen, eighteen, nineteen. Even though eleven and twelve sound different, they are also teen numbers because they come between 10 and 20. 5",
+  "exercises": [],
+  "illustrations": [
+    {"description": "A yellow poster framed in dark brown, titled implicitly by the preceding line 'The single digits are named:'. Contains a 3x3 grid of purple crown-shaped badges, each badge showing a white digit (1-9) and, beside each badge, the digit's name written in purple text: 1/One, 2/Two, 3/Three, 4/Four, 5/Five, 6/Six, 7/Seven, 8/Eight, 9/Nine.", "objects": ["9 purple crown badges", "9 number-name text labels"], "pedagogical_role": "reference chart mapping single digits 1-9 to their number-word names", "text_in_image": "1 One, 2 Two, 3 Three, 4 Four, 5 Five, 6 Six, 7 Seven, 8 Eight, 9 Nine", "counts": {"crown_badges": 9}, "count_method": "grid is a fixed 3x3 layout with each cell's digit printed as its own answer key (not an ambiguous tally); verified by reading the 9 printed digit labels directly, cross-checked against the 3x3 grid structure, counted twice", "count_verified": {"pass_1": 9, "pass_2": 9, "agreement": true}},
+    {"description": "A dark-green chalkboard poster framed in dark brown, with a 3x3 grid of numbered price-tag/ticket shapes in teal (for 11, 12) and yellow (for 13-19), each showing a black digit (11-19) and, beside it, the number's name in white chalk-style text, with the '-teen' suffix hyphenated for 13-19 (e.g. 'Thir-teen', 'Four-teen') to highlight the shared 'teen' sound.", "objects": ["9 numbered ticket/tag shapes", "9 number-name text labels"], "pedagogical_role": "reference chart mapping teen numbers 11-19 to their number-word names, visually emphasising the shared '-teen' suffix via hyphenation", "text_in_image": "11 Eleven, 12 Twelve, 13 Thir-teen, 14 Four-teen, 15 Fif-teen, 16 Six-teen, 17 Seven-teen, 18 Eigh-teen, 19 Nine-teen", "counts": {"ticket_tags": 9}, "count_method": "grid is a fixed 3x3 layout with each cell's digit printed as its own answer key (not an ambiguous tally); verified by reading the 9 printed digit labels directly, cross-checked against the 3x3 grid structure, counted twice", "count_verified": {"pass_1": 9, "pass_2": 9, "agreement": true}}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Running header top-right: 'Chapter 1 / Numberland Adventures: Up to 999'. Intro line then a yellow 3x3 crown-badge poster (digits 1-9 with names), then explanatory text about teen numbers, then a dark-green chalkboard 3x3 ticket poster (11-19 with names, '-teen' hyphenated), then a closing paragraph explaining the teen-number pattern (with the sentence split by the second poster: 'we can hear teen in' ... [poster] ... 'most of them: thirteen, fourteen...'). Footer '5' centered at bottom of page.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

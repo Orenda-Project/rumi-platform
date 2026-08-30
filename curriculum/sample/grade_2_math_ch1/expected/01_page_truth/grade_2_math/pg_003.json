@@ -1,0 +1,38 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 8, "printed_page_number": 3,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": [],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 123 Hundreds Tens Ones 123 = 1 hundreds, 2 tens and 3 ones In expanded form, 123 = 100 + 20 + 3 The digit 1 in 123 is in the hundreds place. The digit 2 in 123 is in the tens place. The digit 3 in 123 is in the ones place. The value of 1 in 123 is 100. The value of 2 in 123 is 20. The value of 3 in 123 is 3. Can you count forward from 123 to 126? 342 Hundreds Tens Ones 342 = 3 hundreds, 4 tens and 2 ones In expanded form, 342= 300 + 40 + 2 The digit 3 in 342 is in the hundreds place. The digit 4 in 342 is in the tens place. The digit 2 in 342 is in ones place. The value of 3 in 342 is 300. 3",
+  "exercises": [
+    {"label": "Place value walkthrough: 123",
+     "instruction_verbatim": "123 = 1 hundreds, 2 tens and 3 ones. In expanded form, 123 = 100 + 20 + 3. The digit 1 in 123 is in the hundreds place. The digit 2 in 123 is in the tens place. The digit 3 in 123 is in the ones place. The value of 1 in 123 is 100. The value of 2 in 123 is 20. The value of 3 in 123 is 3.",
+     "items": ["123 place-value breakdown (worked example, not a question)"],
+     "answer_key": "Fully worked in-text: 123 = 1 hundred + 2 tens + 3 ones = 100+20+3; digit values 100, 20, 3 respectively. Base-ten block picture (1 hundred-flat, 2 ten-sticks, 3 unit-cubes) matches.",
+     "answer_confidence": "high"},
+    {"label": "Can you count forward from 123 to 126?",
+     "instruction_verbatim": "Can you count forward from 123 to 126?",
+     "items": ["counting-on question"],
+     "answer_key": "123, 124, 125, 126.",
+     "answer_confidence": "high"},
+    {"label": "Place value walkthrough: 342",
+     "instruction_verbatim": "342 = 3 hundreds, 4 tens and 2 ones. In expanded form, 342= 300 + 40 + 2. The digit 3 in 342 is in the hundreds place. The digit 4 in 342 is in the tens place. The digit 2 in 342 is in ones place. The value of 3 in 342 is 300.",
+     "items": ["342 place-value breakdown (worked example, not a question)"],
+     "answer_key": "Fully worked in-text: 342 = 3 hundreds + 4 tens + 2 ones = 300+40+2; digit 3 (hundreds place) has value 300. Base-ten block picture (3 hundred-flats, 4 ten-sticks, 2 unit-cubes) matches. Note: page text only states 'the value of 3 in 342' explicitly (does not spell out 'the value of 4 is 40' / 'the value of 2 is 2' the way the 123 example does) — this asymmetry is verbatim to source, kept as-is, not fabricated.",
+     "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "Place-value chart for 123: a 3-column table (blue 'Hundreds' header, yellow 'Tens' header, red 'Ones' header) with the number '123' printed in large bold black digits to the left of the table. Hundreds column shows 1 blue hundred-flat (10x10 grid). Tens column shows 2 orange ten-sticks (vertical stacks of 10 unit cubes). Ones column shows 3 small red unit cubes.", "objects": ["1 hundred-flat", "2 ten-sticks", "3 unit cubes", "3-column table"], "pedagogical_role": "CONCRETE base-ten block model of the number 123, directly supporting the place-value text below it", "text_in_image": "Hundreds, Tens, Ones, 123", "counts": {"hundred_flats": 1, "ten_sticks": 2, "unit_cubes": 3}, "count_method": "300dpi-crop-double-count of each of the three table cells", "count_verified": {"hundred_flats_pass_1": 1, "hundred_flats_pass_2": 1, "ten_sticks_pass_1": 2, "ten_sticks_pass_2": 2, "unit_cubes_pass_1": 3, "unit_cubes_pass_2": 3, "agreement": true}},
+    {"description": "Small circular avatar of a boy character (blue cap/hood, tan skin) beside the dialogue prompt 'Can you count forward from 123 to 126?'.", "objects": ["character avatar"], "pedagogical_role": "guide/narrator character posing the counting-on question", "text_in_image": null},
+    {"description": "Place-value chart for 342: a 3-column table (blue 'Hundreds' header, yellow 'Tens' header, red 'Ones' header) with the number '342' printed in large bold black digits to the left. Hundreds column shows 3 overlapping blue hundred-flats. Tens column shows 4 orange ten-sticks. Ones column shows 2 small red unit cubes.", "objects": ["3 hundred-flats", "4 ten-sticks", "2 unit cubes", "3-column table"], "pedagogical_role": "CONCRETE base-ten block model of the number 342, directly supporting the place-value text below it", "text_in_image": "Hundreds, Tens, Ones, 342", "counts": {"hundred_flats": 3, "ten_sticks": 4, "unit_cubes": 2}, "count_method": "300dpi-crop-double-count of each of the three table cells", "count_verified": {"hundred_flats_pass_1": 3, "hundred_flats_pass_2": 3, "ten_sticks_pass_1": 4, "ten_sticks_pass_2": 4, "unit_cubes_pass_1": 2, "unit_cubes_pass_2": 2, "agreement": true}}
+  ],
+  "tables": [
+    {"description": "Place-value chart for 123 (Hundreds/Tens/Ones headers over the base-ten block pictures)", "rows": ["Hundreds: 1 hundred-flat", "Tens: 2 ten-sticks", "Ones: 3 unit cubes"]},
+    {"description": "Place-value chart for 342 (Hundreds/Tens/Ones headers over the base-ten block pictures)", "rows": ["Hundreds: 3 hundred-flats", "Tens: 4 ten-sticks", "Ones: 2 unit cubes"]}
+  ],
+  "visual_layout_notes": "Running header top-right: 'Chapter 1 / Numberland Adventures: Up to 999'. Two stacked place-value worked examples (123, then 342), each with a large number on the left, a Hundreds/Tens/Ones base-ten-block table, then explanatory place-value text below. A small guide-character speech prompt ('Can you count forward from 123 to 126?') sits between the two examples. Footer '3' centered at bottom of page.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

@@ -1,0 +1,22 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 20, "printed_page_number": 15,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Leap and Learn"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 Leap and Learn The number in the brackets is the rounded-off number. Rounding off means a number is made simple but close to the actual number. Let me show you how we can round off a number to the nearest ten. We will use a number line to learn to round off. 1. Basket of oranges = 92 92 is between 90 and 100. [number line 90 to 100, 92 marked] When we round off a number to its nearest ten, we look at the ones digit. If the ones digit is less than five, we have to round down. If the ones digit is five or more, we have to round up. [number line 90-100 with 'round down' arrow pointing left from 95 to 90, and 'round up' arrow pointing right from 95 to 100] The ones digit in 92 is 2. 2 is less than five, so we round down. [number line 90-100 with green arrow from 92 pointing left to 90] 15",
+  "exercises": [],
+  "illustrations": [
+    {"description": "Circular icon (blue background) with a small white swimmer/diver figure mid-leap, beside the 'Leap and Learn' title in large blue bold text.", "objects": ["diver/leap icon"], "pedagogical_role": "section icon marking the guided-instruction (worked example) block", "text_in_image": null},
+    {"description": "Small circular avatar of an elderly grey-haired, bearded man in an orange top, positioned beside the sentence 'The number in the brackets is the rounded-off number.'", "objects": ["elder/grandfather avatar"], "pedagogical_role": "narrator/guide character introducing the rounding convention", "text_in_image": null},
+    {"description": "Small circular avatar of a child in a blue hooded top, positioned beside the sentence 'Let me show you how we can round off a number to the nearest ten.'", "objects": ["child avatar"], "pedagogical_role": "peer-guide character walking through the worked example", "text_in_image": null},
+    {"description": "Number line from 90 to 100 with tick marks at every unit; labelled ticks at 90, 95 (mid, black), and 100; '92' marked in orange above its tick.", "objects": ["number line 90-100"], "pedagogical_role": "shows where 92 sits between the two nearest tens", "text_in_image": "90, 92, 95, 100"},
+    {"description": "Same 90-100 number line repeated, now with two curved orange arrows above it: a left-pointing arrow labelled 'round down' spanning from the midpoint (95) back to 90, and a right-pointing arrow labelled 'round up' spanning from 95 forward to 100.", "objects": ["number line 90-100", "2 curved arrows"], "pedagogical_role": "visualises the round-down/round-up decision zones split at the midpoint 95", "text_in_image": "round down, round up, 90, 92, 95, 100"},
+    {"description": "Same 90-100 number line a third time, now with a single green curved arrow pointing left from 92 to 90 (92 relabelled in green), illustrating the actual rounding of 92.", "objects": ["number line 90-100", "1 green arrow"], "pedagogical_role": "shows the concrete result: 92 rounds down to 90", "text_in_image": "90, 92 (green), 95 (orange), 100"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Full worked-example page for Topic 3 'Rounding Off': narrator avatars introduce the concept, then three stacked 90-100 number-line diagrams build up the round-down/round-up logic for the oranges basket (92). The concluding sentence '92 rounded to the nearest ten is 90.' appears at the very top of the NEXT page (printed 16). Footer '15' centered at bottom.",
+  "confidence": "high",
+  "flags": [],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

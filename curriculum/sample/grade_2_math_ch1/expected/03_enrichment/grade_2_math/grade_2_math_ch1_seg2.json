@@ -1,0 +1,197 @@
+{
+  "lesson_id": "grade_2_math_ch1_seg2",
+  "lp_type": "content",
+  "model": "openai/gpt-5.6-terra",
+  "generated": {
+    "segment_id": "2",
+    "slo_refs": [
+      "M-02-NS-02"
+    ],
+    "bloom": "apply",
+    "slo_statement": "By the end of the lesson, students will read and write numbers up to 999 in numerals and up to 99 in words (M-02-NS-02), naming teen numbers (11-19) and tens-plus-ones numbers (20-99) correctly.",
+    "scope_declaration": "ONE lesson, ONE class period of 30 minutes, ONE SLO: reading and writing 2-digit numbers in words (teen numbers + tens-word/ones-word compounds), textbook pp.5-6.",
+    "duration_min": 30,
+    "materials": [
+      "chalk",
+      "board",
+      "textbook pp.5-6",
+      "notebook",
+      "pencil"
+    ],
+    "warmUp": {
+      "minutes": 4,
+      "script": "Chorus with me: yesterday we built numbers with bundles. What number is 4 tens and 5 ones? Now tell your partner: say that number (45) out loud as a WORD.",
+      "items": [
+        {
+          "prompt": "What number is 4 tens and 5 ones?",
+          "mode": "choral",
+          "expected": "45"
+        },
+        {
+          "prompt": "Say 45 out loud as a word to your partner.",
+          "mode": "pair-check",
+          "expected": "Forty-five (today's lesson confirms/corrects this)."
+        }
+      ]
+    },
+    "hookStory": "How old will you be on your next birthday? Say that age out loud. Is your age's word a 'teen' number, or does it end in '-ty'? Tell your partner.",
+    "hookCharacters": [],
+    "keyWords": [
+      {
+        "term": "teen number",
+        "urdu_gloss": "اعداد گیارہ تا انیس",
+        "syllables": "teen num-ber (3 syllables)",
+        "student_definition": "a number from 11 to 19; most of them end in the sound 'teen'."
+      },
+      {
+        "term": "-ty ending",
+        "urdu_gloss": "دہائی کی علامت",
+        "syllables": "-ty (1 syllable)",
+        "student_definition": "the ending on a tens-word (20-90) that shows a group of ten, like 'twenty' or 'forty'."
+      },
+      {
+        "term": "tens word",
+        "urdu_gloss": "دہائی کا نام",
+        "syllables": "tens word (2 syllables)",
+        "student_definition": "the word for a multiple of ten, like Forty or Eighty."
+      },
+      {
+        "term": "ones word",
+        "urdu_gloss": "اکائی کا نام",
+        "syllables": "ones word (2 syllables)",
+        "student_definition": "the word for a single digit, like Five or Three."
+      },
+      {
+        "term": "hyphen",
+        "urdu_gloss": "ہائیفن",
+        "syllables": "hy-phen (2 syllables)",
+        "student_definition": "the small dash that joins a tens-word and a ones-word, like Forty-Five."
+      }
+    ],
+    "instance_ledger": {
+      "i_do_steps": "45 (the book's own first worked example, p.6)",
+      "worked_example": "83 (the book's own composed-number worked example, p.6)",
+      "we_do": "67 (a fresh number, modelled together, never printed in the book)",
+      "you_do": "72, 27, 90, 13, 38 (the book's own Practice Questions, p.6)",
+      "exit_ticket": "sixteen vs sixty (a fresh same/different variation pair, new context)",
+      "disjoint": "i_do_steps=45 | steps[0].action | 'p.6's own Forty-Five worked example'; worked_example=83 | workedExample | 'p.6's own 80+3=Eighty-three'; we_do=67 | steps[1].action | 'a fresh tens+ones number built together'; you_do=72/27/90/13/38 | problems[0..4] | 'p.6's own Practice Questions'; exit_ticket=sixteen/sixty | exitTicket.task | 'is sixteen the same as sixty?'; pairwise: no number repeats -- 45/83/72/27/90/13/38 are the book's own numbers, one set per surface as the field-map requires, and 67/16/60 are fresh."
+    },
+    "element_map": {
+      "cumulative spaced-retrieval warm-up": "warmUp.script -- recalls yesterday's place-value bundles before moving to number NAMES today",
+      "topic-fit number-sense warm-up": "warmUp.items -- '4 tens and 5 ones' ties directly into today's number-to-words topic",
+      "anxiety-safe fact-fluency drill": "partnerActivity.structure -- the Name That Number game, self-paced, each child tracks only their OWN streak",
+      "mastery-check exit ticket with a same/different variation item": "exitTicket.task -- 'is sixteen the same as sixty?'",
+      "misconception pre-empt": "notes + steps[0].cfu.if_struggle -- teen-vs-tens sound-alike confusion (sixteen/sixty) named explicitly",
+      "bilingual en/ur maths glossary": "keyWords -- teen number/-ty ending/tens word/ones word/hyphen, each with an Urdu gloss"
+    },
+    "cpa_enactment": {
+      "phase": "abstract",
+      "child_handles": "no physical quantity today -- this lesson works in numeral and word notation",
+      "quantity_visible": "abstract day -- the pictorial bundle model was built on Day 1 (123/342/602, 1 hundred-bundle/2 ten-bundles/3 sticks etc.); this lesson recalls it in the warm-up (4 tens + 5 ones = 45) and then works entirely in numerals and words."
+    },
+    "concrete_model": {
+      "name": "bundles of ten sticks (a ten), and ten bundles taped together into one big bundle (a hundred) -- same model as Day 1, recalled not rebuilt today",
+      "ten": "one bundle = ten sticks tied with a rubber band",
+      "one": "one loose stick",
+      "free_source": "ice-lolly sticks, broom sticks or dry twigs the class gathers; rubber bands from a shop bundle -- the same bundles made on Day 1"
+    },
+    "boardWork": {
+      "instruction": "Before class, write the 20-90 tens-word chart on the board (20=Twenty, 30=Thirty, ... 90=Ninety), with the '-ty' ending underlined on each.",
+      "content": [
+        "20 Twenty, 30 Thirty, 40 Forty, 50 Fifty",
+        "60 Sixty, 70 Seventy, 80 Eighty, 90 Ninety",
+        "tens-word + ones-word, joined with a hyphen"
+      ]
+    },
+    "steps": [
+      {
+        "phase": "I-Do",
+        "minutes": 7,
+        "action": "Show the p.6 chart for 45: 4 tens, 5 ones. Build the word step by step: tens digit 4 -> 'Forty'; ones digit 5 -> 'Five'; join with a hyphen.",
+        "say": "4 in the tens place is 'Forty'. 5 in the ones place is 'Five'. Join them with a hyphen: Forty-Five.",
+        "cfu": {
+          "question": "Why do we say 'Forty' for the tens digit and not just 'Four'?",
+          "pass_signal": "Says the tens digit stands for a group of 10, so it gets the '-ty' word (Forty = 4 tens), not the ones-word.",
+          "if_struggle": "Point to the tens-word chart on the board and match the digit 4 to 'Forty' directly."
+        }
+      },
+      {
+        "phase": "We-Do",
+        "minutes": 10,
+        "action": "Together, help Sana name a fresh number at the board: 67. Ask which tens-word (Sixty) and which ones-word (Seven), then join them.",
+        "say": "Sana's number is 67 -- 6 tens and 7 ones. Everybody: which tens-word? Sixty. Which ones-word? Seven. Join with a hyphen: Sixty-Seven.",
+        "cfu": {
+          "question": "Is 'sixteen' the same word as 'sixty'? Why or why not?",
+          "pass_signal": "Says no -- sixteen is 16 (a teen number), sixty is 60 (a tens-word); they sound similar but mean different numbers."
+        }
+      },
+      {
+        "phase": "You-Do",
+        "minutes": 9,
+        "action": "Independently write the words for p.6's Practice Questions: 72, 27, 90, 13, 38.",
+        "say": "Now write each number's word on your own. Check: is it a teen number, or a tens-word plus a ones-word?",
+        "cfu": {
+          "question": "Which of today's numbers was hardest to write in words, and why?",
+          "pass_signal": "Names one number (e.g. 13, a teen number) and gives a real reason (e.g. 'thirteen doesn't sound exactly like three')."
+        }
+      }
+    ],
+    "workedExample": "83 (the book's own composed-number example, p.6). Step 1: tens digit 8 -> 'Eighty'. Step 2: ones digit 3 -> 'Three'. Step 3: join with a hyphen: Eighty-Three. (A different number from the 45 used in I-Do and the 67 used in We-Do.)",
+    "partnerActivity": {
+      "structure": "Name That Number (anxiety-safe, no timer, 3-5 min): Partner A says a 2-digit number, Partner B says its word name; swap. Each child tracks only their OWN correct-in-a-row streak.",
+      "dialogueFrameA": "My number is ___. Say it as a word.",
+      "dialogueFrameB": "That number in words is ___.",
+      "teacher_role": "circulate, listening for the correct tens-word + ones-word + hyphen (or the correct teen-word); reset a pair's streak with encouragement, never a penalty."
+    },
+    "problems": [
+      {
+        "prompt": "Write 72 in words.",
+        "status": "solved",
+        "solution": "Seventy-two (p.6)."
+      },
+      {
+        "prompt": "Write 27 in words.",
+        "status": "solved",
+        "solution": "Twenty-seven (p.6)."
+      },
+      {
+        "prompt": "Write 90 in words.",
+        "status": "solved",
+        "solution": "Ninety (p.6)."
+      },
+      {
+        "prompt": "Write 13 in words.",
+        "status": "solved",
+        "solution": "Thirteen (p.6, a teen number)."
+      },
+      {
+        "prompt": "Write 38 in words.",
+        "status": "solved",
+        "solution": "Thirty-eight (p.6)."
+      }
+    ],
+    "weakLearnerSupport": "Named strategy: Two-Box Match. The struggling student writes the tens digit in one box and looks up its word on the board chart, writes the ones digit in a second box and looks up ITS word, then joins the two words with a hyphen -- never guesses the whole word at once.",
+    "challengeExtension": "Ahead learners (Fatima's group) take a number with a repeated digit, like 77, and explain why the tens 'Seventy' and the ones 'Seven' sound similar but are NOT the same word.",
+    "exitTicket": {
+      "task": "Hamza says 'sixteen' and 'sixty' are the same number because they sound so similar. Is he right? Explain.",
+      "success_criteria": "Correct if the student says NO and explains that sixteen is 16 (a teen number) while sixty is 60 (a tens-word) -- different numbers.",
+      "self_prediction": "Before answering, draw ☺ or ☹ predicting whether sixteen and sixty will turn out to be the same number."
+    },
+    "homework": "p.6-style: write Usman's number 56 in words, and Hira's number 19 in words.",
+    "keyFact": "A teen number (11-19) and a tens-word (20-90) can sound similar but are different numbers.",
+    "cfuExplain": "If a student writes the ones-word first (e.g. 'Five-Forty' for 45), ask them to point to the TENS digit first and name its word before the ones digit.",
+    "coachingReflection": "Notice whether children mix up a teen number with a similar-sounding tens-word (e.g. fourteen/forty, sixteen/sixty).",
+    "nextTopicPreview": "Next lesson uses these same numbers to compare and order which is bigger or smaller.",
+    "subject_elements": {
+      "number_sense_warmup": "warmUp -- recalls yesterday's place-value bundles (4 tens + 5 ones = 45) before naming it in words",
+      "fluency_drill": "partnerActivity -- Name That Number, self-paced, streak tracked only against the child's own prior round",
+      "mastery_criterion": "exitTicket.success_criteria -- states WHY sixteen and sixty differ, not just the right/wrong label",
+      "variation_item": "exitTicket.task -- the sixteen-vs-sixty same/different comparison",
+      "misconception_preempt": "notes + steps[1].cfu -- teen-vs-tens sound-alike confusion, pre-empted by naming the tens-word and ones-word separately before joining them"
+    },
+    "notes": [
+      "gap: the page-truth's guide/narrator avatar on p.6 (boy, blue cap) is not named in the supplied illustration description, so hookCharacters is omitted rather than inventing a name for it; Sana, Fatima, Hamza, Usman and Hira (this brief's standard Pakistani names, per rule 36 -- Sana + Fatima as the 2 named girls, Hamza + Usman as the 2 named boys) are used only in the fresh We-Do/challenge/exit/homework instances that are not tied to any page-truth character.",
+      "misconception (named for the AUTHOR stage): children confuse a teen number with a similarly-sounding tens-word -- 'sixteen' (16) vs 'sixty' (60), 'fourteen' (14) vs 'forty' (40) -- because both share the root word and a similar ending sound."
+    ]
+  }
+}

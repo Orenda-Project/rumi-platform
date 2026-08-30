@@ -1,0 +1,36 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 23, "printed_page_number": 18,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["Skill Sharpener"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 Skill Sharpener 1. Round each number to the nearest ten by using the number line. 492 [number line 490-500] [ ] 515 [number line 510-520] [ ] 877 [number line 870-880] [ ] 2. Match each number when rounded to the nearest 10. The first one has been done for you. 61 [arrow to 60] 33 42 27 [ladder of boxes: 10,20,30,40,50,60,70,80,90,100] 65 97 85 76 93 3. Which numbers do these arrows show? [number line 30-80 with 4 arrows] 18",
+  "exercises": [
+    {"label": "1. Round each number to the nearest ten (number-line boxes)",
+     "instruction_verbatim": "Round each number to the nearest ten by using the number line.",
+     "items": ["492 (line marked 490 to 500)", "515 (line marked 510 to 520)", "877 (line marked 870 to 880)"],
+     "answer_key": "492 -> 490 (ones digit 2, less than 5, round down); 515 -> 520 (ones digit 5, round up); 877 -> 880 (ones digit 7, round up).",
+     "answer_confidence": "high"},
+    {"label": "2. Match each number to its rounded value",
+     "instruction_verbatim": "Match each number when rounded to the nearest 10. The first one has been done for you.",
+     "items": ["61 (example, matched to 60)", "33", "42", "27", "65", "97", "85", "76", "93"],
+     "answer_key": "61->60 (given example); 33->30; 42->40; 27->30; 65->70; 97->100; 85->90; 76->80; 93->90.",
+     "answer_confidence": "high"},
+    {"label": "3. Which numbers do these arrows show?",
+     "instruction_verbatim": "Which numbers do these arrows show?",
+     "items": ["arrow 1 (leftmost, between 30 and 40)", "arrow 2 (between 50 and 60)", "arrow 3 (between 60 and 70)", "arrow 4 (rightmost, near 80)"],
+     "answer_key": "Arrow positions measured against the tick grid (51 ticks spanning 30-80 at ~37px/unit, 300 DPI crop, tick-index method double-checked against a straight-line-interpolation method — both agreed): arrow 1 = 38, arrow 2 = 55, arrow 3 = 62, arrow 4 = 79.",
+     "answer_confidence": "high (measured twice via independent pixel methods, both converged on 38/55/62/79)"}
+  ],
+  "illustrations": [
+    {"description": "Circular badge icon (blue) with a crossed wrench-and-pencil symbol, beside the 'Skill Sharpener' section title in bold blue text.", "objects": ["wrench-and-pencil badge icon"], "pedagogical_role": "section icon marking a practice/drill block", "text_in_image": null},
+    {"description": "A 3-row bordered table/grid. Each row has: a large bold 3-digit number on the left (492 / 515 / 877), a number line in the middle spanning a 10-wide range centred on that number (490-500 / 510-520 / 870-880) with tick marks at every unit but no other labels, and an empty answer box on the right.", "objects": ["3 rows", "3 number lines", "3 empty answer boxes"], "pedagogical_role": "independent practice applying the round-to-nearest-ten skill to 3-digit numbers", "text_in_image": "492, 490, 500, 515, 510, 520, 877, 870, 880"},
+    {"description": "A vertical ladder/column of 10 bordered boxes stacked top to bottom reading 10, 20, 30, 40, 50, 60, 70, 80, 90, 100. Eight 2-digit numbers are scattered around the ladder (61, 33, 42, 27, 65, 97, 85, 76, 93). A pink/magenta arrow is drawn from '61' (top-left of the ladder) down to the '60' box, showing the worked example.", "objects": ["10-box ladder (10-100)", "8 scattered numbers", "1 example arrow (61->60)"], "pedagogical_role": "matching exercise linking each 2-digit number to its nearest-ten rounded value", "text_in_image": "61, 33, 42, 27, 65, 97, 85, 76, 93, 10,20,30,40,50,60,70,80,90,100"},
+    {"description": "A horizontal ruler-style number line from 30 to 80 with a tick mark at every single unit (50 minor ticks) and bold labels at every ten (30, 40, 50, 60, 70, 80). Four blue downward-pointing arrows sit above the line at four unlabelled tick positions.", "objects": ["number line 30-80", "4 arrows"], "pedagogical_role": "reads-a-position-off-a-number-line task (inverse of rounding: identify the exact value an arrow points to)", "text_in_image": "30, 40, 50, 60, 70, 80"}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Whole page is a 'Skill Sharpener' block with three numbered exercises: (1) a 3-row boxed number-line rounding drill, (2) a ladder-matching diagram (10-100) with one worked example and 8 numbers to match, (3) a fine-grained 30-80 number line with 4 arrows to read off. This is the last page of the assigned printed range (13-18); the page/chapter continues beyond printed 18. Footer '18' centered at bottom.",
+  "confidence": "high",
+  "flags": ["Arrow positions in exercise 3 required sub-pixel measurement (not printed digits) — measured via two independent pixel-analysis passes (line-extent interpolation vs. tick-index nearest-neighbour) on the 300 DPI render; both passes agreed on 38, 55, 62, 79.", "END OF ASSIGNED BLOCK (printed 13-18). Chapter 1 ('Numberland Adventures: Up to 999') continues to printed 31 (per _toc.json, Chapter 2 starts at printed 32) — a subsequent agent should capture printed 19 onward."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

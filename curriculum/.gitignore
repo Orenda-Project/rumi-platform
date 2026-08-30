@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+# semantic-layer caches written next to a graph.json (regenerable)
+slo_vecs.npy
+semantic_report.json

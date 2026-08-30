@@ -1,0 +1,37 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 34, "printed_page_number": 29,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": ["MCQs", "Fill in the blanks", "Questions"],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 6. Which of the following numbers is the smallest? A) 654 B) 645 C) 456 D) 465 7. In the number 578, what is the value of the digit 5? A) 5 B) 50 C) 500 D) 5000 Fill in the blanks 1. The number before 500 is ___. 2. Seventy-two is written as ___ in numerals. 3. In the number 639, the digit 3 represents ___ tens. 4. 544 rounded to the nearest tens is ___. 5. The Roman numeral for 6 is ___. 6. The number after 998 is ___. 7. The number 745 has ___ hundreds. 8. The number before 450 is ___. 9. The ordinal number for 19 is ___. Questions 1. Circle the object in the 4th position. 1st [ball, pacifier, ABC blocks, diaper, stacking rings, bottle, socks, duck, pram, baby monitor] 2. Arrange these numbers in ascending order. 312 321 231 29",
+  "exercises": [
+    {"label": "MCQ 6", "instruction_verbatim": "Which of the following numbers is the smallest? A) 654 B) 645 C) 456 D) 465",
+     "items": ["A) 654","B) 645","C) 456","D) 465"], "answer_key": "C) 456 (456 < 465 < 645 < 654)", "answer_confidence": "high"},
+    {"label": "MCQ 7", "instruction_verbatim": "In the number 578, what is the value of the digit 5? A) 5 B) 50 C) 500 D) 5000",
+     "items": ["A) 5","B) 50","C) 500","D) 5000"], "answer_key": "C) 500 (5 is in the hundreds place of 578)", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 1", "instruction_verbatim": "The number before 500 is ___.", "items": ["500"], "answer_key": "499", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 2", "instruction_verbatim": "Seventy-two is written as ___ in numerals.", "items": ["seventy-two"], "answer_key": "72", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 3", "instruction_verbatim": "In the number 639, the digit 3 represents ___ tens.", "items": ["639"], "answer_key": "3 (the digit 3 is in the tens place, i.e. it represents 3 tens = 30)", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 4", "instruction_verbatim": "544 rounded to the nearest tens is ___.", "items": ["544"], "answer_key": "540 (544 is closer to 540 than to 550)", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 5", "instruction_verbatim": "The Roman numeral for 6 is ___.", "items": ["6"], "answer_key": "VI", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 6", "instruction_verbatim": "The number after 998 is ___.", "items": ["998"], "answer_key": "999", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 7", "instruction_verbatim": "The number 745 has ___ hundreds.", "items": ["745"], "answer_key": "7 (the digit 7 is in the hundreds place)", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 8", "instruction_verbatim": "The number before 450 is ___.", "items": ["450"], "answer_key": "449", "answer_confidence": "high"},
+    {"label": "Fill in the blanks 9", "instruction_verbatim": "The ordinal number for 19 is ___.", "items": ["19"], "answer_key": "Nineteenth", "answer_confidence": "high"},
+    {"label": "Questions 1 — ordinal position", "instruction_verbatim": "Circle the object in the 4th position.",
+     "items": ["row of 10 baby-item icons, labelled 1st at the ball"],
+     "answer_key": "The 4th item is the diaper/nappy. Position order verified by 300-DPI crop, counted twice: 1st ball, 2nd pacifier, 3rd ABC blocks, 4th diaper, 5th stacking-ring toy, 6th baby bottle, 7th pair of socks, 8th rubber duck, 9th pram/stroller, 10th baby monitor. Both counting passes agreed (10 items, diaper at position 4).",
+     "answer_confidence": "high"},
+    {"label": "Questions 2 — ascending order", "instruction_verbatim": "Arrange these numbers in ascending order. 312 321 231", "items": ["312","321","231"],
+     "answer_key": "231, 312, 321", "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "A horizontal row of 10 baby-related item icons, labelled '1st' above the first item (a striped yellow-and-green ball). In order left-to-right: (1) yellow/green striped ball, (2) yellow-and-green baby pacifier/dummy, (3) three alphabet blocks stacked spelling 'A/B/C' (orange, red, green), (4) a light-blue baby diaper/nappy with a red waistband and a white flower print, (5) a stacking-ring toy (red base, then green, light-blue, yellow, and a small green ball on top), (6) a light-blue baby bottle with a green nipple/cap, (7) a pair of green-and-yellow baby socks bundled together, (8) a yellow rubber duck facing left with an orange/red beak, (9) a yellow baby pram/stroller with a red-and-cream striped canopy on green wheels, (10) a red baby monitor/walkie-talkie with a black antenna and green buttons.", "objects": ["ball","pacifier","alphabet blocks","diaper","stacking rings","bottle","socks","rubber duck","pram","baby monitor"], "pedagogical_role": "ordinal-position identification exercise (1st-10th)", "text_in_image": "1st (label above the ball); A, B, C (on the blocks)", "counts": {"total_items": 10}, "count_method": "300dpi-crop-double-count of the full row", "count_verified": {"count_pass_1": 10, "count_pass_2": 10, "agreement": true, "position_4_item": "diaper/nappy"}}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Continuation of 'MCQs' (Q6-7, no heading repeated) from the Mastery Challenge started on p.28, followed by bold 'Fill in the blanks' heading with 9 numbered fill-in items, then bold 'Questions' heading starting a 2-part question (Q1: ordinal-position circling task with the 10-item icon row; Q2: ascending-order task with 3 given numbers, unfinished — continues as Q3 onward on printed p.30). Footer '29' centered at bottom.",
+  "confidence": "high",
+  "flags": ["'Questions' section spans printed pp.29-30: Q1-Q2 here, Q3-Q8 on p.30 — numbering verified continuous and non-duplicated across the two pages."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}

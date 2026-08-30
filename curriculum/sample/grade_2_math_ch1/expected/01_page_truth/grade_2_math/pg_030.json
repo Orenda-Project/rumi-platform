@@ -1,0 +1,35 @@
+{
+  "book_stem": "grade_2_math", "subject": "Math", "grade": 2, "medium": "en", "language": "en",
+  "pdf_page_index": 35, "printed_page_number": 30,
+  "page_type": "content",
+  "chapter": {"number": 1, "title": "Numberland Adventures: Up to 999"},
+  "headings": [],
+  "text_verbatim": "Chapter 1 Numberland Adventures: Up to 999 3. Arrange the numbers 123, 132, 213, 231, 312, and 321 in descending order. 4. Which object is in the 7th position? 1st [ball, pacifier, ABC blocks, diaper, stacking rings, bottle, socks, duck, pram] 5. Which of these numbers has the digit 5 in the hundreds place? 325 525 357 6. Fill in the blank with <, >, or =. a. 245 ___ 241 b. 879 ___ 798 c. 654 ___ 534 d. 924 ___ 924 7. Bunty has 745 marbles, and Babloo has 763 marbles. Who has more marbles? ___ 8. Use the number line to round 294 to the nearest 10. 290 295 300 30",
+  "exercises": [
+    {"label": "Questions 3 — descending order", "instruction_verbatim": "Arrange the numbers 123, 132, 213, 231, 312, and 321 in descending order.",
+     "items": ["123","132","213","231","312","321"], "answer_key": "321, 312, 231, 213, 132, 123", "answer_confidence": "high"},
+    {"label": "Questions 4 — ordinal position", "instruction_verbatim": "Which object is in the 7th position?",
+     "items": ["row of 9 baby-item icons, labelled 1st at the ball"],
+     "answer_key": "The 7th item is the pair of socks. Position order verified by 300-DPI crop, counted twice: 1st ball, 2nd pacifier, 3rd ABC blocks, 4th diaper, 5th stacking-ring toy, 6th baby bottle, 7th pair of socks, 8th rubber duck, 9th pram/stroller. Both counting passes agreed (9 items, socks at position 7).",
+     "answer_confidence": "high"},
+    {"label": "Questions 5 — hundreds-place digit", "instruction_verbatim": "Which of these numbers has the digit 5 in the hundreds place? 325 525 357",
+     "items": ["325","525","357"], "answer_key": "525 (the only one of the three with 5 as the hundreds digit)", "answer_confidence": "high"},
+    {"label": "Questions 6 — compare with <, >, =", "instruction_verbatim": "Fill in the blank with <, >, or =. a. 245 ___ 241 b. 879 ___ 798 c. 654 ___ 534 d. 924 ___ 924",
+     "items": ["a. 245 ___ 241","b. 879 ___ 798","c. 654 ___ 534","d. 924 ___ 924"],
+     "answer_key": "a. 245 > 241; b. 879 > 798; c. 654 > 534; d. 924 = 924", "answer_confidence": "high"},
+    {"label": "Questions 7 — word problem comparison", "instruction_verbatim": "Bunty has 745 marbles, and Babloo has 763 marbles. Who has more marbles?",
+     "items": ["745 vs 763"], "answer_key": "Babloo has more marbles (763 > 745)", "answer_confidence": "high"},
+    {"label": "Questions 8 — rounding via number line", "instruction_verbatim": "Use the number line to round 294 to the nearest 10.",
+     "items": ["294 on a number line marked 290-300, midpoint 295 highlighted"],
+     "answer_key": "290 (294 is 4 units from 290 and 6 units from 300, and lies below the 295 midpoint marker, so it rounds down to 290)", "answer_confidence": "high"}
+  ],
+  "illustrations": [
+    {"description": "A horizontal row of 9 baby-related item icons, labelled '1st' above the first item (a striped yellow-and-green ball) — the same icon set as printed p.29's row but with the 10th item (the red baby monitor) removed. In order left-to-right: (1) ball, (2) pacifier, (3) ABC alphabet blocks, (4) diaper/nappy, (5) stacking-ring toy, (6) baby bottle, (7) pair of green-and-yellow socks, (8) yellow rubber duck, (9) yellow baby pram/stroller.", "objects": ["ball","pacifier","alphabet blocks","diaper","stacking rings","bottle","socks","rubber duck","pram"], "pedagogical_role": "ordinal-position identification exercise (1st-9th)", "text_in_image": "1st (label above the ball); A, B, C (on the blocks)", "counts": {"total_items": 9}, "count_method": "300dpi-crop-double-count of the full row", "count_verified": {"count_pass_1": 9, "count_pass_2": 9, "agreement": true, "position_7_item": "pair of socks"}},
+    {"description": "A horizontal number line with 11 evenly spaced tick marks, labelled '290' under the leftmost tick and '300' under the rightmost tick, with a pink/magenta '295' label highlighted in bold under the middle tick (the 5th interval mark, exactly halfway between 290 and 300).", "objects": ["number line", "tick marks", "290 label", "295 label (highlighted pink)", "300 label"], "pedagogical_role": "visual rounding aid — the highlighted 295 midpoint helps the student see whether 294 falls in the 'round down to 290' or 'round up to 300' half of the interval", "text_in_image": "290, 295 (pink), 300", "counts": {"tick_marks": 11, "interval_from_290_to_300": 10}, "count_method": "300dpi-crop-double-count of tick marks", "count_verified": {"count_pass_1": 11, "count_pass_2": 11, "agreement": true}}
+  ],
+  "tables": [],
+  "visual_layout_notes": "Continuation of the 'Questions' section (heading not reprinted on this page) begun on printed p.29, running Q3 through Q8: a descending-order task, an ordinal-position task (9-item icon row, same set as p.29 minus the baby monitor), a hundreds-digit identification task, a 4-part comparison-symbol task, a marbles word problem, and a number-line rounding task closing the chapter's practice block. Footer '30' centered at bottom. This is the final page of the assigned block (printed 25-30); Chapter 1 'Numberland Adventures: Up to 999' continues beyond p.30 (per _toc.json, Chapter 2 'Add-It-Up Island' starts at printed p.32, so p.31 is still Chapter 1 — not captured in this block).",
+  "confidence": "high",
+  "flags": ["END OF ASSIGNED BLOCK (printed pp.25-30). Chapter 1 continues to printed p.31 (per toc, Ch.2 starts printed p.32) — not yet captured; a later agent should pick up printed p.31 onward."],
+  "described_by": "pagetruth-agent", "described_at": "2026-08-01"
+}
