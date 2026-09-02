@@ -281,7 +281,97 @@ function classSetupFlow() {
   };
 }
 
-const BUILDERS = [studentVideosFlow, settingsFlow, readingAssessmentFlow, classSetupFlow];
+// ── attendance-mark: tap-to-mark absentees, degraded to one free-text reply ──
+//
+// The Meta Flow for this (docs/flows/attendance-marking-flow.json) is a
+// CheckboxGroup over the roster — there's no text equivalent for a real
+// checkbox list, so this collects the same information as one free-text
+// reply instead: the roster is listed by number in the prompt, and the
+// teacher replies with the numbers of absent students (or "none").
+// Synthesises the exact { absent_students, flow_token, class_name,
+// date_display, session_type } response_json shape flow-type-detector.js /
+// AttendanceFlowHandler already expect from a real Flow submission, so
+// whatsapp-bot.js's existing attendance_marking dispatch
+// (FlowResponseHandler.handleAttendanceMarkingFlow) runs completely
+// unchanged — no new server-side attendance logic needed here at all.
+//
+// The roster itself isn't collected from the teacher — it's already sitting
+// in AttendanceConversationService's Redis session (populated by
+// handleMarkingMethodSelection's 'tap' branch), read here by userId exactly
+// like the Slack/Discord tap-to-mark screens do.
+function parseAbsentAttendanceReply(reply, students) {
+  const trimmed = String(reply || '').trim().toLowerCase();
+  const noneKeywords = ['none', 'no one', 'nobody', 'everyone present', 'everyone is here', 'all present'];
+  if (!trimmed || noneKeywords.includes(trimmed)) return [];
+
+  const numbers = trimmed.match(/\d+/g) || [];
+  const ids = [];
+  for (const numStr of numbers) {
+    const index = parseInt(numStr, 10) - 1;
+    if (students[index]) ids.push(students[index].id);
+  }
+  return ids;
+}
+
+function attendanceMarkingFlow() {
+  return {
+    kind: 'attendance-mark',
+    steps: [
+      {
+        id: 'absent_students',
+        freeText: true,
+        prompt: async (answers, context) => {
+          const userId = context?._ctx?.userId;
+          // eslint-disable-next-line global-require -- pulls in redis; load on use
+          const AttendanceConversationService = require('../attendance-conversation.service');
+          const sessionState = await AttendanceConversationService.getSessionState(userId);
+          const students = sessionState?.students || [];
+          const classDisplay = sessionState?.selectedClass
+            ? AttendanceConversationService.formatClassDisplayName(sessionState.selectedClass)
+            : 'your class';
+
+          if (students.length === 0) {
+            return { header: '📋 Mark Attendance', body: `${classDisplay} has no students yet. Say "add class" to add students before marking attendance.` };
+          }
+
+          const roster = students.map((s, i) => `${i + 1}. ${s.student_name}`).join('\n');
+          return {
+            header: '📋 Mark Attendance',
+            body: `${roster}\n\nWho's absent in ${classDisplay} today?\n\nReply with the numbers, separated by commas (e.g. "2, 5"), or "none" if everyone is present.`,
+          };
+        },
+      },
+    ],
+    async onComplete(phone, answers, context) {
+      const userId = context?._ctx?.userId;
+      // eslint-disable-next-line global-require -- see above
+      const AttendanceConversationService = require('../attendance-conversation.service');
+      const sessionState = await AttendanceConversationService.getSessionState(userId);
+      const students = sessionState?.students || [];
+
+      if (!sessionState || students.length === 0) {
+        return { text: 'No attendance session found. Say "attendance" to start again.' };
+      }
+
+      const absentIds = parseAbsentAttendanceReply(answers.absent_students?.title, students);
+      const today = sessionState.selectedDate || new Date().toISOString().split('T')[0];
+      const sessionType = sessionState.sessionType || 'full_day';
+      const className = sessionState.selectedClass?.class_name || 'Class';
+      const flowToken = `${userId}:${sessionState.selectedListId}:${today}:${sessionType}:${encodeURIComponent(className)}`;
+
+      const responseJson = {
+        flow_token: flowToken,
+        absent_students: absentIds,
+        class_name: className,
+        date_display: today,
+        session_type: sessionType,
+      };
+      return { metaMessage: toNfmReply('attendance_marking', responseJson) };
+    },
+  };
+}
+
+const BUILDERS = [studentVideosFlow, settingsFlow, readingAssessmentFlow, classSetupFlow, attendanceMarkingFlow];
 
 /**
  * Registers every text flow. Idempotent (register() overwrites by kind), and
@@ -331,6 +421,7 @@ module.exports = {
   ensureRegistered,
   _resetForTests,
   toNfmReply,
+  parseAbsentAttendanceReply,
   ATTENDANCE_FREQUENCIES,
   READING_LANGUAGES,
   READING_MODES,

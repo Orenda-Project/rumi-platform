@@ -108,6 +108,62 @@ function registerAll() {
   // exam_confirm onFinish verbatim), looking the session back up by id to
   // recover the userId/from ExamCheckerOrchestrator.process() needs (ctx only
   // carries the session id as flowToken).
+  // attendance_mark's flowToken is a normal buildFlowToken() mint (unlike
+  // exam_confirm's session-id exception below) — the roster it needs comes
+  // from AttendanceConversationService's Redis session (keyed by userId,
+  // already populated by handleMarkingMethodSelection's 'tap' branch), not
+  // from anything carried in the flowToken itself.
+  //
+  // onFinish drives the real side effects on the terminal SUCCESS screen:
+  // DMs the confirmation, then hands off to AttendanceDeliveryService for
+  // Excel generation/upload/delivery + DB persistence, exactly like the
+  // WhatsApp Flow path (flow-response.handler.js's ATTENDANCE_MARKING_FLOW_ID
+  // branch) does after AttendanceFlowHandler.handleMarkingFlowSubmission.
+  // Session state is always cleared afterward, success or failure, matching
+  // text-message.handler.js's GENERATE_ATTENDANCE branch (never leave the
+  // conversation stuck in PROCESSING).
+  const attendanceMarking = require('./attendance-marking-endpoint');
+  const attendanceMarkingView = require('./slack-views/attendance-marking.view');
+  register('attendance_mark', buildEndpointModal({
+    kind: 'attendance_mark',
+    init: (ctx) => attendanceMarking.handleMarkingInit(ctx.userId),
+    exchange: (ctx, screen, screenData) => attendanceMarking.handleMarkingExchange(ctx.userId, screen, screenData),
+    screenToView: attendanceMarkingView.screenToView,
+    viewToScreenData: attendanceMarkingView.viewToScreenData,
+    firstInputBlockId: attendanceMarkingView.FIRST_INPUT_BLOCK_ID,
+    onFinish: async (response, ctx) => {
+      const { success_message: success, selectedClass, selectedListId, records, stats, sessionDate, sessionType } = response.data || {};
+      if (success) await slackWebClient.postMessage(ctx.slackUserId, success);
+
+      const AttendanceDeliveryService = require('../services/attendance-delivery.service');
+      const AttendanceConversationService = require('../services/attendance-conversation.service');
+      const { prefixFor } = require('../services/messaging/channel-registry');
+      const recipientIdentifier = `${prefixFor('slack')}:${ctx.slackUserId}`;
+
+      try {
+        const deliveryResult = await AttendanceDeliveryService.processAndDeliver(ctx.userId, recipientIdentifier, {
+          selectedClass,
+          selectedListId,
+          records,
+          markingMethod: 'tap',
+          summary: {
+            present: stats?.present,
+            absent: stats?.absent,
+            attendancePercentage: parseFloat(stats?.attendanceRate) || 0,
+          },
+          sessionDate,
+          sessionType,
+        });
+
+        if (!deliveryResult.success && !deliveryResult.isDuplicate) {
+          await slackWebClient.postMessage(ctx.slackUserId, `Sorry, there was an error generating your attendance file: ${deliveryResult.error}`);
+        }
+      } finally {
+        await AttendanceConversationService.clearSessionState(ctx.userId);
+      }
+    },
+  }));
+
   const examConfirm = require('./exam-confirm-endpoint');
   const examConfirmView = require('./slack-views/exam-confirm.view');
   register('exam_confirm', buildEndpointModal({

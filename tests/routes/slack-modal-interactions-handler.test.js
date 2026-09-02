@@ -111,6 +111,23 @@ describe('handleOpenModal', () => {
     expect(handled).toBe(true);
   });
 
+  // Regression: buildInitialView returns null when the endpoint's init()
+  // itself errored (e.g. attendance_mark with no active session) — it
+  // already DMed the teacher itself in that case, so there's no view left to
+  // open. Calling openView(trigger_id, null) would be a second, spurious
+  // failure on top of the real one; this must be skipped instead.
+  it('skips openView when buildInitialView returns null (init() already handled its own error)', async () => {
+    const renderer = { buildInitialView: jest.fn().mockResolvedValue(null) };
+    const { handler, slackWebClient } = loadHandler({ renderer });
+
+    const handled = await handler.handleOpenModal({
+      trigger_id: 'trigger-999', user: { id: 'U0123ABC' }, actions: [{ action_id: 'open_modal:attendance_mark' }],
+    });
+
+    expect(handled).toBe(true);
+    expect(slackWebClient.openView).not.toHaveBeenCalled();
+  });
+
   it('exam_confirm: uses the embedded sessionId directly as flowToken, never calling buildFlowToken or getOrCreateUserByChannel', async () => {
     const renderer = { buildInitialView: jest.fn().mockResolvedValue({ type: 'modal' }) };
     const { handler, getOrCreateUserByChannel, slackWebClient, flowRegistry } = loadHandler({ renderer });
@@ -180,9 +197,18 @@ describe('handleAttendanceFinish', () => {
     expect(handled).toBe(true);
     expect(handleDoneAction).toHaveBeenCalledWith('list-1', 'Grade 3 - A');
     expect(slackWebClient.postMessage).toHaveBeenCalledWith('U0123ABC', 'Class ready with 2 students.');
+    // Regression: a real success DM used to leave the stale ADD_STUDENT
+    // modal open behind it, looking broken even though the DM landed. The
+    // modal itself must now also reflect completion.
+    expect(slackWebClient.updateView).toHaveBeenCalledWith('V0123VIEW', expect.objectContaining({
+      title: expect.objectContaining({ text: 'All set!' }),
+      blocks: expect.arrayContaining([
+        expect.objectContaining({ block_id: 'success_block', text: expect.objectContaining({ text: 'Class ready with 2 students.' }) }),
+      ]),
+    }));
   });
 
-  it('reopens ADD_STUDENT with the error when handleDoneAction rejects (no students added yet)', async () => {
+  it('reopens ADD_STUDENT with the error VISIBLE when handleDoneAction rejects (no students added yet)', async () => {
     const handleDoneAction = jest.fn().mockResolvedValue({
       screen: 'ADD_STUDENT',
       data: { list_id: 'list-1', class_display: 'Grade 3 - A', heading: 'Add Student #1', error: { message: 'Please add at least one student.' } },
@@ -203,7 +229,17 @@ describe('handleAttendanceFinish', () => {
 
     expect(handled).toBe(true);
     expect(slackWebClient.postMessage).not.toHaveBeenCalled();
-    expect(slackWebClient.updateView).toHaveBeenCalledWith('V0123VIEW', expect.objectContaining({ title: expect.objectContaining({ text: 'Add Student #1' }) }));
+    // Regression: the title alone was never enough — the reopened view used
+    // to be pixel-identical to before because attendance.view.js never
+    // rendered data.error into any block, so this same title assertion
+    // passed even while the bug was live. Assert the error text itself
+    // actually appears in the re-rendered modal's blocks.
+    expect(slackWebClient.updateView).toHaveBeenCalledWith('V0123VIEW', expect.objectContaining({
+      title: expect.objectContaining({ text: 'Add Student #1' }),
+      blocks: expect.arrayContaining([
+        expect.objectContaining({ block_id: 'add_student_error_block', text: expect.objectContaining({ text: '⚠️ Please add at least one student.' }) }),
+      ]),
+    }));
   });
 
   it('does not throw if handleDoneAction itself throws', async () => {

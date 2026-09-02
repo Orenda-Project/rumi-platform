@@ -127,7 +127,9 @@ async function handleOpenModal(payload) {
 
   try {
     const view = await renderer.buildInitialView(ctx);
-    await slackWebClient.openView(payload.trigger_id, view);
+    // null means buildInitialView already handled an init() error itself
+    // (DMed the teacher — see slack-modal-flow.js) — nothing left to open.
+    if (view) await slackWebClient.openView(payload.trigger_id, view);
   } catch (error) {
     logToFile('❌ Slack modal: failed to open initial view', { kind, error: error.message, stack: error.stack });
   }
@@ -163,6 +165,13 @@ async function handleAttendanceFinish(payload) {
     const response = await attendance.handleDoneAction(carry?.list_id, carry?.class_display);
     if (response?.data?.success_message) {
       await slackWebClient.postMessage(ctx.slackUserId, response.data.success_message);
+      // Also reflect completion in the modal itself — leaving it on the
+      // stale ADD_STUDENT form made a real success DM look like nothing
+      // happened (the teacher had to separately notice the DM).
+      const attendanceView = require('./slack-views/attendance.view');
+      const metadata = JSON.stringify({ kind: 'attendance', screen: 'SUCCESS', flowToken });
+      const view = attendanceView.screenToView('SUCCESS', response.data, { ...ctx, metadata });
+      await slackWebClient.updateView(payload.view.id, view);
     } else if (response?.data?.error && response.screen) {
       // Still needs at least one student — reopen ADD_STUDENT with the error,
       // via the SAME screenToView() the ordinary submission path uses (its

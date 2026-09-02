@@ -29,6 +29,28 @@ jest.mock('../../bot/shared/routes/attendance-setup-endpoint', () => ({
   })),
   handleDoneAction: jest.fn(async () => ({ screen: 'SUCCESS', data: { success_message: 'Class ready with 3 students.' } })),
 }));
+jest.mock('../../bot/shared/routes/attendance-marking-endpoint', () => ({
+  handleMarkingInit: jest.fn(async () => ({
+    screen: 'MARK_ABSENT',
+    data: { class_display: 'Grade 3 - A', students: [{ id: 's1', title: 'Zara Abdul' }] },
+  })),
+  handleMarkingExchange: jest.fn(async () => ({
+    screen: 'SUCCESS',
+    data: {
+      success_message: 'Attendance Recorded — Present: 1, Absent: 0',
+      selectedClass: { class_name: 'Grade 3', section: 'A' },
+      selectedListId: 'list-1',
+      records: [{ studentId: 's1', studentName: 'Zara Abdul', status: 'present', confidence: 1 }],
+      stats: { total: 1, present: 1, absent: 0, attendanceRate: '100%' },
+    },
+  })),
+}));
+jest.mock('../../bot/shared/services/attendance-delivery.service', () => ({
+  processAndDeliver: jest.fn(async () => ({ success: true, sessionId: 'sess-1' })),
+}));
+jest.mock('../../bot/shared/services/attendance-conversation.service', () => ({
+  clearSessionState: jest.fn(async () => true),
+}));
 jest.mock('../../bot/shared/routes/exam-confirm-endpoint', () => ({
   handleExamConfirmInit: jest.fn(async () => ({
     screen: 'CONFIRM_STUDENTS',
@@ -178,7 +200,68 @@ describe('slack-flow-registry', () => {
     });
   });
 
-  describe('exam_confirm renderer', () => {
+  describe('attendance_mark renderer', () => {
+  it('is registered alongside registration/settings/attendance/exam_confirm', () => {
+    const registry = load();
+    registry.ensureRegistered();
+    expect(registry.get('attendance_mark')).toBeTruthy();
+  });
+
+  it('calls handleMarkingInit with the resolved userId on buildInitialView', async () => {
+    const registry = load();
+    registry.ensureRegistered();
+    const { handleMarkingInit } = require('../../bot/shared/routes/attendance-marking-endpoint');
+
+    const renderer = registry.get('attendance_mark');
+    await renderer.buildInitialView({ userId: 'u1', flowToken: 'u1:attendance_mark:169' });
+
+    expect(handleMarkingInit).toHaveBeenCalledWith('u1');
+  });
+
+  it('onFinish DMs the success message, then hands off to AttendanceDeliveryService with a slack:-prefixed recipient', async () => {
+    const registry = load();
+    registry.ensureRegistered();
+    const slackWebClient = require('../../bot/shared/services/messaging/slack-web-client');
+    const AttendanceDeliveryService = require('../../bot/shared/services/attendance-delivery.service');
+    const AttendanceConversationService = require('../../bot/shared/services/attendance-conversation.service');
+
+    const renderer = registry.get('attendance_mark');
+    const ctx = { userId: 'u1', flowToken: 'u1:attendance_mark:169', slackUserId: 'U0123ABC' };
+    const result = await renderer.handleSubmission(ctx, 'MARK_ABSENT', {
+      absent_students_block: { absent_students: { selected_options: [] } },
+    });
+
+    expect(result).toEqual({ response_action: 'clear' });
+    expect(slackWebClient.postMessage).toHaveBeenCalledWith('U0123ABC', 'Attendance Recorded — Present: 1, Absent: 0');
+    expect(AttendanceDeliveryService.processAndDeliver).toHaveBeenCalledWith('u1', 'slack:U0123ABC', expect.objectContaining({
+      selectedListId: 'list-1',
+      markingMethod: 'tap',
+      records: [{ studentId: 's1', studentName: 'Zara Abdul', status: 'present', confidence: 1 }],
+      summary: { present: 1, absent: 0, attendancePercentage: 100 },
+    }));
+    expect(AttendanceConversationService.clearSessionState).toHaveBeenCalledWith('u1');
+  });
+
+  it('onFinish posts an error message and still clears session state when delivery fails', async () => {
+    const registry = load();
+    registry.ensureRegistered();
+    const AttendanceDeliveryService = require('../../bot/shared/services/attendance-delivery.service');
+    AttendanceDeliveryService.processAndDeliver.mockResolvedValueOnce({ success: false, error: 'R2 upload failed' });
+    const slackWebClient = require('../../bot/shared/services/messaging/slack-web-client');
+    const AttendanceConversationService = require('../../bot/shared/services/attendance-conversation.service');
+
+    const renderer = registry.get('attendance_mark');
+    const ctx = { userId: 'u1', flowToken: 'u1:attendance_mark:169', slackUserId: 'U0123ABC' };
+    await renderer.handleSubmission(ctx, 'MARK_ABSENT', {
+      absent_students_block: { absent_students: { selected_options: [] } },
+    });
+
+    expect(slackWebClient.postMessage).toHaveBeenCalledWith('U0123ABC', expect.stringContaining('R2 upload failed'));
+    expect(AttendanceConversationService.clearSessionState).toHaveBeenCalledWith('u1');
+  });
+});
+
+describe('exam_confirm renderer', () => {
     it('calls handleExamConfirmInit with the session id passed as flowToken (not a minted token)', async () => {
       const registry = load();
       registry.ensureRegistered();

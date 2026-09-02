@@ -1533,6 +1533,21 @@ async function handleTextMessage(message, from, messageBody, user = null) {
 
         let result;
 
+        // A fresh attendance trigger ("attendance", "حاضری", ...) sent while
+        // already mid-flow means the teacher wants to start over, not answer
+        // whatever state-specific prompt is pending — without this, a stuck
+        // or half-abandoned session (e.g. a channel that silently dropped a
+        // step) has no way back in except explicitly typing "cancel" first,
+        // and instead gets misread as an answer to that prompt (e.g.
+        // AWAITING_VERIFICATION's yes/edit/cancel check). Excluded from
+        // PROCESSING, which already has its own wait/timeout handling and
+        // shouldn't be interrupted mid-generation by this.
+        const attendanceRetrigger = AttendanceDetectorService.detectAttendanceIntent(messageBody);
+        if (sessionState.state !== AttendanceConversationService.STATES.PROCESSING && attendanceRetrigger.detected) {
+          logToFile('📋 Attendance trigger received mid-session, restarting', { userId: user.id, previousState: sessionState.state });
+          await AttendanceConversationService.clearSessionState(user.id);
+          result = await AttendanceConversationService.startAttendanceSession(user.id);
+        } else {
         // Route based on current state
         switch (sessionState.state) {
           case AttendanceConversationService.STATES.AWAITING_CLASS_SELECTION:
@@ -1611,6 +1626,7 @@ async function handleTextMessage(message, from, messageBody, user = null) {
               message: 'Something went wrong with attendance. Say "attendance" to start again.'
             };
         }
+        }
 
         typingController.stop();
 
@@ -1620,8 +1636,24 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         } else if (result.action === 'AWAIT_VOICE_INPUT' || result.action === 'PROMPT_VOICE') {
           await WhatsAppService.sendMessage(from, result.message);
         } else if (result.action === 'SEND_MARKING_FLOW') {
-          // Send the WhatsApp Flow for marking attendance (encryption endpoint implemented)
-          if (ATTENDANCE_MARKING_FLOW_ID) {
+          // Slack has a real Flow-equivalent (attendance_mark's checkbox
+          // modal — see slack-flow-registry.js), not sendFlow()'s Meta/
+          // Baileys-shaped {flowId, flowToken} contract. Same
+          // driverForIdentifier() branch shape as the addClassDetection
+          // block below and /settings above. The roster this modal needs
+          // is already sitting in the Redis session handleMarkingMethodSelection
+          // just saved — the modal's own INIT reads it back by userId.
+          if (driverForIdentifier(from) === 'slack') {
+            await WhatsAppService.sendInteractiveButtons(from, {
+              body: result.message,
+              buttons: [{ id: 'open_modal:attendance_mark', title: 'Mark Attendance' }],
+            });
+          } else if (driverForIdentifier(from) === 'discord') {
+            await WhatsAppService.sendInteractiveButtons(from, {
+              body: result.message,
+              buttons: [{ id: 'discord_start_flow:attendance_mark', title: 'Mark Attendance' }],
+            });
+          } else {
             const sessionState = await AttendanceConversationService.getSessionState(user.id);
             const today = new Date().toISOString().split('T')[0];
             // Flow token format: userId:classId:date:sessionType:className - all data for response handling
@@ -1632,8 +1664,17 @@ async function handleTextMessage(message, from, messageBody, user = null) {
             // Dynamic header with class + section (e.g., "5A Attendance")
             const displayName = section ? `${className}${section}` : className;
 
-            await WhatsAppService.sendFlow(from, {
+            // Baileys has no real Flow support at all — sendFlow() degrades
+            // to the 'attendance-mark' text-flow definition
+            // (text-flow-definitions.js) via flowKind, exactly like
+            // class-setup's own sendFlow() call above already does. Meta
+            // simply ignores flowKind and uses flowId for the real Flow.
+            // Called unconditionally (not gated behind ATTENDANCE_MARKING_FLOW_ID)
+            // so Baileys gets tap-to-mark even with no Meta Flow registered —
+            // the boolean return value decides whether to fall back.
+            const markingSent = await WhatsAppService.sendFlow(from, {
               flowId: ATTENDANCE_MARKING_FLOW_ID,
+              flowKind: 'attendance-mark',
               header: `📋 ${displayName} Attendance`,
               body: result.message,
               buttonText: 'Mark Attendance',
@@ -1641,17 +1682,19 @@ async function handleTextMessage(message, from, messageBody, user = null) {
               // The endpoint determines first screen via INIT response
               flowToken: flowToken
             });
-            logToFile('📋 Sent attendance marking flow', {
-              userId: user.id,
-              flowId: ATTENDANCE_MARKING_FLOW_ID,
-              classId: sessionState?.selectedListId,
-              studentCount: result.students?.length,
-              className: className
-            });
-          } else {
-            // Fallback if flow not configured
-            await WhatsAppService.sendMessage(from, 'The marking form is not configured. Please use voice marking instead.\n\nSay something like: "Everyone is here except Ali and Sara"');
-            logToFile('⚠️ ATTENDANCE_MARKING_FLOW_ID not configured', { userId: user.id });
+
+            if (markingSent) {
+              logToFile('📋 Sent attendance marking flow', {
+                userId: user.id,
+                flowId: ATTENDANCE_MARKING_FLOW_ID,
+                classId: sessionState?.selectedListId,
+                studentCount: result.students?.length,
+                className: className
+              });
+            } else {
+              await WhatsAppService.sendMessage(from, 'The marking form is not configured. Please use voice marking instead.\n\nSay something like: "Everyone is here except Ali and Sara"');
+              logToFile('⚠️ Attendance marking flow unavailable on this channel', { userId: user.id });
+            }
           }
         } else if (result.action === 'GENERATE_ATTENDANCE') {
           // Send initial "generating" message

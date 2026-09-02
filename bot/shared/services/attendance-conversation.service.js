@@ -731,6 +731,20 @@ class AttendanceConversationService {
           };
         }
 
+        // An empty array is truthy — `!students` above does NOT catch a real
+        // class with zero students added yet (e.g. one where setup was
+        // abandoned right after CLASS_INFO, before any ADD_STUDENT step).
+        // Without this, a session gets saved with students: [], and the
+        // channel-specific marking screen later has to guess why its roster
+        // is empty — surfacing as a confusing "no session found" instead of
+        // the real, actionable reason.
+        if (students.length === 0) {
+          return {
+            action: 'ERROR',
+            message: `${this.formatClassDisplayName(sessionState.selectedClass)} has no students yet. Say "add class" to add students before marking attendance.`
+          };
+        }
+
         await this.saveSessionState(userId, {
           ...sessionState,
           state: STATES.AWAITING_VERIFICATION, // Will receive flow response
@@ -780,6 +794,15 @@ class AttendanceConversationService {
         return {
           action: 'ERROR',
           message: 'Sorry, could not load students. Please try again.'
+        };
+      }
+
+      // Same empty-array gap as the tap branch above — `!students` doesn't
+      // catch a real class with zero students added yet.
+      if (students.length === 0) {
+        return {
+          action: 'ERROR',
+          message: `${this.formatClassDisplayName(sessionState.selectedClass)} has no students yet. Say "add class" to add students before marking attendance.`
         };
       }
 

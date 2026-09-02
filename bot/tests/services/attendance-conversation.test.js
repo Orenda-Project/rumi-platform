@@ -246,6 +246,23 @@ describe('AttendanceConversationService', () => {
 
       expect(result.action).toBe('AWAIT_VOICE_INPUT');
     });
+
+    // Regression: confirmed live — a real class can exist with zero students
+    // (e.g. setup abandoned right after CLASS_INFO, before ADD_STUDENT). An
+    // empty array is truthy, so the pre-existing `!students` check let this
+    // through, saving a session with students: [] and leaving the
+    // channel-specific marking screen to fail later with a confusing
+    // "no session found" instead of the real, actionable reason.
+    it('should reject tap-to-mark with a clear message when the class has zero students', async () => {
+      mockStudentListService.getStudentsByList.mockResolvedValue({ data: [], error: null });
+
+      const result = await AttendanceConversationService.handleMarkingMethodSelection('user-123', 'tap');
+
+      expect(result.action).toBe('ERROR');
+      expect(result.message).toContain('Grade 4 - A');
+      expect(result.message).toContain('no students yet');
+      expect(mockRedis.set).not.toHaveBeenCalled(); // never saves a dead-end empty-roster session
+    });
   });
 
   describe('formatClassDisplayName', () => {
@@ -349,6 +366,23 @@ describe('AttendanceConversationService', () => {
 
       expect(result.action).toBe('GENERATE_ATTENDANCE');
       expect(result.records.every(r => r.status === 'present')).toBe(true);
+    });
+
+    it('should reject "everyone present" with a clear message when the class has zero students', async () => {
+      const sessionState = {
+        state: 'AWAITING_MARKING_METHOD',
+        userId: 'user-123',
+        selectedListId: 'list-1',
+        selectedClass: { id: 'list-1', class_name: 'Grade 4', section: 'A' }
+      };
+      mockRedis.get.mockResolvedValue(JSON.stringify(sessionState));
+      mockStudentListService.getStudentsByList.mockResolvedValue({ data: [], error: null });
+
+      const result = await AttendanceConversationService.handleEveryonePresent('user-123');
+
+      expect(result.action).toBe('ERROR');
+      expect(result.message).toContain('no students yet');
+      expect(mockRedis.set).not.toHaveBeenCalled();
     });
   });
 

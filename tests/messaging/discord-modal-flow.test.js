@@ -45,13 +45,20 @@ function mockDiscordBuilders() {
   }), { virtual: true });
 }
 
+function mockDiscordChannel() {
+  const discordChannel = { sendMessage: jest.fn().mockResolvedValue(true) };
+  jest.doMock('../../bot/shared/services/messaging/discord-channel.service', () => discordChannel);
+  return discordChannel;
+}
+
 function loadModule() {
   jest.resetModules();
   jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
   const redis = mockRedis();
   mockDiscordBuilders();
+  const discordChannel = mockDiscordChannel();
   const mod = require('../../bot/shared/services/messaging/discord-modal-flow');
-  return { mod, redis };
+  return { mod, redis, discordChannel };
 }
 
 afterEach(() => jest.resetModules());
@@ -234,6 +241,28 @@ describe('buildEndpointModal', () => {
   it('throws if required config is missing', () => {
     const { mod } = loadModule();
     expect(() => mod.buildEndpointModal({})).toThrow(/needs \{ kind, init, exchange/);
+  });
+
+  // Regression: an endpoint whose init() depends on state a prior async step
+  // must have already populated (attendance_mark's Redis roster is the real
+  // example) can legitimately return {data: {error}} with no screen. Without
+  // this check, startFlow called runScreen(ctx, trigger, undefined, ...),
+  // which called screenToSteps(undefined, ...) and threw BEFORE ever acking
+  // the triggering interaction — confirmed live: Discord showed "the
+  // application didn't respond in time" on every attempt.
+  it('startFlow acks the trigger and sends the error message when init() returns an error with no screen, without ever calling runScreen', async () => {
+    const { mod, discordChannel } = loadModule();
+    const init = jest.fn().mockResolvedValue({ data: { error: { message: 'No attendance session found. Say "attendance" to start again.' } } });
+    const screenToSteps = jest.fn();
+    const renderer = mod.buildEndpointModal({ kind: 'attendance_mark', init, exchange: jest.fn(), screenToSteps, mergeScreenData: jest.fn() });
+    const trigger = fakeTriggerInteraction();
+
+    const result = await renderer.startFlow({ userId: 'u1', discordUserId: 'U1', flowToken: 'u1:attendance_mark:1' }, trigger);
+
+    expect(result).toBe('finished');
+    expect(trigger.deferUpdate).toHaveBeenCalledTimes(1);
+    expect(screenToSteps).not.toHaveBeenCalled();
+    expect(discordChannel.sendMessage).toHaveBeenCalledWith('discord:U1', 'No attendance session found. Say "attendance" to start again.');
   });
 
   it('startFlow -> runScreen opens a modal directly for a screen with no enum fields at all', async () => {

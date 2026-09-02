@@ -81,6 +81,20 @@ function buildEndpointModal(config) {
     /** Called when a shortcut/button opens the FIRST modal. Returns a Slack `views.open` `view` argument. */
     async buildInitialView(ctx) {
       const response = await init(ctx);
+      if (response?.data?.error) {
+        // init() can legitimately fail for a kind whose first screen depends
+        // on state a prior async step must have already populated (e.g.
+        // attendance_mark's roster, sitting in a Redis session a different
+        // flow wrote) — unlike every other kind's init(), which always
+        // unconditionally returns a screen. Without this check, this would
+        // call screenToView(undefined, ...) and throw — there's no view to
+        // open anyway (Slack's trigger_id is single-use), so DM the error
+        // instead and return null for the caller (handleOpenModal) to skip.
+        logToFile('⚠️ Slack modal-flow: init() returned an error with no screen to render', { kind, error: response.data.error.message });
+        const slackWebClient = require('./slack-web-client');
+        await slackWebClient.postMessage(ctx.slackUserId, response.data.error.message);
+        return null;
+      }
       const carry = metadataCarry ? metadataCarry(response.screen, response.data) : undefined;
       const metadata = encodeMetadata(kind, response.screen, ctx.flowToken, carry);
       return screenToView(response.screen, response.data, { ...ctx, metadata });
