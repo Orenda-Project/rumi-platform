@@ -146,8 +146,14 @@ mind later.
 over on their own, because Rumi identifies people by phone number rather than by channel. The one thing that
 cannot follow you is the number itself, so tell your testers to start a chat with the new one.
 
-Future channels (Slack, Telegram, …) plug into the same registry — see
-[docs/onboarding/sandbox-production-design.md](docs/onboarding/sandbox-production-design.md).
+**Slack and Discord are live too — as additive channels.** They're not alternatives to the WhatsApp driver
+above; they run *alongside* it. Set `SLACK_BOT_TOKEN` + `SLACK_SIGNING_SECRET`, or `DISCORD_BOT_TOKEN`, and
+teachers can reach Rumi there with the same features — coaching, reading assessment, quizzes, attendance,
+and more. Meta-only surfaces (native Flow forms) degrade to an equivalent chat-native experience per
+platform — a Block Kit modal on Slack, a modal/select-menu flow on Discord — so nothing is blocked, it just
+renders in each platform's own idiom. See
+[docs/onboarding/sandbox-production-design.md](docs/onboarding/sandbox-production-design.md) for the
+channel-driver architecture.
 
 ---
 
@@ -188,7 +194,7 @@ key(s) that switch it on.
 | 🎬🎓 **[Video Quizzes](docs/features/video-quizzes.md)** | A curriculum video → its quiz, 3 s later — pictures, voice notes, class share links, and a next-morning reteach report. Ships with the open **Taleemabad content library** ([see below ↓](#-the-taleemabad-content-library)) | one import script + `DEFAULT_REGION=pakistan` |
 | 🗣️ **[Voice Messages](docs/features/voice.md)** | Full spoken interaction in many languages | `SONIOX_API_KEY` + `ELEVENLABS_API_KEY` |
 | 🎬 **[Video Generation](docs/features/video.md)** | A topic → a short narrated educational video | `VIDEO_GENERATION_ENABLED` + `KIE_API_KEY` |
-| ✅ **[Attendance](docs/features/attendance.md)** | Voice- or tap-based attendance via WhatsApp Flows | _always on (core)_ |
+| ✅ **[Attendance](docs/features/attendance.md)** | Voice- or tap-based attendance — a native WhatsApp Flow, or an equivalent chat-native flow on Slack, Discord, and WhatsApp sandbox (Baileys) | _always on (core)_ |
 | 🧮 **[Exam Checker](docs/features/exam-checker.md)** | Photograph answer sheets → vision OCR + AI grading | `MISTRAL_API_KEY` |
 
 > **No tiers, no toggles to hunt for.** Rumi gates features by **presence**: set a feature's API key and it
@@ -297,7 +303,7 @@ rumi-platform/
 │   ├── shared/
 │   │   ├── config/         # Presence-based feature gating, branding, languages, regions
 │   │   ├── services/
-│   │   │   ├── messaging/  # Pluggable channel drivers (meta | baileys) + text-flow rendering
+│   │   │   ├── messaging/  # Pluggable channel drivers (meta | baileys) + additive Slack/Discord + text-flow rendering
 │   │   │   ├── queue/      # Pluggable queue (sqs | bullmq)
 │   │   │   └── …           # LLM, coaching, reading, lesson plans, quiz, video, …
 │   │   ├── handlers/       # text / voice / image / flow / exam / attendance
@@ -316,18 +322,19 @@ rumi-platform/
 ### How a message flows
 
 ```
-Teacher on WhatsApp
-  → Meta Cloud API (webhook)  ·OR·  linked-device socket (sandbox)
+Teacher on WhatsApp, Slack, or Discord
+  → Meta Cloud API (webhook)  ·OR·  linked-device socket (sandbox)  ·OR·  Slack/Discord events
     → one normalized inbound shape → message dispatch
       → user lookup (Supabase) → language detection → feature routing
         → text | voice | image | flow handler
           → LLM (OpenRouter) → reply
           → async job queue (Redis or SQS) → background workers → reports / media
-            → delivered back to the teacher on WhatsApp
+            → delivered back to the teacher on their own channel
 ```
 
-Both channels converge on the same dispatch, so a feature is written once and works on either. A correlation
-id threads each request across the webhook, the queue, and the workers, so any flow can be traced end to end.
+Every channel converges on the same dispatch, so a feature is written once and works on all of them. A
+correlation id threads each request across the webhook, the queue, and the workers, so any flow can be
+traced end to end.
 See [docs/architecture.md](docs/architecture.md) for the full picture.
 
 ---
@@ -366,7 +373,7 @@ Guide](docs/agent-customization.md) maps each goal to exact files:
 |---|---|---|
 | Runtime | Node.js 20+ | Server-side JavaScript |
 | Web | Express.js | Webhook + API routes |
-| Messaging | WhatsApp Cloud API **or** linked-device socket (pluggable via `CHANNEL_DRIVER`) | Messages, media, interactive Flows |
+| Messaging | WhatsApp Cloud API **or** linked-device socket (pluggable via `CHANNEL_DRIVER`), plus Slack and Discord as additive channels | Messages, media, interactive Flows |
 | AI / LLM | OpenRouter (500+ models) | Chat, analysis, content |
 | Database | Supabase (PostgreSQL) | 76 tables with Row-Level Security |
 | Queue | Redis or AWS SQS (pluggable via `QUEUE_DRIVER`) | Transcription, reports, video, exams |
