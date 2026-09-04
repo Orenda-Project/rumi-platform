@@ -11,6 +11,10 @@ It arrives wherever your deployment already talks — **WhatsApp, Slack or Disco
 bot's own channel drivers, and it leaves a live page in the dashboard behind it. No new credentials:
 one read-only database URL and a list of recipients.
 
+[![Watch the film — Every morning.](morning_brief_film_poster.png)](https://github.com/Orenda-Project/rumi-platform/releases/download/v2.2.0/Morning_Brief_Every_Morning.mp4)
+
+*An 81-second film (click to play). And the brief itself:*
+
 ![The sample brief — registration by school](sample/daily/01_registration.png)
 
 *A synthetic programme. Every panel of the sample daily and weekly brief is in [`sample/`](sample/),

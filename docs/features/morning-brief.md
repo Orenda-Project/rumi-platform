@@ -1,5 +1,9 @@
 # 🌅 Morning Brief
 
+[![Watch the film — Every morning.](../../brief/morning_brief_film_poster.png)](https://github.com/Orenda-Project/rumi-platform/releases/download/v2.2.0/Morning_Brief_Every_Morning.mp4)
+
+*An 81-second film (click to play).*
+
 ![The sample brief — registration by school](../../brief/sample/daily/01_registration.png)
 
 > Every morning, one thread that answers five plain questions about your programme, each with a number
