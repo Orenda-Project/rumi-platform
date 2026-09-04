@@ -26,6 +26,9 @@
  * the messaging router (messaging/index.js) dispatches by — this driver
  * strips the prefix once, internally, and never receives a bare Discord user
  * id directly (see channel-registry.js's CHANNEL_PREFIXES).
+ * A "discord:channel:<snowflake>" identifier addresses a text channel instead
+ * of a person (see getSendTarget) — the team target for the Morning Brief;
+ * everything else about the send is identical.
  *
  * Real divergences from Slack's driver, all deliberate:
  *   - showTypingIndicator/startContinuousTypingIndicator are REAL here
@@ -112,6 +115,40 @@ async function getDiscordUser(userId) {
   return user;
 }
 
+// ── Send target: a person OR a channel ──────────────────────────────────────
+// "discord:<id>" is a person (a DM, unchanged). "discord:channel:<id>" is a
+// text channel the bot can see — the team target the Morning Brief posts to
+// (bot/scripts/brief/send-brief.js). A User and a TextChannel expose the
+// same .send(payload) surface in discord.js, so every send path below is
+// shape-agnostic once it has gone through here.
+const CHANNEL_MARKER = `${DISCORD_PREFIX}:channel:`;
+
+function isChannelTarget(to) {
+  return String(to).startsWith(CHANNEL_MARKER);
+}
+
+async function getChannelTarget(to) {
+  const client = await getClient();
+  const channelId = String(to).slice(CHANNEL_MARKER.length);
+  const channel = await client.channels.fetch(channelId);
+  if (!channel || typeof channel.send !== 'function') {
+    throw new Error(`Discord: could not resolve a sendable channel for ${to}`);
+  }
+  return channel;
+}
+
+async function getSendTarget(to) {
+  if (isChannelTarget(to)) return getChannelTarget(to);
+  return getDiscordUser(discordUserId(to));
+}
+
+/** The channel a reaction/typing indicator lands in: the DM for a person, the channel itself for a channel target. */
+async function getMessageChannel(to) {
+  if (isChannelTarget(to)) return getChannelTarget(to);
+  const user = await getDiscordUser(discordUserId(to));
+  return user.dmChannel || await user.createDM();
+}
+
 // ── Media sources (mirrors slack-channel.service.js's resolveMediaBuffer) ───
 
 function isAbsoluteHttpUrl(url) {
@@ -177,8 +214,8 @@ function discordErrorDetail(error) {
 
 async function sendMessage(to, message) {
   try {
-    const user = await getDiscordUser(discordUserId(to));
-    await user.send({ content: removeEmotionTags(message) });
+    const target = await getSendTarget(to);
+    await target.send({ content: removeEmotionTags(message) });
     logToFile('✅ Discord message sent', { to });
     return true;
   } catch (error) {
@@ -189,12 +226,12 @@ async function sendMessage(to, message) {
 
 async function sendTextReturningId(to, message, opts = {}) {
   try {
-    const user = await getDiscordUser(discordUserId(to));
+    const target = await getSendTarget(to);
     const payload = { content: removeEmotionTags(message) };
     // Discord's quote-equivalent is a real message reply, not an
     // approximated thread the way Slack's thread_ts is.
     if (opts.contextMessageId) payload.reply = { messageReference: opts.contextMessageId };
-    const sent = await user.send(payload);
+    const sent = await target.send(payload);
     return sent?.id || null;
   } catch (error) {
     logToFile('❌ Discord: error sending message (returning id)', { ...discordErrorDetail(error) });
@@ -212,9 +249,8 @@ async function sendReaction(to, messageId, emoji = '❤️') {
   if (!/^\d+$/.test(String(messageId))) return false;
 
   try {
-    const user = await getDiscordUser(discordUserId(to));
-    const dmChannel = user.dmChannel || await user.createDM();
-    const message = await dmChannel.messages.fetch(messageId);
+    const channel = await getMessageChannel(to);
+    const message = await channel.messages.fetch(messageId);
     // Discord accepts a literal unicode emoji directly — no shortcode
     // translation table needed, unlike Slack's EMOJI_TO_SLACK_NAME.
     await message.react(emoji);
@@ -229,9 +265,8 @@ async function sendReaction(to, messageId, emoji = '❤️') {
 // genuine implementations, not honest no-op stubs.
 async function showTypingIndicator(to) {
   try {
-    const user = await getDiscordUser(discordUserId(to));
-    const dmChannel = user.dmChannel || await user.createDM();
-    await dmChannel.sendTyping();
+    const channel = await getMessageChannel(to);
+    await channel.sendTyping();
     return true;
   } catch (error) {
     logToFile('❌ Discord: error sending typing indicator', { ...discordErrorDetail(error) });
@@ -282,8 +317,8 @@ async function downloadMedia(mediaId) {
 }
 
 async function sendFile(to, buffer, filename, caption) {
-  const user = await getDiscordUser(discordUserId(to));
-  await user.send({ content: caption || undefined, files: [{ attachment: buffer, name: filename }] });
+  const target = await getSendTarget(to);
+  await target.send({ content: caption || undefined, files: [{ attachment: buffer, name: filename }] });
   return true;
 }
 
@@ -328,9 +363,9 @@ async function sendAudioFromUrl(to, audioUrl) {
 
 async function sendAudioFromUrlReturningId(to, audioUrl) {
   try {
-    const user = await getDiscordUser(discordUserId(to));
+    const target = await getSendTarget(to);
     const buffer = await resolveMediaBuffer(audioUrl);
-    const sent = await user.send({ files: [{ attachment: buffer, name: 'audio.mp3' }] });
+    const sent = await target.send({ files: [{ attachment: buffer, name: 'audio.mp3' }] });
     return sent?.id || null;
   } catch (error) {
     logToFile('❌ Discord: error sending audio from URL (returning id)', { ...discordErrorDetail(error), audioUrl });
@@ -386,10 +421,10 @@ async function sendVideoFromUrl(to, videoUrl, caption = '') {
   try {
     // eslint-disable-next-line global-require -- lazy, matching this file's other lazy discord.js requires
     const { EmbedBuilder } = require('discord.js');
-    const user = await getDiscordUser(discordUserId(to));
+    const target = await getSendTarget(to);
     const embed = new EmbedBuilder().setTitle('Your video is ready').setURL(videoUrl);
     if (caption) embed.setDescription(caption);
-    await user.send({ content: videoUrl, embeds: [embed] });
+    await target.send({ content: videoUrl, embeds: [embed] });
     return true;
   } catch (error) {
     logToFile('❌ Discord: error sending video from URL', { ...discordErrorDetail(error), videoUrl });
@@ -445,7 +480,7 @@ async function sendInteractiveButtons(to, options) {
   try {
     // eslint-disable-next-line global-require -- lazy, matching this file's other lazy discord.js requires
     const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-    const user = await getDiscordUser(discordUserId(to));
+    const target = await getSendTarget(to);
     const { body, buttons } = options;
 
     const row = new ActionRowBuilder().addComponents(
@@ -454,7 +489,7 @@ async function sendInteractiveButtons(to, options) {
         .setLabel(btn.title.substring(0, 80))
         .setStyle(ButtonStyle.Primary))
     );
-    await user.send({ content: body, components: [row] });
+    await target.send({ content: body, components: [row] });
     return true;
   } catch (error) {
     logToFile('❌ Discord: error sending interactive buttons', { ...discordErrorDetail(error) });
@@ -466,7 +501,7 @@ async function sendImageWithButtons(to, imageUrl, bodyText, buttons) {
   try {
     // eslint-disable-next-line global-require -- lazy, matching this file's other lazy discord.js requires
     const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-    const user = await getDiscordUser(discordUserId(to));
+    const target = await getSendTarget(to);
     const buffer = await resolveMediaBuffer(imageUrl);
 
     const row = new ActionRowBuilder().addComponents(
@@ -478,7 +513,7 @@ async function sendImageWithButtons(to, imageUrl, bodyText, buttons) {
     // Unlike Slack (files can't carry inline block actions, forcing a
     // two-message split), Discord CAN attach components to a message that
     // also has file attachments — a real simplification over Slack's design.
-    await user.send({ content: bodyText, files: [{ attachment: buffer, name: 'image.png' }], components: [row] });
+    await target.send({ content: bodyText, files: [{ attachment: buffer, name: 'image.png' }], components: [row] });
     return true;
   } catch (error) {
     logToFile('❌ Discord: error sending image with buttons', { ...discordErrorDetail(error), imageUrl });
@@ -490,7 +525,7 @@ async function sendInteractiveMessage(to, listData) {
   try {
     // eslint-disable-next-line global-require -- lazy, matching this file's other lazy discord.js requires
     const { ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
-    const user = await getDiscordUser(discordUserId(to));
+    const target = await getSendTarget(to);
     const { header, body, footer, action } = listData;
     const { sections } = action || {};
     const options = (sections || []).flatMap((s) => s.rows || []);
@@ -521,7 +556,7 @@ async function sendInteractiveMessage(to, listData) {
 
     const content = [headerText, bodyText, footerText].filter(Boolean).join('\n\n')
       || 'Please choose an option';
-    await user.send({ content, components: [row] });
+    await target.send({ content, components: [row] });
     return true;
   } catch (error) {
     logToFile('❌ Discord: error sending interactive list', { ...discordErrorDetail(error) });

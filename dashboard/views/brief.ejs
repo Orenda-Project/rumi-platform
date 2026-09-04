@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+</head>
+<body class="bg-background">
+  <!-- Navigation -->
+  <%- include('partials/navigation', { currentPage: 'brief', username: username, userRole: userRole }) %>
+
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-medium text-foreground mb-2">Morning Brief</h1>
+      <p class="text-muted-foreground">
+        <% if (brief) { %>
+          <%= brief.dateline %>
+          <% if (brief.cohort && brief.cohort.label) { %>
+            &middot; <%= brief.cohort.teachers %> teachers (<%= brief.cohort.label %>)
+          <% } %>
+        <% } else { %>
+          The programme-health charts your team gets every morning.
+        <% } %>
+      </p>
+    </div>
+
+    <!-- Daily / weekly toggle -->
+    <div class="flex flex-wrap gap-2 mb-8">
+      <a href="/observability/brief?kind=daily"
+         class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 <%= kind === 'daily' ? 'bg-primary text-white' : 'bg-secondary text-gray-700 hover:bg-gray-200' %>">
+        Daily
+      </a>
+      <a href="/observability/brief?kind=weekly"
+         class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 <%= kind === 'weekly' ? 'bg-primary text-white' : 'bg-secondary text-gray-700 hover:bg-gray-200' %>">
+        Weekly
+      </a>
+      <% if (brief) { %>
+        <span class="ml-auto self-center text-xs text-muted-foreground" title="Where this brief was read from">
+          <%= brief.source === 'local' ? 'local render' : 'bucket mirror' %>
+          <% if (brief.generatedAt) { %> &middot; generated <%= brief.generatedAt %><% } %>
+        </span>
+      <% } %>
+    </div>
+
+    <% if (brief && brief.panels.length > 0) { %>
+      <!-- Lead -->
+      <% if (brief.lead) { %>
+        <p class="text-lg text-foreground leading-relaxed mb-8"><%= brief.lead %></p>
+      <% } %>
+
+      <!-- Panels -->
+      <div class="space-y-8">
+        <% brief.panels.forEach(function(panel) { %>
+          <figure id="panel-<%= panel.index %>" class="card-primary p-4">
+            <img src="<%= panel.src %>" alt="<%= panel.alt || panel.caption %>" class="w-full h-auto rounded-md" loading="<%= panel.index === 0 ? 'eager' : 'lazy' %>">
+            <figcaption class="mt-4 flex items-start justify-between gap-4">
+              <p class="text-foreground leading-relaxed"><%= panel.index === 0 ? '' : panel.caption %></p>
+              <a href="<%= panel.screenHref %>" class="shrink-0 text-sm font-medium text-primary hover:text-accent transition-colors" title="Full-screen, self-refreshing view of this panel for an office wall">
+                Screen mode
+              </a>
+            </figcaption>
+          </figure>
+        <% }); %>
+      </div>
+
+      <!-- Closer -->
+      <% if (brief.closer) { %>
+        <p class="text-foreground leading-relaxed mt-8"><%= brief.closer %></p>
+      <% } %>
+      <% if (brief.liveUrl) { %>
+        <p class="text-sm text-muted-foreground mt-2">Live: <a href="<%= brief.liveUrl %>" class="text-primary hover:text-accent"><%= brief.liveUrl %></a></p>
+      <% } %>
+    <% } else { %>
+      <!-- Empty state -->
+      <div class="text-center py-16">
+        <div class="text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          <p class="text-lg mb-2">No <%= kind %> brief yet</p>
+          <p class="text-sm">Run <code class="px-1.5 py-0.5 rounded bg-secondary text-foreground">rumi brief<%= kind === 'weekly' ? ' --weekly' : '' %></code> on the bot host to render one, or schedule <code class="px-1.5 py-0.5 rounded bg-secondary text-foreground">bot/workers/brief.worker.js</code> to do it every morning.</p>
+          <p class="text-sm mt-2">This page reads the local render first, then the public <code class="px-1.5 py-0.5 rounded bg-secondary text-foreground">brief</code> bucket on your Supabase project.</p>
+        </div>
+      </div>
+    <% } %>
+  </main>
+
+</body>
+</html>

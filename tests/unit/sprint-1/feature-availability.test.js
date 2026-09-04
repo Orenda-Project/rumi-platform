@@ -137,3 +137,34 @@ const path = require('path');
 function fs_existsTierModule() {
   return fs.existsSync(path.resolve(__dirname, '../../../bot/shared/config/feature-tiers.js'));
 }
+
+describe('Morning Brief (programme-health briefs)', () => {
+  it('is a presence-gated feature keyed on BRIEF_RECIPIENTS, with a note pointing at the worker', () => {
+    const brief = fa.FEATURES.find((f) => /Morning Brief/.test(f.name));
+    expect(brief).toBeDefined();
+    expect(brief.keys).toEqual(['BRIEF_RECIPIENTS']);
+    expect(brief.notes).toMatch(/BRIEF_DATABASE_URL/);
+    expect(brief.notes).toMatch(/brief\.worker\.js/);
+    expect(fa.isFeatureAvailable(brief, FULL_ENV)).toBe(false);
+    expect(fa.isFeatureAvailable(brief, { ...FULL_ENV, BRIEF_RECIPIENTS: 'slack:channel:C01' })).toBe(true);
+    expect(fa.availableFeatures({ ...FULL_ENV, BRIEF_RECIPIENTS: 'slack:channel:C01' })).toContain(brief.name);
+  });
+
+  it('.env.template documents every BRIEF_* key under an ENABLES block', () => {
+    const template = fs.readFileSync(path.resolve(__dirname, '../../../.env.template'), 'utf-8');
+    expect(template).toMatch(/--- ENABLES: Morning Brief/);
+    for (const key of [
+      'BRIEF_RECIPIENTS', 'BRIEF_DATABASE_URL', 'BRIEF_TZ', 'BRIEF_GROUP_BY', 'BRIEF_REGION',
+      'BRIEF_ORGANIZATION', 'BRIEF_DAILY_DOWS', 'BRIEF_WEEKLY_DOW', 'BRIEF_OUT_DIR', 'BRIEF_LIVE_URL',
+      'BRIEF_SCREEN_TOKEN', 'BRIEF_PYTHON',
+    ]) {
+      expect(template).toMatch(new RegExp(`^${key}=`, 'm'));
+    }
+    expect(template).toMatch(/^BRIEF_TZ=UTC$/m);
+    expect(template).toMatch(/^BRIEF_DAILY_DOWS=1,2,3,4$/m);
+    expect(template).toMatch(/^BRIEF_WEEKLY_DOW=5$/m);
+    expect(template).toMatch(/^BRIEF_OUT_DIR=brief\/out$/m);
+    expect(template).toMatch(/^BRIEF_PYTHON=python3$/m);
+    expect(template).toMatch(/^BRIEF_GROUP_BY=school_name$/m);
+  });
+});

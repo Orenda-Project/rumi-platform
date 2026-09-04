@@ -190,6 +190,7 @@ key(s) that switch it on.
 | 🎬 **[Video Generation](docs/features/video.md)** | A topic → a short narrated educational video | `VIDEO_GENERATION_ENABLED` + `KIE_API_KEY` |
 | ✅ **[Attendance](docs/features/attendance.md)** | Voice- or tap-based attendance via WhatsApp Flows | _always on (core)_ |
 | 🧮 **[Exam Checker](docs/features/exam-checker.md)** | Photograph answer sheets → vision OCR + AI grading | `MISTRAL_API_KEY` |
+| 🌅 **[Morning Brief](docs/features/morning-brief.md)** | Every morning, one thread that tells your team how the programme is doing — registration, lesson plans, coaching, scores, reading, every school worst-first — on WhatsApp, Slack or Discord, with a live page | `BRIEF_RECIPIENTS` + a read-only `BRIEF_DATABASE_URL` |
 
 > **No tiers, no toggles to hunt for.** Rumi gates features by **presence**: set a feature's API key and it
 > switches on; leave it blank and it stays off cleanly — the bot never crashes over a missing key. Run
@@ -269,9 +270,10 @@ realistic for a small, non-specialist team.
 
 - **Progressive-disclosure context.** A root [`CLAUDE.md`](CLAUDE.md) (and [`AGENTS.md`](AGENTS.md)) orients
   the agent, then routes it down to folder guides ([`bot/CLAUDE.md`](bot/CLAUDE.md),
-  [`infrastructure/CLAUDE.md`](infrastructure/CLAUDE.md)) and, on demand, to **16 operational skills** under
+  [`infrastructure/CLAUDE.md`](infrastructure/CLAUDE.md)) and, on demand, to **18 operational skills** under
   [`.claude/skills/`](.claude/skills/) — coaching, reading-assessment, registration, lesson-plan routing,
-  whatsapp-flows, debugging, logging, database analysis, QA, the pre-merge checklist, and more. The agent
+  whatsapp-flows, debugging, logging, database analysis, QA, the pre-merge checklist, the curriculum builder, the
+  morning brief, and more. The agent
   loads only what the task needs.
 - **Just ask.** Open the repo in your agent and say *"set me up"* — it asks you for each credential in
   conversation, checks every one against the real service, creates your database, and hands you the two steps
@@ -310,7 +312,7 @@ rumi-platform/
 ├── infrastructure/
 │   └── supabase/           # SQL schema (76 tables), RLS policies, seed data + bootstrap
 ├── docs/                   # Architecture, features, customization, cost, samples
-└── .claude/                # Agent-native config — CLAUDE.md routers + 16 operational skills
+└── .claude/                # Agent-native config — CLAUDE.md routers + 18 operational skills
 ```
 
 ### How a message flows
@@ -408,7 +410,7 @@ the schema, the docs, the agent skills, and the link web all stay honest.
 | [docs/onboarding/api-keys.md](docs/onboarding/api-keys.md) | Every API key: what it unlocks and where to get it |
 | [docs/LP_PATHS.md](docs/LP_PATHS.md) | How a lesson-plan request is routed (pre-generated vs Gamma vs photo) |
 | [docs/architecture.md](docs/architecture.md) | System architecture & message flow |
-| [CLAUDE.md](CLAUDE.md) + [.claude/](.claude/) | **Agent-native** context: the routers + the 16 operational skills |
+| [CLAUDE.md](CLAUDE.md) + [.claude/](.claude/) | **Agent-native** context: the routers + the 18 operational skills |
 | [docs/agent-customization.md](docs/agent-customization.md) | Agent-first deep customization (frameworks, languages, branding) |
 | [docs/cost-guide.md](docs/cost-guide.md) | Monthly cost estimates — core baseline + per-feature add-ons |
 | [docs/monitoring.md](docs/monitoring.md) | Observability & debugging |

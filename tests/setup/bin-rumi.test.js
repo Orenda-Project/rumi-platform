@@ -22,7 +22,7 @@ afterEach(() => {
 describe('rumi CLI dispatcher', () => {
   it('exposes exactly the documented commands', () => {
     const { COMMANDS } = loadCli();
-    expect(Object.keys(COMMANDS).sort()).toEqual(['doctor', 'graduate', 'pair', 'setup', 'start', 'status']);
+    expect(Object.keys(COMMANDS).sort()).toEqual(['brief', 'doctor', 'graduate', 'pair', 'setup', 'start', 'status']);
   });
 
   it('gives every command a one-line summary, since the help screen is built from them', () => {
@@ -106,6 +106,66 @@ describe('rumi CLI dispatcher', () => {
     await cli.main();
 
     expect(logSpy.mock.calls.join('\n')).toMatch(/Unknown command: "bogus"/);
+    expect(process.exitCode).toBe(1);
+  });
+});
+
+describe('rumi brief', () => {
+  it('is documented as rendering the brief, with --send as the delivery step', () => {
+    const { COMMANDS } = loadCli();
+    expect(COMMANDS.brief.summary).toBe("Render this morning's brief (add --send to deliver it)");
+  });
+
+  it('routes "rumi brief" to COMMANDS.brief', async () => {
+    const cli = loadCli();
+    const spy = jest.fn().mockResolvedValue(undefined);
+    cli.COMMANDS.brief.run = spy;
+    process.argv = ['node', 'bin/rumi.js', 'brief', '--send'];
+
+    await cli.main();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists --weekly, --send and --dry-run on the help screen', async () => {
+    const cli = loadCli();
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    process.argv = ['node', 'bin/rumi.js', '--help'];
+
+    await cli.main();
+
+    const printed = logSpy.mock.calls.join('\n');
+    expect(printed).toMatch(/--weekly/);
+    expect(printed).toMatch(/--send/);
+    expect(printed).toMatch(/--dry-run/);
+  });
+
+  it('parses its flags: --weekly picks the weekly brief, --send delivers, --dry-run rehearses', () => {
+    const { parseBriefFlags } = loadCli();
+    expect(parseBriefFlags([])).toEqual({ kind: 'daily', send: false, dryRun: false });
+    expect(parseBriefFlags(['--weekly', '--send', '--dry-run'])).toEqual({ kind: 'weekly', send: true, dryRun: true });
+  });
+
+  it('runs the same render step as the worker, then sends only when asked', async () => {
+    const cli = loadCli();
+    const runner = jest.fn().mockResolvedValue(0);
+    const send = jest.fn().mockResolvedValue({ sent: ['a'], skipped: [], failed: [] });
+    const log = jest.fn();
+
+    await cli.runBrief(['--weekly'], { runner, send, log, env: {} });
+    expect(runner).toHaveBeenCalledWith('python3', ['brief/cli.py', 'render', '--kind', 'weekly'], expect.any(Object));
+    expect(send).not.toHaveBeenCalled();
+    expect(log.mock.calls.flat().join('\n')).toMatch(/latest[\/\\]weekly/);
+
+    await cli.runBrief(['--send', '--dry-run'], { runner, send, log, env: { BRIEF_RECIPIENTS: 'a' } });
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ dryRun: true, recipients: ['a'] }));
+  });
+
+  it('a failed render sets a non-zero exit code and skips sending', async () => {
+    const cli = loadCli();
+    const runner = jest.fn().mockResolvedValue(1);
+    const send = jest.fn();
+    await cli.runBrief(['--send'], { runner, send, log: () => {}, env: { BRIEF_RECIPIENTS: 'a' } });
+    expect(send).not.toHaveBeenCalled();
     expect(process.exitCode).toBe(1);
   });
 });

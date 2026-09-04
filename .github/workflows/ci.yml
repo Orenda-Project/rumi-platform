@@ -63,6 +63,33 @@ jobs:
             --exclude-dir=node_modules --exclude-dir=.git \
             bot/shared/ dashboard/ portal/ scripts/ infrastructure/
 
+  python:
+    # The Python packages (the Morning Brief in brief/, the curriculum builder in curriculum/) carry
+    # their own offline unittest suites — fakes only, no database, no network.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the brief's dependencies
+        run: pip install matplotlib numpy
+
+      - name: Morning Brief tests
+        run: python3 -m unittest discover -s brief/tests -t brief -p 'test_*.py'
+
+      - name: Curriculum tests
+        run: |
+          python3 -m unittest discover curriculum/tools -p 'test_*.py'
+          python3 curriculum/gates/test_qa_checks.py
+          python3 curriculum/test_cli.py
+          python3 curriculum/graph/test_build_graph.py
+
   lint:
     runs-on: ubuntu-latest
 

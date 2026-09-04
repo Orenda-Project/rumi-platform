@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-09-04
+
+**The Morning Brief.** Every morning, your team wakes up to one thread that says how the programme is
+doing — who is on the platform and who actually used it, are teachers teaching with the lesson plans, is
+the teaching improving, are the coaches showing up against their target, where should attention go next —
+with a number behind every question and the same charts every day so drift is visible at a glance. On
+Fridays the same thread rolls the week up.
+
+### Added
+
+- **`brief/`** — the Python package: a code-level calendar (a morning brief covers the previous working
+  day; Monday's is about Friday), live-schema detection (panels switch themselves on from
+  `information_schema`, so a fork that records classroom observations gets that panel for free), the
+  metric definitions as tagged SQL with their prose twin in `brief/README.md`, matplotlib panels that follow
+  one binding grammar (a delta chip on every headline, one organising unit breaking down every panel, every
+  school listed worst-first, PCHIP-smoothed lines with the real points marked), plain-language captions, and
+  a `manifest.json` contract. `python3 brief/cli.py check` says what your database can draw;
+  `python3 brief/cli.py sample` renders a synthetic brief with no database at all.
+- **Delivery through the bot's own channel drivers** — `bot/scripts/brief/send-brief.js` posts the cover,
+  the panels and the closer to every target in `BRIEF_RECIPIENTS`, idempotently. New team targets in the
+  drivers: `slack:channel:C…`, `discord:channel:…`, and `…@g.us` WhatsApp groups.
+- **`rumi brief`** (`--send`, `--weekly`, `--dry-run`) and **`bot/workers/brief.worker.js`**, a one-shot
+  for any daily cron that decides daily / weekly / off-day itself in `BRIEF_TZ`.
+- **A live page** in the dashboard — `/observability/brief` (latest daily and weekly) and
+  `/observability/brief/screen?p=N`, a self-refreshing single panel for an office wall
+  (`BRIEF_SCREEN_TOKEN` lets a display in without a login).
+- The `morning-brief` agent skill, `docs/features/morning-brief.md`, a `BRIEF_*` block in `.env.template`,
+  a `Morning Brief` row in `rumi status`, and a CI job that runs the Python suites.
+
+## [2.1.0] - 2026-08-30
+
+**The curriculum builder and its knowledge graph** — `curriculum/`: textbooks in, a faithful, gate-checked
+lesson-plan corpus out (page-truth → segment → enrich → slide-script → render → voicenote → deliver), with an
+SLO registry so every lesson carries a validated learning-outcome code, and `curriculum/graph/`, which turns
+the corpus into a knowledge graph (lessons ↔ outcomes, outcomes ordered per strand) with a self-contained
+viewer. A 105-second walkthrough film is attached to the release.
+
 ## [2.0.0] - 2026-08-07
 
 **Rumi no longer requires a Meta WhatsApp Business account to run.** The messaging
