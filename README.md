@@ -146,14 +146,14 @@ mind later.
 over on their own, because Rumi identifies people by phone number rather than by channel. The one thing that
 cannot follow you is the number itself, so tell your testers to start a chat with the new one.
 
-**Slack and Discord are live too — as additive channels.** They're not alternatives to the WhatsApp driver
-above; they run *alongside* it. Set `SLACK_BOT_TOKEN` + `SLACK_SIGNING_SECRET`, or `DISCORD_BOT_TOKEN`, and
-teachers can reach Rumi there with the same features — coaching, reading assessment, quizzes, attendance,
-and more. Meta-only surfaces (native Flow forms) degrade to an equivalent chat-native experience per
-platform — a Block Kit modal on Slack, a modal/select-menu flow on Discord — so nothing is blocked, it just
-renders in each platform's own idiom. See
-[docs/onboarding/sandbox-production-design.md](docs/onboarding/sandbox-production-design.md) for the
-channel-driver architecture.
+**Rumi also works on Slack and Discord now, in addition to WhatsApp — not instead of it.** If your team
+already lives on Slack or Discord, teachers can talk to Rumi right there, with the same features — coaching,
+reading assessment, quizzes, attendance, and more. To turn this on, add a Slack or Discord bot's login keys
+to your `.env` file (`SLACK_BOT_TOKEN` + `SLACK_SIGNING_SECRET` for Slack, `DISCORD_BOT_TOKEN` for Discord).
+A few WhatsApp-only touches (like tap-through forms) look a little different on Slack/Discord — Rumi just
+asks the same questions as a normal message instead — but nothing is missing. See
+[docs/onboarding/sandbox-production-design.md](docs/onboarding/sandbox-production-design.md) for how this
+works under the hood.
 
 ---
 
@@ -194,7 +194,7 @@ key(s) that switch it on.
 | 🎬🎓 **[Video Quizzes](docs/features/video-quizzes.md)** | A curriculum video → its quiz, 3 s later — pictures, voice notes, class share links, and a next-morning reteach report. Ships with the open **Taleemabad content library** ([see below ↓](#-the-taleemabad-content-library)) | one import script + `DEFAULT_REGION=pakistan` |
 | 🗣️ **[Voice Messages](docs/features/voice.md)** | Full spoken interaction in many languages | `SONIOX_API_KEY` + `ELEVENLABS_API_KEY` |
 | 🎬 **[Video Generation](docs/features/video.md)** | A topic → a short narrated educational video | `VIDEO_GENERATION_ENABLED` + `KIE_API_KEY` |
-| ✅ **[Attendance](docs/features/attendance.md)** | Voice- or tap-based attendance — a native WhatsApp Flow, or an equivalent chat-native flow on Slack, Discord, and WhatsApp sandbox (Baileys) | _always on (core)_ |
+| ✅ **[Attendance](docs/features/attendance.md)** | Mark attendance by voice or by tapping names — works the same way on WhatsApp, Slack, and Discord | _always on (core)_ |
 | 🧮 **[Exam Checker](docs/features/exam-checker.md)** | Photograph answer sheets → vision OCR + AI grading | `MISTRAL_API_KEY` |
 
 > **No tiers, no toggles to hunt for.** Rumi gates features by **presence**: set a feature's API key and it
@@ -303,7 +303,7 @@ rumi-platform/
 │   ├── shared/
 │   │   ├── config/         # Presence-based feature gating, branding, languages, regions
 │   │   ├── services/
-│   │   │   ├── messaging/  # Pluggable channel drivers (meta | baileys) + additive Slack/Discord + text-flow rendering
+│   │   │   ├── messaging/  # Talks to WhatsApp, Slack, and Discord, and the plain-text fallback for simple setups
 │   │   │   ├── queue/      # Pluggable queue (sqs | bullmq)
 │   │   │   └── …           # LLM, coaching, reading, lesson plans, quiz, video, …
 │   │   ├── handlers/       # text / voice / image / flow / exam / attendance
@@ -373,7 +373,7 @@ Guide](docs/agent-customization.md) maps each goal to exact files:
 |---|---|---|
 | Runtime | Node.js 20+ | Server-side JavaScript |
 | Web | Express.js | Webhook + API routes |
-| Messaging | WhatsApp Cloud API **or** linked-device socket (pluggable via `CHANNEL_DRIVER`), plus Slack and Discord as additive channels | Messages, media, interactive Flows |
+| Messaging | WhatsApp (official API or a linked-device QR code), plus Slack and Discord | Messages, media, interactive forms |
 | AI / LLM | OpenRouter (500+ models) | Chat, analysis, content |
 | Database | Supabase (PostgreSQL) | 76 tables with Row-Level Security |
 | Queue | Redis or AWS SQS (pluggable via `QUEUE_DRIVER`) | Transcription, reports, video, exams |
