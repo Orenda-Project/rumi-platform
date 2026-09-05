@@ -117,8 +117,9 @@ refreshes itself — for an office wall. Put that URL in `BRIEF_LIVE_URL` and ev
 | `slack:U0123ABC` · `slack:channel:C0123ABC` | a Slack person · a Slack channel |
 | `discord:9182…` · `discord:channel:9182…` | a Discord person · a Discord channel |
 
-Pilot to yourself first. Send to a team channel only once you have read a real brief and agree with
-every number on it — a recurring send is a promise.
+For a public Slack channel the bot joins itself on the first send; a private Slack channel, and any
+Discord channel, needs the bot invited first. Pilot to yourself before a team channel: send to a team
+only once you have read a real brief and agree with every number on it — a recurring send is a promise.
 
 ## Tests
 

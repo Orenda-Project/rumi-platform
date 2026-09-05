@@ -39,6 +39,18 @@ def _fmt(n):
     return f"{int(n):,}"
 
 
+_SINGULAR = {"plans": "plan", "sessions": "session", "assessments": "assessment", "observations": "observation",
+             "quizzes": "quiz", "exams": "exam", "videos": "video", "teachers": "teacher", "students": "student"}
+
+
+def count(n, label: str) -> str:
+    """'1 lesson plan' / '2 lesson plans' — a count of one reads singular, whatever the label's noun."""
+    n = int(round(n))
+    if n == 1:
+        label = " ".join(_SINGULAR.get(w, w) for w in label.split(" "))
+    return f"{_fmt(n)} {label}"
+
+
 def posts(m: dict, charts: dict, brand: str = "Rumi") -> list:
     """Ordered posts: cover first, the attention list (school-wise) always last."""
     weekly = m["kind"] == "weekly"
@@ -112,7 +124,7 @@ def posts(m: dict, charts: dict, brand: str = "Rumi") -> list:
                     "alt": "Reading assessments per day and by grade"})
 
     if m.get("features"):
-        bits = ", ".join(f"{_fmt(f['n'])} {f['label']}" for f in m["features"])
+        bits = ", ".join(count(f["n"], f["label"]) for f in m["features"])
         out.append({"id": "features", "image": charts.get("features"),
                     "caption": f"*Also {period}: {bits}.*\n\nEach count compares with the {'week' if weekly else 'day'} before.",
                     "alt": "Other feature usage"})
@@ -140,13 +152,13 @@ def posts(m: dict, charts: dict, brand: str = "Rumi") -> list:
 def closer(m: dict, live_url: str | None = None) -> str:
     t, reg = m["totals"], m["registration"]
     weekly = m["kind"] == "weekly"
-    bits = [f"{_fmt(t['lps'])} lesson plans", f"{_fmt(t['coach'])} coaching sessions"]
+    bits = [count(t["lps"], "lesson plans"), count(t["coach"], "coaching sessions")]
     if m.get("reading"):
-        bits.append(f"{_fmt(t['reading'])} reading assessments")
+        bits.append(count(t["reading"], "reading assessments"))
     if m.get("observations"):
-        bits.append(f"{_fmt(m['observations']['total'])} observations")
+        bits.append(count(m["observations"]["total"], "observations"))
     line = (f"*In short — {'this week' if weekly else m['day_word']}*\n\n" + " · ".join(bits) +
-            f" · {_fmt(reg['active_week'])} teachers active in the last 7 days, across {_fmt(reg['teachers'])} registered.")
+            f" · {count(reg['active_week'], 'teachers')} active in the last 7 days, across {_fmt(reg['teachers'])} registered.")
     if live_url:
         line += f"\n\nLive: {live_url}"
     return line

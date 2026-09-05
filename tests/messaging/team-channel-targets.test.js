@@ -223,3 +223,65 @@ describe('baileys-channel.service — group targets', () => {
     expect(service._toJid('15550100000:0@s.whatsapp.net')).toBe('15550100000@s.whatsapp.net');
   });
 });
+
+// ── Slack: a public channel the bot has not joined yet ───────────────────────
+// A partner who lists `slack:channel:C…` in BRIEF_RECIPIENTS will usually not
+// have invited the bot first. Slack answers `not_in_channel`; for a PUBLIC
+// channel the bot can join itself, so the driver does that once and retries.
+
+function loadSlackNotJoined() {
+  jest.resetModules();
+  const notIn = Object.assign(new Error('An API error occurred: not_in_channel'), { data: { error: 'not_in_channel' } });
+  let uploads = 0;
+  let posts = 0;
+  const client = {
+    conversations: {
+      open: jest.fn(async () => ({ channel: { id: 'D0123DM' } })),
+      join: jest.fn(async () => ({ ok: true, channel: { id: 'C0123ABC' } })),
+    },
+    chat: { postMessage: jest.fn(async () => { posts += 1; if (posts === 1) throw notIn; return { ts: '169.002' }; }) },
+    reactions: { add: jest.fn(async () => ({})) },
+    files: {
+      uploadV2: jest.fn(async () => { uploads += 1; if (uploads === 1) throw notIn; return { files: [{ id: 'F0123FILE' }] }; }),
+      info: jest.fn(async () => ({ file: {} })),
+    },
+  };
+  jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+  jest.doMock('../../bot/shared/storage/r2', () => ({
+    downloadFromR2: jest.fn(),
+    extractKeyFromUrl: jest.fn((url) => url.split('/').pop()),
+  }));
+  jest.doMock('@slack/web-api', () => ({
+    WebClient: jest.fn().mockImplementation(() => client),
+  }), { virtual: true });
+  process.env.SLACK_BOT_TOKEN = 'xoxb-test-token';
+  const service = require('../../bot/shared/services/messaging/slack-channel.service');
+  return { service, client };
+}
+
+describe('slack-channel.service — joining a public channel on not_in_channel', () => {
+  const CHANNEL = 'slack:channel:C0123ABC';
+
+  it('sendImage joins the channel once and retries the upload', async () => {
+    const { service, client } = loadSlackNotJoined();
+    const result = await service.sendImage(CHANNEL, pngPath, 'The cover');
+    expect(result).toBe(true);
+    expect(client.conversations.join).toHaveBeenCalledWith({ channel: 'C0123ABC' });
+    expect(client.files.uploadV2).toHaveBeenCalledTimes(2);
+  });
+
+  it('sendMessage joins the channel once and retries the post', async () => {
+    const { service, client } = loadSlackNotJoined();
+    const result = await service.sendMessage(CHANNEL, 'Morning');
+    expect(result).toBe(true);
+    expect(client.conversations.join).toHaveBeenCalledWith({ channel: 'C0123ABC' });
+    expect(client.chat.postMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('never tries to join for a person target — a DM cannot be "joined"', async () => {
+    const { service, client } = loadSlackNotJoined();
+    const result = await service.sendMessage('slack:U0123ABC', 'hi');
+    expect(result).toBe(false);
+    expect(client.conversations.join).not.toHaveBeenCalled();
+  });
+});

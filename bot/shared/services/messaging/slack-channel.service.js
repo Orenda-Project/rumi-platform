@@ -124,6 +124,23 @@ async function resolveConversationId(to) {
   return getDmChannelId(slackUserId(to));
 }
 
+// A channel target the bot has not been invited to answers `not_in_channel`. For a PUBLIC
+// channel the bot can join itself, so `send` is retried once after a join — a partner who
+// lists `slack:channel:C…` as a recipient should not have to know to /invite the bot first.
+// A private channel still needs the invite (join fails, the original error is reported), and
+// a person target is never "joined": a DM cannot be.
+async function withChannelJoin(to, send) {
+  try {
+    return await send();
+  } catch (error) {
+    if (!isChannelTarget(to) || error?.data?.error !== 'not_in_channel') throw error;
+    const channel = String(to).slice(CHANNEL_MARKER.length);
+    await getClient().conversations.join({ channel });
+    logToFile('Slack: joined the channel before sending', { channel });
+    return send();
+  }
+}
+
 // ── Media sources (mirrors baileys-channel.service.js's resolveMediaSource) ──
 
 function isAbsoluteHttpUrl(url) {
@@ -201,7 +218,7 @@ async function sendMessage(to, message) {
   try {
     const client = getClient();
     const channel = await resolveConversationId(to);
-    await client.chat.postMessage({ channel, text: removeEmotionTags(message) });
+    await withChannelJoin(to, () => client.chat.postMessage({ channel, text: removeEmotionTags(message) }));
     logToFile('✅ Slack message sent', { to });
     return true;
   } catch (error) {
@@ -282,12 +299,12 @@ async function downloadMedia(mediaId) {
 async function uploadFile(to, buffer, filename, caption) {
   const client = getClient();
   const channel = await resolveConversationId(to);
-  await client.files.uploadV2({
+  await withChannelJoin(to, () => client.files.uploadV2({
     channel_id: channel,
     file: buffer,
     filename,
     initial_comment: caption || undefined,
-  });
+  }));
   return true;
 }
 
