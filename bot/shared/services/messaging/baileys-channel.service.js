@@ -51,7 +51,7 @@ function parseMembers(src) {
 const MEMBERS = parseMembers(fs.readFileSync(META_SOURCE_PATH, 'utf-8'));
 
 /**
- * Builds a chat JID from a phone number.
+ * Builds a chat JID from a phone number (or passes a group JID through).
  *
  * Drops any `@server` and `:device` suffix BEFORE stripping non-digits. Order
  * matters — a live bug: Baileys 7.x can hand back device-scoped JIDs like
@@ -61,6 +61,11 @@ const MEMBERS = parseMembers(fs.readFileSync(META_SOURCE_PATH, 'utf-8'));
  * well as at the inbound edge, since this is the last gate before a send.
  */
 function toJid(phoneNumber) {
+  // A group JID ("<id>@g.us") is already a complete address — the team
+  // target the Morning Brief posts to (bot/scripts/brief/send-brief.js).
+  // It passes through untouched; the digit normalisation below is for a
+  // person's phone number only.
+  if (String(phoneNumber).endsWith('@g.us')) return String(phoneNumber);
   const bare = String(phoneNumber).split('@')[0].split(':')[0];
   const digits = bare.replace(/\D/g, '');
   return `${digits}@s.whatsapp.net`;

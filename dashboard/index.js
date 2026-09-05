@@ -134,6 +134,9 @@ const portalRoutes = require('./routes/portal.routes');
 // BYOF Routes (Build Your Own Feature) - Conversational AI for bug/feature planning
 const byofRoutes = require('./routes/byof.routes');
 
+// Morning Brief Routes - the live page for the programme-health briefs
+const { createBriefRouter } = require('./routes/brief.routes');
+
 const app = express();
 const PORT = process.env.PORT || process.env.DASHBOARD_PORT || 4000;
 
@@ -2509,6 +2512,12 @@ app.use('/observability/api/wordcloud', requireAuth, requirePartnerAdmin, requir
 // BYOF routes - Build Your Own Feature (Conversational AI for bug/feature planning)
 // RBAC: All portal users
 app.use('/observability/byof', requireAuth, requirePartnerAdmin, byofRoutes);
+
+// Morning Brief routes - the live page + per-panel screen mode
+// RBAC: All portal users. requireAuth is applied INSIDE the router, because
+// the screen-mode page may instead be opened with BRIEF_SCREEN_TOKEN (a wall
+// display has no session) — see routes/brief.routes.js.
+app.use('/observability/brief', createBriefRouter({ requireAuth }));
 
 // ============================================================================
 // AMA (ASK ME ANYTHING) ROUTES

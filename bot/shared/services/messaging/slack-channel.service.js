@@ -28,6 +28,9 @@
  * identifier the messaging router (messaging/index.js) dispatches by — this
  * driver strips the prefix once, internally, and never receives a bare
  * Slack user id directly (see channel-registry.js's CHANNEL_PREFIXES).
+ * A "slack:channel:<channel-id>" identifier addresses a channel instead of
+ * a person (see resolveConversationId) — the team target for the Morning
+ * Brief; everything else about the send is identical.
  *
  * Templates/Flow/carousels have no Slack equivalent without the
  * channel-agnostic template registry from
@@ -101,6 +104,41 @@ async function getDmChannelId(userId) {
   if (!channelId) throw new Error(`Slack: could not open a DM with user ${userId}`);
   dmChannelCache.set(userId, channelId);
   return channelId;
+}
+
+// ── Conversation resolution: a person OR a channel ──────────────────────────
+// "slack:U…" is a person (a DM, opened and cached above). "slack:channel:C…"
+// is a channel the bot has been invited to — the team target the Morning
+// Brief posts to (bot/scripts/brief/send-brief.js). A channel id is usable
+// directly in chat.postMessage / files.uploadV2, so there is no
+// conversations.open round-trip for it. Every send path resolves through
+// this one helper so the two shapes can never drift apart.
+const CHANNEL_MARKER = `${SLACK_PREFIX}:channel:`;
+
+function isChannelTarget(to) {
+  return String(to).startsWith(CHANNEL_MARKER);
+}
+
+async function resolveConversationId(to) {
+  if (isChannelTarget(to)) return String(to).slice(CHANNEL_MARKER.length);
+  return getDmChannelId(slackUserId(to));
+}
+
+// A channel target the bot has not been invited to answers `not_in_channel`. For a PUBLIC
+// channel the bot can join itself, so `send` is retried once after a join — a partner who
+// lists `slack:channel:C…` as a recipient should not have to know to /invite the bot first.
+// A private channel still needs the invite (join fails, the original error is reported), and
+// a person target is never "joined": a DM cannot be.
+async function withChannelJoin(to, send) {
+  try {
+    return await send();
+  } catch (error) {
+    if (!isChannelTarget(to) || error?.data?.error !== 'not_in_channel') throw error;
+    const channel = String(to).slice(CHANNEL_MARKER.length);
+    await getClient().conversations.join({ channel });
+    logToFile('Slack: joined the channel before sending', { channel });
+    return send();
+  }
 }
 
 // ── Media sources (mirrors baileys-channel.service.js's resolveMediaSource) ──
@@ -179,8 +217,8 @@ function slackErrorDetail(error) {
 async function sendMessage(to, message) {
   try {
     const client = getClient();
-    const channel = await getDmChannelId(slackUserId(to));
-    await client.chat.postMessage({ channel, text: removeEmotionTags(message) });
+    const channel = await resolveConversationId(to);
+    await withChannelJoin(to, () => client.chat.postMessage({ channel, text: removeEmotionTags(message) }));
     logToFile('✅ Slack message sent', { to });
     return true;
   } catch (error) {
@@ -192,7 +230,7 @@ async function sendMessage(to, message) {
 async function sendTextReturningId(to, message, opts = {}) {
   try {
     const client = getClient();
-    const channel = await getDmChannelId(slackUserId(to));
+    const channel = await resolveConversationId(to);
     const payload = { channel, text: removeEmotionTags(message) };
     // Slack's quote-equivalent is a threaded reply, not an inline quote.
     if (opts.contextMessageId) payload.thread_ts = opts.contextMessageId;
@@ -207,7 +245,7 @@ async function sendTextReturningId(to, message, opts = {}) {
 async function sendReaction(to, messageId, emoji = 'heart') {
   try {
     const client = getClient();
-    const channel = await getDmChannelId(slackUserId(to));
+    const channel = await resolveConversationId(to);
     // Slack reaction names are bare emoji shortcodes (no colons); a caller
     // passing a literal unicode glyph (Meta's convention) is mapped to a
     // close Slack equivalent for the common cases, falling back to a plain
@@ -260,13 +298,13 @@ async function downloadMedia(mediaId) {
 
 async function uploadFile(to, buffer, filename, caption) {
   const client = getClient();
-  const channel = await getDmChannelId(slackUserId(to));
-  await client.files.uploadV2({
+  const channel = await resolveConversationId(to);
+  await withChannelJoin(to, () => client.files.uploadV2({
     channel_id: channel,
     file: buffer,
     filename,
     initial_comment: caption || undefined,
-  });
+  }));
   return true;
 }
 
@@ -312,7 +350,7 @@ async function sendAudioFromUrl(to, audioUrl) {
 async function sendAudioFromUrlReturningId(to, audioUrl) {
   try {
     const client = getClient();
-    const channel = await getDmChannelId(slackUserId(to));
+    const channel = await resolveConversationId(to);
     const buffer = await resolveMediaBuffer(audioUrl);
     const result = await client.files.uploadV2({ channel_id: channel, file: buffer, filename: 'audio.mp3' });
     // files.uploadV2 returns per-file metadata, not a chat message ts — the
@@ -400,7 +438,7 @@ async function sendSticker(to, mediaIdOrPath) {
 async function sendInteractiveButtons(to, options) {
   try {
     const client = getClient();
-    const channel = await getDmChannelId(slackUserId(to));
+    const channel = await resolveConversationId(to);
     const { body, buttons } = options;
 
     const blocks = [
@@ -426,7 +464,7 @@ async function sendInteractiveButtons(to, options) {
 async function sendImageWithButtons(to, imageUrl, bodyText, buttons) {
   try {
     const client = getClient();
-    const channel = await getDmChannelId(slackUserId(to));
+    const channel = await resolveConversationId(to);
     const buffer = await resolveMediaBuffer(imageUrl);
     // Slack files can't carry inline block actions directly, so the image is
     // uploaded first and the button prompt follows as its own message — the
@@ -455,7 +493,7 @@ async function sendImageWithButtons(to, imageUrl, bodyText, buttons) {
 async function sendInteractiveMessage(to, listData) {
   try {
     const client = getClient();
-    const channel = await getDmChannelId(slackUserId(to));
+    const channel = await resolveConversationId(to);
     const { header, body, footer, action } = listData;
     const { sections, buttons } = action || {};
 
@@ -674,5 +712,6 @@ for (const { name, isAsync } of MEMBERS) {
 
 SlackChannel._slackUserId = slackUserId;
 SlackChannel._getDmChannelId = getDmChannelId;
+SlackChannel._resolveConversationId = resolveConversationId;
 
 module.exports = SlackChannel;

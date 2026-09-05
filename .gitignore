@@ -89,3 +89,7 @@ supabase/.temp/
 **/supabase/.temp/
 dashboard/supabase/.temp/
 .env.provisioner
+
+# Python bytecode (the brief/ and curriculum/ packages)
+__pycache__/
+*.pyc

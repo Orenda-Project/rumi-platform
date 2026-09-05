@@ -7,6 +7,7 @@
  *   rumi doctor       check every connection in detail
  *   rumi pair         link (or re-link) WhatsApp
  *   rumi graduate     move to an official WhatsApp Business number
+ *   rumi brief        render this morning's programme-health brief (--send delivers it)
  *
  * Repo-local by design (`bin/rumi.js`, not a published package): a Rumi
  * deployment is a clone or a fork, so there is no single global install to
@@ -119,11 +120,78 @@ const COMMANDS = {
     summary: 'Move to an official WhatsApp Business number',
     run: () => require(path.join(SCRIPTS_DIR, 'graduate')).main(),
   },
+  brief: {
+    summary: "Render this morning's brief (add --send to deliver it)",
+    run: () => runBrief(process.argv.slice(3)),
+  },
 };
+
+/** `rumi brief` flags: --weekly picks the weekly brief; --send delivers; --dry-run rehearses the send. */
+function parseBriefFlags(argv) {
+  const flags = { kind: 'daily', send: false, dryRun: false };
+  for (const arg of argv) {
+    if (arg === '--weekly') flags.kind = 'weekly';
+    else if (arg === '--send') flags.send = true;
+    else if (arg === '--dry-run') flags.dryRun = true;
+    else throw new Error(`Unknown option for rumi brief: ${arg}`);
+  }
+  return flags;
+}
+
+/**
+ * `rumi brief` — the same render step the cron worker runs
+ * (bot/workers/brief.worker.js), so a hand-run and the scheduled run can
+ * never diverge; then, only with --send, the same delivery step. The
+ * renderer runner and the sender are injectable for the tests.
+ */
+async function runBrief(argv, deps = {}) {
+  loadEnv();
+  const env = deps.env || process.env;
+  const log = deps.log || console.log;
+  const u = ui();
+  const flags = parseBriefFlags(argv);
+  // Both live under bot/ (the worker is a cron entry, the sender a script);
+  // required lazily like every other command body so `rumi --help` loads nothing.
+  const worker = require(path.join(BOT_DIR, 'workers', 'brief.worker'));
+  const sender = require(path.join(BOT_DIR, 'scripts', 'brief', 'send-brief'));
+
+  const code = await worker.renderBrief(flags.kind, { env, runner: deps.runner, log });
+  if (code !== 0) {
+    log(u.fail(`The ${flags.kind} brief did not render (exit code ${code}). See the renderer's output above.`));
+    process.exitCode = 1;
+    return;
+  }
+
+  const manifestDir = sender.defaultManifestDir(flags.kind, env);
+  let panelNote = '';
+  try {
+    panelNote = ` (${sender.loadManifest(manifestDir).panels.length} panels)`;
+  } catch {
+    // The renderer said it succeeded; the PNGs are still where it put them.
+  }
+  log(u.ok(`Rendered the ${flags.kind} brief to ${manifestDir}${panelNote}`));
+
+  if (!flags.send) {
+    log(u.aside('Add --send to deliver it to BRIEF_RECIPIENTS, or --send --dry-run to see what would go out.'));
+    return;
+  }
+
+  const recipients = sender.resolveRecipients(env);
+  if (recipients.length === 0) {
+    log(u.warn('No recipients — set BRIEF_RECIPIENTS in .env (comma-separated targets) to deliver it.'));
+    return;
+  }
+  const deliver = deps.send || sender.sendBrief;
+  const result = await deliver({ manifestDir, recipients, dryRun: flags.dryRun, log, env });
+  process.exitCode = sender.exitCodeFor(result);
+}
 
 const OPTIONS = [
   ['--reconfigure', 'setup: ask about everything again, including what already works'],
   ['--to=<channel>', 'graduate: which channel to move to (defaults to meta)'],
+  ['--weekly', 'brief: render the weekly brief instead of the daily one'],
+  ['--send', 'brief: deliver the rendered brief to BRIEF_RECIPIENTS'],
+  ['--dry-run', 'brief: with --send, print what would go out and send nothing'],
 ];
 
 function printUsage() {
@@ -190,4 +258,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, COMMANDS, printUsage };
+module.exports = { main, COMMANDS, printUsage, parseBriefFlags, runBrief };

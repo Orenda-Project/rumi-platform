@@ -71,6 +71,11 @@ const FEATURES = [
       + 'once the bot is in 100+ servers.',
     probe: 'discord',
   },
+  {
+    name: 'Morning Brief (programme-health briefs to your team)',
+    keys: ['BRIEF_RECIPIENTS'],
+    notes: 'Needs BRIEF_DATABASE_URL or DATABASE_URL and python3 with matplotlib; schedule bot/workers/brief.worker.js daily.',
+  },
   { name: 'Spoken replies (text-to-speech, ElevenLabs)', keys: ['ELEVENLABS_API_KEY'] },
   { name: 'Urdu / regional voices (Uplift)', keys: ['UPLIFT_API_KEY'] },
   { name: 'Lesson-plan generation (Gamma)', keys: ['GAMMA_API_KEY'] },

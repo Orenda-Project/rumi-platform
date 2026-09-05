@@ -53,6 +53,10 @@ const LOAD_TIME_ERROR_RE =
 // the next tick — same shape as Railway / Kubernetes restart policies).
 const CRON_WORKERS = new Set([
   path.join(BOT_ROOT, 'workers', 'stale-session.worker.js'),
+  // The Morning Brief worker is a one-shot cron: with no BRIEF_DATABASE_URL it reports
+  // "nothing sent" and exits 1 so the scheduler can see the failed run — that is the
+  // contract, not a boot failure.
+  path.join(BOT_ROOT, 'workers', 'brief.worker.js'),
 ]);
 
 function discoverWorkerEntries() {

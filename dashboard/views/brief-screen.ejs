@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- An office-wall page: it re-fetches itself so the morning's new brief appears without anyone touching the display. -->
+  <meta http-equiv="refresh" content="<%= refreshSeconds %>">
+  <title><%= title %> - Rumi Observability Portal</title>
+  <link rel="icon" type="image/png" href="/images/rumi-logo.png">
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0f17; color: #e8ecf3; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .stage img { max-width: 100vw; max-height: 100vh; width: auto; height: auto; object-fit: contain; }
+    .corner { position: fixed; left: 1.25rem; bottom: 1rem; font-size: 0.85rem; opacity: 0.7; letter-spacing: 0.02em; }
+    .corner span + span::before { content: " · "; }
+    .empty { text-align: center; padding: 2rem; }
+    .empty h1 { font-weight: 500; font-size: 1.5rem; margin: 0 0 0.5rem; }
+    .empty p { opacity: 0.75; margin: 0.25rem 0; }
+    .empty code { background: #1a2130; padding: 0.1rem 0.4rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <% if (panel) { %>
+      <img src="<%= panel.src %>" alt="<%= panel.alt || panel.caption %>">
+    <% } else { %>
+      <div class="empty">
+        <h1>No <%= kind %> brief to show</h1>
+        <% if (panelCount > 0) { %>
+          <p>This brief has <%= panelCount %> panels (p=0 to <%= panelCount - 1 %>); p=<%= p %> is not one of them.</p>
+        <% } else { %>
+          <p>Run <code>rumi brief<%= kind === 'weekly' ? ' --weekly' : '' %></code> on the bot host to render one.</p>
+        <% } %>
+        <p>This page checks again every <%= Math.round(refreshSeconds / 60) %> minutes.</p>
+      </div>
+    <% } %>
+  </div>
+  <div class="corner">
+    <span><%= kind === 'weekly' ? 'Weekly brief' : 'Morning brief' %></span>
+    <% if (dateline) { %><span><%= dateline %></span><% } %>
+    <% if (panel && panel.index > 0 && panel.caption) { %><span><%= panel.caption %></span><% } %>
+  </div>
+</body>
+</html>
