@@ -48,8 +48,11 @@ and a link to the live page.
 ## Enable it
 
 ```bash
+python3 -m venv .venv && source .venv/bin/activate   # a venv keeps system Python untouched
 pip install matplotlib numpy 'psycopg[binary]'
 ```
+
+If the Python the bot's worker finds is not the venv's, point `BRIEF_PYTHON` at `.venv/bin/python`.
 
 | Variable | What |
 |---|---|

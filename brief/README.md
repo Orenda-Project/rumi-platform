@@ -23,7 +23,8 @@ with the captions that go beside them in `THREAD.md`. Nothing in it is a real pe
 ## Quick start
 
 ```bash
-pip install matplotlib numpy 'psycopg[binary]'     # the only Python dependencies
+python3 -m venv .venv && source .venv/bin/activate   # any Python 3.9+; a venv keeps system Python untouched
+pip install matplotlib numpy 'psycopg[binary]'       # the only Python dependencies
 
 # .env — three lines are enough
 BRIEF_DATABASE_URL=postgresql://…                  # a READ-ONLY role; falls back to DATABASE_URL
