@@ -1,8 +1,0 @@
-{
-  "_comment": "Scope-detection config for the Data Standards Gate (distinct from data-quality-gate's .data-quality-gate/scope.json). Read by .claude/skills/data-standards/scripts/detect_schema_changes.py. `exclude` here is APPENDED to that script's built-in defaults, not a replacement.",
-  "exclude": [
-    ".claude/skills/data-quality-gate/evals/fixtures/**",
-    ".claude/skills/data-standards/evals/fixtures/**"
-  ],
-  "_exclude_note": "Both skills ship deliberately-VIOLATING .sql fixtures under their own evals/fixtures/ for testing the validators themselves (confirmed live: a --mode diff run against this repo's real history flagged .claude/skills/data-quality-gate/evals/fixtures/migrations_*/001_init.sql and .claude/skills/data-standards/evals/fixtures/violating_migration.sql as real D1/D3/D4/D5/D8 violations). This is a false-positive source specific to this repo, since the skills now live in-repo (.claude/skills/) rather than as an external checkout the default include patterns would never reach. Excluding both eval fixture directories entirely, since their SQL is intentionally non-compliant test data, never real product schema."
-}

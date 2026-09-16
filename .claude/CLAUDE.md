@@ -27,8 +27,6 @@ folder with a `SKILL.md` (+ optional reference files).
 | [cross-agent-safety](skills/cross-agent-safety/SKILL.md) | Safety checklist before editing shared services/workers |
 | [pre-merge-checklist](skills/pre-merge-checklist/SKILL.md) | Defensive pre-flight checks for recurring bug classes |
 | [database-analysis](skills/database-analysis/SKILL.md) | Read-only analyst guide: connection, query patterns, anti-sprawl |
-| [data-standards](skills/data-standards/SKILL.md) | Audit a schema/migration/PR against the 27 Data Standards (D1-D27); blocks a confirmed NON-NEGOTIABLE violation live, the instant it's written (`PreToolUse` on Edit/Write) |
-| [data-quality-gate](skills/data-quality-gate/SKILL.md) | New-table/new-column contract checks and column-narrowing detection, live in a session; the live-Postgres data-profile checks (row counts, null rates, FK orphans, anomalies) stay CI-only — not yet wired here |
 | [qa-testing](skills/qa-testing/SKILL.md) | Test runner, conformance guards, the route-contract pattern |
 | [video-generation](skills/video-generation/SKILL.md) | The educational-video pipeline, presigned-URL gotcha, checkpoint/resume |
 | [ab-testing](skills/ab-testing/SKILL.md) | Thompson-sampling multi-armed bandit (ab_tests tables) |
