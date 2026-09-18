@@ -321,6 +321,71 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     }
   }
 
+  // ============================================================
+  // GRANDPARENT BRIDGE (D3)
+  // ============================================================
+  // Two parts, in this order:
+  //
+  //   1. INTAKE INTERCEPT — the three questions are a plain chat conversation
+  //      (Redis-backed, no Meta Flow id to register — see the service header),
+  //      so a mid-intake reply must be consumed before anything else reads it.
+  //      A slash command is never an answer: without that carve-out a parent
+  //      mid-intake could not run /menu, the same bug the quiz intercept above
+  //      had to fix.
+  //   2. TRIGGER — `/bridge` starts it; the softer keywords ("in-laws",
+  //      "saas", "family doesn't support") only OFFER it, once a day. A parent
+  //      mentioning her in-laws is often just venting, and hijacking that with
+  //      a form would be exactly the wrong reply. The offer is plain text, so
+  //      this feature emits no interactive IDs that would need a dispatcher.
+  if (user?.id && messageBody) {
+    try {
+      const GrandparentBridgeService = require('../services/grandparent-bridge.service');
+      const { detectGrandparentBridgeIntent } = require('./grandparent-bridge-trigger');
+      const bridgeText = messageBody.trim();
+
+      if (!bridgeText.startsWith('/') && await GrandparentBridgeService.isInIntake(user.id)) {
+        const result = await GrandparentBridgeService.handleReply(user.id, bridgeText);
+        if (result) {
+          if (result.message) await WhatsAppService.sendMessage(from, result.message);
+          if (result.status === 'complete') {
+            // Generation is a network round-trip plus a PDF render — let the
+            // parent know something is happening, then do it.
+            await WhatsAppService.sendMessage(from, '✍️ Writing it now — one moment.');
+            await GrandparentBridgeService.deliver(from, { userId: user.id, ...result.answers });
+          }
+          if (typingController) typingController.stop();
+          return;
+        }
+      }
+
+      const bridgeIntent = detectGrandparentBridgeIntent(bridgeText);
+      if (bridgeIntent.detected && bridgeIntent.confidence === 'high') {
+        const started = await GrandparentBridgeService.start(user.id);
+        await WhatsAppService.sendMessage(from, started.message);
+        if (typingController) typingController.stop();
+        return;
+      }
+      if (bridgeIntent.detected && bridgeIntent.confidence === 'medium') {
+        const offerKey = `bridge:offer:${user.id}`;
+        const alreadyOffered = await redisService.get(offerKey);
+        if (!alreadyOffered) {
+          await redisService.set(offerKey, '1', 86400); // once a day, no nagging
+          await WhatsAppService.sendMessage(
+            from,
+            '💛 If it would help, I can write you a short note — Urdu and English — '
+            + 'that you can forward to them, built around the exact thing they keep saying.\n\n'
+            + 'Just send */bridge* whenever you want it.'
+          );
+          logToFile('💛 Grandparent Bridge offered', { userId: user.id, keyword: bridgeIntent.keyword });
+        }
+        // Deliberately NOT returning: she was talking to Rumi about something
+        // else, and the offer is a footnote, not an answer.
+      }
+    } catch (bridgeErr) {
+      logToFile('⚠️ Grandparent Bridge routing error (non-fatal)', { error: bridgeErr.message });
+    }
+  }
+
   // When user taps ice breaker, WhatsApp sends the ice breaker text as message
   const iceBreakers = {
     'show menu - see all features i can help with': 'menu',

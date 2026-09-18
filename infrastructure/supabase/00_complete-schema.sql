@@ -3869,6 +3869,36 @@ LEFT JOIN quiz_sessions s ON s.id = d.quiz_session_id
 GROUP BY 1, 2, 3;
 
 -- =============================================================================
+-- Grandparent Bridge (D3) — one row per one-pager generated for a relative.
+--
+-- Deliberately minimal and deliberately un-joinable to a person: the phone
+-- number is stored ONLY as a sha256 hash, because the disclosure behind each
+-- row ("my in-laws think this is neglect") is the most sensitive thing this
+-- product handles. The table answers one question — which objections families
+-- actually face, and did the PDF reach them — and nothing else. No user_id, no
+-- free text, no copy of the generated note.
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS bridge_onepagers (
+    id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- sha256 of the E.164 number: stable per family, reversible by nobody.
+    phone_hash     varchar(64) NOT NULL,
+    -- matches an `id` in bot/shared/data/grandparent-bridge-evidence.json.
+    -- Intentionally NOT a CHECK-constrained enum: the curated library grows by
+    -- editing that JSON, and a CHECK would silently reject every new objection
+    -- type until someone shipped a migration (pre-merge-checklist Class C.1).
+    objection_type text NOT NULL,
+    language       text NOT NULL DEFAULT 'both'
+                       CHECK (language IN ('en', 'ur', 'both')),
+    delivered_pdf  boolean NOT NULL DEFAULT false,
+    created_at     timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_bridge_onepagers_created   ON bridge_onepagers (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bridge_onepagers_objection ON bridge_onepagers (objection_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bridge_onepagers_phone     ON bridge_onepagers (phone_hash);
+
+-- =============================================================================
 -- Column reconcile (Phase 5) — columns the bot code writes/reads that the base
 -- table definitions above predate. Idempotent (ADD COLUMN IF NOT EXISTS) so a
 -- fresh install applies them right after table creation and re-runs are no-ops.
