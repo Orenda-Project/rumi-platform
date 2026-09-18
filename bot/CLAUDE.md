@@ -17,6 +17,7 @@
 | `shared/utils/` | logger, structured-logger (correlation IDs), constants, phone-validation |
 | `workers/` | Background job workers (9) — `sqs-worker.js` is the poll loop; one handler per job type |
 | `scripts/` | CLI simulator, validators, and `scripts/setup/` — the `rumi` wizard, doctor, pairing, flow registration |
+| `console/` | **Operator web console** — mounted at `/console` by `whatsapp-bot.js`, and runnable alone via `rumi console`. Self-contained; see [docs/console.md](../docs/console.md) |
 
 ## Things to know before editing
 
@@ -27,6 +28,10 @@
 - **Shared-service edits are high-blast-radius** — grep consumers, verify imports, run the suite. See the
   `cross-agent-safety` skill.
 - **LLM:** all model calls go through `shared/services/llm-client.js`.
+- **Console:** nothing under `console/` may require `shared/config/supabase`, `shared/utils/constants`,
+  `shared/services/llm-client` or `shared/services/messaging` at module scope — the first exits the process
+  at require time, the rest freeze env at load, and either breaks `rumi console` on the broken deployment it
+  exists to repair. `tests/console/boot-independence.test.js` enforces it.
 - **Flows:** a new Flow = `shared/routes/<x>-endpoint.js` + mount in `flow-endpoint.routes.js` + `<X>_FLOW_ID`
   in `shared/utils/constants.js` + `.env.template` + a `/command` trigger in `shared/handlers/text-message.handler.js`
   + sanitized JSON in `docs/flows/`. See the `whatsapp-flows` skill.

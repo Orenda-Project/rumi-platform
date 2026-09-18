@@ -1,0 +1,20 @@
+<%- include('partials/head') %>
+<div class="centred">
+  <div class="panel card-narrow">
+    <div class="panel-head"><h3>The console is locked</h3></div>
+    <div class="panel-body">
+      <p>This deployment is reachable from the network — <%= reason %> — so the console
+         will not open without a password. It does not fall back to an open page, because the first thing to
+         find an open one would not be you.</p>
+      <ul class="small t-body loose">
+        <% problems.forEach(function (p) { %><li><%= p %></li><% }) %>
+      </ul>
+      <p class="small muted flush-bottom">
+        Set a password on the machine running <%= branding.botName %>:<br>
+        <code class="code-block">rumi console --set-password</code><br>
+        then restart the bot.
+      </p>
+    </div>
+  </div>
+</div>
+</body></html>

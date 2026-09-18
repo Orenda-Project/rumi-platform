@@ -35,6 +35,7 @@ with Docker if you have it — otherwise paste any reachable address (Railway, U
 | `rumi setup` | Connect Rumi to your accounts. Start here. `--reconfigure` re-asks everything. |
 | `rumi start` | Start the bot |
 | `rumi status` | Is Rumi running, which WhatsApp number it answers as, and what's switched on |
+| `rumi console` | Open the web console in a browser. Works even when the bot won't start. |
 | `rumi doctor` | Check every connection in detail, with where to get anything missing |
 | `rumi pair` | Link (or re-link) WhatsApp — sessions do expire |
 | `rumi graduate` | Move to an official WhatsApp Business number |
@@ -50,6 +51,13 @@ rumi start
 
 Message the number the wizard linked, from any phone, and try **Hi**, then `/menu`, `/reading test`, a voice
 note, or a photo of a worksheet.
+
+Then open **<http://localhost:3000/console>** — the web console. It shows whether every service is
+answering, which features are on and which key each one is waiting for, the speech-to-text → AI →
+text-to-speech pipeline with the model behind each layer, and a live feed of what Rumi is doing. You
+can change any setting there instead of editing `.env` by hand. On your own machine it opens without
+a password; anywhere else it stays locked until you set one. See
+[docs/console.md](docs/console.md).
 
 ## What the wizard does, and what it can't
 

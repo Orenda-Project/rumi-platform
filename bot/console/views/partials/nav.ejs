@@ -1,0 +1,35 @@
+<div class="shell">
+<aside class="side">
+  <div class="brand"><b><%= branding.botName %></b><span>console</span></div>
+  <nav class="nav">
+    <a href="<%= mount %>/"          <%- active === '/'         ? 'aria-current="page"' : '' %>>Overview</a>
+    <a href="<%= mount %>/setup"     <%- active === '/setup'    ? 'aria-current="page"' : '' %>>Setup<% if (setupTally) { %><span class="tally"><%= setupTally %></span><% } %></a>
+    <a href="<%= mount %>/pipeline"  <%- active === '/pipeline' ? 'aria-current="page"' : '' %>>Pipeline</a>
+    <a href="<%= mount %>/features"  <%- active === '/features' ? 'aria-current="page"' : '' %>>Features<% if (featureTally) { %><span class="tally"><%= featureTally %></span><% } %></a>
+    <a href="<%= mount %>/activity"  <%- active === '/activity' ? 'aria-current="page"' : '' %>>Activity</a>
+    <a href="<%= mount %>/system"    <%- active === '/system'   ? 'aria-current="page"' : '' %>>System</a>
+  </nav>
+  <div class="side-foot">
+    <% if (standalone) { %>
+      <div>Running on its own —<br>the bot is not in this process.</div>
+    <% } else { %>
+      <div>Mounted in the bot</div>
+    <% } %>
+    <div class="mono"><%= posture.mode === 'local' ? 'open on this machine'
+      : posture.mode === 'gated' ? 'password protected'
+      : posture.mode === 'per-request' ? 'this machine only'
+      : 'locked' %></div>
+  </div>
+</aside>
+<main class="main">
+<% if (pending && pending.length) { %>
+  <div class="banner warn">
+    <div class="grow">
+      <b><%= pending.length %> saved change<%= pending.length === 1 ? '' : 's' %> not applied yet</b>
+      Rumi is still running with the old values for
+      <% pending.slice(0, 6).forEach(function (p, i) { %><code><%= p.key %></code><%= i < Math.min(pending.length, 6) - 1 ? ', ' : '' %><% }) %><%
+      %><% if (pending.length > 6) { %> and <%= pending.length - 6 %> more<% } %>.
+      Restart it to pick them up.
+    </div>
+  </div>
+<% } %>

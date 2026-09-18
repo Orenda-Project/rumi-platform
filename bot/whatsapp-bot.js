@@ -80,6 +80,36 @@ app.use(express.json());
 // Mount routes (Flow encryption endpoints)
 app.use('/api/flows', flowEndpointRoutes);
 
+// Operator console at /console — a web view of what `rumi status`, `rumi doctor`
+// and `.env` already hold, for the people running Rumi who do not want a
+// terminal. Mounted HERE deliberately: after express.json() so its POST bodies
+// parse, and after the /api/slack raw-body mount above so Slack's HMAC over the
+// exact wire bytes is untouched.
+//
+// It authenticates itself and only under its own paths, so `/`, `/health` and
+// the Meta webhook keep behaving exactly as before — which matters because
+// bot/railway.json points its health check at `/`.
+//
+// The same console also runs standalone (`rumi console`), because this process
+// exits at require time when Supabase credentials are wrong — see
+// bot/console/server.js.
+const consoleMount = (() => {
+  try {
+    return require('./console').mountConsole(app, {
+      bind: process.env.CONSOLE_BIND || (process.env.PORT ? '0.0.0.0' : '127.0.0.1'),
+    });
+  } catch (err) {
+    // A broken console must never stop the bot from answering teachers.
+    console.error(`Operator console failed to mount: ${err.message}`);
+    return null;
+  }
+})();
+
+// Feature switches an operator set from the console (or by hand in .env). Loaded
+// once here so the gate is warm before the first message arrives; the console
+// updates the same cache in-process when a switch is flipped.
+require('./shared/config/feature-availability').overrides.load(process.env);
+
 // Create temp directory if it doesn't exist
 if (!fs.existsSync(constants.TEMP_DIR)) {
   fs.mkdirSync(constants.TEMP_DIR, { recursive: true });
@@ -1955,6 +1985,7 @@ ${'='.repeat(70)}
 ✅ Server running on port ${constants.PORT}
 📍 Local URL: http://localhost:${constants.PORT}
 🔗 Health Check: http://localhost:${constants.PORT}/health
+🎛️  Console: http://localhost:${constants.PORT}/console${consoleMount ? ` (${consoleMount.mode === 'per-request' ? 'open from this machine, locked from the network' : `${consoleMount.mode} access`})` : ' (failed to mount)'}
 
 📝 LOGGING ENABLED
    All webhook activity is logged to: ${LOGS_DIR}

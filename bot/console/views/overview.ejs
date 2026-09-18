@@ -1,0 +1,104 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+
+<% var ready = missing.length === 0; %>
+
+<% if (!ready) { %>
+  <div class="banner bad">
+    <div class="grow">
+      <b>Rumi cannot start yet</b>
+      <%= missing.length %> required setting<%= missing.length === 1 ? ' is' : 's are' %> still empty.
+      Fill <% missing.forEach(function (k, i) { %><code><%= k %></code><%= i < missing.length - 1 ? ', ' : '' %><% }) %> in Setup.
+    </div>
+    <a class="btn accent" href="<%= mount %>/setup">Finish setting up →</a>
+  </div>
+<% } %>
+
+<section class="hero">
+  <h2><%= branding.botName %> is <%= standalone ? 'not running here' : 'running' %></h2>
+  <p class="lede">
+    <% if (standalone) { %>
+      This console is running on its own so you can fix the settings. Start the bot with <code>rumi start</code> when you are done.
+    <% } else if (channel === 'baileys') { %>
+      Answering as a linked WhatsApp account — the try-it-out setup, no Meta approval needed.
+    <% } else { %>
+      Answering on an official WhatsApp Business number.
+    <% } %>
+  </p>
+  <dl class="hero-grid">
+    <div>
+      <dt>Uptime</dt>
+      <dd><%= standalone ? '—' : (uptime < 90 ? uptime + 's' : Math.floor(uptime / 60) + 'm') %></dd>
+    </div>
+    <div>
+      <dt>Channel</dt>
+      <dd class="mono"><%= channel %><% activeChannels.forEach(function (c) { %> + <%= c %><% }) %></dd>
+    </div>
+    <div>
+      <dt>Answers as</dt>
+      <dd class="mono"><%= identity.paired && identity.number ? ('+' + identity.number.slice(0, 2) + '•••' + identity.number.slice(-2)) : 'not linked' %></dd>
+    </div>
+    <div>
+      <dt>Features on</dt>
+      <dd><%= features.counts.on %> of <%= features.counts.total %></dd>
+    </div>
+    <div>
+      <dt>Version</dt>
+      <dd class="mono"><%= version %></dd>
+    </div>
+  </dl>
+</section>
+
+<h2 class="section">Connections</h2>
+<div class="panel">
+  <div class="panel-body flush">
+    <div id="probes" data-probes='<%- JSON.stringify([
+        { id: "supabase",   label: "Database",  what: "Where teachers, lessons and assessments are stored", keys: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"] },
+        { id: "tables",     label: "Tables",    what: "Whether the schema has been applied to that database", keys: [] },
+        { id: "openrouter", label: "AI",        what: "Every word Rumi writes", keys: ["OPENROUTER_API_KEY"] },
+        { id: "redis",      label: "Redis",     what: "Conversation state and the job queue", keys: ["REDIS_URL"] }
+      ]) %>'>
+    </div>
+  </div>
+</div>
+
+<h2 class="section">What's switched on</h2>
+<div class="panel">
+  <div class="panel-body flush">
+    <% features.rows.forEach(function (f) { %>
+      <div class="row compact">
+        <span class="dot <%= f.state === 'on' ? 'ok' : (f.state === 'paused' ? 'warn' : 'off') %>"></span>
+        <span class="t-strong"><%= f.title %></span>
+        <span class="right">
+          <% if (f.state === 'on') { %>
+            <span class="pill ok">on</span>
+          <% } else if (f.state === 'paused') { %>
+            <span class="pill warn">switched off by you</span>
+          <% } else { %>
+            <span class="pill">needs <%= f.missing.length === 1 ? 'a key' : f.missing.length + ' keys' %></span>
+          <% } %>
+        </span>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<h2 class="section">Recent activity</h2>
+<div class="panel">
+  <div class="panel-body flush">
+    <% if (ring.records === 0) { %>
+      <div class="empty-state">
+        <b>Nothing recorded yet</b>
+        <p>Message <%= branding.botName %> from WhatsApp and what happens will appear here, stage by stage.</p>
+      </div>
+    <% } else { %>
+      <div class="stats">
+        <div class="stat"><div class="n"><%= ring.records %></div><div class="l">events held</div></div>
+        <div class="stat"><div class="n"><%= ring.traces %></div><div class="l">requests traced</div></div>
+        <div class="stat"><div class="n muted"><%= ring.capacity %></div><div class="l">buffer size</div></div>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

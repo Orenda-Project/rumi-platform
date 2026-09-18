@@ -117,10 +117,20 @@ added later by setting its key. Each is documented in [`.env.template`](.env.tem
 | `rumi start` | Start Rumi |
 | `rumi status` | Is Rumi running, which WhatsApp number it answers as, what's switched on |
 | `rumi doctor` | Check every connection in detail, with where to get anything missing |
+| `rumi console` | Open the web console — same answers in a browser, and you can change things there |
 | `rumi pair` | Link (or re-link) WhatsApp — sessions do expire |
 | `rumi graduate` | Move to an official WhatsApp Business number |
 
 If `install.sh` could not put `rumi` on your PATH, `node bin/rumi.js <command>` is identical.
+
+**Prefer a screen to a terminal?** `rumi start` opens it for you — or go to
+**<http://localhost:3000/console>** yourself. The
+console shows whether every service is answering, which features are on and which key each one is waiting
+for, the speech-to-text → AI → text-to-speech pipeline with the model behind each layer, and a live feed of
+what Rumi is doing right now. You can set any key there instead of editing `.env`, with the same "where do I
+get this" links the wizard gives you and a **Test connection** button on each one. It opens without a
+password on your own machine, and stays locked anywhere else until you set one. (`rumi start --no-open`
+if you would rather it did not.) Full details: **[docs/console.md](docs/console.md)**.
 
 **Would rather not type it yourself?** Open the repo in a coding agent (Claude Code, Cursor, Codex) and say
 *"set me up"* — it walks you through the same sequence in conversation, following the
@@ -416,6 +426,7 @@ the schema, the docs, the agent skills, and the link web all stay honest.
 | [docs/onboarding/whatsapp.md](docs/onboarding/whatsapp.md) | Getting a WhatsApp Business number, start to finish |
 | [docs/onboarding/api-keys.md](docs/onboarding/api-keys.md) | Every API key: what it unlocks and where to get it |
 | [docs/LP_PATHS.md](docs/LP_PATHS.md) | How a lesson-plan request is routed (pre-generated vs Gamma vs photo) |
+| [docs/console.md](docs/console.md) | The operator web console — settings, health, the pipeline, live activity |
 | [docs/architecture.md](docs/architecture.md) | System architecture & message flow |
 | [CLAUDE.md](CLAUDE.md) + [.claude/](.claude/) | **Agent-native** context: the routers + the 18 operational skills |
 | [docs/agent-customization.md](docs/agent-customization.md) | Agent-first deep customization (frameworks, languages, branding) |

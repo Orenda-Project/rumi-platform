@@ -1,0 +1,62 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+
+<div class="page-head">
+  <h1>Activity</h1>
+  <p>What <%= branding.botName %> is doing, as it happens. Click any line to see the whole request
+     stage by stage — which engine transcribed it, which model answered, where it failed.</p>
+</div>
+
+<div class="banner info">
+  <div class="grow">
+    <b>Phone numbers and message content are never shown here</b>
+    This bot handles teachers' voice notes and children's names. The feed carries only the shape of what
+    happened — provider, model, timing, result — and drops everything else before it reaches this page.
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h3><span class="dot live"></span> Live</h3>
+    <div class="flex">
+      <span class="sub"><%= stats.records %> of <%= stats.capacity %> held in memory</span>
+      <button class="btn sm" id="feed-pause">Pause</button>
+    </div>
+  </div>
+  <div class="panel-body flush">
+    <div class="feed" id="feed">
+      <div class="empty-state">
+        <b>Waiting for something to happen</b>
+        <p>Send <%= branding.botName %> a message from WhatsApp and it will appear here within a second.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="trace">
+  <div class="panel-body muted small">Select a line above to see its full trace.</div>
+</div>
+
+<% if (traces.length) { %>
+  <h2 class="section">Recent requests</h2>
+  <div class="panel">
+    <div class="wrap-x">
+    <table class="grid">
+      <thead><tr><th>When</th><th>Feature</th><th>Stages</th><th>Took</th><th>Result</th></tr></thead>
+      <tbody>
+        <% traces.forEach(function (t) { %>
+          <tr>
+            <td class="mono"><%= new Date(t.startedAt).toLocaleTimeString('en-GB', { hour12: false }) %></td>
+            <td><%= t.feature || '—' %></td>
+            <td><%= t.count %></td>
+            <td class="mono"><%= t.durationMs %>ms</td>
+            <td><% if (t.failed) { %><span class="pill bad">failed</span><% } else { %><span class="pill ok">ok</span><% } %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+<% } %>
+
+<%- include('partials/foot') %>
