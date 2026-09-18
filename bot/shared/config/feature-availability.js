@@ -96,6 +96,17 @@ const FEATURES = [
     name: 'Exam-checker OCR (Mistral or Chandra)',
     keysAny: ['MISTRAL_API_KEY', 'CHANDRA_API_KEY'],
   },
+  // Writing feedback reads a child's handwritten paragraph with the SAME OCR
+  // service the exam checker uses (services/exam-checker/ocr.service.js), so
+  // it is gated on exactly the same disjunction — no new credential, and no
+  // separate enable flag. Listed as its own row because `doctor` reports
+  // per-FEATURE, and a parent-facing feature being live is a different fact
+  // from exam grading being live even though one key switches both on.
+  {
+    name: "Writing feedback (Writer's Second Pair of Eyes)",
+    keysAny: ['MISTRAL_API_KEY', 'CHANDRA_API_KEY'],
+    notes: 'Shares the exam-checker OCR key. Parent confirms every draft before it reaches the child.',
+  },
   { name: 'Observability (Axiom)', keys: ['AXIOM_DATASET', 'AXIOM_TOKEN'] },
 ];
 

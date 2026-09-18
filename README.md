@@ -196,6 +196,7 @@ key(s) that switch it on.
 | 🎬 **[Video Generation](docs/features/video.md)** | A topic → a short narrated educational video | `VIDEO_GENERATION_ENABLED` + `KIE_API_KEY` |
 | ✅ **[Attendance](docs/features/attendance.md)** | Mark attendance by voice or by tapping names — works the same way on WhatsApp, Slack, and Discord | _always on (core)_ |
 | 🧮 **[Exam Checker](docs/features/exam-checker.md)** | Photograph answer sheets → vision OCR + AI grading | `MISTRAL_API_KEY` |
+| ✍️ **[Writing Feedback](docs/features/writing-feedback.md)** | Photo of a child's paragraph → 2–3 kind edits the parent confirms before the child sees them | `MISTRAL_API_KEY` |
 | 🌅 **[Morning Brief](docs/features/morning-brief.md)** | Every morning, one thread that tells your team how the programme is doing — registration, lesson plans, coaching, scores, reading, every school worst-first — on WhatsApp, Slack or Discord, with a live page | `BRIEF_RECIPIENTS` + a read-only `BRIEF_DATABASE_URL` |
 
 > **No tiers, no toggles to hunt for.** Rumi gates features by **presence**: set a feature's API key and it

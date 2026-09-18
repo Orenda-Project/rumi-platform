@@ -37,6 +37,7 @@ ALTER TABLE exam_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE exam_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE exam_grades ENABLE ROW LEVEL SECURITY;
 ALTER TABLE grade_audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE writing_feedback_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE image_analysis_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE video_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE video_tasks ENABLE ROW LEVEL SECURITY;
@@ -152,6 +153,10 @@ DROP POLICY IF EXISTS "service_role_exam_grades" ON exam_grades;
 CREATE POLICY "service_role_exam_grades" ON exam_grades FOR ALL USING (auth.role() = 'service_role');
 DROP POLICY IF EXISTS "service_role_grade_audit_log" ON grade_audit_log;
 CREATE POLICY "service_role_grade_audit_log" ON grade_audit_log FOR ALL USING (auth.role() = 'service_role');
+
+-- Writing Feedback
+DROP POLICY IF EXISTS "service_role_writing_feedback_sessions" ON writing_feedback_sessions;
+CREATE POLICY "service_role_writing_feedback_sessions" ON writing_feedback_sessions FOR ALL USING (auth.role() = 'service_role');
 
 -- Image Analysis
 DROP POLICY IF EXISTS "service_role_image_analysis" ON image_analysis_requests;

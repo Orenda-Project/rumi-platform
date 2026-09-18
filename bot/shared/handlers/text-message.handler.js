@@ -386,6 +386,27 @@ async function handleTextMessage(message, from, messageBody, user = null) {
   }
 
   // ============================================================
+  // WRITING FEEDBACK DETECTION: /writing, the age reply, the parent's edits
+  // Slots AFTER exam-checker so its routing is untouched — the two keyword
+  // sets do not overlap, and this gate returns null for anything that isn't
+  // a writing trigger or an open writing session.
+  // ============================================================
+  if (user) {
+    try {
+      const WritingFeedbackHandler = require('./writing-feedback.handler');
+      const result = await WritingFeedbackHandler.handleWritingText(message, from, user);
+      if (result && result.handled) {
+        logToFile('✅ Message handled by Writing Feedback', { userId: user.id });
+        typingController.stop();
+        return;
+      }
+    } catch (error) {
+      logToFile('⚠️ Error in writing feedback detection', { error: error.message });
+      // Continue with regular message handling
+    }
+  }
+
+  // ============================================================
   // PORTAL COMMAND DETECTION: Check for /portal command
   // ============================================================
   if (trimmedMessage === '/portal' || trimmedMessage.startsWith('/portal ')) {

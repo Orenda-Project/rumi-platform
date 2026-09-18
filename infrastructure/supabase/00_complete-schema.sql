@@ -766,6 +766,33 @@ CREATE TABLE IF NOT EXISTS exam_check_sessions (
     PRIMARY KEY (id)
 );
 
+-- Writing feedback ("Writer's Second Pair of Eyes"): a parent photographs her
+-- child's handwritten paragraph; Rumi drafts 2-3 kind edits; the PARENT edits or
+-- confirms them before anything reaches the child. ai_draft + parent_final +
+-- edits_count are the point, not bookkeeping: the difference between them is the
+-- accuracy signal no AI writing grader on the market currently measures.
+-- phone_hash (not the number) groups sessions per parent — the content is a
+-- child's schoolwork.
+CREATE TABLE IF NOT EXISTS writing_feedback_sessions (
+    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    phone_hash VARCHAR(64),
+    status VARCHAR(30) NOT NULL DEFAULT 'awaiting_photo',
+    child_age INTEGER,
+    image_url TEXT,
+    ocr_text TEXT,
+    ocr_confidence NUMERIC,
+    ocr_provider VARCHAR(20),
+    ai_draft JSONB,
+    parent_final JSONB,
+    edits_count INTEGER DEFAULT 0,
+    confirmed_at TIMESTAMPTZ,
+    error_message TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE IF NOT EXISTS exam_templates (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
@@ -1649,6 +1676,13 @@ END $$;
 DO $$ BEGIN
     ALTER TABLE exam_check_sessions
         ADD CONSTRAINT exam_check_sessions_user_id_fkey
+        FOREIGN KEY (user_id) REFERENCES users(id);
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE writing_feedback_sessions
+        ADD CONSTRAINT writing_feedback_sessions_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES users(id);
 EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
 END $$;
@@ -3085,6 +3119,12 @@ CREATE TRIGGER exam_templates_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_exam_checker_updated_at();
 
+DROP TRIGGER IF EXISTS writing_feedback_sessions_updated_at ON writing_feedback_sessions;
+CREATE TRIGGER writing_feedback_sessions_updated_at
+    BEFORE UPDATE ON writing_feedback_sessions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_exam_checker_updated_at();
+
 DROP TRIGGER IF EXISTS increment_session_turn_count ON conversations;
 CREATE TRIGGER increment_session_turn_count
     AFTER INSERT ON conversations
@@ -3314,6 +3354,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_exam_grades_unique ON exam_grades USING bt
 CREATE INDEX IF NOT EXISTS idx_exam_submissions_session ON exam_submissions USING btree (session_id);
 CREATE INDEX IF NOT EXISTS idx_exam_submissions_student ON exam_submissions USING btree (student_id) WHERE (student_id IS NOT NULL);
 CREATE INDEX IF NOT EXISTS idx_exam_templates_user ON exam_templates USING btree (user_id, last_used_at DESC);
+CREATE INDEX IF NOT EXISTS idx_writing_feedback_sessions_user ON writing_feedback_sessions USING btree (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_writing_feedback_sessions_status ON writing_feedback_sessions USING btree (status) WHERE ((status)::text <> ALL ((ARRAY['done'::character varying, 'cancelled'::character varying])::text[]));
 CREATE INDEX IF NOT EXISTS idx_failed_operations_created ON failed_operations USING btree (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feature_permissions_feature ON feature_permissions USING btree (feature_key);
 CREATE INDEX IF NOT EXISTS idx_feature_permissions_role ON feature_permissions USING btree (role);

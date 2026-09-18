@@ -8,8 +8,9 @@
  * Routing order (each gate falls through to the next):
  *   1. Coaching classroom-photo collection (active coaching session)
  *   2. Exam checker (active exam session)
- *   3. Pic-to-LP: a textbook-page photo → illustrated lesson-plan PDF
- *   4. Generic vision analysis (fallback — feedback on any image)
+ *   3. Writing feedback: a child's handwritten paragraph → parent-confirmed edits
+ *   4. Pic-to-LP: a textbook-page photo → illustrated lesson-plan PDF
+ *   5. Generic vision analysis (fallback — feedback on any image)
  *
  * Features:
  * - Idempotency via Redis (prevents duplicate processing)
@@ -203,6 +204,28 @@ async function handleImageMessage(message, from, user = null) {
         }
       } catch (examError) {
         logToFile('⚠️ Error in exam checker image detection', { error: examError.message });
+        // Continue with regular image analysis
+      }
+
+      // ============================================================
+      // WRITING FEEDBACK DETECTION: a child's handwritten paragraph
+      // Slots AFTER exam-checker so its routing is untouched: it only claims
+      // an image when an open writing session is waiting on one, or the
+      // caption names writing/essay/paragraph (none of which appear in
+      // EXAM_CHECK_KEYWORDS).
+      // ============================================================
+      try {
+        const WritingFeedbackHandler = require('./writing-feedback.handler');
+        const result = await WritingFeedbackHandler.handleWritingImage(message, from, user);
+        if (result && result.handled) {
+          logToFile('✅ Image handled by Writing Feedback', { userId: user.id });
+          typingController.stop();
+          return;
+        }
+      } catch (writingError) {
+        logToFile('⚠️ Error in writing feedback image detection', {
+          error: writingError.message
+        });
         // Continue with regular image analysis
       }
 
