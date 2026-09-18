@@ -1,0 +1,34 @@
+{
+  "currency": "PKR",
+  "as_of": "2026-09-09",
+  "_fixture_note": "TEST FIXTURE — a deliberately HOLEY dataset. Mirrors the real-world shapes the live data has: a board that publishes a per-subject fee, a board that prices per subject GROUP so per_subject_fee is null and the real prices live only in notes (AKU-EB's actual shape), a null fixed_fee amount, and a null late_entry_surcharge amount. Guards the honesty rules deterministically, in case the live dataset one day fills all its holes.",
+  "boards": [
+    {
+      "id": "cambridge",
+      "name": "Cambridge (CAIE) via British Council",
+      "levels": ["O Level", "A Level"],
+      "per_subject_fee": { "O Level": 32920, "A Level": null },
+      "fixed_fees": [
+        { "label": "British Council registration/admin charge", "amount": 12500, "per": "session" },
+        { "label": "Unpublished centre charge", "amount": null, "per": "candidate" }
+      ],
+      "late_entry_surcharge": { "stage": "Late", "amount": null, "per": "subject" },
+      "private_candidate_allowed": true,
+      "cities": ["Karachi", "Lahore"],
+      "notes": "AS/A Level per-subject fee could not be separately confirmed this pass and is left null rather than guessed.",
+      "source": "https://example.invalid/bc"
+    },
+    {
+      "id": "aku-eb",
+      "name": "AKU-EB (Aga Khan University Examination Board)",
+      "levels": ["SSC-II", "HSSC-II"],
+      "per_subject_fee": { "SSC-II": null, "HSSC-II": null },
+      "fixed_fees": [],
+      "late_entry_surcharge": { "stage": "Late", "amount": null, "per": "candidate" },
+      "private_candidate_allowed": true,
+      "cities": ["Karachi"],
+      "notes": "AKU-EB charges a single flat fee PER GROUP choice covering all subjects in that group, so no single number can populate per_subject_fee without producing a wrong total. Confirmed group fees, reference only: SSC-II Humanities PKR 31,500 / Science PKR 34,800; HSSC-II Pre-Medical PKR 42,800. This sentence is far past the two-hundred character cut so the trim is exercised.",
+      "source": "https://example.invalid/akueb"
+    }
+  ]
+}

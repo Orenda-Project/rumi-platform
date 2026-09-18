@@ -93,6 +93,7 @@ async function tryCurriculumLessonPlanServe(from, topic, user, language) {
  */
 
 const { evaluateHomeworkTrigger } = require('./homework-trigger');
+const { parseExamCostCommand } = require('./exam-cost-trigger');
 const { detectEditClassIntent } = require('./edit-class-trigger');
 
 async function handleTextMessage(message, from, messageBody, user = null) {
@@ -1421,6 +1422,75 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       logToFile('❌ Error starting /status', { userId: user?.id, error: error.message });
     }
     return;
+  }
+
+  // ============================================================
+  // EXAM COST COMPASS — itemised exam-cost comparison + registration deadlines.
+  //   cost <level> <n subjects> [board,board] [city]
+  //   deadlines [board]
+  //   remind me <board>   /   stop reminders
+  // plus the natural-language ways in ("cambridge fee", "what's the deadline"),
+  // parsed by the pure ./exam-cost-trigger module (same shape as the homework
+  // trigger below).
+  //
+  // NOT presence-gated: the fee/deadline datasets ship as JSON in
+  // bot/shared/data/, so there is no env key to gate on and the feature is
+  // deliberately absent from feature-availability.js's FEATURES list (that
+  // list maps a feature to the key that switches it on). Core, always on —
+  // the same treatment registration and attendance get.
+  //
+  // Placed before the registration gate on purpose: the parent asking what
+  // Cambridge costs is usually not a registered teacher and may have no users
+  // row at all — the same reason quiz answering runs early.
+  // ============================================================
+  {
+    const examCost = parseExamCostCommand(messageBody);
+    if (examCost.match) {
+      logToFile('📊 Exam Cost Compass command detected', { type: examCost.type, phoneNumber: from });
+      typingController.stop();
+      const costLanguage = (await getUserLanguage(from)) || responseLanguage || 'en';
+      try {
+        const ExamCostService = require('../services/exam-cost.service');
+
+        if (examCost.type === 'cost') {
+          const result = ExamCostService.estimate({
+            level: examCost.level,
+            subjects: examCost.subjects,
+            boardIds: examCost.boardIds,
+            includeLate: examCost.includeLate,
+            city: examCost.city,
+          });
+          await WhatsAppService.sendMessage(from, ExamCostService.formatEstimateReply(result, costLanguage));
+        } else if (examCost.type === 'deadlines') {
+          const upcoming = ExamCostService.nextDeadlines(examCost.boardId, new Date());
+          await WhatsAppService.sendMessage(from, ExamCostService.formatDeadlinesReply(upcoming, costLanguage));
+        } else if (examCost.type === 'remind') {
+          const DeadlineReminderService = require('../services/deadline-reminder.service');
+          if (!examCost.boardId) {
+            await WhatsAppService.sendMessage(from,
+              `Which board? Try: remind me cambridge\n\nBoards: ${ExamCostService.boardIds().join(', ')}`);
+          } else {
+            const res = await DeadlineReminderService.optIn(from, examCost.boardId);
+            await WhatsAppService.sendMessage(from, res.ok
+              ? `✅ You'll get a nudge 14 days and 3 days before each ${examCost.boardId} deadline.\nReply "stop reminders" any time.`
+              : `Sorry — I couldn't save that reminder. Please try again.`);
+          }
+        } else if (examCost.type === 'stop_reminders') {
+          const DeadlineReminderService = require('../services/deadline-reminder.service');
+          const res = await DeadlineReminderService.optOut(from);
+          await WhatsAppService.sendMessage(from, res.ok
+            ? '🔕 Deadline reminders stopped for every board.'
+            : "Sorry — I couldn't stop those reminders. Please try again.");
+        } else {
+          await WhatsAppService.sendMessage(from, ExamCostService.formatUsage(costLanguage));
+        }
+      } catch (error) {
+        logToFile('❌ Error in Exam Cost Compass', { error: error.message, type: examCost.type });
+        await WhatsAppService.sendMessage(from,
+          'Sorry, something went wrong working out those exam costs. Please try again.');
+      }
+      return;
+    }
   }
 
   // ============================================================

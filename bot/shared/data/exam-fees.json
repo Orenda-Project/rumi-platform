@@ -1,0 +1,195 @@
+{
+  "currency": "PKR",
+  "as_of": "2026-09-09",
+  "boards": [
+    {
+      "id": "cambridge",
+      "name": "Cambridge (CAIE) via British Council",
+      "levels": [
+        "O Level",
+        "IGCSE",
+        "AS",
+        "A Level"
+      ],
+      "per_subject_fee": {
+        "O Level": 32920,
+        "IGCSE": 32920,
+        "AS": null,
+        "A Level": null
+      },
+      "fixed_fees": [
+        {
+          "label": "British Council registration/admin charge",
+          "amount": 12500,
+          "per": "session"
+        }
+      ],
+      "late_entry_surcharge": {
+        "stage": "Late",
+        "amount": null,
+        "per": "subject"
+      },
+      "private_candidate_allowed": true,
+      "cities": [
+        "Karachi",
+        "Lahore",
+        "Islamabad",
+        "Rawalpindi",
+        "Multan",
+        "Faisalabad",
+        "Peshawar"
+      ],
+      "notes": "per_subject_fee of PKR 32,920 is the confirmed official May/June 2026 fee sampled across multiple subjects (Accounting 7707, Additional Mathematics 4037, Arabic 3180, Art & Design 6090) from a British Council 'Fee Calculation Form MJ2026 Pakistan'. Independent vault research (08-pakistan-muslim-global-south.md) and a Senate committee complaint cite a wider PKR 35,000-60,000/subject range for 2025-26 sessions and press coverage of a 'Rs60,000 fee' \u2014 treat 32,920 as the confirmed floor for a typical (non-science-practical) subject; science subjects with practicals run higher per multiple secondary sources (thinkerzz.com cites PKR 30,000-35,000 general range, sciences higher). AS/A Level per-subject fee could not be separately confirmed this pass (cambrilearn.com cites a vague ~$90-140 USD equivalent, not a PKR figure) \u2014 left null rather than guessed. Late-entry surcharge of 25-50% per subject is a secondary-source range (thinkerzz.com), not an official schedule; midpoint 37.5% given as amount_pct, no confirmed PKR amount. A separate PKR 1,500/subject withdrawal-before-deadline admin fee is also documented (thinkerzz.com, learnersacademy.com.pk) but is not the same as late-entry surcharge so is not placed in that field. Registration/admin charge of PKR 10,000-15,000 is from vault research citing stateofchildren.com and a Reddit private-candidate thread, not an official British Council fee page; use 12,500 (range midpoint) with low confidence. Exact exam-centre city list by board is not compiled anywhere in the source research (open question in 02-A-exam-cost-records.md) \u2014 cities listed are the commonly-cited major British Council exam centres, not a verified exhaustive list. Late-entry surcharge estimated at ~37.5% of the base per-subject fee (secondary-source range 25-50%, no confirmed PKR amount). SECOND PASS 2026-09-09: britishcouncil.pk and internationalschools.britishcouncil.org were checked again -- the official private-candidate registration pages confirm fees are 'within the SRS' (School Registration System, login-gated) and NOT published publicly; britishcouncil.pk itself returns an Akamai 'Access Denied' to automated fetches regardless of user-agent. New secondary-source range found: thinkerzz.com/a-level-fees-pk/ states A Level (AS+A2 combined program) exam fees run PKR 40,000-50,000/subject, with AS and A2 paid as two SEPARATE entries (not one AS+A2 fee), and states a late-registration surcharge of PKR 5,000-10,000/subject on top of the standard fee (still not an official BC figure -- amount field left null per the 'never guess' rule, this range is prose-only). Still no confirmed single official PKR figure for AS/A Level distinct from the O Level/IGCSE 32,920 already confirmed -- left null.",
+      "source": "https://www.scribd.com/document/982930584/Fee-Calculation-Form-MJ2026-Pakistan ; https://thinkerzz.com/igcse-fees-pk/ ; https://stateofchildren.com/parliamentary-body-calls-for-reviewing-rs60000-fee-for-each-cambridge-exam-in-pakistan/"
+    },
+    {
+      "id": "edexcel",
+      "name": "Pearson Edexcel International (Pakistan private candidate, via British Council)",
+      "levels": [
+        "IGCSE",
+        "AS",
+        "A Level"
+      ],
+      "per_subject_fee": {
+        "IGCSE": null,
+        "AS": null,
+        "A Level": null
+      },
+      "fixed_fees": [],
+      "late_entry_surcharge": {
+        "stage": "Late",
+        "amount": null,
+        "per": "subject"
+      },
+      "private_candidate_allowed": true,
+      "cities": [
+        "Karachi",
+        "Lahore",
+        "Islamabad"
+      ],
+      "notes": "No official PKR per-subject fee schedule for Edexcel Pakistan was found in this research pass. CambriLearn markets itself as an 'approved Edexcel centre (No. 94888)' implying Edexcel is priced competitively against Cambridge, but gives no PKR figure. Pearson's own global qualifications-fees page (qualifications.pearson.com) is a UK-centre fee schedule, not Pakistan-specific, so was not used to avoid misattributing a foreign fee as the Pakistan private-candidate rate. Deadlines are confirmed (see exam-deadlines.json); the fee itself is null per the 'never guess' rule. Update priority: contact British Council Pakistan or an Edexcel-registered centre directly for the next session's fee schedule. British Council Pakistan confirms an Edexcel Oct/Nov 2026 normal-stage deadline (24 Aug 2026) and late-stage deadline (17 Sep 2026) exist and carry a late surcharge, but no PKR amount for the surcharge or the base fee was found in this pass.",
+      "source": "https://learnersacademy.com.pk/blog/private-candidate-registration-pakistan-oct-nov-2026/"
+    },
+    {
+      "id": "aku-eb",
+      "name": "AKU-EB (Aga Khan University Examination Board)",
+      "levels": [
+        "SSC-I",
+        "SSC-II",
+        "HSSC-I",
+        "HSSC-II"
+      ],
+      "per_subject_fee": {
+        "SSC-I": null,
+        "SSC-II": null,
+        "HSSC-I": null,
+        "HSSC-II": null
+      },
+      "fixed_fees": [],
+      "late_entry_surcharge": {
+        "stage": "Late",
+        "amount": null,
+        "per": "candidate"
+      },
+      "private_candidate_allowed": true,
+      "cities": [
+        "Karachi"
+      ],
+      "notes": "CONFIRMED 2026-09-09 from official AKU-EB SSC and HSSC Private Candidate Registration Form PDFs (Annual Examinations 2027, examinationboard.aku.edu, fee table on page 4 of each form). AKU-EB charges a single flat 'Candidate Enrolment and Exam Registration Fee' PER GROUP choice (e.g. Science, Humanities, Pre-Medical) that covers ALL subjects in that group -- it is NOT a per-subject fee like Cambridge's, and groups are mutually exclusive (a candidate picks one), so no single number can correctly populate this schema's per_subject_fee or fixed_fees fields without producing a wrong total in the calculator (summing all groups would double/triple-count a candidate who only pays for one). Both per_subject_fee and fixed_fees are left null/empty for that reason; the confirmed group fees are recorded here as reference only: SSC-I Humanities PKR 28,100 / Science PKR 32,500; SSC-II Humanities PKR 31,500 / Science PKR 34,800; HSSC-I Humanities PKR 41,600 / Commerce PKR 41,500 / Pre-Engineering PKR 45,000 / Science General PKR 45,100 / Pre-Medical PKR 45,800; HSSC-II Humanities PKR 39,600 / Commerce PKR 39,500 / Pre-Engineering PKR 42,100 / Science General PKR 42,500 / Pre-Medical PKR 42,800. Add-ons (also flat, not summed here): additional theory subject PKR 7,000, additional practical subject PKR 5,500, re-sit/ex-candidate exam registration fee PKR 4,500 (waived for part-II candidates re-sitting a part-I subject), Practical fee for Art & Model Drawing/Fine Arts PKR 5,500. Late penalty fee is flat per candidate (not per subject), left null in late_entry_surcharge.amount for the same mutual-exclusivity-with-group reasoning is not the issue here (it genuinely is one flat number) but is recorded in prose instead since the schema field doesn't support multiple stages: NIL up to the regular deadline (Fri Oct 30, 2026), PKR 10,000 Stage 1 (Nov 2-14, 2026), PKR 15,000 Stage 2 (Nov 15-21, 2026), PKR 20,000 Stage 3 (Nov 22-30, 2026) -- same 4 stages/amounts apply to both SSC and HSSC forms. Registration is Karachi-office-only (hard-copy submission), a real accessibility cost for non-Karachi families not captured by a PKR figure. Fee paid via HBL bank deposit or pay order to 'The Aga Khan University' (NTN 1206240-5). Next update: if this schema ever adds a per-group fee structure, populate it directly from this note instead of re-fetching the PDFs.",
+      "source": "https://examinationboard.aku.edu/services/Publication/SSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf ; https://examinationboard.aku.edu/services/Publication/HSSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf"
+    },
+    {
+      "id": "bise-lahore",
+      "name": "BISE Lahore (Board of Intermediate & Secondary Education, Lahore)",
+      "levels": [
+        "SSC (Matric)",
+        "HSSC (Intermediate)"
+      ],
+      "per_subject_fee": {
+        "SSC (Matric)": null,
+        "HSSC (Intermediate)": null
+      },
+      "fixed_fees": [
+        {
+          "label": "Science Group fee (SSC private candidate)",
+          "amount": 900,
+          "per": "candidate"
+        },
+        {
+          "label": "Practical fee",
+          "amount": 870,
+          "per": "candidate"
+        },
+        {
+          "label": "Examination centre fee",
+          "amount": 1000,
+          "per": "candidate"
+        },
+        {
+          "label": "Candidate/enrolment fee (separate SSC enrolment challan sample)",
+          "amount": 2020,
+          "per": "candidate"
+        }
+      ],
+      "late_entry_surcharge": {
+        "stage": "Late",
+        "amount": null,
+        "per": "subject"
+      },
+      "private_candidate_allowed": true,
+      "cities": [
+        "Lahore"
+      ],
+      "notes": "BISE Lahore does not publish a single clean per-subject or total private-candidate fee schedule the way Cambridge does \u2014 figures compiled here come from a BISE Lahore official Facebook page fee announcement (Aug 2026, SSC Second Annual Examination 2026) and a separate sample SSC enrolment challan (Scribd, total PKR 2,020 for one candidate). These line items are NOT confirmed to sum to one consistent total \u2014 do not add them together and present as a fixed total without re-verifying against the current session's official notification on biselahore.com. This is far cheaper than Cambridge (low hundreds to a few thousand PKR vs tens of thousands per subject), consistent with vault research calling BISE fees 'nominal by comparison, not separately itemized in sources found.' Private-candidate registration runs through registration.biselahore.com / privatereginter.biselahore.com, which requires the candidate to have never previously enrolled at BISE Lahore. SECOND PASS 2026-09-09: confirmed a 2027-cycle private-candidate registration schedule PDF exists (Pvt_RegSch(1stA27).pdf, linked from biselahore.com/notifications) but it is an Urdu-only document using a custom/non-Unicode font -- pdftotext extracts garbled characters, not usable text, and OCR was out of scope for this pass. A separate current-session fee schedule (Admission And Fee Schedule For SSC 2nd Annual 2026.pdf, biserawalpindi.edu.pk -- note this is the RAWALPINDI board's document, not Lahore's, found while researching a neighbouring board) shows a real fee table (Rs.1500/750/750, Rs.1600/800/800, Rs.1000 rows, total Rs.3500 line) but the column/row headers are Urdu and could not be attributed to specific candidate categories (regular vs private, which group) without translation -- not used here to avoid mis-assigning a number to the wrong field. Facebook posts citing specific PKR figures (e.g. 'Rs.3900', 'Rs.1000') for BISE fee schedules could not be independently verified: fetching those post URLs returns Facebook's login-gated shell with no message text (only a title fragment), so the figures seen in search-engine snippets are unconfirmed and were NOT added. per_subject_fee remains null; fixed_fees unchanged from first pass.",
+      "source": "https://www.facebook.com/biselahorepunjab/posts/-admissions-open-ssc-second-annual-examination-2026the-board-of-intermediate-sec/122117501907386172/ ; https://www.scribd.com/document/838671389/RegistrationForm-PrivateCandidate544748"
+    },
+    {
+      "id": "bise-karachi",
+      "name": "BISE Karachi (Board of Intermediate & Secondary Education, Karachi)",
+      "levels": [
+        "SSC (Matric)",
+        "HSSC (Intermediate)"
+      ],
+      "per_subject_fee": {
+        "SSC (Matric)": null,
+        "HSSC (Intermediate)": null
+      },
+      "fixed_fees": [],
+      "late_entry_surcharge": {
+        "stage": "Late",
+        "amount": null,
+        "per": "subject"
+      },
+      "private_candidate_allowed": true,
+      "cities": [
+        "Karachi"
+      ],
+      "notes": "No PKR fee figure for BISE Karachi private candidates was found in this research pass or the underlying vault research (08-pakistan-muslim-global-south.md flags BISE fees generally as 'not separately itemized in sources found'). BISEK runs its own private-candidate portal separately from BISE Lahore's. Next update: pull the current session's official fee notification from bisek.edu.pk directly. SECOND PASS 2026-09-09: bsek.edu.pk and biek.edu.pk were checked -- bsek.edu.pk returns only a minimal JS-shell page with no linked fee PDFs reachable via curl; biek.edu.pk (Intermediate board, separate from BSEK which handles SSC/Matric) was not deeply crawled this pass. No PKR fee figure found. Next update: crawl biek.edu.pk/notifications.asp and bsek.edu.pk directly with a headless browser (JS rendering likely required), or search for a Facebook-posted screenshot of the official notice that can be independently verified.",
+      "source": null
+    },
+    {
+      "id": "bise-rawalpindi",
+      "name": "BISE Rawalpindi (Board of Intermediate & Secondary Education, Rawalpindi)",
+      "levels": [
+        "SSC (Matric)",
+        "HSSC (Intermediate)"
+      ],
+      "per_subject_fee": {
+        "SSC (Matric)": null,
+        "HSSC (Intermediate)": null
+      },
+      "fixed_fees": [],
+      "late_entry_surcharge": {
+        "stage": "Late",
+        "amount": null,
+        "per": "subject"
+      },
+      "private_candidate_allowed": true,
+      "cities": [
+        "Rawalpindi"
+      ],
+      "notes": "No PKR fee figure for BISE Rawalpindi private candidates was found in this research pass or the underlying vault research. Next update: pull the current session's official fee notification from biseb.edu.pk (or the board's current domain) directly. SECOND PASS 2026-09-09: found biserawalpindi.edu.pk's official 'Admission And Fee Schedule For SSC 2nd Annual 2026' PDF (real fee table present: Rs.1500/750/750, Rs.1600/800/800, Rs.1000 rows, a Rs.3500 total line) but it is almost entirely Urdu text; pdftotext could not recover the row/column labels (regular vs private candidate, which subject group) needed to attribute a number correctly to this schema's fields -- left null rather than guess which row is the private-candidate total. The document confirms BISE Rawalpindi does publish a real, structured fee schedule (unlike Karachi where no PDF was even found), so this is the best next-update target: https://www.biserawalpindi.edu.pk/Content/Uploads/Documents/ea028fd1-9108-4ddd-a0fc-5fedd8c1952f_Admission%20And%20Fee%20Schedule%20For%20SSC%202nd%20Annual%202026.pdf -- needs Urdu translation or OCR pass, then re-check against the 2027-cycle equivalent once published.",
+      "source": null
+    }
+  ]
+}

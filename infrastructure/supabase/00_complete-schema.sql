@@ -3869,6 +3869,28 @@ LEFT JOIN quiz_sessions s ON s.id = d.quiz_session_id
 GROUP BY 1, 2, 3;
 
 -- =============================================================================
+-- Exam Cost Compass — opt-in registration-deadline reminders.
+-- Keyed on the raw phone number (not users.id) on purpose: the parent asking
+-- "what will Cambridge cost me" is often not a registered teacher and may have
+-- no users row at all, the same reason quiz answering runs before user
+-- creation. board_id is the id in bot/shared/data/exam-fees.json, not an FK —
+-- the board catalogue is a shipped JSON dataset, not a table.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS deadline_reminder_optins (
+    id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- varchar(64), not the varchar(20) used for a bare WhatsApp number: the
+    -- messaging layer addresses additive channels by a prefixed identifier
+    -- ("slack:U0AV1DX3WSE"), and the same value is what we send the reminder to.
+    phone      varchar(64) NOT NULL,
+    board_id   text        NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT deadline_reminder_optins_phone_board_uniq UNIQUE (phone, board_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_dro_board ON deadline_reminder_optins (board_id);
+CREATE INDEX IF NOT EXISTS idx_dro_phone ON deadline_reminder_optins (phone);
+
+-- =============================================================================
 -- Column reconcile (Phase 5) — columns the bot code writes/reads that the base
 -- table definitions above predate. Idempotent (ADD COLUMN IF NOT EXISTS) so a
 -- fresh install applies them right after table creation and re-runs are no-ops.

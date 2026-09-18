@@ -1,0 +1,63 @@
+{
+  "currency": "PKR",
+  "as_of": "FIXTURE",
+  "_fixture_note": "PLACEHOLDER DATA — every amount below is illustrative, not a quoted fee. as_of is deliberately the literal string FIXTURE so exam-cost.service.js flags every reply as an estimate. This is the TEST FIXTURE (tests/exam-cost/fixtures/) — the live compiled dataset lives at bot/shared/data/. Tests point here via ExamCostService.useDataDir() so a real-world data refresh can never turn the maths suite red for the wrong reason.",
+  "boards": [
+    {
+      "id": "cambridge",
+      "name": "Cambridge (CAIE, via British Council)",
+      "levels": ["O Level", "IGCSE", "AS", "A Level"],
+      "per_subject_fee": {
+        "O Level": 42000,
+        "IGCSE": 45000,
+        "AS": 52000,
+        "A Level": 58000
+      },
+      "fixed_fees": [
+        { "label": "British Council administrative surcharge", "amount": 12000, "per": "session" },
+        { "label": "Private candidate registration", "amount": 10000, "per": "candidate" }
+      ],
+      "late_entry_surcharge": { "stage": "Late Stage 1", "amount": 18000, "per": "subject" },
+      "private_candidate_allowed": true,
+      "cities": ["Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Peshawar"],
+      "notes": "Two exam sessions a year (May/June, Oct/Nov). Private candidates enter through the British Council SRS portal.",
+      "source": "https://www.britishcouncil.pk/exam/school/dates-fees"
+    },
+    {
+      "id": "aku-eb",
+      "name": "Aga Khan University Examination Board",
+      "levels": ["O Level", "A Level"],
+      "per_subject_fee": {
+        "O Level": 4500,
+        "A Level": 6000
+      },
+      "fixed_fees": [
+        { "label": "Candidate registration", "amount": 3500, "per": "candidate" },
+        { "label": "Examination centre fee", "amount": 2000, "per": "session" }
+      ],
+      "late_entry_surcharge": { "stage": "Late", "amount": 2500, "per": "subject" },
+      "private_candidate_allowed": true,
+      "cities": ["Karachi"],
+      "notes": "SSC / HSSC series, listed here against the O Level / A Level stage so boards compare side by side. Hard-copy forms submitted in person in Karachi.",
+      "source": "https://www.aku.edu/akueb/Pages/home.aspx"
+    },
+    {
+      "id": "bise-lahore",
+      "name": "BISE Lahore (Matric / Intermediate)",
+      "levels": ["O Level", "A Level"],
+      "per_subject_fee": {
+        "O Level": 1200,
+        "A Level": 1800
+      },
+      "fixed_fees": [
+        { "label": "Private candidate registration", "amount": 2000, "per": "candidate" },
+        { "label": "Board examination fee", "amount": 1500, "per": "session" }
+      ],
+      "late_entry_surcharge": { "stage": "Late", "amount": 1000, "per": "subject" },
+      "private_candidate_allowed": true,
+      "cities": ["Lahore", "Kasur", "Okara", "Nankana Sahib", "Sheikhupura"],
+      "notes": "Matric / Intermediate series, listed against the O Level / A Level stage for comparison. Private candidates apply on the board's own portal.",
+      "source": "https://www.biselahore.com/"
+    }
+  ]
+}
