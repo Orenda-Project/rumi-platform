@@ -1,0 +1,196 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+
+<div class="page-head">
+  <h1>Pipeline</h1>
+  <p>What happens to a message, in order. <%= branding.botName %> listens, thinks, then speaks — each layer has
+     its own providers and its own fallbacks. This is read from the code that actually runs, not from a diagram
+     someone drew once.</p>
+</div>
+
+<!-- ── Listening ────────────────────────────────────────────────────────── -->
+<h2 class="section">1 · Listening</h2>
+<div class="panel">
+  <div class="panel-body">
+    <div class="lane">
+      <div class="lane-label">
+        <h3>Speech to text</h3>
+        <p>Turning a voice note into words.</p>
+      </div>
+      <div>
+        <div class="chain-scroll"><div class="chain">
+          <% pipeline.listening.chain.forEach(function (step, i) { %>
+            <% if (i) { %><div class="chain-arrow">→</div><% } %>
+            <div class="chain-step <%= step.on ? '' : 'off' %>">
+              <% if (i === 2) { %><span class="fallback-tag">last resort</span><% } %>
+              <div class="who"><span class="dot <%= step.on ? 'ok' : 'off' %>"></span><%= step.provider %></div>
+              <div class="what"><%= step.model %></div>
+              <div class="note"><%= step.note %></div>
+              <% if (!step.on) { %><div class="note t-bad">needs <%= step.key %></div><% } %>
+            </div>
+          <% }) %>
+        </div></div>
+
+        <div class="gap-md">
+          <div class="small muted">Languages routed to Soniox</div>
+          <div class="langs">
+            <% pipeline.listening.sonioxLanguages.forEach(function (l) { %><span class="lang"><%= l %></span><% }) %>
+          </div>
+        </div>
+
+        <div class="gap-md">
+          <div class="small muted">
+            Routed instead to <%= pipeline.listening.regional.provider %>
+            <span class="pill inline-gap <%= pipeline.listening.regional.on ? 'ok' : '' %>"><%= pipeline.listening.regional.on ? 'on' : 'off' %></span>
+          </div>
+          <div class="langs">
+            <% Object.keys(pipeline.listening.regional.languages).forEach(function (l) { %><span class="lang alt"><%= l %></span><% }) %>
+          </div>
+          <p class="small muted gap-sm"><%= pipeline.listening.regional.note %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Thinking ─────────────────────────────────────────────────────────── -->
+<h2 class="section">2 · Thinking</h2>
+<div class="panel">
+  <div class="panel-body">
+    <div class="lane">
+      <div class="lane-label">
+        <h3>Intelligence</h3>
+        <p>Every word <%= branding.botName %> writes.</p>
+      </div>
+      <div>
+        <div class="flex wrap gap-md-below">
+          <span class="dot <%= pipeline.thinking.on ? 'ok' : 'bad' %>"></span>
+          <b><%= pipeline.thinking.provider === 'openrouter' ? 'OpenRouter' : 'OpenAI (direct)' %></b>
+          <span class="pill mono"><%= pipeline.thinking.baseUrl %></span>
+          <button class="btn sm" data-test="openrouter">Test connection</button>
+        </div>
+
+        <div class="wrap-x">
+        <table class="grid">
+          <thead><tr><th>Setting</th><th>Model</th><th>Used for</th><th></th></tr></thead>
+          <tbody>
+          <% pipeline.thinking.settings.forEach(function (s) { %>
+            <tr>
+              <td><%= s.label %><div class="small muted mono"><%= s.key %></div></td>
+              <td class="mono">
+                <%= s.value || s.fallback %>
+                <% if (!s.value) { %><span class="pill inline-gap">default</span><% } %>
+              </td>
+              <td class="small muted"><%= s.note %></td>
+              <td>
+                <span class="keyline flush">
+                  <button class="btn sm" data-edit="<%= s.key %>">Change</button>
+                </span>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+        </div>
+
+        <div class="banner info gap-md">
+          <div class="grow">
+            <b>Other models are named inside the code</b>
+            About fifty-six places pick their own model rather than reading a setting. Rather than list them
+            here and let the list go stale, the table below shows models actually seen running.
+          </div>
+        </div>
+
+        <% if (pipeline.observed.length) { %>
+          <div class="wrap-x gap-md">
+          <table class="grid">
+            <thead><tr><th>Feature</th><th>Model seen</th><th>Calls</th><th>Tokens</th></tr></thead>
+            <tbody>
+              <% pipeline.observed.forEach(function (o) { %>
+                <tr><td><%= o.feature %></td><td class="mono"><%= o.model %></td><td><%= o.calls %></td><td><%= o.tokens || '—' %></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+          </div>
+        <% } else { %>
+          <div class="empty-state compact">
+            <b>No model calls recorded yet</b>
+            <p>Once <%= branding.botName %> answers a message, the models it used will be listed here.</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Speaking ─────────────────────────────────────────────────────────── -->
+<h2 class="section">3 · Speaking</h2>
+<div class="panel">
+  <div class="panel-body">
+    <div class="lane">
+      <div class="lane-label">
+        <h3>Text to speech</h3>
+        <p>Answering out loud, per language.</p>
+      </div>
+      <div>
+        <%# ElevenLabs and Uplift are chosen per LANGUAGE, not in sequence — they
+            run in parallel. OpenAI tts-1 is the one thing downstream of both:
+            whatever fails, that is what a teacher ends up hearing. Drawing them
+            as one left-to-right chain would misdescribe the routing. %>
+        <div class="chain-scroll"><div class="chain">
+          <div class="chain-group">
+            <% pipeline.speaking.providers.filter(function (p) { return !p.fallback; }).forEach(function (p) { %>
+              <div class="chain-step <%= p.on ? '' : 'off' %>">
+                <div class="who"><span class="dot <%= p.on ? 'ok' : 'off' %>"></span><%= p.name %></div>
+                <% if (p.model) { %><div class="what"><%= p.model %></div><% } %>
+                <% if (p.note) { %><div class="note"><%= p.note %></div><% } %>
+                <% if (!p.on) { %><div class="note t-bad">needs <%= p.key %></div><% } %>
+              </div>
+            <% }) %>
+          </div>
+          <div class="chain-arrow" title="whichever one fails, this is what speaks instead">→</div>
+          <% pipeline.speaking.providers.filter(function (p) { return p.fallback; }).forEach(function (p) { %>
+            <div class="chain-step <%= p.on ? '' : 'off' %>">
+              <span class="fallback-tag">if either fails</span>
+              <div class="who"><span class="dot <%= p.on ? 'ok' : 'off' %>"></span><%= p.name %></div>
+              <div class="what"><%= p.model %></div>
+              <% if (!p.on) { %><div class="note t-bad">needs <%= p.key %></div><% } %>
+            </div>
+          <% }) %>
+        </div></div>
+
+        <% if (pipeline.speaking.drift.length) { %>
+          <div class="banner bad gap-md">
+            <div class="grow">
+              <b>Two files disagree about a voice</b>
+              <% pipeline.speaking.drift.forEach(function (d) { %>
+                <div class="gap-xs">For <code><%= d.language %></code> the router uses <b><%= d.effective %></b>
+                (from <code><%= d.winner %></code>), but <code><%= d.loser %></code> declares <b><%= d.alsoDeclared %></b>.
+                The router wins, so <b><%= d.effective %></b> is what a teacher hears.</div>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+
+        <div class="wrap-x gap-md">
+        <table class="grid">
+          <thead><tr><th>Language</th><th>Voice from</th><th>Voice ID</th><th>Emotion tags</th><th></th></tr></thead>
+          <tbody>
+          <% pipeline.speaking.languages.forEach(function (l) { %>
+            <tr>
+              <td class="mono"><%= l.language %></td>
+              <td><span class="dot <%= l.configured ? 'ok' : 'off' %>"></span> <%= l.provider %></td>
+              <td class="mono"><%= l.voiceId || '—' %></td>
+              <td class="small muted"><%= l.supportsEmotionTags ? 'yes' : 'stripped before speaking' %></td>
+              <td><% if (!l.configured) { %><span class="pill">falls back to OpenAI</span><% } %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

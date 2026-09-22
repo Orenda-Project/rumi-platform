@@ -1,0 +1,63 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+
+<div class="page-head">
+  <h1>Features</h1>
+  <p>Switch a feature off without losing its key. A feature runs only when its key is present
+     <em>and</em> its switch is on — so "off" always tells you which of the two is missing.</p>
+</div>
+
+<div class="panel summary">
+  <div class="panel-body flush">
+    <div class="stats">
+      <div class="stat"><div class="n t-ok"><%= features.counts.on %></div><div class="l">running</div></div>
+      <div class="stat"><div class="n <%= features.counts.paused ? 't-warn' : '' %>"><%= features.counts.paused %></div><div class="l">switched off</div></div>
+      <div class="stat"><div class="n muted"><%= features.counts.needsKey %></div><div class="l">need a key</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-body flush">
+    <% features.rows.forEach(function (f) { %>
+      <div class="row">
+        <div class="row-top">
+          <div>
+            <div class="row-title">
+              <span class="dot <%= f.state === 'on' ? 'ok' : (f.state === 'paused' ? 'warn' : 'off') %>"></span>
+              <%= f.title %>
+            </div>
+            <% if (f.why) { %><p class="row-why"><%= f.why %></p><% } %>
+            <%# `why` falls back to `notes` for features the setup wizard has no
+                copy for, so print `notes` again only when it is genuinely a
+                second, different sentence. %>
+            <% if (f.notes && f.notes !== f.why) { %><p class="row-when-off"><%= f.notes %></p><% } %>
+            <% if (f.whenOff) { %><p class="row-when-off"><%= f.switchedOn && f.configured ? 'If you switch it off' : 'While it is off' %>: <%= f.whenOff %></p><% } %>
+          </div>
+          <div class="right-align">
+            <% if (f.switchable) { %>
+              <label class="switch" title="<%= f.switchOn ? 'Switch off' : 'Switch on' %>">
+                <input type="checkbox" data-feature="<%= f.id %>" <%= f.switchedOn ? 'checked' : '' %>>
+                <span class="track"></span>
+              </label>
+              <div class="small muted gap-xs"><%= f.switchedOn ? 'running' : 'switched off' %></div>
+            <% } else { %>
+              <span class="pill">needs a key</span>
+            <% } %>
+          </div>
+        </div>
+        <div class="keyline">
+          <% f.keys.forEach(function (k) { %>
+            <span class="keyname <%= k.set ? '' : 'missing' %>"><%= k.key %></span>
+          <% }) %>
+          <% if (f.anyOf) { %><span class="small muted">either one is enough</span><% } %>
+          <% if (f.missing.length) { %>
+            <a class="btn sm right" href="<%= mount %>/setup">Add in Setup →</a>
+          <% } %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

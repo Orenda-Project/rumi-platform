@@ -11,6 +11,15 @@ bun.lockb
 .env.test.local
 .env.production.local
 .env.staging
+# Timestamped copies the operator console takes before it writes .env. Each one
+# holds every credential the deployment has, so they must never be committable —
+# a bare `.env` rule does not match `.env.bak.2026-01-01T00-00-00-000Z`.
+.env.bak.*
+
+# Internal working notes. docs/internal/api-consolidation.md already states in
+# its own header that this directory is not committed — but no rule existed, so
+# the whole directory was one `git add .` away from a public repo.
+docs/internal/
 
 # Secrets and credentials
 keys/

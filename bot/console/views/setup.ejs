@@ -1,0 +1,79 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+
+<div class="page-head">
+  <h1>Setup</h1>
+  <p>Everything <%= branding.botName %> needs to connect to, in one place. Each one says what it does for a
+     teacher and where to get it. Values are hidden by default and never leave this page unless you ask.</p>
+</div>
+
+<div class="panel summary">
+  <div class="panel-body flush">
+    <div class="stats">
+      <div class="stat">
+        <div class="n <%= catalog.counts.requiredSet === catalog.counts.requiredTotal ? 't-ok' : 't-bad' %>">
+          <%= catalog.counts.requiredSet %>/<%= catalog.counts.requiredTotal %>
+        </div>
+        <div class="l">required</div>
+      </div>
+      <div class="stat">
+        <div class="n"><%= catalog.counts.abilitiesOn %>/<%= catalog.counts.abilitiesTotal %></div>
+        <div class="l">extras on</div>
+      </div>
+      <div class="stat"><div class="n muted mono t-md"><%= catalog.channel %></div><div class="l">channel</div></div>
+    </div>
+  </div>
+</div>
+
+<% catalog.groups.forEach(function (group) { %>
+  <% if (!group.rows.length && !group.abilities.length) return; %>
+  <h2 class="section"><%= group.title %></h2>
+  <p class="section-blurb"><%= group.blurb %></p>
+
+  <div class="panel">
+    <div class="panel-body flush">
+
+      <% group.rows.forEach(function (row) { %>
+        <div class="row">
+          <div class="row-top">
+            <div>
+              <div class="row-title">
+                <span class="dot <%= row.set ? 'ok' : 'bad' %>"></span><%= row.label %>
+              </div>
+              <% if (row.hint) { %><p class="row-why"><%= row.hint %></p><% } %>
+            </div>
+            <% if (row.where) { %><span class="where">from <%= row.where %></span><% } %>
+          </div>
+          <%- include('partials/keyline', { row: row }) %>
+        </div>
+      <% }) %>
+
+      <% group.abilities.forEach(function (ability) { %>
+        <div class="row">
+          <div class="row-top">
+            <div>
+              <div class="row-title">
+                <span class="dot <%= ability.on ? 'ok' : (ability.partial ? 'warn' : 'off') %>"></span><%= ability.title %>
+              </div>
+              <p class="row-why"><%= ability.why %></p>
+            </div>
+            <div class="flex">
+              <% if (ability.on) { %><span class="pill ok">on</span>
+              <% } else if (ability.partial) { %><span class="pill warn">half set up</span>
+              <% } else { %><span class="pill">off</span><% } %>
+            </div>
+          </div>
+          <% ability.rows.forEach(function (row) { %>
+            <%- include('partials/keyline', { row: row }) %>
+          <% }) %>
+          <% if (ability.where && !ability.on) { %>
+            <div class="where gap-sm">Get a key at <b><%= ability.where %></b></div>
+          <% } %>
+        </div>
+      <% }) %>
+
+    </div>
+  </div>
+<% }) %>
+
+<%- include('partials/foot') %>

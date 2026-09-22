@@ -18,6 +18,7 @@ CLAUDE.md (this file)  →  <folder>/CLAUDE.md (router)  →  .claude/skills/<sk
 | Database schema, RLS, seed, one-command bootstrap | [infrastructure/CLAUDE.md](infrastructure/CLAUDE.md) |
 | Agent/skill config + what skills exist | [.claude/CLAUDE.md](.claude/CLAUDE.md) |
 | Set up a clone from scratch | [SETUP.md](SETUP.md) · `npm run doctor` (preflight) |
+| The operator web console (settings, health, pipeline, activity) | [bot/console/](bot/console/) · [docs/console.md](docs/console.md) |
 | Customize branding / swap a framework / add a feature | [docs/agent-customization.md](docs/agent-customization.md) |
 | Architecture, cost, monitoring | [docs/architecture.md](docs/architecture.md) · [docs/cost-guide.md](docs/cost-guide.md) · [docs/monitoring.md](docs/monitoring.md) |
 
@@ -25,7 +26,9 @@ CLAUDE.md (this file)  →  <folder>/CLAUDE.md (router)  →  .claude/skills/<sk
 
 1. **Feature gating is presence-based.** A feature is ON iff its env keys are present —
    `bot/shared/config/feature-availability.js` is the single source of truth (`FEATURES` maps feature →
-   real env key). There is **no `RUMI_TIER`** and no tier system.
+   real env key). There is **no `RUMI_TIER`** and no tier system. One operator control sits on top: a
+   `RUMI_FEATURE_<ID>=off` switch (`bot/shared/config/feature-overrides.js`) that can turn an available
+   feature OFF without deleting its key. It only ever subtracts — no switch can turn a feature on.
 2. **The queue backend is pluggable** via `QUEUE_DRIVER` (default `sqs`; `bullmq` runs the whole async
    pipeline on Redis with no AWS). Producers/consumers require `bot/shared/services/queue/` (the index),
    never a specific driver. See [bot/CLAUDE.md](bot/CLAUDE.md).
@@ -54,5 +57,6 @@ CLAUDE.md (this file)  →  <folder>/CLAUDE.md (router)  →  .claude/skills/<sk
 ## Repo map
 
 `bot/` WhatsApp bot (Node/Express; entry `bot/whatsapp-bot.js`; 10 handlers, 45 services, 9 workers) ·
+`bot/console/` the operator web console, mounted at `/console` and also runnable alone ·
 `infrastructure/` Supabase schema (76 tables) + deploy configs · `tests/` Jest suites (170 suites / 1996
 tests) · `docs/` architecture & customization · `dashboard/` + `portal/` observability/teacher UIs.

@@ -22,7 +22,7 @@ afterEach(() => {
 describe('rumi CLI dispatcher', () => {
   it('exposes exactly the documented commands', () => {
     const { COMMANDS } = loadCli();
-    expect(Object.keys(COMMANDS).sort()).toEqual(['brief', 'doctor', 'graduate', 'pair', 'setup', 'start', 'status']);
+    expect(Object.keys(COMMANDS).sort()).toEqual(['brief', 'console', 'doctor', 'graduate', 'pair', 'setup', 'start', 'status']);
   });
 
   it('gives every command a one-line summary, since the help screen is built from them', () => {
@@ -254,5 +254,98 @@ describe('rumi doctor — dotenv resolution (regression)', () => {
   whenInstalled('bot/node_modules/dotenv is really there once bot deps are installed', () => {
     const pkg = path.resolve(__dirname, '../../bot/node_modules/dotenv/package.json');
     expect(require('fs').existsSync(pkg)).toBe(true);
+  });
+});
+
+describe('`rumi start` opening the console in a browser', () => {
+  // The point of the console is people who would rather not use a terminal, so
+  // a local start should put it in front of them. Everywhere else, opening a
+  // browser is either impossible or rude.
+  const localEnv = {};
+
+  it('opens on a plain local interactive start', () => {
+    const { shouldOpenConsole } = loadCli();
+    expect(shouldOpenConsole({ argv: [], env: localEnv, isTty: true }).open).toBe(true);
+  });
+
+  it('does not open when the operator passed --no-open', () => {
+    const { shouldOpenConsole } = loadCli();
+    const decision = shouldOpenConsole({ argv: ['--no-open'], env: localEnv, isTty: true });
+    expect(decision.open).toBe(false);
+    expect(decision.reason).toBe('--no-open');
+  });
+
+  it('does not open when RUMI_NO_OPEN=1', () => {
+    const { shouldOpenConsole } = loadCli();
+    expect(shouldOpenConsole({ argv: [], env: { RUMI_NO_OPEN: '1' }, isTty: true }).open).toBe(false);
+  });
+
+  it('does not open from a non-interactive shell — CI, a supervisor, a Dockerfile', () => {
+    const { shouldOpenConsole } = loadCli();
+    const decision = shouldOpenConsole({ argv: [], env: localEnv, isTty: false });
+    expect(decision.open).toBe(false);
+    expect(decision.reason).toMatch(/interactive/);
+  });
+
+  it.each(['RAILWAY_PUBLIC_DOMAIN', 'RAILWAY_STATIC_URL', 'RAILWAY_ENVIRONMENT', 'RENDER', 'FLY_APP_NAME'])(
+    'does not open on a hosted deployment (%s set) — there is no browser there, and the console is locked anyway',
+    (hint) => {
+      const { shouldOpenConsole } = loadCli();
+      const decision = shouldOpenConsole({ argv: [], env: { [hint]: '1' }, isTty: true });
+      expect(decision.open).toBe(false);
+      expect(decision.reason).toContain(hint);
+    },
+  );
+
+  it('does not open when bound to every interface, even without a platform hint', () => {
+    const { shouldOpenConsole } = loadCli();
+    expect(shouldOpenConsole({ argv: [], env: { CONSOLE_BIND: '0.0.0.0' }, isTty: true }).open).toBe(false);
+  });
+
+  it('knows how to open a URL on macOS, Windows and Linux', () => {
+    const { openCommand } = loadCli();
+    expect(openCommand('darwin').command).toBe('open');
+    expect(openCommand('win32').command).toBe('cmd');
+    expect(openCommand('linux').command).toBe('xdg-open');
+  });
+
+  it('does not guess a command on a platform it does not know', () => {
+    const { openCommand } = loadCli();
+    expect(openCommand('sunos')).toBeNull();
+  });
+
+  it('detaches the browser so it does not die with the bot, and never inherits its output', () => {
+    const { openUrl } = loadCli();
+    const child = { on: jest.fn(), unref: jest.fn() };
+    const spawn = jest.fn().mockReturnValue(child);
+
+    expect(openUrl('http://localhost:3000/console', { platform: 'linux', spawn })).toBe(true);
+    expect(spawn).toHaveBeenCalledWith('xdg-open', ['http://localhost:3000/console'], { stdio: 'ignore', detached: true });
+    expect(child.unref).toHaveBeenCalled();
+    expect(child.on).toHaveBeenCalledWith('error', expect.any(Function));
+  });
+
+  it('survives a machine with no opener installed, rather than taking the bot down', () => {
+    const { openUrl } = loadCli();
+    const spawn = jest.fn(() => { throw new Error('spawn xdg-open ENOENT'); });
+    expect(openUrl('http://localhost:3000/console', { platform: 'linux', spawn })).toBe(false);
+  });
+
+  it('waits for the bot to be serving before opening, so the tab never lands on a connection error', async () => {
+    const { waitForHealth } = loadCli();
+    const fetchImpl = jest.fn()
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+      .mockResolvedValueOnce({ ok: true });
+
+    await expect(waitForHealth('http://127.0.0.1:3000/health', { fetchImpl, intervalMs: 1 })).resolves.toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up quietly on a bot that never becomes healthy', async () => {
+    const { waitForHealth } = loadCli();
+    const fetchImpl = jest.fn().mockResolvedValue({ ok: false });
+    await expect(
+      waitForHealth('http://127.0.0.1:3000/health', { fetchImpl, intervalMs: 1, timeoutMs: 15 }),
+    ).resolves.toBe(false);
   });
 });

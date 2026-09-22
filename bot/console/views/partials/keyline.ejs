@@ -1,0 +1,15 @@
+<%# One credential. The "where to get it" line is deliberately NOT here — it
+    belongs to the ability or the row above, which may own several keys, and
+    repeating it per key turned into visual noise. %>
+<div class="keyline">
+  <span class="keyname"><%= row.key %></span>
+  <% if (row.set) { %>
+    <span class="keyval" data-val="<%= row.key %>" data-masked="<%= row.display %>"><%= row.display %></span>
+  <% } else { %>
+    <span class="keyval empty">not set</span>
+  <% } %>
+  <% if (row.revealable) { %>
+    <button class="btn sm" data-reveal="<%= row.key %>">Reveal</button>
+  <% } %>
+  <button class="btn sm" data-edit="<%= row.key %>"><%= row.set ? 'Replace' : 'Set' %></button>
+</div>

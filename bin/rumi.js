@@ -4,6 +4,7 @@
  *
  *   rumi setup       connect Rumi to your accounts (start here)
  *   rumi status       is Rumi running, and what is switched on
+ *   rumi console      the web console — settings, health and live activity
  *   rumi doctor       check every connection in detail
  *   rumi pair         link (or re-link) WhatsApp
  *   rumi graduate     move to an official WhatsApp Business number
@@ -57,6 +58,97 @@ function loadEnv() {
 
 const ui = () => require(path.join(SCRIPTS_DIR, 'ui'));
 
+/**
+ * The env as the operator sees it: real variables plus whatever `.env` holds.
+ *
+ * `rumi start` does not itself call loadEnv() — the bot it spawns loads dotenv
+ * for its own process — so RUMI_NO_OPEN or CONSOLE_BIND written in `.env` would
+ * otherwise be invisible to the decision below. Read rather than loaded, so the
+ * child's environment is left exactly as it was.
+ */
+function settingsEnv() {
+  try {
+    const { readEnvFile } = require(path.join(SCRIPTS_DIR, 'env-file'));
+    return { ...process.env, ...readEnvFile(path.join(REPO_ROOT, '.env')) };
+  } catch {
+    return process.env;
+  }
+}
+
+/**
+ * Should `rumi start` open the console in a browser?
+ *
+ * Yes for the case this exists for — a person on their own machine who would
+ * rather see a screen than a terminal. No everywhere that would be rude or
+ * useless: a hosted deployment (there is no browser on Railway, and the console
+ * is locked there anyway), a non-interactive shell (CI, a supervisor, a
+ * Dockerfile), or an operator who said not to.
+ *
+ * The hosted check reuses the console's own `reachability()` rather than a
+ * second list of platform variables that could drift from the one guarding
+ * access.
+ *
+ * @returns {{open: boolean, reason: string}}
+ */
+function shouldOpenConsole({ argv = [], env = settingsEnv(), isTty = process.stdout.isTTY } = {}) {
+  if (argv.includes('--no-open')) return { open: false, reason: '--no-open' };
+  if (env.RUMI_NO_OPEN === '1') return { open: false, reason: 'RUMI_NO_OPEN=1' };
+  if (!isTty) return { open: false, reason: 'not an interactive terminal' };
+
+  const { reachability } = require(path.join(BOT_DIR, 'console', 'auth'));
+  const reach = reachability(env, env.CONSOLE_BIND || '127.0.0.1');
+  if (reach.public) return { open: false, reason: reach.reason };
+
+  return { open: true, reason: 'local interactive start' };
+}
+
+/** The platform's "open this URL" command, or null where we do not know one. */
+function openCommand(platform = process.platform) {
+  if (platform === 'darwin') return { command: 'open', args: [] };
+  if (platform === 'win32') return { command: 'cmd', args: ['/c', 'start', ''] };
+  if (platform === 'linux') return { command: 'xdg-open', args: [] };
+  return null;
+}
+
+/**
+ * Opens a URL, and never lets that failure matter. A missing xdg-open on a
+ * headless Linux box must not take the bot down with it, so the child is
+ * detached, its output discarded, and its errors swallowed — the banner has
+ * already printed the URL either way.
+ */
+function openUrl(url, { platform = process.platform, spawn = require('child_process').spawn } = {}) {
+  const entry = openCommand(platform);
+  if (!entry) return false;
+  try {
+    const child = spawn(entry.command, [...entry.args, url], { stdio: 'ignore', detached: true });
+    child.on('error', () => {});
+    child.unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Waits for the bot to actually be serving before opening a tab, by polling its
+ * health endpoint. Opening on spawn would race the boot and land on a connection
+ * error, which reads as "the console is broken" rather than "it was not up yet".
+ *
+ * Gives up quietly: a bot that never becomes healthy has a real problem, and the
+ * operator is already watching its output.
+ */
+async function waitForHealth(url, { timeoutMs = 30000, intervalMs = 400, fetchImpl = fetch, now = Date.now } = {}) {
+  const deadline = now() + timeoutMs;
+  while (now() < deadline) {
+    try {
+      const response = await fetchImpl(url);
+      if (response && response.ok) return true;
+    } catch { /* not up yet */ }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return false;
+}
+
 const COMMANDS = {
   start: {
     summary: 'Start Rumi (the bot itself)',
@@ -80,6 +172,17 @@ const COMMANDS = {
       // launcher, which would leave the bot orphaned and still holding the
       // WhatsApp session lock. The next `rumi start` then refuses to attach,
       // correctly but confusingly, blaming a pid nobody can see.
+      // Once the bot is actually serving, put the console in front of the
+      // operator. Entirely best-effort: it cannot fail the start, and the
+      // banner prints the URL regardless.
+      const decision = shouldOpenConsole({ argv: process.argv.slice(3) });
+      if (decision.open) {
+        const port = process.env.PORT || 3000;
+        waitForHealth(`http://127.0.0.1:${port}/health`)
+          .then((healthy) => { if (healthy && child.exitCode === null) openUrl(`http://localhost:${port}/console`); })
+          .catch(() => {});
+      }
+
       const forward = (signal) => () => { if (child.exitCode === null) child.kill(signal); };
       const onInt = forward('SIGINT');
       const onTerm = forward('SIGTERM');
@@ -110,6 +213,23 @@ const COMMANDS = {
       const result = await runDoctor({});
       console.log(formatReport(result));
       process.exitCode = result.ok ? 0 : 1;
+    },
+  },
+  console: {
+    summary: 'Open the web console (works even when the bot will not start)',
+    run: async () => {
+      loadEnv();
+      const args = process.argv.slice(3);
+      if (args.includes('--set-password')) {
+        return require(path.join(SCRIPTS_DIR, 'console-password')).main();
+      }
+      const portArg = args.find((a) => a.startsWith('--port='));
+      await require(path.join(BOT_DIR, 'console', 'server')).start({
+        port: portArg ? Number(portArg.split('=')[1]) : undefined,
+      });
+      // The server owns the process from here — `rumi console` is a thing you
+      // leave running, like `rumi start`.
+      return new Promise(() => {});
     },
   },
   pair: {
@@ -188,6 +308,7 @@ async function runBrief(argv, deps = {}) {
 
 const OPTIONS = [
   ['--reconfigure', 'setup: ask about everything again, including what already works'],
+  ['--no-open', 'start: do not open the console in a browser'],
   ['--to=<channel>', 'graduate: which channel to move to (defaults to meta)'],
   ['--weekly', 'brief: render the weekly brief instead of the daily one'],
   ['--send', 'brief: deliver the rendered brief to BRIEF_RECIPIENTS'],
@@ -258,4 +379,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, COMMANDS, printUsage, parseBriefFlags, runBrief };
+module.exports = { main, COMMANDS, printUsage, parseBriefFlags, runBrief, shouldOpenConsole, settingsEnv, openCommand, openUrl, waitForHealth };

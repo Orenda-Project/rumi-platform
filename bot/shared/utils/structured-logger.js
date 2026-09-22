@@ -499,6 +499,9 @@ if (!IS_INTERACTIVE_CLI) {
  * @param {string} eventName - Format: feature.action.result (e.g., video.generation.started)
  * @param {Object} data - Event data to include
  */
+// See logger.js — same switch, same reasoning.
+const RING_ENABLED = process.env.CONSOLE_RING !== '0' && process.env.RUMI_CLI !== '1';
+
 function logEvent(eventName, data = {}) {
   const correlationId = getCurrentCorrelationId();
   const parts = eventName.split('.');
@@ -512,6 +515,18 @@ function logEvent(eventName, data = {}) {
     correlationId,
     ...data
   }, eventName);
+
+  // Mirror into the operator console's ring. See the note in logger.js for why
+  // this is a function-level tap rather than a stream-level one. The require is
+  // lazy and event-ring imports nothing, so there is no cycle to create here —
+  // this module is the first require in the bot and in every worker.
+  if (RING_ENABLED) {
+    try {
+      require('../observability/event-ring').push({
+        kind: 'event', event: eventName, correlationId, data,
+      });
+    } catch { /* the console is optional; logging is not */ }
+  }
 }
 
 // ============================================================

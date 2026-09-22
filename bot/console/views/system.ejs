@@ -1,0 +1,63 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+
+<div class="page-head">
+  <h1>System</h1>
+  <p>The mechanical details, and how to apply changes.</p>
+</div>
+
+<div class="panel summary">
+  <div class="panel-body flush">
+    <div class="stats">
+      <div class="stat"><div class="n mono t-lg"><%= version %></div><div class="l">version</div></div>
+      <div class="stat"><div class="n"><%= uptime < 90 ? uptime + 's' : Math.floor(uptime / 60) + 'm' %></div><div class="l">uptime</div></div>
+      <div class="stat"><div class="n mono t-lg"><%= channel %></div><div class="l">channel</div></div>
+      <div class="stat"><div class="n mono t-lg"><%= queueDriver %></div><div class="l">queue</div></div>
+      <div class="stat"><div class="n"><%= Math.round(memory.rss / 1048576) %>MB</div><div class="l">memory</div></div>
+    </div>
+  </div>
+</div>
+
+<h2 class="section">Applying changes</h2>
+<div class="panel">
+  <div class="panel-body">
+    <% if (pending.length) { %>
+      <p><b><%= pending.length %> setting<%= pending.length === 1 ? '' : 's' %> changed since <%= branding.botName %> started.</b>
+         Most settings are read once at startup, so they take effect when you restart.</p>
+      <div class="langs">
+        <% pending.forEach(function (p) { %><span class="lang alt"><%= p.key %></span><% }) %>
+      </div>
+    <% } else { %>
+      <p class="muted">Nothing is waiting. What is saved is what is running.</p>
+    <% } %>
+
+    <div class="banner info gap-md">
+      <div class="grow">
+        <b>There is no restart button, on purpose</b>
+        On a laptop <%= branding.botName %> runs in your terminal, and a button that stopped it could not start
+        it again. On Railway the restart policy is <code>ON_FAILURE</code>, so a clean exit would stop the
+        service rather than restart it. Instead:
+        <div class="gap-sm">
+          <div class="small">On your own machine — press <b>Ctrl+C</b> in the terminal running it, then <code>rumi start</code>.</div>
+          <div class="small">On Railway — press <b>Restart</b> on the service.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2 class="section">Where things are</h2>
+<div class="panel">
+  <div class="wrap-x">
+  <table class="grid">
+    <tbody>
+      <tr><td>Settings file</td><td class="mono"><%= envPath %></td></tr>
+      <tr><td>Node</td><td class="mono"><%= node %></td></tr>
+      <tr><td>Environment</td><td class="mono"><%= nodeEnv %></td></tr>
+      <tr><td>Console access</td><td class="mono"><%= posture.mode %> — <%= posture.reason %></td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

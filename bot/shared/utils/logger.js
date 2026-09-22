@@ -2,6 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const { getCurrentCorrelationId } = require('./structured-logger');
 
+// The console's live feed. Off for `rumi` commands (their output is a
+// conversation with a person, and no console is watching), and switchable off
+// entirely with CONSOLE_RING=0 if it ever needs to be.
+const RING_ENABLED = process.env.CONSOLE_RING !== '0' && process.env.RUMI_CLI !== '1';
+
 // Create logs directory if it doesn't exist
 const LOGS_DIR = path.join(__dirname, '../../logs');
 if (!fs.existsSync(LOGS_DIR)) {
@@ -41,6 +46,25 @@ function logToFile(message, data = null) {
     fileMessage += `\n${JSON.stringify(enrichedData, null, 2)}`;
   }
   fileMessage += '\n' + '='.repeat(80) + '\n';
+
+  // Feed the operator console's in-memory ring.
+  //
+  // Tapped HERE, at the function, rather than at the pino output stream:
+  // structured-logger.js only uses its dual-output stream in production, and
+  // falls back to a pino-pretty *transport* (a worker thread) in development —
+  // so a stream-level tap would work on Railway and silently do nothing on a
+  // laptop, which is where the console is most used.
+  //
+  // event-ring drops everything that is not on its field allowlist, so no
+  // phone number, transcript or credential from these 180 call sites can reach
+  // a browser. Wrapped because logging must never throw into its caller.
+  if (RING_ENABLED) {
+    try {
+      require('../observability/event-ring').push({
+        kind: 'log', message, correlationId, data: enrichedData,
+      });
+    } catch { /* the console is optional; logging is not */ }
+  }
 
   // Write to file (for local debugging)
   try {

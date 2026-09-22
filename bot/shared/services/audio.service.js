@@ -1131,4 +1131,11 @@ class AudioService {
 // tests/language/french-stt.test.js) without loading the transcription path.
 AudioService.SONIOX_AUTODETECT_HINTS = SONIOX_AUTODETECT_HINTS;
 
+// The two routing tables that decide which engine hears which language. Same
+// reason as the line above — read by callers that want to DESCRIBE the routing
+// rather than perform it (the operator console's pipeline page), so neither
+// needs a second, drifting copy of a list that lives here.
+AudioService.SONIOX_LANGUAGES = SONIOX_LANGUAGES;
+AudioService.MMS_LANGUAGES = MMS_LANGUAGES;
+
 module.exports = AudioService;

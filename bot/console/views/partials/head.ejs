@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= pageTitle %> · <%= branding.botName %> console</title>
+<link rel="stylesheet" href="<%= mount %>/assets/console.css">
+<%# The per-request token travels in a meta tag rather than an inline script,
+    which is what lets the Content-Security-Policy keep script-src at 'self'
+    with no nonce machinery. %>
+<meta name="console-token" content="<%= typeof token === 'string' ? token : '' %>">
+<meta name="console-mount" content="<%= mount %>">
+</head>
+<body>
