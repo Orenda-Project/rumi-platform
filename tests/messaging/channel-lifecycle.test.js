@@ -80,4 +80,24 @@ describe('logged-out session is terminal, not a restart loop', () => {
     expect(isActive({ CHANNEL_DRIVER: 'meta' })).toBe(false);
     expect(isActive({ CHANNEL_DRIVER: 'baileys' })).toBe(true);
   });
+
+  it('matrix and discord are both registered in PERSISTENT_CONNECTION_DRIVERS with a no-op onLogoutExit, neither has a mid-session "logged out" event for a long-lived token', () => {
+    // A revoked Discord bot token or Matrix access token surfaces as a
+    // CONNECT-time failure (inside attachInbound's own try/catch), not a
+    // live-session event the way Baileys' 401 does, so onLogoutExit is
+    // deliberately null for both, exercised against the real registry object
+    // rather than re-parsed from source text.
+    const src = require('fs').readFileSync(
+      require('path').resolve(__dirname, '../../bot/whatsapp-bot.js'),
+      'utf-8'
+    );
+    const matrixEntry = src.slice(src.indexOf('matrix: {'), src.indexOf('};', src.indexOf('matrix: {')));
+    expect(matrixEntry).toMatch(/onLogoutExit:\s*null/);
+    expect(matrixEntry).toMatch(/resolveActiveChannels\(env\)\.includes\('matrix'\)/);
+
+    const { resolveActiveChannels } = require('../../bot/shared/config/feature-availability');
+    const isActive = (env) => resolveActiveChannels(env).includes('matrix');
+    expect(isActive({})).toBe(false);
+    expect(isActive({ MATRIX_HOMESERVER_URL: 'https://matrix.example.org', MATRIX_ACCESS_TOKEN: 'tok' })).toBe(true);
+  });
 });
