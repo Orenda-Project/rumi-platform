@@ -276,6 +276,24 @@ const defaultProbes = {
 
     return { ok: true, detail: `connected as ${body.name || 'your application'}` };
   },
+  /**
+   * Confirms the access token authenticates against the homeserver's own
+   * whoami endpoint, the Matrix equivalent of Discord's applications/@me
+   * check above. No scopes to verify (an access token is all-or-nothing on
+   * Matrix), so this is deliberately the simplest probe in the file.
+   */
+  async matrix(env) {
+    const base = String(env.MATRIX_HOMESERVER_URL || '').replace(/\/+$/, '');
+    const res = await fetch(`${base}/_matrix/client/v3/account/whoami`, {
+      headers: { Authorization: `Bearer ${env.MATRIX_ACCESS_TOKEN}` },
+    });
+    if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
+
+    const body = await res.json();
+    if (!body.user_id) return { ok: false, detail: 'homeserver accepted the request but returned no user_id' };
+
+    return { ok: true, detail: `connected as ${body.user_id}` };
+  },
   async redis(env) {
     // Lazy require so the bot's redis lib is optional at doctor time.
     const IORedis = require('ioredis');

@@ -38,9 +38,9 @@ const flowEndpointRoutes = require('./shared/routes/flow-endpoint.routes');
 // The channel-registry map from additive-driver name -> the `channel` value
 // user_channels/getOrCreateUserByChannel expects (registry driver names are
 // per-implementation — meta/baileys both mean 'whatsapp' as an identity
-// family; slack/discord map 1:1). See driverForIdentity() below.
+// family; slack/discord/matrix map 1:1). See driverForIdentity() below.
 const { driverForIdentifier } = require('./shared/services/messaging/channel-registry');
-const CHANNEL_FAMILY = { slack: 'slack', discord: 'discord' };
+const CHANNEL_FAMILY = { slack: 'slack', discord: 'discord', matrix: 'matrix' };
 
 /**
  * Resolves the (channel, channelUserId) pair for a `from` identifier, or null
@@ -1846,6 +1846,19 @@ const PERSISTENT_CONNECTION_DRIVERS = {
     // take WhatsApp down), so this intentionally stays null.
     onLogoutExit: null,
     close: () => require('./shared/services/messaging/discord-connection').close(),
+  },
+  matrix: {
+    isActive: (env) => require('./shared/config/feature-availability').resolveActiveChannels(env).includes('matrix'),
+    attachInbound: async (dispatch) => {
+      const matrixEventsAdapter = require('./shared/services/messaging/inbound/matrix-events.adapter');
+      await matrixEventsAdapter.attach(dispatch);
+    },
+    // Same reasoning as Discord: a long-lived access token has no mid-session
+    // "you have been logged out" event -- a revoked MATRIX_ACCESS_TOKEN
+    // surfaces as a sync-start failure (at connect() time, inside
+    // attachInbound's own try/catch below), not a live-session event.
+    onLogoutExit: null,
+    close: () => require('./shared/services/messaging/matrix-connection').close(),
   },
 };
 

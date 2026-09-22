@@ -52,6 +52,13 @@ const ADDITIVE_CHANNEL_REQUIRED_VARS = {
   // connection too — see discord-events.adapter.js. There is no HTTP route
   // to sign-verify at all for this driver, unlike Slack's webhook-based design.
   discord: ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID'],
+  // Matrix needs no signing secret / interactions endpoint either, like
+  // Discord, it runs a persistent sync connection (matrix-bot-sdk's own
+  // /sync loop) rather than a signed HTTP webhook, so there is no third var
+  // to verify requests with the way Slack's SLACK_SIGNING_SECRET does.
+  // MATRIX_USER_ID/MATRIX_STORAGE_DIR/MATRIX_E2EE are genuinely optional
+  // (sensible defaults in matrix-connection.js), not just left off this list.
+  matrix: ['MATRIX_HOMESERVER_URL', 'MATRIX_ACCESS_TOKEN'],
 };
 
 // Optional features → the env key(s) that switch each one on.
@@ -70,6 +77,15 @@ const FEATURES = [
       + 'messaging channels step. MESSAGE_CONTENT is a privileged intent; needs Discord\'s own Bot Verification '
       + 'once the bot is in 100+ servers.',
     probe: 'discord',
+  },
+  {
+    name: 'Matrix channel (self-hosted homeserver)',
+    keys: ['MATRIX_HOMESERVER_URL', 'MATRIX_ACCESS_TOKEN'],
+    notes: 'Runs alongside your WhatsApp driver via a persistent sync connection to your own homeserver, '
+      + 'no third-party app review at all (self-hosted). MATRIX_E2EE defaults to "auto" (tries E2EE, falls '
+      + 'back to plaintext if the optional @matrix-org/matrix-sdk-crypto-nodejs native module can\'t load on '
+      + 'this host, e.g. Node <24 or no matching prebuilt binary); set MATRIX_E2EE=on to require it instead.',
+    probe: 'matrix',
   },
   {
     name: 'Morning Brief (programme-health briefs to your team)',

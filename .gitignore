@@ -27,6 +27,11 @@ credentials*
 service-account*.json
 .railway-token
 
+# Matrix channel local state (sync token store + E2EE crypto store), see
+# MATRIX_STORAGE_DIR in .env.template. Same "treat like a credential"
+# reasoning as .channel-state/ above: the crypto store holds Megolm/Olm keys.
+.matrix-storage/
+
 # Setup state (generated during /setup)
 .setup-state.json
 

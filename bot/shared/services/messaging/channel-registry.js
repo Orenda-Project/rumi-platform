@@ -17,20 +17,24 @@ const DRIVERS = {
   baileys: './baileys-channel.service',
   slack: './slack-channel.service',
   discord: './discord-channel.service',
+  matrix: './matrix-channel.service',
 };
 
 const DEFAULT_DRIVER = 'baileys';
 
-// Drivers that require a formal business registration / app-review process —
+// Drivers that require a formal business registration / app-review process,
 // the thing that actually makes a channel "production-grade" here. Every
-// driver NOT in this list is sandbox-tier by default. Slack and Discord have
-// no such process (neither has a review gate like WhatsApp Business
-// verification for the permission scopes this bot needs), so both are
-// listed here — usable in BOTH sandbox and production, unlike Baileys which
-// stays sandbox-only. (Discord's MESSAGE_CONTENT privileged intent does need
-// Discord's own Bot Verification once a bot is in 100+ servers — a separate,
-// later operational concern, not a blocker at this deployment's scale.)
-const PRODUCTION_TIER_DRIVERS = ['meta', 'slack', 'discord'];
+// driver NOT in this list is sandbox-tier by default. Slack, Discord, and
+// Matrix have no such process (neither has a review gate like WhatsApp
+// Business verification for the permission scopes this bot needs), so all
+// three are listed here -- usable in BOTH sandbox and production, unlike
+// Baileys which stays sandbox-only. (Discord's MESSAGE_CONTENT privileged
+// intent does need Discord's own Bot Verification once a bot is in 100+
+// servers, a separate, later operational concern, not a blocker at this
+// deployment's scale. Matrix has no equivalent concern at all: it's a
+// self-hosted homeserver, so there is no third-party review process to ever
+// need -- "production-grade" here means only "no external approval gate".)
+const PRODUCTION_TIER_DRIVERS = ['meta', 'slack', 'discord', 'matrix'];
 
 // Additive-channel drivers (Slack, Discord, ...) are never selected via
 // CHANNEL_DRIVER — they run alongside whichever WhatsApp-family driver
@@ -43,6 +47,7 @@ const PRODUCTION_TIER_DRIVERS = ['meta', 'slack', 'discord'];
 const CHANNEL_PREFIXES = {
   slack: 'slack',
   discord: 'discord',
+  matrix: 'matrix',
 };
 
 function isKnownDriver(name) {
@@ -62,6 +67,11 @@ function prefixFor(driverName) {
  * Which additive-channel driver owns this identifier, based on its
  * "<prefix>:<id>" shape — or null for a bare WhatsApp phone number (no
  * colon), which the router falls back to the resolved CHANNEL_DRIVER for.
+ *
+ * Only the FIRST colon is significant. This matters for Matrix specifically:
+ * a Matrix user id is itself "@user:server" (contains its own colon), so a
+ * full identifier reads "matrix:@user:server" -- splitting on the first colon
+ * still correctly yields prefix "matrix" and id "@user:server" untouched.
  */
 function driverForIdentifier(id) {
   const idx = String(id).indexOf(':');

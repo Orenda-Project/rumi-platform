@@ -40,6 +40,8 @@ const { DRIVERS } = require('../../bot/shared/services/messaging/channel-registr
 require('../../bot/shared/services/messaging/meta-channel.service');
 require('../../bot/shared/services/messaging/baileys-channel.service');
 require('../../bot/shared/services/messaging/slack-channel.service');
+require('../../bot/shared/services/messaging/discord-channel.service');
+require('../../bot/shared/services/messaging/matrix-channel.service');
 
 function parseMethodNames(src) {
   const names = new Set();

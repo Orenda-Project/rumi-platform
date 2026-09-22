@@ -357,6 +357,48 @@ describe('the real Discord probe — lighter than Slack\'s, no per-scope breakdo
   });
 });
 
+describe('the real Matrix probe -- an access token is all-or-nothing, no per-scope breakdown at all', () => {
+  const { defaultProbes } = require('../../bot/scripts/setup/doctor');
+  const ENV = { MATRIX_HOMESERVER_URL: 'https://matrix.example.org', MATRIX_ACCESS_TOKEN: 'test-token' };
+
+  let realFetch;
+  beforeEach(() => { realFetch = global.fetch; });
+  afterEach(() => { global.fetch = realFetch; });
+
+  it('passes when the token authenticates against the homeserver\'s whoami endpoint', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ user_id: '@rumi:example.org' }) });
+    const result = await defaultProbes.matrix(ENV);
+    expect(result.ok).toBe(true);
+    expect(result.detail).toMatch(/@rumi:example\.org/);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://matrix.example.org/_matrix/client/v3/account/whoami',
+      expect.objectContaining({ headers: { Authorization: 'Bearer test-token' } })
+    );
+  });
+
+  it('fails cleanly on a bad/revoked token (non-2xx HTTP response)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 401 });
+    const result = await defaultProbes.matrix(ENV);
+    expect(result).toEqual({ ok: false, detail: 'HTTP 401' });
+  });
+
+  it('fails cleanly when the homeserver answers 200 with no user_id (an unexpected/malformed response)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+    const result = await defaultProbes.matrix(ENV);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/no user_id/);
+  });
+
+  it('strips a trailing slash from MATRIX_HOMESERVER_URL before building the request', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ user_id: '@rumi:example.org' }) });
+    await defaultProbes.matrix({ ...ENV, MATRIX_HOMESERVER_URL: 'https://matrix.example.org/' });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://matrix.example.org/_matrix/client/v3/account/whoami',
+      expect.anything()
+    );
+  });
+});
+
 describe('the real OpenRouter probe — a valid key is not the same as a usable one', () => {
   // Live finding: doctor reported "✅ OpenRouter (LLM) — HTTP 200" and "All
   // required services are configured and reachable" on an account with zero
