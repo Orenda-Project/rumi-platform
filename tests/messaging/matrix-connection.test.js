@@ -20,27 +20,34 @@
 // getting wrong before). This mock intentionally mirrors ONLY the real
 // exports, so a regression back to importing StoreType from matrix-bot-sdk
 // fails loudly here instead of silently passing against a too-generous mock.
-function mockMatrixSdk({ startImpl, getUserIdImpl } = {}) {
-  const client = {
+function mockMatrixSdk({ startImpl, getUserIdImpl, joinRoomImpl } = {}) {
+  // A minimal real EventEmitter (not a jest.fn() stub) so tests can actually
+  // fire 'room.invite' and observe how connect()'s own listener (see
+  // autojoinRoomInvites()) reacts -- matches how the real MatrixClient's
+  // `on`/emit works.
+  const EventEmitter = require('events');
+  const emitter = new EventEmitter();
+  const client = Object.assign(emitter, {
     start: jest.fn(startImpl || (async () => undefined)),
     stop: jest.fn(),
     getUserId: jest.fn(getUserIdImpl || (async () => '@rumi:example.org')),
-    on: jest.fn(),
-  };
+    joinRoom: jest.fn(joinRoomImpl || (async () => undefined)),
+    // connect() always wraps this (see matrix-connection.js's
+    // wrapSetAccountDataSerialized) -- a real MatrixClient always has it.
+    setAccountData: jest.fn(async () => undefined),
+  });
   const MatrixClient = jest.fn(() => client);
   const SimpleFsStorageProvider = jest.fn();
-  const AutojoinRoomsMixin = { setupOnClient: jest.fn() };
   const RustSdkCryptoStorageProvider = jest.fn(() => ({}));
 
   jest.doMock('matrix-bot-sdk', () => ({
     MatrixClient,
     SimpleFsStorageProvider,
-    AutojoinRoomsMixin,
     RustSdkCryptoStorageProvider,
   }), { virtual: true });
   jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
 
-  return { MatrixClient, client, SimpleFsStorageProvider, AutojoinRoomsMixin, RustSdkCryptoStorageProvider };
+  return { MatrixClient, client, SimpleFsStorageProvider, RustSdkCryptoStorageProvider };
 }
 
 function mockCryptoAvailable() {
@@ -189,13 +196,46 @@ describe('matrix-connection', () => {
     expect(MatrixClient).toHaveBeenCalledTimes(1);
   });
 
-  it('AutojoinRoomsMixin is wired onto the client so an invite is auto-accepted', async () => {
-    const { AutojoinRoomsMixin, client } = mockMatrixSdk();
+  it('auto-accepts a room invite by joining it', async () => {
+    const { client } = mockMatrixSdk();
     mockCryptoAvailable();
     const conn = require('../../bot/shared/services/messaging/matrix-connection');
 
     await conn.getClient();
-    expect(AutojoinRoomsMixin.setupOnClient).toHaveBeenCalledWith(client);
+    client.emit('room.invite', '!room:example.org', { sender: '@teacher:example.org' });
+    await Promise.resolve(); // let the fire-and-forget joinRoom().catch(...) chain settle
+
+    expect(client.joinRoom).toHaveBeenCalledWith('!room:example.org');
+  });
+
+  // Replaces matrix-bot-sdk's own AutojoinRoomsMixin.setupOnClient(), whose
+  // `room.invite` listener has NO try/catch around client.joinRoom(roomId) --
+  // a failed join (stale/foreign invite, federation hiccup, already-kicked,
+  // ...) throws straight out of an EventEmitter callback and kills the
+  // process. See matrix-connection.js#autojoinRoomInvites's own header
+  // comment for the live crash this pins down.
+  it('a failed join does NOT throw/reject out of the room.invite listener -- it is caught and logged', async () => {
+    const joinError = new Error("Can't join remote room because no servers that are in the room have been provided.");
+    const { client } = mockMatrixSdk({ joinRoomImpl: async () => { throw joinError; } });
+    mockCryptoAvailable();
+    const logger = require('../../bot/shared/utils/logger');
+    const conn = require('../../bot/shared/services/messaging/matrix-connection');
+
+    await conn.getClient();
+
+    // If autojoinRoomInvites() ever regresses to the SDK's own uncaught
+    // shape, this listener itself throwing/rejecting would surface as an
+    // unhandled rejection in the test process -- there is nothing else here
+    // to catch it, which is exactly the point.
+    client.emit('room.invite', '!stale:example.org', { sender: '@ghost:example.org' });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(client.joinRoom).toHaveBeenCalledWith('!stale:example.org');
+    expect(logger.logToFile).toHaveBeenCalledWith(
+      expect.stringContaining('failed to auto-join an invited room'),
+      expect.objectContaining({ channel: 'matrix', roomId: '!stale:example.org', error: joinError.message })
+    );
   });
 
   it('throws when MATRIX_HOMESERVER_URL is not set', async () => {

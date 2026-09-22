@@ -153,6 +153,13 @@ async function mapMessageToMetaShape(roomId, event, ownUserId, startedAt) {
   if (ownUserId && event.sender === ownUserId) return null;
   if (typeof event.origin_server_ts === 'number' && event.origin_server_ts < startedAt) return null;
 
+  // Ground truth for "which room does a reply to this user go to" -- see
+  // this file's "Reply-to-the-room-you-were-messaged-in" section header for
+  // the crash/misdelivery this fixes. Recorded for every real inbound event,
+  // not just ones that end up dispatched, so it reflects the room as
+  // accurately as possible.
+  recordInboundRoom(event.sender, roomId);
+
   const from = toPrefixedIdentity(event.sender);
   const id = event.event_id;
   const timestamp = Math.floor((event.origin_server_ts || Date.now()) / 1000);
@@ -194,6 +201,97 @@ function isDuplicateDelivery(id) {
 /** Test-only: clears the seen-id dedup cache between test runs. */
 function _resetSeenIdsForTests() {
   seenIds.clear();
+}
+
+// ── Reply-to-the-room-you-were-messaged-in ───────────────────────────────────
+// The outbound identity a reply is addressed to is only "matrix:<user_id>" --
+// there's no room in it -- so matrix-channel.service.js has to RESOLVE a room
+// for that user, and its existing resolution (client.dms.getOrCreateDm(),
+// backed by the 'm.direct' account-data map) is asynchronous/eventually-
+// consistent. That resolution can race a genuine inbound message: a user
+// invites the bot into a fresh DM and asks a question in the SAME beat that
+// account data is still catching up, getOrCreateDm() sees no cached room yet,
+// and creates a SECOND, empty room -- the reply lands somewhere the user
+// never sees (reproduced live: a teacher's question in
+// "!ljKfozcoLYAVQKuxMM:..." got a reply in a brand-new
+// "!zskAHVYNfwWVYrUSpl:..." nobody else had joined).
+//
+// Fix: remember, per sender, the room their MOST RECENT inbound message
+// actually arrived in -- ground truth, no account-data round trip involved --
+// and let matrix-channel.service.js#resolveDmRoomId prefer it over
+// getOrCreateDm() whenever the bot is still joined to that room (see
+// matrix-connection.js#isJoinedToRoom). Falls back to the existing
+// getOrCreateDm() path when there's no recorded room at all -- the welcome-DM
+// path (a bot-initiated first contact; the user has never sent a room.message
+// yet) is exactly that case, and is therefore unaffected by this map.
+//
+// Bounded so a long-running process can't grow this without limit: entries
+// older than LAST_INBOUND_ROOM_TTL_MS are pruned opportunistically on every
+// write, and if the map is still over LAST_INBOUND_ROOM_MAX_ENTRIES afterward
+// the least-recently-touched entries are evicted (Map iteration is insertion
+// order, and recordInboundRoom() re-inserts on every touch, so the first keys
+// in iteration order are always the stalest).
+const LAST_INBOUND_ROOM_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours -- generous for a same-day conversation, not "forever"
+const LAST_INBOUND_ROOM_MAX_ENTRIES = 5000;
+const lastInboundRoomByUser = new Map(); // unprefixed matrix user id -> { roomId, ts }
+
+function pruneLastInboundRoom() {
+  const now = Date.now();
+  for (const [userId, entry] of lastInboundRoomByUser) {
+    if (now - entry.ts > LAST_INBOUND_ROOM_TTL_MS) lastInboundRoomByUser.delete(userId);
+  }
+  if (lastInboundRoomByUser.size > LAST_INBOUND_ROOM_MAX_ENTRIES) {
+    let excess = lastInboundRoomByUser.size - LAST_INBOUND_ROOM_MAX_ENTRIES;
+    for (const userId of lastInboundRoomByUser.keys()) {
+      if (excess-- <= 0) break;
+      lastInboundRoomByUser.delete(userId);
+    }
+  }
+}
+
+/**
+ * Records that `userId`'s most recent inbound message arrived in `roomId` --
+ * called from mapMessageToMetaShape() for every real (non-echo, non-backlog)
+ * inbound event, regardless of msgtype, since even an unsupported message
+ * type is still evidence of "this is where the user is talking to us".
+ *
+ * @param {string} userId unprefixed matrix user id (event.sender)
+ * @param {string} roomId
+ */
+function recordInboundRoom(userId, roomId) {
+  if (!userId || !roomId) return;
+  // Delete-then-set (rather than a plain set on an existing key) so a
+  // re-touched entry moves to the END of Map iteration order -- keeps
+  // pruneLastInboundRoom()'s "first keys are stalest" assumption true even
+  // for a user who messages the bot repeatedly.
+  lastInboundRoomByUser.delete(userId);
+  lastInboundRoomByUser.set(userId, { roomId, ts: Date.now() });
+  pruneLastInboundRoom();
+}
+
+/**
+ * @param {string} userId unprefixed matrix user id
+ * @returns {string|null} the room `userId`'s most recent inbound message
+ *   arrived in, or null if there's no (or an expired) recorded entry.
+ */
+function getLastInboundRoom(userId) {
+  const entry = lastInboundRoomByUser.get(userId);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > LAST_INBOUND_ROOM_TTL_MS) {
+    lastInboundRoomByUser.delete(userId);
+    return null;
+  }
+  return entry.roomId;
+}
+
+/** Test-only: clears the last-inbound-room map between test runs. */
+function _resetLastInboundRoomForTests() {
+  lastInboundRoomByUser.clear();
+}
+
+/** Test-only: the map's current size, to assert the bound actually holds. */
+function _lastInboundRoomSizeForTests() {
+  return lastInboundRoomByUser.size;
 }
 
 function buildSyntheticRequest(metaMessage) {
@@ -453,4 +551,10 @@ module.exports = {
   handleWelcomeRoomJoin,
   defaultWelcomeRoomAlias,
   _resetSeenIdsForTests,
+  // Consumed by matrix-channel.service.js#resolveDmRoomId -- see this file's
+  // "Reply-to-the-room-you-were-messaged-in" section header.
+  getLastInboundRoom,
+  recordInboundRoom,
+  _resetLastInboundRoomForTests,
+  _lastInboundRoomSizeForTests,
 };

@@ -100,9 +100,35 @@ async function createDmRoom(client, targetUserId) {
 }
 
 async function resolveDmRoomId(userId) {
+  const client = await getClient();
+
+  // Prefer the room the user's message ACTUALLY arrived in over anything
+  // derived/cached -- see matrix-events.adapter.js's
+  // "Reply-to-the-room-you-were-messaged-in" section header for the exact
+  // bug this exists to fix: client.dms.getOrCreateDm() (below) reads the
+  // 'm.direct' account-data map, which is asynchronous/eventually-consistent
+  // and can race a genuine inbound message, creating a SECOND room and
+  // sending the reply where the teacher never sees it (reproduced live).
+  // Checked ahead of dmRoomCache too, since that cache could itself hold a
+  // stale/duplicate room from exactly that race. Skipped when there's no
+  // recorded room (a bot-initiated first contact, e.g. the welcome DM -- the
+  // user has never sent a room.message yet) or the bot is no longer joined
+  // to the recorded room (kicked/left since) -- both fall through to the
+  // existing resolution below unchanged.
+  // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load (the adapter requires this file too)
+  const adapter = require('./inbound/matrix-events.adapter');
+  const lastInboundRoomId = adapter.getLastInboundRoom(userId);
+  if (lastInboundRoomId) {
+    // eslint-disable-next-line global-require -- lazy, see file header
+    const connection = require('./matrix-connection');
+    if (connection.isJoinedToRoom(client, lastInboundRoomId)) {
+      dmRoomCache.set(userId, lastInboundRoomId);
+      return lastInboundRoomId;
+    }
+  }
+
   if (dmRoomCache.has(userId)) return dmRoomCache.get(userId);
 
-  const client = await getClient();
   const storageKey = `${DM_ROOM_STORAGE_PREFIX}${userId}`;
 
   // Best-effort warm start straight from the storage provider -- skips a

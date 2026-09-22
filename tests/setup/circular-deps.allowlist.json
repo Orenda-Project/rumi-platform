@@ -20,5 +20,12 @@
       "bot/shared/services/quiz/video-quiz-share.service.js"
     ],
     "reason": "Offer/share/invite are one feature split by concern; each edge is a lazy require() inside a function body, resolved at call time, so module load order never deadlocks."
+  },
+  {
+    "cycle": [
+      "bot/shared/services/messaging/inbound/matrix-events.adapter.js",
+      "bot/shared/services/messaging/matrix-channel.service.js"
+    ],
+    "reason": "Reply-to-the-room-you-were-messaged-in fix: matrix-channel.service.js#resolveDmRoomId lazy-requires the adapter inside the function body to read its last-inbound-room map; the adapter already lazy-required the channel service the same way (mapAttachmentToMetaShape, sendWelcomeDm) before this change. Both edges resolve at call time, after both modules have finished their own top-level evaluation, so module load order never deadlocks."
   }
 ]
