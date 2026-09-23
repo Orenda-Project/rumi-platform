@@ -116,6 +116,7 @@ describe('reply-to-the-room-you-were-messaged-in', () => {
       storageProvider: { readValue: jest.fn().mockResolvedValue(null), storeValue: jest.fn().mockResolvedValue(undefined) },
       getAccountData: jest.fn().mockRejectedValue(Object.assign(new Error('not found'), { body: { errcode: 'M_NOT_FOUND' } })),
       setAccountData: jest.fn().mockResolvedValue(undefined),
+      getRoomStateEvent: jest.fn(async () => ({ membership: 'join' })), // already in the DM: greet now
     };
     const event = { type: 'm.room.member', state_key: '@brandnew:example.org', content: { membership: 'join' } };
 

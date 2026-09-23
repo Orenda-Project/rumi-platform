@@ -412,7 +412,7 @@ describe('handleWelcomeRoomJoin', () => {
    *   the "fresh storage dir, but the SERVER remembers" scenario this fix
    *   exists for is `{ localGreeted: false, serverGreetedMap: {...} }`.
    */
-  function fakeClient({ localGreeted = false, serverGreetedMap = null } = {}) {
+  function fakeClient({ localGreeted = false, serverGreetedMap = null, dmJoined = true } = {}) {
     const notFound = async () => {
       const error = new Error('Event not found.');
       error.body = { errcode: 'M_NOT_FOUND' };
@@ -425,6 +425,8 @@ describe('handleWelcomeRoomJoin', () => {
       },
       getAccountData: jest.fn(serverGreetedMap ? async () => serverGreetedMap : notFound),
       setAccountData: jest.fn().mockResolvedValue(undefined),
+      // The user's own membership in the DM room: joined (greet now) or not yet (defer).
+      getRoomStateEvent: jest.fn(dmJoined ? async () => ({ membership: 'join' }) : notFound),
     };
   }
 
@@ -441,7 +443,7 @@ describe('handleWelcomeRoomJoin', () => {
 
   beforeEach(() => jest.resetModules());
 
-  it('opens a DM (via the driver\'s own sendMessage) and sends the welcome message on a genuine first join (nothing local, nothing on the server)', async () => {
+  it('opens a DM (via the driver\'s own sendMessage) and sends the welcome message on a genuine first join when the user is already in the DM (nothing local, nothing on the server)', async () => {
     jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
     const matrixChannel = mockMatrixChannel();
     const { handleWelcomeRoomJoin: freshHandle } = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
@@ -555,6 +557,73 @@ describe('handleWelcomeRoomJoin', () => {
     expect(matrixChannel.sendMessage).not.toHaveBeenCalled();
   });
 
+  it('REGRESSION: a user with no devices yet (teacher.sh onboarding) only gets the DM opened -- the greeting waits for their DM join', async () => {
+    // Sending here encrypted the greeting to nobody: the phone later showed
+    // it forever as "Waiting for this message" (reproduced live 2026-09-23).
+    jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+    const matrixChannel = mockMatrixChannel();
+    const adapterMod = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
+    const client = fakeClient({ dmJoined: false });
+
+    const join = { type: 'm.room.member', state_key: '@teacher:example.org', content: { membership: 'join' } };
+    await adapterMod.handleWelcomeRoomJoin(client, '!welcome:example.org', '!welcome:example.org', join, OWN_USER_ID);
+    expect(matrixChannel._resolveDmRoomId).toHaveBeenCalledWith('@teacher:example.org'); // DM created + invited
+    expect(matrixChannel.sendMessage).not.toHaveBeenCalled();
+    expect(client.setAccountData).not.toHaveBeenCalled();
+    expect(client.storageProvider.storeValue).toHaveBeenCalledWith('rumi:matrix:welcome-pending:!dm:example.org', '@teacher:example.org');
+
+    // The teacher's phone signs in and accepts the invite: NOW the greeting goes out, once.
+    await adapterMod.handleDmRoomJoin(client, '!dm:example.org', join, OWN_USER_ID);
+    expect(matrixChannel.sendMessage).toHaveBeenCalledWith('matrix:@teacher:example.org', expect.stringContaining("we're glad you're here"));
+    expect(client.setAccountData).toHaveBeenCalledWith('org.rumi.messenger.greeted', { '@teacher:example.org': true });
+    expect(client.storageProvider.storeValue).toHaveBeenCalledWith('rumi:matrix:welcome-pending:!dm:example.org', '');
+
+    await adapterMod.handleDmRoomJoin(client, '!dm:example.org', join, OWN_USER_ID);
+    expect(matrixChannel.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('the deferred greeting survives a restart: a pending marker only in storage still greets on the DM join', async () => {
+    jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+    const matrixChannel = mockMatrixChannel();
+    const { handleDmRoomJoin } = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
+    const client = fakeClient();
+    client.storageProvider.readValue = jest.fn(async (key) => (
+      key === 'rumi:matrix:welcome-pending:!dm:example.org' ? '@teacher:example.org' : null
+    ));
+
+    await handleDmRoomJoin(client, '!dm:example.org',
+      { type: 'm.room.member', state_key: '@teacher:example.org', content: { membership: 'join' } }, OWN_USER_ID);
+    expect(matrixChannel.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('a join in a DM with no pending welcome (an invite accepted long ago, a group room, the bot itself) sends nothing', async () => {
+    jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+    const matrixChannel = mockMatrixChannel();
+    const { handleDmRoomJoin } = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
+    const client = fakeClient();
+
+    await handleDmRoomJoin(client, '!old-dm:example.org',
+      { type: 'm.room.member', state_key: '@teacher:example.org', content: { membership: 'join' } }, OWN_USER_ID);
+    await handleDmRoomJoin(client, '!old-dm:example.org',
+      { type: 'm.room.member', state_key: OWN_USER_ID, content: { membership: 'join' } }, OWN_USER_ID);
+    expect(matrixChannel.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('a pending DM join for someone already greeted (e.g. by another process) clears the marker without re-greeting', async () => {
+    jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+    const matrixChannel = mockMatrixChannel();
+    const { handleDmRoomJoin } = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
+    const client = fakeClient({ serverGreetedMap: { '@teacher:example.org': true } });
+    client.storageProvider.readValue = jest.fn(async (key) => (
+      key.startsWith('rumi:matrix:welcome-pending:') ? '@teacher:example.org' : null
+    ));
+
+    await handleDmRoomJoin(client, '!dm:example.org',
+      { type: 'm.room.member', state_key: '@teacher:example.org', content: { membership: 'join' } }, OWN_USER_ID);
+    expect(matrixChannel.sendMessage).not.toHaveBeenCalled();
+    expect(client.storageProvider.storeValue).toHaveBeenCalledWith('rumi:matrix:welcome-pending:!dm:example.org', '');
+  });
+
   it('does not mark the user greeted when the welcome send fails -- a retry can still happen later', async () => {
     jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
     mockMatrixChannel({ sendMessage: jest.fn().mockResolvedValue(false) });
@@ -610,7 +679,7 @@ describe('attach -- welcome-room join wiring', () => {
     expect(typeof handlers['room.message']).toBe('function'); // unaffected
   });
 
-  it('a room.event join in the resolved welcome room triggers the welcome DM end-to-end, exactly once per user', async () => {
+  it('a room.event join in the welcome room opens the DM; the user\'s later join of that DM sends the welcome, exactly once', async () => {
     jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
     jest.doMock('../../bot/shared/services/messaging/pending-options', () => pendingOptionsMock());
     const matrixChannel = {
@@ -620,21 +689,28 @@ describe('attach -- welcome-room join wiring', () => {
     };
     jest.doMock('../../bot/shared/services/messaging/matrix-channel.service', () => matrixChannel);
     const { client, handlers } = mockConnectionWithWelcome();
-    client.storageProvider = { readValue: jest.fn().mockResolvedValue(null), storeValue: jest.fn().mockResolvedValue(undefined) };
+    const stored = {};
+    client.storageProvider = {
+      readValue: jest.fn(async (key) => stored[key] || null),
+      storeValue: jest.fn(async (key, value) => { stored[key] = value; }),
+    };
+    client.getAccountData = jest.fn().mockResolvedValue({});
+    client.setAccountData = jest.fn().mockResolvedValue(undefined);
+    client.getRoomStateEvent = jest.fn(async () => { throw new Error('M_NOT_FOUND'); }); // only invited so far
     const { attach: freshAttach } = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
 
     await freshAttach(jest.fn());
-    await handlers['room.event']('!welcome:example.org', {
-      type: 'm.room.member', state_key: '@newteacher:example.org', content: { membership: 'join' },
-    });
+    const join = { type: 'm.room.member', state_key: '@newteacher:example.org', content: { membership: 'join' } };
+    await handlers['room.event']('!welcome:example.org', join);
+    expect(matrixChannel._resolveDmRoomId).toHaveBeenCalledWith('@newteacher:example.org');
+    expect(matrixChannel.sendMessage).not.toHaveBeenCalled();
 
+    await handlers['room.event']('!dm:x', join);
     expect(matrixChannel.sendMessage).toHaveBeenCalledWith('matrix:@newteacher:example.org', expect.any(String));
 
-    // A second join for the same user must do nothing further.
-    client.storageProvider.readValue.mockResolvedValue('1');
-    await handlers['room.event']('!welcome:example.org', {
-      type: 'm.room.member', state_key: '@newteacher:example.org', content: { membership: 'join' },
-    });
+    // Further joins (welcome room or DM) for the same user do nothing more.
+    await handlers['room.event']('!welcome:example.org', join);
+    await handlers['room.event']('!dm:x', join);
     expect(matrixChannel.sendMessage).toHaveBeenCalledTimes(1);
   });
 });

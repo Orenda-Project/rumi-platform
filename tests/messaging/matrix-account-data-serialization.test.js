@@ -144,6 +144,7 @@ describe('matrix-connection: serialized/retried account-data writes', () => {
       storageProvider: null, // force the account-data path, not the local cache
       getAccountData: jest.fn(async () => { throw makeMatrixError(500, 'M_UNKNOWN'); }), // fetchGreetedMap also fails
       setAccountData: original, // markGreeted's write fails every attempt
+      getRoomStateEvent: jest.fn(async () => ({ membership: 'join' })), // already in the DM: greet now
     };
     wrapSetAccountDataSerialized(client);
 

@@ -606,12 +606,56 @@ async function sendWelcomeDm(client, userId) {
   return sent;
 }
 
+// ── Greet on the DM join, not on the announcements join ─────────────────────
+// A teacher onboarded by scripts/teacher.sh (rumi-messenger) is joined to the
+// welcome room server-side, BEFORE they have ever signed in -- i.e. with ZERO
+// devices. Sending the greeting right then encrypts it with a Megolm session
+// shared with nobody, so when their phone later signs in and accepts the
+// invite the greeting shows forever as "Waiting for this message"
+// (reproduced live, twice, 2026-09-23). So the welcome-room join only OPENS
+// the DM (create + invite); the greeting goes out when the teacher actually
+// joins that DM room -- by then their device keys exist and the crypto
+// client shares the session with them. The pending room -> user marker is
+// written through to the storage provider so a restart in between doesn't
+// lose the greeting.
+const PENDING_WELCOME_PREFIX = 'rumi:matrix:welcome-pending:';
+const pendingWelcomeByRoom = new Map(); // dmRoomId -> userId
+
+async function isJoinedMember(client, roomId, userId) {
+  try {
+    const member = await client.getRoomStateEvent(roomId, 'm.room.member', userId);
+    return member?.membership === 'join';
+  } catch (error) {
+    return false; // M_NOT_FOUND: never a member (only invited, or not even that yet)
+  }
+}
+
+async function getPendingWelcome(client, roomId) {
+  if (pendingWelcomeByRoom.has(roomId)) return pendingWelcomeByRoom.get(roomId);
+  try {
+    return (await client.storageProvider?.readValue?.(`${PENDING_WELCOME_PREFIX}${roomId}`)) || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function setPendingWelcome(client, roomId, userId) {
+  if (userId) pendingWelcomeByRoom.set(roomId, userId); else pendingWelcomeByRoom.delete(roomId);
+  try {
+    await client.storageProvider?.storeValue?.(`${PENDING_WELCOME_PREFIX}${roomId}`, userId || '');
+  } catch (error) {
+    logToFile('Matrix: welcome-DM pending marker write failed (non-fatal)', { error: error.message });
+  }
+}
+
 /**
- * Reacts to an `m.room.member` join in the welcome room. Only ever fires the
- * welcome DM once per user (source of truth is homeserver account data, see
- * hasBeenGreeted/markGreeted above -- survives not just a restart but a
- * FRESH process with an empty MATRIX_STORAGE_DIR) and never for the bot's
- * own membership event.
+ * Reacts to an `m.room.member` join in the welcome room. Opens the DM
+ * (create + invite) and either greets right away -- only if the user is
+ * already joined to it -- or leaves a pending marker for handleDmRoomJoin.
+ * Only ever greets once per user (source of truth is homeserver account
+ * data, see hasBeenGreeted/markGreeted above -- survives not just a restart
+ * but a FRESH process with an empty MATRIX_STORAGE_DIR) and never for the
+ * bot's own membership event.
  *
  * @param {object} client the matrix-bot-sdk MatrixClient
  * @param {string} welcomeRoomId the resolved (not alias) welcome room id
@@ -625,7 +669,33 @@ async function handleWelcomeRoomJoin(client, welcomeRoomId, roomId, event, ownUs
   const userId = event.state_key;
   if (!userId || userId === ownUserId) return;
   if (await hasBeenGreeted(client, userId)) return;
-  await sendWelcomeDm(client, userId);
+
+  // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load
+  const matrixChannel = require('../matrix-channel.service');
+  const dmRoomId = await matrixChannel._resolveDmRoomId(userId); // creates + invites on first contact
+  if (await isJoinedMember(client, dmRoomId, userId)) {
+    await sendWelcomeDm(client, userId);
+    return;
+  }
+  await setPendingWelcome(client, dmRoomId, userId);
+  logToFile('Matrix: welcome DM opened, greeting deferred until the user joins it', {
+    channel: 'matrix', event: 'welcome_dm_pending', userId, roomId: dmRoomId,
+  });
+}
+
+/**
+ * The deferred half of the welcome: the invited user joining the DM room
+ * handleWelcomeRoomJoin opened. Rooms with no pending marker (every DM whose
+ * invite was accepted long ago, every group room) are ignored.
+ */
+async function handleDmRoomJoin(client, roomId, event, ownUserId) {
+  if (!event || event.type !== 'm.room.member' || event.content?.membership !== 'join') return;
+  const userId = event.state_key;
+  if (!userId || userId === ownUserId) return;
+  if ((await getPendingWelcome(client, roomId)) !== userId) return;
+  if (await hasBeenGreeted(client, userId) || await sendWelcomeDm(client, userId)) {
+    await setPendingWelcome(client, roomId, null);
+  }
 }
 
 /**
@@ -694,6 +764,7 @@ async function attach(dispatch) {
     client.on('room.event', async (roomId, event) => {
       try {
         await handleWelcomeRoomJoin(client, welcomeRoomId, roomId, event, ownUserId);
+        await handleDmRoomJoin(client, roomId, event, ownUserId);
       } catch (error) {
         logToFile('❌ Matrix inbound: error handling a welcome-room join', { error: error.message, stack: error.stack });
       }
@@ -730,6 +801,7 @@ module.exports = {
   toPrefixedMediaId,
   isDuplicateDelivery,
   handleWelcomeRoomJoin,
+  handleDmRoomJoin,
   defaultWelcomeRoomAlias,
   _resetSeenIdsForTests,
   // Consumed by matrix-channel.service.js#resolveDmRoomId -- see this file's
