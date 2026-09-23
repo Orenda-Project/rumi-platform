@@ -50,6 +50,19 @@ const CHANNEL_PREFIXES = {
   matrix: 'matrix',
 };
 
+// Extra inbound-only aliases for an additive-channel prefix -- kept OUT of
+// CHANNEL_PREFIXES (the driver -> canonical-outbound-prefix map prefixFor()
+// reads) so prefixFor('matrix') stays exactly 'matrix' and every existing
+// caller/test of it is untouched. "mtx" is Matrix's short identity form for a
+// numeric (phone-number) localpart -- see matrix-identity.js's header comment
+// for the varchar(20) budget arithmetic that forces "matrix:" (7 chars, 7+15
+// digits = 22) to be too long for that one case. Add an entry here, never a
+// second key in CHANNEL_PREFIXES, if a channel ever needs more than one wire
+// prefix recognized on the way in.
+const ALIAS_PREFIXES = {
+  mtx: 'matrix',
+};
+
 function isKnownDriver(name) {
   return Object.prototype.hasOwnProperty.call(DRIVERS, name);
 }
@@ -77,7 +90,9 @@ function driverForIdentifier(id) {
   const idx = String(id).indexOf(':');
   if (idx === -1) return null;
   const prefix = String(id).slice(0, idx);
-  return Object.keys(CHANNEL_PREFIXES).find((name) => CHANNEL_PREFIXES[name] === prefix) || null;
+  const known = Object.keys(CHANNEL_PREFIXES).find((name) => CHANNEL_PREFIXES[name] === prefix);
+  if (known) return known;
+  return ALIAS_PREFIXES[prefix] || null;
 }
 
 module.exports = {

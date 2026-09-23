@@ -19,10 +19,20 @@
  * logs (one line, no message body) -- there is nothing else to recover from a
  * lost Megolm session key on the bot's side.
  *
- * Identity: `from` is always the PREFIXED "matrix:<user_id>" identifier (see
- * channel-registry.js's CHANNEL_PREFIXES) -- e.g. "matrix:@teacher:example.org".
- * Minted here, at the one place Matrix identities enter the system, then
- * carried unchanged through getOrCreateUserByChannel and every downstream send.
+ * Identity: `from` is minted here, at the one place Matrix identities enter
+ * the system, then carried unchanged through getOrCreateUserByChannel and
+ * every downstream send. For a phone-number-shaped localpart (a teacher who
+ * registered with "+" + their phone digits, e.g. "@+923360506129:example.org"
+ * -- Synapse itself rejects a purely numeric localpart, but does accept a
+ * leading "+"; a leading "t" is kept as a fallback form for accounts already
+ * created that way) it is the short "mtx:<digits>" form (leading "+"/"t"
+ * dropped, e.g. "mtx:923360506129"); for anything else it's the existing
+ * prefixed "matrix:<user_id>" form, e.g. "matrix:@teacher:example.org". See
+ * matrix-identity.js's header comment for why the short form exists (a
+ * varchar(20) column several shared tables write this identity into), the
+ * exact character budget behind the "mtx" prefix choice, and the "+" vs "t"
+ * ambiguity this file resolves below by recording the REAL observed form the
+ * moment an inbound message proves an account exists.
  *
  * Coverage: plain text messages, image/audio/video/document attachments
  * (mapped by msgtype), and a numbered-menu reply to a pending
@@ -36,14 +46,41 @@
 
 const { logToFile } = require('../../../utils/logger');
 const { prefixFor } = require('../channel-registry');
+const matrixIdentity = require('../matrix-identity');
 const pendingOptions = require('../pending-options');
 
 const MATRIX_PREFIX = prefixFor('matrix');
 // A stable, non-test, non-zero entry id -- passes validators.isTestWebhook().
 const SYNTHETIC_ENTRY_ID = 'matrix-sync';
 
+/**
+ * Mints the identity `from` carries for a Matrix sender. Delegates to
+ * matrix-identity.js#encodeIdentity -- see that file's header comment for the
+ * short ("mtx:<digits>") vs. long ("matrix:@user:server") form and why.
+ *
+ * For a phone-shaped account, this is also the ONE place the real "+"/"t"
+ * localpart form is ever directly observed (this inbound message proves the
+ * account exists), so it's recorded here via
+ * matrix-channel.service.js#_rememberPhoneLocalpart -- fire-and-forget
+ * (best-effort, matches every other account-data/cache write in this file);
+ * this function stays synchronous, returning the identity string immediately,
+ * same as before.
+ */
 function toPrefixedIdentity(userId) {
-  return `${MATRIX_PREFIX}:${userId}`;
+  const identity = matrixIdentity.encodeIdentity(userId, { logToFile });
+  if (identity.startsWith(`${matrixIdentity.SHORT_PREFIX}:`)) {
+    const parsed = matrixIdentity.splitUserId(userId);
+    if (parsed) {
+      // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load
+      const matrixChannel = require('../matrix-channel.service');
+      if (typeof matrixChannel._rememberPhoneLocalpart === 'function') {
+        matrixChannel
+          ._rememberPhoneLocalpart(matrixIdentity.phoneDigitsFromLocalpart(parsed.localpart), parsed.localpart)
+          .catch((error) => logToFile('Matrix: failed to remember phone localpart (non-fatal)', { error: error.message }));
+      }
+    }
+  }
+  return identity;
 }
 
 // Media ids need the same "matrix:" prefix as user identities -- messaging/index.js's

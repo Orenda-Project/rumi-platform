@@ -63,4 +63,20 @@ describe('channel-registry', () => {
     // own colon) untouched as the id.
     expect(registry.driverForIdentifier('matrix:@teacher:example.org')).toBe('matrix');
   });
+
+  it('driverForIdentifier also routes the short Matrix "mtx:" identity (phone-number localpart) to matrix', () => {
+    // See matrix-identity.js's header comment: "mtx:" is the short wire form
+    // for a numeric Matrix localpart, kept out of CHANNEL_PREFIXES/prefixFor
+    // so it doesn't disturb the canonical 'matrix' prefix the tests above rely on.
+    expect(registry.driverForIdentifier('mtx:923001234567')).toBe('matrix');
+  });
+
+  it('prefixFor("matrix") is unaffected by the "mtx:" alias -- stays the canonical long-form prefix', () => {
+    expect(registry.prefixFor('matrix')).toBe('matrix');
+  });
+
+  it('the "mtx:" alias does not steal slack or discord identifiers', () => {
+    expect(registry.driverForIdentifier('slack:mtx-not-a-real-user')).toBe('slack');
+    expect(registry.driverForIdentifier('discord:mtx12345')).toBe('discord');
+  });
 });
