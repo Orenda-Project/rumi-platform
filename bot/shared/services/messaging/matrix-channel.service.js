@@ -454,10 +454,23 @@ async function sendReaction(to, messageId, emoji = '❤️') {
 // implementation, not an honest no-op stub the way Slack's is.
 const TYPING_TIMEOUT_MS = 10000;
 
-async function showTypingIndicator(to) {
+/**
+ * Shows "Rumi is typing" and, when the inbound event id is passed (whatsapp-bot.js
+ * calls showTypingIndicator(from, message.id) on every accepted message), also
+ * sends a read receipt for it -- Meta's version of this call does both in one
+ * request (status: 'read' + typing_indicator), so a WhatsApp teacher sees blue
+ * ticks; without this a Matrix teacher's message stayed "delivered, unread".
+ * The receipt is best-effort: a failure never blocks the typing indicator.
+ */
+async function showTypingIndicator(to, messageId) {
   try {
     const roomId = await getRoomId(to);
     const client = await getClient();
+    if (typeof messageId === 'string' && messageId.startsWith('$') && typeof client.sendReadReceipt === 'function') {
+      client.sendReadReceipt(roomId, messageId).catch((error) => {
+        logToFile('Matrix: read receipt failed (non-fatal)', { ...matrixErrorDetail(error) });
+      });
+    }
     await client.setTyping(roomId, true, TYPING_TIMEOUT_MS);
     return true;
   } catch (error) {
@@ -873,6 +886,20 @@ async function sendFeatureMenuListFallback(to) {
   });
 }
 
+// Meta's own sendStyleCarousel/sendFeatureMenuCarousel fall back to exactly
+// these list menus whenever the carousel template can't be sent (not approved,
+// rate limited, any exception). A carousel template can never be sent on
+// Matrix, so it goes straight to the same fallback. Returning false here (the
+// old stub) left video-orchestrator.service.js's /video flow with no style
+// menu at all -- it has no fallback of its own after sendStyleCarousel().
+async function sendStyleCarousel(to) {
+  return sendStyleListFallback(to);
+}
+
+async function sendFeatureMenuCarousel(to) {
+  return sendFeatureMenuListFallback(to);
+}
+
 function notSupportedMessage(methodName) {
   return `Matrix channel driver: ${methodName}() has no equivalent yet -- it needs the channel-agnostic `
     + 'template registry from docs/onboarding/sandbox-production-design.md §1, which is not built. '
@@ -914,14 +941,14 @@ const IMPLEMENTATIONS = {
   sendLanguageSelectionList,
   sendStyleListFallback,
   sendFeatureMenuListFallback,
+  sendStyleCarousel,
+  sendFeatureMenuCarousel,
   sendFlow,
 };
 
 // name -> whether the real (Meta) method is async, so the stub shape matches.
 const STUBS = {
   sendTemplate: true,
-  sendStyleCarousel: true,
-  sendFeatureMenuCarousel: true,
   buildStyleCarouselPayload: false,
   buildFeatureMenuCarouselPayload: false,
 };

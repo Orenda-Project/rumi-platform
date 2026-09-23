@@ -133,6 +133,28 @@ describe('matrix-channel.service -- reactions and typing', () => {
     expect(client.setTyping).toHaveBeenCalledWith('!room:example.org', true, expect.any(Number));
   });
 
+  it('showTypingIndicator(to, eventId) also sends a read receipt for that event -- Meta marks the message read in the same call', async () => {
+    const { service, client } = loadService();
+    client.sendReadReceipt = jest.fn(async () => ({}));
+    await expect(service.showTypingIndicator(TO, '$inbound1')).resolves.toBe(true);
+    expect(client.sendReadReceipt).toHaveBeenCalledWith('!room:example.org', '$inbound1');
+  });
+
+  it('a failing read receipt never fails the typing indicator', async () => {
+    const { service, client } = loadService();
+    client.sendReadReceipt = jest.fn(async () => { throw new Error('M_FORBIDDEN'); });
+    await expect(service.showTypingIndicator(TO, '$inbound1')).resolves.toBe(true);
+    expect(client.setTyping).toHaveBeenCalled();
+  });
+
+  it('no read receipt without a Matrix event id (e.g. the continuous typing ticks)', async () => {
+    const { service, client } = loadService();
+    client.sendReadReceipt = jest.fn(async () => ({}));
+    await service.showTypingIndicator(TO);
+    await service.showTypingIndicator(TO, 'wamid.not-matrix');
+    expect(client.sendReadReceipt).not.toHaveBeenCalled();
+  });
+
   it('startContinuousTypingIndicator returns a real, callable controller, ticks immediately, repeats, and sends a final stop signal', async () => {
     jest.useFakeTimers();
     try {
@@ -389,11 +411,25 @@ describe('matrix-channel.service -- stubbed Meta-template-only methods', () => {
     await expect(service.sendFlow(TO, {})).resolves.toBe(false);
   });
 
-  it('sendTemplate/sendStyleCarousel/sendFeatureMenuCarousel have no equivalent yet -- log and resolve false', async () => {
+  it('sendTemplate has no equivalent yet -- logs and resolves false', async () => {
     const { service } = loadService();
     await expect(service.sendTemplate(TO, 'x', 'en')).resolves.toBe(false);
-    await expect(service.sendStyleCarousel(TO)).resolves.toBe(false);
-    await expect(service.sendFeatureMenuCarousel(TO)).resolves.toBe(false);
+  });
+
+  it('sendStyleCarousel goes straight to the numbered style list (what Meta itself falls back to) -- /video has no fallback of its own', async () => {
+    const { service, sentMessages, pendingOptions } = loadService();
+    await expect(service.sendStyleCarousel(TO)).resolves.toBe(true);
+    expect(sentMessages[0].content.body).toContain('1. Photorealistic');
+    expect(pendingOptions.remember).toHaveBeenCalledWith(TO, expect.objectContaining({
+      replyType: 'list_reply',
+      options: expect.arrayContaining([{ id: 'style_cartoon', title: 'Cartoon' }]),
+    }));
+  });
+
+  it('sendFeatureMenuCarousel goes straight to the numbered feature menu', async () => {
+    const { service, sentMessages } = loadService();
+    await expect(service.sendFeatureMenuCarousel(TO)).resolves.toBe(true);
+    expect(sentMessages[0].content.body).toContain('1. Lesson Plans');
   });
 
   it('buildStyleCarouselPayload/buildFeatureMenuCarouselPayload have no equivalent yet -- synchronous, return null', () => {
