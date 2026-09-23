@@ -106,6 +106,62 @@ describe('matrix-channel.service -- outbound text', () => {
     });
   });
 
+  describe('WhatsApp formatting markers become Matrix HTML (a single * is BOLD, as on WhatsApp)', () => {
+    const html = async (text) => {
+      const { service, sentMessages } = loadService();
+      await service.sendMessage(TO, text);
+      return sentMessages[0].content;
+    };
+
+    it('*bold*, _italic_, ~strike~', async () => {
+      const content = await html('*Lesson Plan* for _Grade 4_ ~not~ now');
+      expect(content.body).toBe('*Lesson Plan* for _Grade 4_ ~not~ now');
+      expect(content.format).toBe('org.matrix.custom.html');
+      expect(content.formatted_body).toBe('<strong>Lesson Plan</strong> for <em>Grade 4</em> <del>not</del> now');
+    });
+
+    it('```monospace``` and `inline code`, with no formatting applied inside code', async () => {
+      const content = await html('Run ```a *b* c``` then `x_y_z`');
+      expect(content.formatted_body).toBe('Run <pre><code>a *b* c</code></pre> then <code>x_y_z</code>');
+    });
+
+    it('multi-line messages keep their line breaks; bold at the start of each line', async () => {
+      const content = await html('*Step 1:* Warm up\n*Step 2:* Explain');
+      expect(content.formatted_body).toBe('<strong>Step 1:</strong> Warm up<br/><strong>Step 2:</strong> Explain');
+    });
+
+    it('bold inside quotes/parentheses and before punctuation', async () => {
+      const content = await html('Say "*hello*" (or *salaam*), then *start*!');
+      expect(content.formatted_body).toBe('Say &quot;<strong>hello</strong>&quot; (or <strong>salaam</strong>), then <strong>start</strong>!');
+    });
+
+    it('arithmetic, snake_case, URLs and a lone tilde are NOT formatted -- plain body, no formatted_body', async () => {
+      for (const text of ['2 * 3 * 4 = 24', 'use file_name_here', 'see https://x.org/a_b_c/', 'takes ~ 5 minutes', 'a*b*c']) {
+        // eslint-disable-next-line no-await-in-loop
+        const content = await html(text);
+        expect(content).toEqual({ msgtype: 'm.text', body: text });
+      }
+    });
+
+    it('HTML in the text is escaped, never injected', async () => {
+      const content = await html('*hi* <script>alert(1)</script>');
+      expect(content.formatted_body).toBe('<strong>hi</strong> &lt;script&gt;alert(1)&lt;/script&gt;');
+    });
+
+    it('only http(s)/mailto markdown links become anchors', async () => {
+      // (an all-letters label like "[guide]" is stripped earlier as an emotion tag, on every channel)
+      const good = await html('[Guide v2](https://rumi.org/guide)');
+      expect(good.formatted_body).toBe('<a href="https://rumi.org/guide">Guide v2</a>');
+      const bad = await html('[x1](javascript:alert(1)) and *b*');
+      expect(bad.formatted_body).not.toContain('<a ');
+    });
+
+    it('Urdu text with bold markers renders too', async () => {
+      const content = await html('*لیسن پلان* تیار ہے');
+      expect(content.formatted_body).toBe('<strong>لیسن پلان</strong> تیار ہے');
+    });
+  });
+
   it('sendMessage returns false (never throws) when the send call rejects', async () => {
     const { service } = loadService({ sendMessageImpl: async () => { throw new Error('boom'); } });
     await expect(service.sendMessage(TO, 'hi')).resolves.toBe(false);

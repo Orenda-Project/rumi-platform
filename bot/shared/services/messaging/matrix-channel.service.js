@@ -355,33 +355,71 @@ function removeEmotionTags(text) {
   return text.replace(/\[[a-zA-Z\s]+\]\s*/g, '').trim();
 }
 
-// A conservative "does this look like markdown" sniff -- bold/italic, a link,
-// or a heading/list marker at the start of a line. Plain conversational text
-// (the overwhelming majority of what Rumi sends) skips formatted_body
-// entirely, so an ordinary reply doesn't carry redundant HTML.
-const MARKDOWN_RE = /(\*\*[^*]+\*\*|__[^_]+__|\[[^\]]+\]\([^)]+\)|^#{1,3}\s|^[-*]\s|^\d+\.\s)/m;
+// ── Formatting: WhatsApp markers -> Matrix HTML ──────────────────────────────
+// Rumi's replies are written for WhatsApp, whose markers are *bold*, _italic_,
+// ~strikethrough~, ```monospace``` and `inline code` -- note a SINGLE asterisk
+// is bold there, not italic as in Markdown. Matrix clients render none of that
+// from `body`, so without formatted_body a teacher saw literal asterisks
+// (reported from the Android app). Markdown's **bold**/__bold__ and [links](..)
+// are also accepted, since some templates use them.
+//
+// A marker only counts the way WhatsApp counts it: the opening marker follows
+// the start of a line or a space/punctuation, the closing one is followed by
+// the end or a space/punctuation, and neither touches a space on the inside --
+// so "2 * 3 * 4", "snake_case_name" and "~ 5 minutes" stay plain text.
+// Matched against HTML-ESCAPED text, so a quote/angle bracket arrives as an
+// entity: ";" (end of &quot;/&gt;) opens, "&" (start of an entity) closes.
+const OPEN_BOUNDARY = '(^|[\\s(\\[{\';])';
+const CLOSE_BOUNDARY = '(?=$|[\\s.,!?;:)\\]}\'&])';
 
+function markerRe(marker) {
+  const m = marker.replace(/[*~]/g, '\\$&');
+  return new RegExp(`${OPEN_BOUNDARY}${m}(?=\\S)([^\\n]*?\\S)${m}${CLOSE_BOUNDARY}`, 'gm');
+}
+
+const BOLD_DOUBLE_RE = /\*\*(?=\S)([^\n]*?\S)\*\*/g;
+const BOLD_UNDERSCORE_DOUBLE_RE = /__(?=\S)([^\n]*?\S)__/g;
+const BOLD_RE = markerRe('*');
+const ITALIC_RE = markerRe('_');
+const STRIKE_RE = markerRe('~');
+const CODE_BLOCK_RE = /```([\s\S]+?)```/g;
+const INLINE_CODE_RE = /`([^`\n]+)`/g;
+const LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+
+// Plain conversational text (the overwhelming majority of what Rumi sends)
+// skips formatted_body entirely, so an ordinary reply carries no redundant HTML.
 function isMarkdownish(text) {
-  return MARKDOWN_RE.test(text);
+  const t = String(text);
+  return [BOLD_DOUBLE_RE, BOLD_UNDERSCORE_DOUBLE_RE, BOLD_RE, ITALIC_RE, STRIKE_RE, CODE_BLOCK_RE, INLINE_CODE_RE, LINK_RE]
+    .some((re) => { re.lastIndex = 0; const hit = re.test(t); re.lastIndex = 0; return hit; });
 }
 
 function escapeHtml(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 /**
- * A deliberately minimal Markdown->HTML renderer -- bold, italic, links, and
- * newlines only, which is all Rumi's own message templates ever use. Not a
- * general-purpose Markdown engine (no new dependency for four regexes).
+ * WhatsApp/Markdown-ish text -> the small HTML subset Matrix clients render
+ * (org.matrix.custom.html): <strong>, <em>, <del>, <code>, <pre>, <a>, <br/>.
+ * Code is cut out first so nothing inside it is reformatted. Not a general
+ * Markdown engine -- no new dependency for a handful of regexes.
  */
 function renderMarkdownToHtml(text) {
+  const slots = [];
+  const hold = (html) => `\u0000${slots.push(html) - 1}\u0000`;
+
   let html = escapeHtml(text);
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
-  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  html = html.replace(CODE_BLOCK_RE, (_, code) => hold(`<pre><code>${code.replace(/^\n/, '')}</code></pre>`));
+  html = html.replace(INLINE_CODE_RE, (_, code) => hold(`<code>${code}</code>`));
+  html = html.replace(LINK_RE, (_, label, href) => (/^(https?:|mailto:)/i.test(href) ? `<a href="${href}">${label}</a>` : _));
+  html = html.replace(BOLD_DOUBLE_RE, '<strong>$1</strong>');
+  html = html.replace(BOLD_UNDERSCORE_DOUBLE_RE, '<strong>$1</strong>');
+  html = html.replace(BOLD_RE, '$1<strong>$2</strong>');
+  html = html.replace(ITALIC_RE, '$1<em>$2</em>');
+  html = html.replace(STRIKE_RE, '$1<del>$2</del>');
   html = html.replace(/\n/g, '<br/>');
-  return html;
+  // eslint-disable-next-line no-control-regex -- the NUL-delimited placeholders set by hold() above
+  return html.replace(/\u0000(\d+)\u0000/g, (_, i) => slots[Number(i)]);
 }
 
 function buildTextContent(rawText) {
