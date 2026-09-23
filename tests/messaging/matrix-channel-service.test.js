@@ -240,6 +240,61 @@ describe('matrix-channel.service -- media upload + send', () => {
     }));
   });
 
+  it('sendImageFromUrl labels a .jpg URL as image/jpeg (query string ignored), not a blanket image/png', async () => {
+    const fetchImpl = jest.fn(async () => ({ ok: true, arrayBuffer: async () => Buffer.from('img').buffer }));
+    const { service, client } = loadService({ fetchImpl });
+    await service.sendImageFromUrl(TO, 'https://example.com/pages/p1.JPG?sig=abc', '');
+    expect(client.uploadContent).toHaveBeenCalledWith(expect.any(Buffer), 'image/jpeg', 'image.jpg');
+  });
+
+  it('in an E2EE room, an attachment is encrypted before upload and sent as content.file (never a plaintext content.url)', async () => {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const tmpFile = path.join(os.tmpdir(), `matrix-test-enc-${Date.now()}.pdf`);
+    fs.writeFileSync(tmpFile, 'pdfdata');
+    try {
+      const { service, client, sentMessages } = loadService();
+      client.crypto = {
+        isRoomEncrypted: jest.fn(async () => true),
+        encryptMedia: jest.fn(async () => ({
+          buffer: Buffer.from('ciphertext'),
+          file: { key: { k: 'secret' }, iv: 'iv', hashes: { sha256: 'h' }, v: 'v2' },
+        })),
+      };
+      const result = await service.sendDocument(TO, tmpFile, 'lesson-plan.pdf', 'here you go');
+      expect(result).toBe(true);
+      expect(client.crypto.encryptMedia).toHaveBeenCalledWith(Buffer.from('pdfdata'));
+      expect(client.uploadContent).toHaveBeenCalledWith(Buffer.from('ciphertext'), 'application/octet-stream', 'lesson-plan.pdf');
+      const { content } = sentMessages[0];
+      expect(content.url).toBeUndefined();
+      expect(content.file).toEqual({
+        key: { k: 'secret' }, iv: 'iv', hashes: { sha256: 'h' }, v: 'v2', url: 'mxc://example.org/abc123',
+      });
+      expect(content.info).toEqual({ mimetype: 'application/pdf', size: 7 });
+      expect(content.filename).toBe('lesson-plan.pdf');
+      expect(content.body).toBe('here you go');
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it('in a plaintext room (crypto present, room not encrypted) the attachment is uploaded as-is with content.url', async () => {
+    const { service, client, sentMessages } = loadService();
+    client.crypto = { isRoomEncrypted: jest.fn(async () => false), encryptMedia: jest.fn() };
+    await service.sendAudio(TO, Buffer.alloc(64));
+    expect(client.crypto.encryptMedia).not.toHaveBeenCalled();
+    expect(sentMessages[0].content.url).toBe('mxc://example.org/abc123');
+  });
+
+  it('if the room-encryption check fails the send fails -- it never falls back to plaintext media', async () => {
+    const { service, client } = loadService();
+    client.crypto = { isRoomEncrypted: jest.fn(async () => { throw new Error('store locked'); }), encryptMedia: jest.fn() };
+    const result = await service.sendAudio(TO, Buffer.alloc(64));
+    expect(result).toBe(false);
+    expect(client.uploadContent).not.toHaveBeenCalled();
+  });
+
   it('sendDocument reads a local file and sends it as m.file', async () => {
     const fs = require('fs');
     const os = require('os');

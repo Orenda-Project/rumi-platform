@@ -327,10 +327,26 @@ const EXT_MIME_TYPES = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
   '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.mp4': 'video/mp4',
   '.pdf': 'application/pdf', '.txt': 'text/plain',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 };
 
 function guessMimeType(filename) {
   return EXT_MIME_TYPES[path.extname(String(filename || '')).toLowerCase()] || 'application/octet-stream';
+}
+
+/**
+ * The image's real type from its URL's extension (query string ignored),
+ * defaulting to PNG. Generated worksheets and lesson-plan pages are often
+ * JPEG/WebP; labelling them image/png makes some clients refuse to render them.
+ */
+function imageTypeFromUrl(url) {
+  let pathname = String(url || '');
+  try { pathname = new URL(pathname).pathname; } catch (error) { pathname = pathname.split('?')[0]; }
+  const ext = path.extname(pathname).toLowerCase();
+  const mimeType = EXT_MIME_TYPES[ext];
+  if (mimeType && mimeType.startsWith('image/')) return { mimeType, filename: `image${ext}` };
+  return { mimeType: 'image/png', filename: 'image.png' };
 }
 
 // ── Real implementations ─────────────────────────────────────────────────────
@@ -512,17 +528,48 @@ async function downloadMedia(mediaId) {
   return data;
 }
 
+/**
+ * Whether an attachment for this room must itself be encrypted. matrix-bot-sdk
+ * encrypts the EVENT automatically in an E2EE room, but not the uploaded bytes:
+ * an attachment uploaded as-is sits in the homeserver's media store in the
+ * clear, readable by anyone who learns its mxc url, and Element marks it as not
+ * encrypted. With crypto present, a failed room lookup throws, so the send
+ * fails loudly instead of quietly downgrading a private room to plaintext media.
+ */
+async function roomNeedsEncryptedMedia(client, roomId) {
+  if (!client.crypto) return false;
+  return client.crypto.isRoomEncrypted(roomId);
+}
+
+/**
+ * Uploads `buffer` to the homeserver's media repo and returns the content
+ * fragment that points at it: `{ url }` in a plaintext room, `{ file }` (an
+ * EncryptedFile carrying the mxc url and the AES key) in an E2EE room -- the
+ * shape the Matrix spec requires there and the one Element/Element X decrypt.
+ */
+async function uploadForRoom(client, roomId, buffer, mimeType, filename) {
+  if (await roomNeedsEncryptedMedia(client, roomId)) {
+    const encrypted = await client.crypto.encryptMedia(buffer);
+    const mxcUrl = await client.uploadContent(encrypted.buffer, 'application/octet-stream', filename);
+    return { file: { ...encrypted.file, url: mxcUrl } };
+  }
+  return { url: await client.uploadContent(buffer, mimeType, filename) };
+}
+
 /** Uploads a buffer to the homeserver's media repo, then sends it as the given msgtype. Returns the event id. */
 async function uploadAndSend(to, buffer, mimeType, filename, msgtype, caption) {
   const roomId = await getRoomId(to);
   const client = await getClient();
-  const mxcUrl = await client.uploadContent(buffer, mimeType, filename);
+  const media = await uploadForRoom(client, roomId, buffer, mimeType, filename);
   const content = {
     msgtype,
     body: caption || filename,
-    url: mxcUrl,
+    ...media,
     info: { mimetype: mimeType, size: buffer.length },
   };
+  // MSC2530: with a caption, `body` is the caption and `filename` names the
+  // file -- without it Element shows the caption as the file's name.
+  if (caption && caption !== filename) content.filename = filename;
   const eventId = await client.sendMessage(roomId, content);
   logOutbound(roomId, eventId, msgtype);
   return eventId;
@@ -585,7 +632,8 @@ async function sendAudioFromUrlReturningId(to, audioUrl) {
 async function sendImageFromUrl(to, imageUrl, caption = '') {
   try {
     const buffer = await resolveMediaBuffer(imageUrl);
-    await uploadAndSend(to, buffer, 'image/png', 'image.png', 'm.image', caption);
+    const { mimeType, filename } = imageTypeFromUrl(imageUrl);
+    await uploadAndSend(to, buffer, mimeType, filename, 'm.image', caption);
     return true;
   } catch (error) {
     logToFile('❌ Matrix: error sending image from URL', { ...matrixErrorDetail(error), imageUrl });
@@ -655,10 +703,10 @@ async function sendSticker(to, mediaIdOrPath) {
     const roomId = await getRoomId(to);
     const client = await getClient();
     const mimeType = guessMimeType(mediaIdOrPath);
-    const mxcUrl = await client.uploadContent(buffer, mimeType, path.basename(mediaIdOrPath));
+    const media = await uploadForRoom(client, roomId, buffer, mimeType, path.basename(mediaIdOrPath));
     const eventId = await client.sendEvent(roomId, 'm.sticker', {
       body: path.basename(mediaIdOrPath),
-      url: mxcUrl,
+      ...media,
       info: { mimetype: mimeType, size: buffer.length },
     });
     logOutbound(roomId, eventId, 'sticker');
@@ -736,7 +784,8 @@ async function sendImageWithButtons(to, imageUrl, bodyText, buttons) {
     const buffer = await resolveMediaBuffer(imageUrl);
     const caption = renderOptionsAsText({ body: bodyText, options: buttons.map((b) => ({ title: b.title })) });
     await rememberMenu(to, 'button_reply', buttons);
-    await uploadAndSend(to, buffer, 'image/png', 'image.png', 'm.image', caption);
+    const { mimeType, filename } = imageTypeFromUrl(imageUrl);
+    await uploadAndSend(to, buffer, mimeType, filename, 'm.image', caption);
     return true;
   } catch (error) {
     logToFile('❌ Matrix: error sending image with buttons (text fallback)', { ...matrixErrorDetail(error), imageUrl });
