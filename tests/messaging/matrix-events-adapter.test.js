@@ -187,6 +187,59 @@ describe('mapAttachmentToMetaShape', () => {
     });
   });
 
+  it('maps an ENCRYPTED voice note (E2EE room: content.file, no content.url) to the Meta audio shape and caches the EncryptedFile for decryption', () => {
+    const matrixChannel = require('../../bot/shared/services/messaging/matrix-channel.service');
+    const file = {
+      url: 'mxc://example.org/ENC1', key: { kty: 'oct', k: 'abc', alg: 'A256CTR', ext: true, key_ops: ['encrypt', 'decrypt'] },
+      iv: 'iv==', hashes: { sha256: 'hash' }, v: 'v2',
+    };
+    const mapped = adapter.mapAttachmentToMetaShape('mtx:923001230001', '$v1', 169100, {
+      msgtype: 'm.audio', body: 'Voice message', file,
+      info: { mimetype: 'audio/ogg', size: 5120, duration: 3000 },
+      'org.matrix.msc3245.voice': {},
+    });
+    expect(mapped).toEqual({
+      from: 'mtx:923001230001', id: '$v1', timestamp: 169100,
+      type: 'audio', audio: { id: 'matrix:mxc://example.org/ENC1', mime_type: 'audio/ogg' },
+    });
+    expect(matrixChannel._cacheIncomingMedia).toHaveBeenCalledWith('matrix:mxc://example.org/ENC1', {
+      url: 'mxc://example.org/ENC1', mime_type: 'audio/ogg', file_size: 5120, file,
+    });
+  });
+
+  it('maps an encrypted image the same way as a plaintext one (the E2EE shape was previously dropped as "no url")', () => {
+    const mapped = adapter.mapAttachmentToMetaShape('mtx:923001230001', '$i1', 169100, {
+      msgtype: 'm.image', body: 'IMG_2031.jpg', file: { url: 'mxc://example.org/ENC2' }, info: { mimetype: 'image/jpeg' },
+    });
+    expect(mapped.type).toBe('image');
+    expect(mapped.image.id).toBe('matrix:mxc://example.org/ENC2');
+  });
+
+  it('a bare filename in body is NOT passed through as the caption (Matrix puts the filename there when there is no caption)', () => {
+    const noCaption = adapter.mapAttachmentToMetaShape('matrix:@t:x', '$1', 1, {
+      msgtype: 'm.image', body: 'IMG_2031.jpg', url: 'mxc://x/1', info: { mimetype: 'image/jpeg' },
+    });
+    expect(noCaption.image.caption).toBe('');
+    const sameAsFilename = adapter.mapAttachmentToMetaShape('matrix:@t:x', '$2', 1, {
+      msgtype: 'm.image', body: 'photo.png', filename: 'photo.png', url: 'mxc://x/2',
+    });
+    expect(sameAsFilename.image.caption).toBe('');
+  });
+
+  it('a real caption (MSC2530: filename present and different from body) IS passed through', () => {
+    const mapped = adapter.mapAttachmentToMetaShape('matrix:@t:x', '$1', 1, {
+      msgtype: 'm.image', body: 'grade 3 worksheet, check it', filename: 'IMG_2031.jpg', url: 'mxc://x/1',
+    });
+    expect(mapped.image.caption).toBe('grade 3 worksheet, check it');
+  });
+
+  it('a document keeps its real filename when MSC2530 separates it from the caption', () => {
+    const mapped = adapter.mapAttachmentToMetaShape('matrix:@t:x', '$1', 1, {
+      msgtype: 'm.file', body: 'my lesson plan', filename: 'lp.pdf', url: 'mxc://x/1', info: { mimetype: 'application/pdf' },
+    });
+    expect(mapped.document.filename).toBe('lp.pdf');
+  });
+
   it('returns null when the media content has no url (e.g. an undecryptable media event)', () => {
     const mapped = adapter.mapAttachmentToMetaShape('matrix:@teacher:example.org', '$1', 169100, { msgtype: 'm.image', body: 'x' });
     expect(mapped).toBeNull();

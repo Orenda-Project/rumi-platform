@@ -114,32 +114,65 @@ const FILE_MSGTYPE = 'm.file';
  * @returns {object|null} Meta-shaped message, or null to skip
  */
 function mapAttachmentToMetaShape(from, id, timestamp, content) {
-  if (!content.url) return null; // an encrypted-but-undecryptable or malformed media event has nothing to fetch
+  // In an E2EE room the attachment itself is encrypted too: the event carries
+  // `content.file` (an EncryptedFile -- its own mxc url plus the AES key/iv/
+  // hashes needed to decrypt it) and NO top-level `content.url`. Every
+  // attachment Element/Element X sends into an encrypted DM is this shape, so
+  // reading only `content.url` silently dropped every image and voice note a
+  // teacher sent from the app. The EncryptedFile is cached alongside the url
+  // so matrix-channel.service.js#downloadMedia can decrypt on demand.
+  const encryptedFile = content.file && content.file.url ? content.file : null;
+  const mxcUrl = content.url || encryptedFile?.url;
+  if (!mxcUrl) return null; // a malformed media event has nothing to fetch
 
   // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load
   const matrixChannel = require('../matrix-channel.service');
-  const mediaId = toPrefixedMediaId(content.url);
+  const mediaId = toPrefixedMediaId(mxcUrl);
   const mimeType = content.info?.mimetype || 'application/octet-stream';
   const fileSize = content.info?.size;
 
-  matrixChannel._cacheIncomingMedia(mediaId, { url: content.url, mime_type: mimeType, file_size: fileSize });
+  matrixChannel._cacheIncomingMedia(mediaId, {
+    url: mxcUrl,
+    mime_type: mimeType,
+    file_size: fileSize,
+    ...(encryptedFile ? { file: encryptedFile } : {}),
+  });
 
   const base = { from, id, timestamp };
   if (content.msgtype === AUDIO_MSGTYPE) {
     return { ...base, type: 'audio', audio: { id: mediaId, mime_type: mimeType } };
   }
   if (content.msgtype === IMAGE_MSGTYPE) {
-    return { ...base, type: 'image', image: { id: mediaId, mime_type: mimeType, caption: content.body || '' } };
+    return { ...base, type: 'image', image: { id: mediaId, mime_type: mimeType, caption: captionOf(content) } };
   }
   if (content.msgtype === VIDEO_MSGTYPE) {
-    return { ...base, type: 'video', video: { id: mediaId, mime_type: mimeType, caption: content.body || '' } };
+    return { ...base, type: 'video', video: { id: mediaId, mime_type: mimeType, caption: captionOf(content) } };
   }
   // FILE_MSGTYPE and anything else self-describing enough to carry a url --
   // matches Meta's default-to-document fallback, same as Discord's adapter.
   return {
     ...base, type: 'document',
-    document: { id: mediaId, mime_type: mimeType, filename: content.body || 'file' },
+    document: { id: mediaId, mime_type: mimeType, filename: content.filename || content.body || 'file' },
   };
+}
+
+// A bare filename with a media extension and no spaces ("IMG_2031.jpg").
+const FILENAME_ONLY_RE = /^[^\s/\\]+\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|mp4|mov|webm|3gp|mkv)$/i;
+
+/**
+ * The user's caption for an image/video, or '' when there is none.
+ *
+ * Matrix puts the FILENAME in `body` when a user sends a picture with no
+ * caption (the spec's original meaning of `body`); a real caption only exists
+ * when the newer `filename` field is present and differs from `body`
+ * (MSC2530, what Element X sends). WhatsApp's `image.caption` is empty in that
+ * case, and the image handler treats a caption as the teacher's instruction,
+ * so passing "IMG_2031.jpg" through as a caption would steer the reply.
+ */
+function captionOf(content) {
+  const body = content.body || '';
+  if (content.filename) return body && body !== content.filename ? body : '';
+  return FILENAME_ONLY_RE.test(body.trim()) ? '' : body;
 }
 
 /**

@@ -493,9 +493,21 @@ async function getMediaInfo(mediaId) {
   return cached;
 }
 
+/**
+ * The attachment's plaintext bytes. An attachment sent into an E2EE room is
+ * itself AES-encrypted (see matrix-events.adapter.js#mapAttachmentToMetaShape,
+ * which caches the EncryptedFile as `info.file`); matrix-bot-sdk's own
+ * CryptoClient#decryptMedia downloads and decrypts it, verifying the hash.
+ */
 async function downloadMedia(mediaId) {
   const info = await getMediaInfo(mediaId);
   const client = await getClient();
+  if (info.file) {
+    if (!client.crypto) {
+      throw new Error('Matrix: this attachment is end-to-end encrypted but the connection has no crypto provider -- cannot decrypt it');
+    }
+    return client.crypto.decryptMedia(info.file);
+  }
   const { data } = await client.downloadContent(info.url);
   return data;
 }

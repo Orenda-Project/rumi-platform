@@ -178,6 +178,28 @@ describe('matrix-channel.service -- media (cache-based, not a live API lookup)',
     expect(buffer).toEqual(Buffer.from('data'));
   });
 
+  it('downloadMedia decrypts an E2EE attachment (cached EncryptedFile) via client.crypto.decryptMedia, never a raw download', async () => {
+    const { service, client } = loadService();
+    client.crypto = { decryptMedia: jest.fn(async () => Buffer.from('plaintext-voice-note')) };
+    const file = { url: 'mxc://example.org/ENC1', key: { k: 'x' }, iv: 'iv', hashes: { sha256: 'h' }, v: 'v2' };
+    service._cacheIncomingMedia('matrix:mxc://example.org/ENC1', {
+      url: 'mxc://example.org/ENC1', mime_type: 'audio/ogg', file_size: 9, file,
+    });
+    const buffer = await service.downloadMedia('matrix:mxc://example.org/ENC1');
+    expect(client.crypto.decryptMedia).toHaveBeenCalledWith(file);
+    expect(client.downloadContent).not.toHaveBeenCalled();
+    expect(buffer).toEqual(Buffer.from('plaintext-voice-note'));
+  });
+
+  it('downloadMedia refuses (throws) an encrypted attachment when the connection has no crypto provider, rather than handing back ciphertext', async () => {
+    const { service, client } = loadService();
+    service._cacheIncomingMedia('matrix:mxc://example.org/ENC2', {
+      url: 'mxc://example.org/ENC2', mime_type: 'image/jpeg', file: { url: 'mxc://example.org/ENC2' },
+    });
+    await expect(service.downloadMedia('matrix:mxc://example.org/ENC2')).rejects.toThrow(/encrypted/);
+    expect(client.downloadContent).not.toHaveBeenCalled();
+  });
+
   it('sendImage rejects a bare media-id that is not a real file on disk -- Matrix has no reusable media-id upload step', async () => {
     const { service, client } = loadService();
     const result = await service.sendImage(TO, 'F0123FILE_no_slash_and_does_not_exist');
