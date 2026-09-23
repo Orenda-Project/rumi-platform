@@ -484,11 +484,21 @@ async function showTypingIndicator(to, messageId) {
 // under that window (mirrors Discord's own ~8s-under-~10s pattern) and sends
 // one explicit typing:false on stop() so the indicator doesn't linger for the
 // full timeout after the bot has actually replied.
+async function stopTypingIndicator(to) {
+  const roomId = await getRoomId(to);
+  const client = await getClient();
+  await client.setTyping(roomId, false, 0);
+  return true;
+}
+
+// Looked up through MatrixChannel (not called directly) so that in a relay-mode
+// process (the worker -- see matrix-outbound-relay.js) each tick and the final
+// stop go over the relay instead of opening a local connection.
 function startContinuousTypingIndicator(to) {
   let stopped = false;
   const tick = () => {
     if (stopped) return;
-    showTypingIndicator(to).catch(() => {});
+    Promise.resolve(MatrixChannel.showTypingIndicator(to)).catch(() => {});
   };
   tick();
   const interval = setInterval(tick, 8000);
@@ -496,9 +506,7 @@ function startContinuousTypingIndicator(to) {
     stop: () => {
       stopped = true;
       clearInterval(interval);
-      getRoomId(to)
-        .then((roomId) => getClient().then((client) => client.setTyping(roomId, false, 0)))
-        .catch(() => {});
+      Promise.resolve(MatrixChannel._stopTypingIndicator(to)).catch(() => {});
     },
   };
 }
@@ -1021,9 +1029,33 @@ function syncNullStub(methodName) {
 
 const MatrixChannel = {};
 
+// ── Relay mode (worker processes) ────────────────────────────────────────────
+// Methods that stay local even in relay mode: pure helpers, and the typing
+// controller, which is synchronous and composes relayed calls itself.
+const NEVER_RELAYED = new Set(['_removeEmotionTags', 'startContinuousTypingIndicator']);
+
+/**
+ * In a process that called matrix-outbound-relay.js#useRelayForThisProcess()
+ * (the worker), a driver call is shipped to the bot process that owns the sync
+ * connection instead of opening a second one here -- see that file's header.
+ * Everywhere else this is the plain local implementation.
+ */
+function relayable(name, impl) {
+  if (NEVER_RELAYED.has(name)) return impl;
+  return function matrixMaybeRelayed(...args) {
+    // eslint-disable-next-line global-require -- lazy: relay mode is decided at runtime, per process
+    const relay = require('./matrix-outbound-relay');
+    return relay.isRelayMode() ? relay.call(name, args) : impl(...args);
+  };
+}
+
+// The real, local implementations the relay owner executes (the relay must
+// never call back into the relay-wrapped versions).
+const LOCAL_IMPLEMENTATIONS = { ...IMPLEMENTATIONS, _stopTypingIndicator: stopTypingIndicator };
+
 for (const { name, isAsync } of MEMBERS) {
   if (Object.prototype.hasOwnProperty.call(IMPLEMENTATIONS, name)) {
-    MatrixChannel[name] = IMPLEMENTATIONS[name];
+    MatrixChannel[name] = relayable(name, IMPLEMENTATIONS[name]);
   } else if (Object.prototype.hasOwnProperty.call(STUBS, name)) {
     const stubIsAsync = STUBS[name];
     if (stubIsAsync !== isAsync) {
@@ -1050,5 +1082,8 @@ MatrixChannel._rememberPhoneLocalpart = rememberPhoneLocalpart;
 MatrixChannel._resolveKnownLocalpart = resolveKnownLocalpart;
 // Consumed by matrix-events.adapter.js to render every text-flow step after the first.
 MatrixChannel._sendTextFlowStep = sendTextFlowStep;
+MatrixChannel._stopTypingIndicator = relayable('_stopTypingIndicator', stopTypingIndicator);
+// Handed to matrix-outbound-relay.js#startOwner by matrix-events.adapter.js#attach.
+MatrixChannel._localImplementations = LOCAL_IMPLEMENTATIONS;
 
 module.exports = MatrixChannel;

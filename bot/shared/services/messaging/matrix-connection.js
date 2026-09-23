@@ -271,6 +271,13 @@ function autojoinRoomInvites(matrixClient) {
  *   work can happen" rule.
  */
 async function connect() {
+  // A relay-mode process (the worker) must never open its own sync loop on the
+  // bot's access token and crypto store -- see matrix-outbound-relay.js. The
+  // driver routes around this; reaching it means a caller bypassed the driver.
+  // eslint-disable-next-line global-require -- lazy, avoids a load-order cycle
+  if (require('./matrix-outbound-relay').isRelayMode()) {
+    throw new Error('Matrix connection: this process sends through the relay (matrix-outbound-relay.js) and must not open its own sync connection');
+  }
   const homeserverUrl = process.env.MATRIX_HOMESERVER_URL;
   const accessToken = process.env.MATRIX_ACCESS_TOKEN;
   if (!homeserverUrl) throw new Error('Matrix connection: MATRIX_HOMESERVER_URL is not set');
@@ -402,6 +409,12 @@ function isJoinedToRoom(matrixClient, roomId) {
  */
 async function close() {
   shuttingDown = true;
+  try {
+    // eslint-disable-next-line global-require -- lazy, see connect()
+    require('./matrix-outbound-relay').close();
+  } catch (error) {
+    logToFile('Matrix: relay close error (ignored)', { error: error.message });
+  }
   if (client) {
     try {
       client.stop();

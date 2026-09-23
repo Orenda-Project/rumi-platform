@@ -32,6 +32,11 @@
 const { runWithCorrelation, generateCorrelationId } = require('../shared/utils/structured-logger');
 
 require('dotenv').config();
+// The bot process owns the Matrix sync connection (and its E2EE crypto store);
+// this worker sends to Matrix teachers through it rather than opening a second
+// one -- see shared/services/messaging/matrix-outbound-relay.js. Must run before
+// any job can reach the messaging layer. A no-op for deployments without Matrix.
+require('../shared/services/messaging/matrix-outbound-relay').useRelayForThisProcess();
 const supabase = require('../shared/config/supabase');
 const { logToFile } = require('../shared/utils/logger');
 const SQSQueueService = require('../shared/services/queue');

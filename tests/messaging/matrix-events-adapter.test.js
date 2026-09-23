@@ -285,10 +285,26 @@ describe('attach', () => {
       getClient: jest.fn().mockResolvedValue(client),
       getCachedUserId: jest.fn(() => OWN_USER_ID),
     }));
-    return { client, handlers };
+    // tests/setup.js sets a REDIS_URL; never let attach() dial a real Redis here.
+    const relay = { startOwner: jest.fn(() => true) };
+    jest.doMock('../../bot/shared/services/messaging/matrix-outbound-relay', () => relay);
+    return { client, handlers, relay };
   }
 
   beforeEach(() => jest.resetModules());
+
+  it('starts serving relayed worker sends, handing the relay the driver\'s LOCAL implementations', async () => {
+    jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+    jest.doMock('../../bot/shared/services/messaging/pending-options', () => pendingOptionsMock());
+    const localImplementations = { sendMessage: jest.fn() };
+    jest.doMock('../../bot/shared/services/messaging/matrix-channel.service', () => ({
+      _cacheIncomingMedia: jest.fn(), _localImplementations: localImplementations,
+    }));
+    const { relay } = mockConnection();
+    const { attach: freshAttach } = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
+    await freshAttach(jest.fn());
+    expect(relay.startOwner).toHaveBeenCalledWith(localImplementations);
+  });
 
   it('registers a room.message and a room.failed_decryption listener on the shared client', async () => {
     jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
@@ -564,6 +580,8 @@ describe('attach -- welcome-room join wiring', () => {
       getClient: jest.fn().mockResolvedValue(client),
       getCachedUserId: jest.fn(() => OWN_USER_ID),
     }));
+    // tests/setup.js sets a REDIS_URL; never let attach() dial a real Redis here.
+    jest.doMock('../../bot/shared/services/messaging/matrix-outbound-relay', () => ({ startOwner: jest.fn(() => true) }));
     return { client, handlers };
   }
 

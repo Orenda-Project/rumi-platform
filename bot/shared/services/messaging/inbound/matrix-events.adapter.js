@@ -709,6 +709,15 @@ async function attach(dispatch) {
     });
   });
 
+  // This process owns the sync connection, so it is also the one that serves
+  // Matrix sends for the worker (lesson plans, reports, ...) -- see
+  // matrix-outbound-relay.js. Best-effort: without Redis there is no worker
+  // that could reach us anyway, and ordinary messaging is unaffected.
+  // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load
+  const matrixChannel = require('../matrix-channel.service');
+  // eslint-disable-next-line global-require -- lazy, see above
+  require('../matrix-outbound-relay').startOwner(matrixChannel._localImplementations);
+
   logToFile('✅ Matrix inbound listener attached', { welcomeRoomId });
 }
 
