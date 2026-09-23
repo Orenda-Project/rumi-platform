@@ -203,6 +203,91 @@ async function toInteractiveSelection(from, text) {
     : { type: 'interactive', interactive: { type: 'list_reply', list_reply: reply } };
 }
 
+// ── Text flows (Flows degraded to a conversation) ────────────────────────────
+// Same behaviour as baileys-socket.adapter.js#advanceActiveTextFlow/isCommandLike
+// (copied, per this codebase's one-copy-per-driver convention), sending through
+// the Matrix driver instead of the Baileys one.
+
+// eslint-disable-next-line global-require -- lazy: text-flow opens Redis on first use
+const textFlow = () => require('../text-flow');
+
+/**
+ * Whether this message is a command in its own right and must never be
+ * consumed as a flow answer -- "/..." or one of the plain-phrase commands
+ * ("add class", "attendance", ...), asked of the same detector the text
+ * handler routes on so the two cannot drift.
+ */
+function isCommandLike(text) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith('/')) return true;
+  try {
+    // eslint-disable-next-line global-require -- keeps this adapter's load light
+    const detector = require('../../attendance-detector.service');
+    if (detector.detectAddClassIntent(trimmed).detected) return true;
+    if (detector.detectAttendanceIntent(trimmed).detected) return true;
+  } catch (error) {
+    logToFile('⚠️ Matrix inbound: command detection unavailable', { error: error.message });
+  }
+  return false;
+}
+
+/**
+ * Feeds text into the sender's active text flow.
+ * @returns {Promise<null | {handled: true} | {metaMessage: object}>} null when
+ *   there is no active flow (or two unmatched strikes gave it up), so the
+ *   message continues to normal handling; {handled} when the flow consumed the
+ *   reply and already responded; {metaMessage} when the flow finished with a
+ *   submission (a synthesised nfm_reply) for the normal dispatch to route.
+ */
+async function advanceActiveTextFlow(from, text) {
+  // eslint-disable-next-line global-require -- lazy; a flow can outlive the process that started it
+  require('../text-flow-definitions').ensureRegistered();
+  // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load
+  const matrixChannel = require('../matrix-channel.service');
+
+  const result = await textFlow().advance(from, text);
+  if (!result) return null;
+
+  logToFile('🧩 Matrix inbound: text-flow reply', { from, status: result.status, step: result.render?.kind || null });
+
+  if (result.status === 'cancelled') {
+    await matrixChannel.sendMessage(from, 'Okay, cancelled. Type /menu to see what else I can do.');
+    return { handled: true };
+  }
+  if (result.status === 'step' || result.status === 'aborted') {
+    await matrixChannel._sendTextFlowStep(from, result.render);
+    return { handled: true };
+  }
+  if (result.status === 'complete') {
+    const outcome = await result.definition.onComplete(from, result.answers, result.context);
+    if (outcome?.text) await matrixChannel.sendMessage(from, outcome.text);
+    if (outcome?.metaMessage) return { metaMessage: outcome.metaMessage };
+    return { handled: true };
+  }
+
+  // 'unmatched': re-ask once, give the flow up on the second consecutive miss.
+  if ((result.strikes || 0) >= 2) {
+    await textFlow().clear(from);
+    await pendingOptions.clear(from);
+    logToFile('⏹️ Matrix inbound: text flow abandoned after repeated unmatched replies', { from });
+    return null;
+  }
+  const state = await textFlow().getState(from);
+  if (state) {
+    const definition = textFlow().getDefinition(state.kind);
+    const render = definition
+      ? await textFlow().renderStep(from, definition, state.stepIndex, state.answers, state.context)
+      : null;
+    if (render) {
+      await matrixChannel.sendMessage(from, "Sorry, I didn't catch that. Please pick one of these -- or reply **cancel** to stop.");
+      await matrixChannel._sendTextFlowStep(from, render);
+      return { handled: true };
+    }
+  }
+  return null;
+}
+
 /**
  * Maps a matrix-bot-sdk `room.message` event into Meta's message shape, or
  * null to skip. Skips the bot's own messages (echoes -- matrix-bot-sdk's own
@@ -240,6 +325,23 @@ async function mapMessageToMetaShape(roomId, event, ownUserId, startedAt) {
   }
 
   if (content.msgtype !== 'm.text' || !content.body) return null; // m.notice/m.emote/etc. are not user-authored chat turns
+
+  // An in-progress text flow (a Flow degraded to one question per message --
+  // see matrix-channel.service.js#sendFlow) gets the reply first, exactly the
+  // Baileys ordering: its menu lives in the same pending-options store, so
+  // whichever runs first consumes the reply. A command always wins over the
+  // flow so a teacher can never get stuck in one.
+  if (isCommandLike(content.body)) {
+    if (await textFlow().isActive(from)) {
+      await textFlow().clear(from);
+      await pendingOptions.clear(from);
+      logToFile('⏹️ Matrix inbound: text flow abandoned for a command', { from });
+    }
+  } else {
+    const flowed = await advanceActiveTextFlow(from, content.body);
+    if (flowed?.metaMessage) return { from, id, timestamp, ...flowed.metaMessage };
+    if (flowed?.handled) return null;
+  }
 
   // A numbered/named reply to a pending menu MUST be checked before falling
   // through to plain text -- same ordering rule as baileys-socket.adapter.js

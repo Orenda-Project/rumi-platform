@@ -906,10 +906,62 @@ function notSupportedMessage(methodName) {
     + 'The template\'s static wording lives only in Meta\'s registered config, not in this call\'s arguments.';
 }
 
-async function sendFlow() {
-  logToFile('Matrix channel driver: sendFlow() has no direct equivalent -- Flow-shaped forms have no '
-    + 'modal-workaround renderer built for this channel (unlike Discord\'s discord-modal-flow.js).');
-  return false;
+// ── WhatsApp Flows, degraded to a conversation (same as Baileys) ─────────────
+// Matrix has no form surface, so a Flow (reading assessment, class setup,
+// attendance, settings, student videos) runs as the SAME registered text flow
+// Baileys uses -- text-flow.js/text-flow-definitions.js, one question per
+// message, answered by number or name. matrix-events.adapter.js feeds each
+// reply back through textFlow.advance() and renders the next step via
+// _sendTextFlowStep. Before this, sendFlow() returned false and e.g. /reading
+// test surfaced to the teacher as "Sorry, something went wrong".
+
+/** The Flow's kind from its token (`${userId}:${kind}:${timestamp}` by convention -- see baileys-channel.service.js). */
+function kindFromToken(flowToken) {
+  const parts = String(flowToken || '').split(':');
+  return parts.length >= 2 ? parts[1] : null;
+}
+
+/** Sends one rendered text-flow step (menu -> numbered list; text/empty -> plain message). */
+async function sendTextFlowStep(to, render) {
+  const { header, body, footer } = render.prompt || {};
+  if (render.kind === 'menu') {
+    return sendMessage(to, renderOptionsAsText({ header, body, footer, options: render.options }));
+  }
+  const lines = [];
+  if (header) lines.push(`**${header}**`);
+  if (body) lines.push(body);
+  if (footer) lines.push(`_${footer}_`);
+  return sendMessage(to, lines.join('\n\n') || 'Please reply to continue.');
+}
+
+/**
+ * True whenever the teacher was given something actionable; false only when
+ * no text flow is registered for this Flow, so the caller runs its own
+ * fallback -- the exact contract baileys-channel.service.js#sendFlow documents.
+ */
+async function sendFlow(to, options = {}) {
+  // eslint-disable-next-line global-require -- lazy: definitions pull in DB-backed services
+  require('./text-flow-definitions').ensureRegistered();
+  // eslint-disable-next-line global-require -- lazy, matching this file's other lazy requires
+  const textFlow = require('./text-flow');
+
+  const kind = options.flowKind || kindFromToken(options.flowToken);
+  const definition = kind ? textFlow.getDefinition(kind) : null;
+  if (!definition) {
+    logToFile('Matrix channel driver: no text flow registered for this Flow -- falling back to the caller', {
+      driver: 'matrix', flowKind: options.flowKind || null, derivedKind: kind,
+    });
+    return false;
+  }
+
+  const flowToken = options.flowToken || '';
+  const context = { _ctx: { userId: flowToken.split(':')[0] || null, flowToken, phone: String(to) } };
+  const render = await textFlow.start(String(to), kind, {}, context);
+  if (!render) return false;
+
+  await sendTextFlowStep(to, render);
+  logToFile('▶️ Matrix: Flow degraded to a text flow', { channel: 'matrix', kind, step: render.kind });
+  return true;
 }
 
 // ── Explicit method table ────────────────────────────────────────────────────
@@ -996,5 +1048,7 @@ MatrixChannel._resolveDmRoomId = resolveDmRoomId;
 // "Phone-number localpart memory" section header.
 MatrixChannel._rememberPhoneLocalpart = rememberPhoneLocalpart;
 MatrixChannel._resolveKnownLocalpart = resolveKnownLocalpart;
+// Consumed by matrix-events.adapter.js to render every text-flow step after the first.
+MatrixChannel._sendTextFlowStep = sendTextFlowStep;
 
 module.exports = MatrixChannel;

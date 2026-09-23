@@ -36,6 +36,13 @@ function loadService({ sendMessageImpl, fetchImpl, dmRoomId = '!room:example.org
     clear: jest.fn().mockResolvedValue(undefined),
     resolveSelection: jest.fn(() => null),
   }));
+  // text-flow.js lazy-requires the Redis service; reject so its in-memory
+  // fallback runs and no socket is opened (same as baileys-socket-adapter.test.js).
+  jest.doMock('../../bot/shared/services/cache/railway-redis.service', () => ({
+    set: jest.fn().mockRejectedValue(new Error('redis disabled in tests')),
+    get: jest.fn().mockRejectedValue(new Error('redis disabled in tests')),
+    delete: jest.fn().mockRejectedValue(new Error('redis disabled in tests')),
+  }));
   jest.doMock('../../bot/shared/services/messaging/matrix-connection', () => ({
     getClient: jest.fn(async () => client),
     isE2eeActive: jest.fn(() => false),
@@ -406,9 +413,29 @@ describe('matrix-channel.service -- interactive surfaces (text-flow degradation,
 });
 
 describe('matrix-channel.service -- stubbed Meta-template-only methods', () => {
-  it('sendFlow logs and resolves false -- no modal-workaround renderer exists for this channel', async () => {
+  it('sendFlow resolves false (caller runs its own fallback) when no text flow is registered for the Flow', async () => {
     const { service } = loadService();
     await expect(service.sendFlow(TO, {})).resolves.toBe(false);
+    await expect(service.sendFlow(TO, { flowToken: 'u1:no-such-flow:123' })).resolves.toBe(false);
+  });
+
+  it('sendFlow degrades a registered Flow (reading assessment) to its text flow and asks the first question', async () => {
+    const { service, sentMessages } = loadService();
+    const result = await service.sendFlow(TO, { flowKind: 'reading-assessment', flowToken: 'user-1:reading-assessment:1' });
+    expect(result).toBe(true);
+    expect(sentMessages[0].content.body).toContain('Reading Assessment');
+    expect(sentMessages[0].content.body).toContain("student's full name");
+    const textFlow = require('../../bot/shared/services/messaging/text-flow');
+    expect(await textFlow.isActive(TO)).toBe(true);
+  });
+
+  it('_sendTextFlowStep renders a menu step as the numbered list', async () => {
+    const { service, sentMessages } = loadService();
+    await service._sendTextFlowStep(TO, {
+      kind: 'menu', prompt: { body: 'Which language?' }, options: [{ id: 'en', title: 'English' }, { id: 'ur', title: 'Urdu' }],
+    });
+    expect(sentMessages[0].content.body).toContain('1. English');
+    expect(sentMessages[0].content.body).toContain('2. Urdu');
   });
 
   it('sendTemplate has no equivalent yet -- logs and resolves false', async () => {

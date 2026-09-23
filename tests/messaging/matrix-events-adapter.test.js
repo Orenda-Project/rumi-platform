@@ -620,3 +620,90 @@ describe('attach -- welcome-room join wiring', () => {
     expect(matrixChannel.sendMessage).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('text flows (a WhatsApp Flow degraded to one question per message)', () => {
+  function loadWithTextFlow(textFlowOverrides = {}, detector = {}) {
+    jest.resetModules();
+    jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+    const channel = {
+      _cacheIncomingMedia: jest.fn(),
+      sendMessage: jest.fn().mockResolvedValue(true),
+      _sendTextFlowStep: jest.fn().mockResolvedValue(true),
+    };
+    jest.doMock('../../bot/shared/services/messaging/matrix-channel.service', () => channel);
+    pendingOptions = pendingOptionsMock();
+    jest.doMock('../../bot/shared/services/messaging/pending-options', () => pendingOptions);
+    const textFlow = {
+      advance: jest.fn().mockResolvedValue(null),
+      isActive: jest.fn().mockResolvedValue(false),
+      clear: jest.fn().mockResolvedValue(undefined),
+      getState: jest.fn().mockResolvedValue(null),
+      getDefinition: jest.fn(() => null),
+      renderStep: jest.fn(),
+      ...textFlowOverrides,
+    };
+    jest.doMock('../../bot/shared/services/messaging/text-flow', () => textFlow);
+    jest.doMock('../../bot/shared/services/messaging/text-flow-definitions', () => ({ ensureRegistered: jest.fn() }));
+    jest.doMock('../../bot/shared/services/attendance-detector.service', () => ({
+      detectAddClassIntent: jest.fn(() => ({ detected: false })),
+      detectAttendanceIntent: jest.fn(() => ({ detected: false })),
+      ...detector,
+    }));
+    // eslint-disable-next-line global-require
+    adapter = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
+    return { channel, textFlow };
+  }
+
+  const FROM_USER = '@teacher:example.org';
+  const textEvent = (body) => ({
+    sender: FROM_USER, event_id: `$${body}`, origin_server_ts: STARTED_AT + 1000, content: { msgtype: 'm.text', body },
+  });
+
+  it('a reply mid-flow is consumed by the flow, which renders the next step -- nothing reaches the dispatcher', async () => {
+    const render = { kind: 'menu', prompt: { body: 'Which language?' }, options: [] };
+    const { channel, textFlow } = loadWithTextFlow({ advance: jest.fn().mockResolvedValue({ status: 'step', render }) });
+    const mapped = await adapter.mapMessageToMetaShape('!room:x', textEvent('Ayesha Khan'), OWN_USER_ID, STARTED_AT);
+    expect(mapped).toBeNull();
+    expect(textFlow.advance).toHaveBeenCalledWith('matrix:@teacher:example.org', 'Ayesha Khan');
+    expect(channel._sendTextFlowStep).toHaveBeenCalledWith('matrix:@teacher:example.org', render);
+  });
+
+  it('a completed flow hands its synthesised nfm_reply to the normal dispatch (flow-response.handler.js runs as on Meta)', async () => {
+    const nfm = { type: 'interactive', interactive: { type: 'nfm_reply', nfm_reply: { name: 'reading_assessment', response_json: '{}' } } };
+    loadWithTextFlow({
+      advance: jest.fn().mockResolvedValue({
+        status: 'complete', answers: {}, context: {}, definition: { onComplete: jest.fn().mockResolvedValue({ metaMessage: nfm }) },
+      }),
+    });
+    const mapped = await adapter.mapMessageToMetaShape('!room:x', textEvent('2'), OWN_USER_ID, STARTED_AT);
+    expect(mapped).toEqual({ from: 'matrix:@teacher:example.org', id: '$2', timestamp: Math.floor((STARTED_AT + 1000) / 1000), ...nfm });
+  });
+
+  it('"cancel" mid-flow confirms the cancellation and stops there', async () => {
+    const { channel } = loadWithTextFlow({ advance: jest.fn().mockResolvedValue({ status: 'cancelled' }) });
+    expect(await adapter.mapMessageToMetaShape('!room:x', textEvent('cancel'), OWN_USER_ID, STARTED_AT)).toBeNull();
+    expect(channel.sendMessage).toHaveBeenCalledWith('matrix:@teacher:example.org', expect.stringContaining('cancelled'));
+  });
+
+  it('a slash command always wins over an active flow: the flow is cleared and the command dispatches as text', async () => {
+    const { textFlow } = loadWithTextFlow({ isActive: jest.fn().mockResolvedValue(true) });
+    const mapped = await adapter.mapMessageToMetaShape('!room:x', textEvent('/menu'), OWN_USER_ID, STARTED_AT);
+    expect(textFlow.advance).not.toHaveBeenCalled();
+    expect(textFlow.clear).toHaveBeenCalledWith('matrix:@teacher:example.org');
+    expect(mapped.type).toBe('text');
+    expect(mapped.text.body).toBe('/menu');
+  });
+
+  it('a second unmatched reply gives the flow up and lets the message through to normal handling', async () => {
+    const { textFlow } = loadWithTextFlow({ advance: jest.fn().mockResolvedValue({ status: 'unmatched', strikes: 2 }) });
+    const mapped = await adapter.mapMessageToMetaShape('!room:x', textEvent('what is photosynthesis'), OWN_USER_ID, STARTED_AT);
+    expect(textFlow.clear).toHaveBeenCalled();
+    expect(mapped.type).toBe('text');
+  });
+
+  it('with no active flow, text continues to the menu-selection / plain-text path unchanged', async () => {
+    loadWithTextFlow();
+    const mapped = await adapter.mapMessageToMetaShape('!room:x', textEvent('hello'), OWN_USER_ID, STARTED_AT);
+    expect(mapped).toEqual(expect.objectContaining({ type: 'text', text: { body: 'hello' } }));
+  });
+});
