@@ -698,6 +698,224 @@ async function handleDmRoomJoin(client, roomId, event, ownUserId) {
   }
 }
 
+// ── Group rooms: answer only when addressed ─────────────────────────────────
+// A teacher can invite Rumi into a group room with other teachers. Without
+// this gate every message in that room -- "is the staff room free after
+// lunch?", a forwarded notice, Urdu chit-chat -- was dispatched as if it had
+// been sent to Rumi in a DM: a reaction, a typing indicator, a reply (QA
+// critic, 2026-09-24). The WhatsApp bar is that a bot in a group answers only
+// when addressed, so in a group a message is processed ONLY when it
+//   1. mentions Rumi (m.mentions.user_ids, a matrix.to pill in formatted_body,
+//      or Rumi's user id / display name / localpart in the body), or
+//   2. is a reply to one of Rumi's own messages, or
+//   3. answers the numbered menu / text-flow question Rumi last put to THIS
+//      sender in THIS room (so a menu Rumi posted in the group keeps working).
+// Everything else is dropped here, before dispatch -- so no reply, reaction,
+// typing indicator or read receipt -- and before recordInboundRoom(), so
+// chatter in a group never redirects the sender's DM replies into it.
+// DMs are untouched.
+//
+// "Group" = more than two joined+invited members (bot included), or a
+// two-member room that is neither in the bot's m.direct map nor unnamed: a
+// room a teacher created and NAMED before the others joined is a group by
+// intent. A nameless two-member room outside m.direct stays a DM -- the live
+// homeserver has such DMs (created without is_direct), and gating them would
+// silence 1:1 conversations. A failed lookup also falls back to DM behaviour
+// (logged): a noisy group is a smaller failure than a silent DM.
+// Short TTL instead of a membership listener: a DM that becomes a group (a
+// third person invited) is re-classified within half a minute.
+const ROOM_KIND_TTL_MS = 30 * 1000;
+const roomKindCache = new Map(); // roomId -> { group, ts }
+
+async function isGroupRoom(client, roomId) {
+  const cached = roomKindCache.get(roomId);
+  if (cached && Date.now() - cached.ts < ROOM_KIND_TTL_MS) return cached.group;
+
+  let group = false;
+  try {
+    const members = await client.getAllRoomMembers(roomId);
+    const present = members.filter((m) => ['join', 'invite'].includes(m.effectiveMembership || m.membership));
+    if (present.length > 2) {
+      group = true;
+    } else if (!client.dms?.isDm?.(roomId)) {
+      try {
+        const name = await client.getRoomStateEvent(roomId, 'm.room.name', '');
+        group = Boolean(name && name.name);
+      } catch (error) {
+        group = false; // M_NOT_FOUND: no name -- a DM created without is_direct
+      }
+    }
+  } catch (error) {
+    logToFile('⚠️ Matrix inbound: could not classify room as DM/group -- treating it as a DM', {
+      channel: 'matrix', roomId, error: error.message,
+    });
+    return false; // not cached: retry on the next message
+  }
+  roomKindCache.set(roomId, { group, ts: Date.now() });
+  return group;
+}
+
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** The names a teacher might type to address Rumi: display name and localpart, deduped. */
+function mentionNames(ownUserId, displayName) {
+  const localpart = String(ownUserId || '').replace(/^@/, '').split(':')[0];
+  return [...new Set([displayName, localpart].filter(Boolean).map((n) => n.trim()).filter(Boolean))];
+}
+
+function nameRe(names, flags) {
+  if (!names.length) return null;
+  // Not preceded/followed by a letter or digit, so "Rumina" or "rumi2" is not Rumi.
+  return new RegExp(`(^|[^\\p{L}\\p{N}_])@?(?:${names.map(escapeRegExp).join('|')})(?![\\p{L}\\p{N}_])`, flags);
+}
+
+function mentionsRumi(content, ownUserId, names) {
+  if (!ownUserId) return false;
+  const userIds = content['m.mentions']?.user_ids;
+  if (Array.isArray(userIds) && userIds.includes(ownUserId)) return true;
+  const formatted = String(content.formatted_body || '');
+  if (formatted.includes(`matrix.to/#/${ownUserId}`) || formatted.includes(`matrix.to/#/${encodeURIComponent(ownUserId)}`)) {
+    return true;
+  }
+  const body = String(content.body || '');
+  if (body.includes(ownUserId)) return true;
+  const re = nameRe(names, 'iu');
+  return Boolean(re && re.test(body));
+}
+
+/**
+ * The body with the mention itself removed, so the pipeline sees the request,
+ * not the address: Element X writes a pill as a Markdown link in `body`
+ * ("[@rumi:localhost](https://matrix.to/#/@rumi:localhost) one quick idea"),
+ * Element Web as the display name ("Rumi: one quick idea"). A bare mention
+ * with nothing else becomes "hi" -- the teacher summoned Rumi.
+ */
+function stripMention(body, ownUserId, names) {
+  let text = String(body || '');
+  if (ownUserId) {
+    const id = escapeRegExp(ownUserId);
+    text = text.replace(new RegExp(`\\[[^\\]]*\\]\\(https?://matrix\\.to/#/(?:${id}|${escapeRegExp(encodeURIComponent(ownUserId))})\\)`, 'g'), ' ');
+    text = text.replace(new RegExp(id, 'g'), ' ');
+  }
+  const re = nameRe(names, 'giu');
+  if (re) text = text.replace(re, '$1');
+  text = text.replace(/\s+/g, ' ').replace(/^[\s,:;.!-]+/, '').trim();
+  return text || 'hi';
+}
+
+/** Drops a rich-reply fallback ("> <@x:y> quoted text" lines, then a blank line) from the top of a body. */
+function stripReplyFallback(body) {
+  const lines = String(body || '').split('\n');
+  if (!lines.length || !lines[0].startsWith('>')) return String(body || '');
+  let i = 0;
+  while (i < lines.length && lines[i].startsWith('>')) i += 1;
+  while (i < lines.length && lines[i].trim() === '') i += 1;
+  return lines.slice(i).join('\n');
+}
+
+// Event ids Rumi itself sent -- recorded by matrix-channel.service.js#logOutbound
+// (every send, including relayed worker sends, executes in this process), so a
+// reply-to-Rumi check is usually a Map lookup; a restart falls back to fetching
+// the replied-to event and reading its sender.
+const OWN_EVENT_MAX = 2000;
+const ownEventIds = new Set();
+
+function recordOwnEvent(eventId) {
+  if (!eventId) return;
+  ownEventIds.delete(eventId);
+  ownEventIds.add(eventId);
+  if (ownEventIds.size > OWN_EVENT_MAX) ownEventIds.delete(ownEventIds.values().next().value);
+}
+
+async function isReplyToRumi(client, roomId, content, ownUserId) {
+  const target = content['m.relates_to']?.['m.in_reply_to']?.event_id;
+  if (!target || !ownUserId) return false;
+  if (ownEventIds.has(target)) return true;
+  try {
+    // The raw event, not client.getEvent(): the sender is readable without
+    // decrypting, and a lost Megolm key must not turn a reply into "not to Rumi".
+    const raw = await client.doRequest(
+      'GET', `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/event/${encodeURIComponent(target)}`
+    );
+    return raw?.sender === ownUserId;
+  } catch (error) {
+    return false;
+  }
+}
+
+// The room Rumi last put a numbered menu or text-flow question to each user
+// in -- recorded by matrix-channel.service.js when it sends one. Lets "2" in a
+// group count as an answer only when the menu it answers was posted in that
+// same room; otherwise "2" is just chatter.
+const PROMPT_ROOM_TTL_MS = 60 * 60 * 1000;
+const lastPromptRoomByUser = new Map(); // unprefixed matrix user id -> { roomId, ts }
+
+function recordPromptRoom(userId, roomId) {
+  if (!userId || !roomId) return;
+  lastPromptRoomByUser.delete(userId);
+  lastPromptRoomByUser.set(userId, { roomId, ts: Date.now() });
+  if (lastPromptRoomByUser.size > LAST_INBOUND_ROOM_MAX_ENTRIES) {
+    lastPromptRoomByUser.delete(lastPromptRoomByUser.keys().next().value);
+  }
+}
+
+function getLastPromptRoom(userId) {
+  const entry = lastPromptRoomByUser.get(userId);
+  if (!entry || Date.now() - entry.ts > PROMPT_ROOM_TTL_MS) return null;
+  return entry.roomId;
+}
+
+async function isAnswerToRumisPrompt(roomId, event) {
+  if (getLastPromptRoom(event.sender) !== roomId) return false;
+  const from = toPrefixedIdentity(event.sender);
+  const menu = await pendingOptions.get(from);
+  if (menu && pendingOptions.resolveSelection(menu, event.content.body)) return true;
+  try {
+    return Boolean(await textFlow().isActive(from));
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Whether a room.message may be dispatched, and with what body. DMs: always,
+ * unchanged. Groups: only when addressed (see the section header above).
+ *
+ * @returns {Promise<{process: boolean, reason: string, event?: object}>}
+ *   `event` is the event to dispatch -- in a group, a copy whose body has the
+ *   mention and any reply fallback removed.
+ */
+async function gateGroupMessage(client, roomId, event, ownUserId, names) {
+  if (!event || !event.content || !event.sender || event.sender === ownUserId) {
+    return { process: true, reason: 'passthrough', event };
+  }
+  if (!(await isGroupRoom(client, roomId))) return { process: true, reason: 'dm', event };
+
+  const content = event.content;
+  const isText = content.msgtype === 'm.text';
+  // A reply's quoted fallback ("> <@rumi:...> ...") is not the teacher's words.
+  const ownBody = isText && content['m.relates_to']?.['m.in_reply_to'] ? stripReplyFallback(content.body) : content.body;
+  let reason = null;
+  if (mentionsRumi({ ...content, body: ownBody }, ownUserId, names)) reason = 'mention';
+  else if (await isReplyToRumi(client, roomId, content, ownUserId)) reason = 'reply_to_rumi';
+  else if (isText && content.body && (await isAnswerToRumisPrompt(roomId, event))) reason = 'menu_reply';
+
+  if (!reason) return { process: false, reason: 'group_not_addressed' };
+  if (!isText || reason === 'menu_reply') return { process: true, reason, event };
+
+  const body = reason === 'mention' ? stripMention(ownBody, ownUserId, names) : ownBody;
+  return { process: true, reason, event: { ...event, content: { ...content, body } } };
+}
+
+/** Test-only: clears the group-gating caches between test runs. */
+function _resetGroupGateForTests() {
+  roomKindCache.clear();
+  ownEventIds.clear();
+  lastPromptRoomByUser.clear();
+}
+
 /**
  * Attaches every sync listener this bot needs onto the shared client
  * matrix-connection.js owns. Mirrors discord-events.adapter.js's/
@@ -720,13 +938,38 @@ async function attach(dispatch) {
     }
   }
 
+  // The name a teacher types to address Rumi in a group ("Rumi, ..."). Falls
+  // back to the localpart alone if the profile can't be read.
+  let displayName = null;
+  try {
+    displayName = (await client.getUserProfile?.(ownUserId))?.displayname || null;
+  } catch (error) {
+    logToFile('Matrix inbound: could not read own display name -- group mentions match the localpart only', { error: error.message });
+  }
+  const names = mentionNames(ownUserId, displayName);
+
   client.on('room.message', async (roomId, event) => {
     try {
       if (isDuplicateDelivery(event?.event_id)) {
         logToFile('⚠️ Matrix inbound: duplicate event delivery skipped', { eventId: event?.event_id });
         return;
       }
-      const metaMessage = await mapMessageToMetaShape(roomId, event, ownUserId, startedAt);
+      if (typeof event?.origin_server_ts === 'number' && event.origin_server_ts < startedAt) return;
+
+      const gate = await gateGroupMessage(client, roomId, event, ownUserId, names);
+      if (!gate.process) {
+        // No body -- teacher privacy; just enough to see the gate working.
+        logToFile('🔇 Matrix inbound: group message not addressed to Rumi -- ignored', {
+          channel: 'matrix', roomId, eventId: event?.event_id,
+        });
+        return;
+      }
+      if (gate.reason !== 'dm' && gate.reason !== 'passthrough') {
+        logToFile('📣 Matrix inbound: group message addressed to Rumi', {
+          channel: 'matrix', roomId, eventId: event?.event_id, reason: gate.reason,
+        });
+      }
+      const metaMessage = await mapMessageToMetaShape(roomId, gate.event, ownUserId, startedAt);
       if (!metaMessage) return;
 
       await dispatch(buildSyntheticRequest(metaMessage), buildSyntheticResponse());
@@ -804,6 +1047,16 @@ module.exports = {
   handleDmRoomJoin,
   defaultWelcomeRoomAlias,
   _resetSeenIdsForTests,
+  // Group-room gating -- see the "Group rooms: answer only when addressed" section.
+  gateGroupMessage,
+  isGroupRoom,
+  mentionsRumi,
+  stripMention,
+  mentionNames,
+  recordOwnEvent,
+  recordPromptRoom,
+  getLastPromptRoom,
+  _resetGroupGateForTests,
   // Consumed by matrix-channel.service.js#resolveDmRoomId -- see this file's
   // "Reply-to-the-room-you-were-messaged-in" section header.
   getLastInboundRoom,

@@ -801,3 +801,179 @@ describe('text flows (a WhatsApp Flow degraded to one question per message)', ()
     expect(mapped).toEqual(expect.objectContaining({ type: 'text', text: { body: 'hello' } }));
   });
 });
+
+describe('group rooms -- Rumi answers only when addressed (gateGroupMessage)', () => {
+  const GROUP = '!group:example.org';
+  const DM = '!dm:example.org';
+  const T1 = '@teacher:example.org';
+  const T2 = '@teacher2:example.org';
+  const NAMES = ['Rumi', 'rumi'];
+
+  function member(userId, membership = 'join') {
+    return { membershipFor: userId, effectiveMembership: membership };
+  }
+
+  function fakeClient({ members, isDm = false, roomName = 'Grade 3 Teachers', repliedToSender = T2 } = {}) {
+    return {
+      getAllRoomMembers: jest.fn(async () => members || [member(OWN_USER_ID), member(T1), member(T2)]),
+      dms: { isDm: jest.fn(() => isDm) },
+      getRoomStateEvent: jest.fn(async () => {
+        if (!roomName) throw new Error('M_NOT_FOUND');
+        return { name: roomName };
+      }),
+      doRequest: jest.fn(async () => ({ sender: repliedToSender })),
+    };
+  }
+
+  function textEvent(body, extra = {}) {
+    return {
+      sender: T1, event_id: `$${Math.random()}`, origin_server_ts: Date.now(),
+      content: { msgtype: 'm.text', body, ...extra },
+    };
+  }
+
+  afterEach(() => adapter._resetGroupGateForTests());
+
+  it('ignores unrelated teacher-to-teacher chatter in a group', async () => {
+    const client = fakeClient();
+    for (const body of ['Is the staff room free after lunch?', 'السلام علیکم، کل صبح دس بجے میٹنگ ہے', 'Forwarded: school closes at 1pm Friday']) {
+      const gate = await adapter.gateGroupMessage(client, GROUP, textEvent(body), OWN_USER_ID, NAMES);
+      expect(gate).toEqual({ process: false, reason: 'group_not_addressed' });
+    }
+  });
+
+  it('ignores a group image with no mention', async () => {
+    const event = { sender: T1, event_id: '$img', content: { msgtype: 'm.image', body: 'IMG_1.jpg', url: 'mxc://x/y' } };
+    const gate = await adapter.gateGroupMessage(fakeClient(), GROUP, event, OWN_USER_ID, NAMES);
+    expect(gate.process).toBe(false);
+  });
+
+  it('processes an Element X pill mention (m.mentions + Markdown-link body) and strips the mention from the body', async () => {
+    const event = textEvent(`[@rumi:example.org](https://matrix.to/#/${OWN_USER_ID}) one quick fractions idea for grade 3 please`, {
+      'm.mentions': { user_ids: [OWN_USER_ID] },
+    });
+    const gate = await adapter.gateGroupMessage(fakeClient(), GROUP, event, OWN_USER_ID, NAMES);
+    expect(gate.process).toBe(true);
+    expect(gate.reason).toBe('mention');
+    expect(gate.event.content.body).toBe('one quick fractions idea for grade 3 please');
+    expect(gate.event.event_id).toBe(event.event_id);
+  });
+
+  it('processes a mention by display name typed as plain text ("Rumi, ..." / "@rumi ...") and strips it', async () => {
+    const client = fakeClient();
+    const a = await adapter.gateGroupMessage(client, GROUP, textEvent('Rumi, one quick fractions idea'), OWN_USER_ID, NAMES);
+    expect(a.process).toBe(true);
+    expect(a.event.content.body).toBe('one quick fractions idea');
+    const b = await adapter.gateGroupMessage(client, GROUP, textEvent('@rumi what is a good warm-up?'), OWN_USER_ID, NAMES);
+    expect(b.event.content.body).toBe('what is a good warm-up?');
+  });
+
+  it('a bare mention becomes "hi"; a word that merely contains the name is not a mention', async () => {
+    const client = fakeClient();
+    const bare = await adapter.gateGroupMessage(client, GROUP, textEvent('@Rumi'), OWN_USER_ID, NAMES);
+    expect(bare.event.content.body).toBe('hi');
+    const notMention = await adapter.gateGroupMessage(client, GROUP, textEvent('Rumina is late today'), OWN_USER_ID, NAMES);
+    expect(notMention.process).toBe(false);
+  });
+
+  it('processes a reply to one of Rumi\'s own messages and drops the quoted reply fallback', async () => {
+    adapter.recordOwnEvent('$rumi-said');
+    const event = textEvent('> <@rumi:example.org> Try a pizza fractions game\n\nhow long should it take?', {
+      'm.relates_to': { 'm.in_reply_to': { event_id: '$rumi-said' } },
+    });
+    const client = fakeClient();
+    const gate = await adapter.gateGroupMessage(client, GROUP, event, OWN_USER_ID, NAMES);
+    expect(gate).toEqual(expect.objectContaining({ process: true, reason: 'reply_to_rumi' }));
+    expect(gate.event.content.body).toBe('how long should it take?');
+    expect(client.doRequest).not.toHaveBeenCalled(); // known own event: no fetch
+  });
+
+  it('after a restart (own-event memory empty) a reply is checked against the replied-to event\'s sender', async () => {
+    const reply = (id) => textEvent('ok', { 'm.relates_to': { 'm.in_reply_to': { event_id: id } } });
+    const toRumi = await adapter.gateGroupMessage(fakeClient({ repliedToSender: OWN_USER_ID }), GROUP, reply('$old'), OWN_USER_ID, NAMES);
+    expect(toRumi.process).toBe(true);
+    const toTeacher = await adapter.gateGroupMessage(fakeClient({ repliedToSender: T2 }), GROUP, reply('$t2'), OWN_USER_ID, NAMES);
+    expect(toTeacher.process).toBe(false);
+  });
+
+  it('processes a numbered reply to the menu Rumi last posted to this sender in THIS room -- body untouched', async () => {
+    loadAdapter({
+      get: jest.fn().mockResolvedValue({ replyType: 'list_reply', options: [{ id: 'a', title: 'A' }, { id: 'b', title: 'B' }] }),
+      resolveSelection: jest.fn((menu, text) => (text === '2' ? { id: 'b', title: 'B' } : null)),
+    });
+    adapter.recordPromptRoom(T1, GROUP);
+    const gate = await adapter.gateGroupMessage(fakeClient(), GROUP, textEvent('2'), OWN_USER_ID, NAMES);
+    expect(gate).toEqual(expect.objectContaining({ process: true, reason: 'menu_reply' }));
+    expect(gate.event.content.body).toBe('2');
+  });
+
+  it('ignores the same "2" when Rumi\'s menu went to a different room (e.g. the teacher\'s DM)', async () => {
+    loadAdapter({
+      get: jest.fn().mockResolvedValue({ replyType: 'list_reply', options: [{ id: 'b', title: 'B' }] }),
+      resolveSelection: jest.fn(() => ({ id: 'b', title: 'B' })),
+    });
+    adapter.recordPromptRoom(T1, DM);
+    const gate = await adapter.gateGroupMessage(fakeClient(), GROUP, textEvent('2'), OWN_USER_ID, NAMES);
+    expect(gate.process).toBe(false);
+  });
+
+  it('leaves a DM completely unchanged -- no mention needed, body not rewritten', async () => {
+    const client = fakeClient({ members: [member(OWN_USER_ID), member(T1)], isDm: true });
+    const event = textEvent('Rumi, one quick fractions idea');
+    const gate = await adapter.gateGroupMessage(client, DM, event, OWN_USER_ID, NAMES);
+    expect(gate).toEqual({ process: true, reason: 'dm', event });
+  });
+
+  it('classifies rooms: >2 members = group; 2 members in m.direct = DM; unnamed 2-member = DM; named 2-member outside m.direct = group', async () => {
+    const two = [member(OWN_USER_ID), member(T1)];
+    expect(await adapter.isGroupRoom(fakeClient(), '!a:x')).toBe(true);
+    expect(await adapter.isGroupRoom(fakeClient({ members: [member(OWN_USER_ID), member(T1), member(T2, 'invite')] }), '!b:x')).toBe(true);
+    expect(await adapter.isGroupRoom(fakeClient({ members: two, isDm: true }), '!c:x')).toBe(false);
+    expect(await adapter.isGroupRoom(fakeClient({ members: two, roomName: null }), '!d:x')).toBe(false);
+    expect(await adapter.isGroupRoom(fakeClient({ members: two, roomName: 'Class 5 planning' }), '!e:x')).toBe(true);
+    // Departed members don't count.
+    expect(await adapter.isGroupRoom(fakeClient({ members: [...two, member(T2, 'leave')], isDm: true }), '!f:x')).toBe(false);
+  });
+
+  it('falls back to DM behaviour when the room cannot be classified (a silent DM is worse than a noisy group)', async () => {
+    const client = { getAllRoomMembers: jest.fn(async () => { throw new Error('boom'); }) };
+    const event = textEvent('hello');
+    const gate = await adapter.gateGroupMessage(client, '!x:x', event, OWN_USER_ID, NAMES);
+    expect(gate).toEqual({ process: true, reason: 'dm', event });
+  });
+
+  it('attach(): group chatter is never dispatched (no reply/reaction/typing); a mention is dispatched with the mention stripped', async () => {
+    jest.resetModules();
+    jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+    jest.doMock('../../bot/shared/services/messaging/pending-options', () => pendingOptionsMock());
+    jest.doMock('../../bot/shared/services/messaging/matrix-channel.service', () => ({ _cacheIncomingMedia: jest.fn() }));
+    const handlers = {};
+    const client = {
+      ...fakeClient(),
+      on: jest.fn((event, handler) => { handlers[event] = handler; }),
+      getUserId: jest.fn(async () => OWN_USER_ID),
+      getUserProfile: jest.fn(async () => ({ displayname: 'Rumi' })),
+    };
+    jest.doMock('../../bot/shared/services/messaging/matrix-connection', () => ({
+      getClient: jest.fn().mockResolvedValue(client),
+      getCachedUserId: jest.fn(() => OWN_USER_ID),
+    }));
+    jest.doMock('../../bot/shared/services/messaging/matrix-outbound-relay', () => ({ startOwner: jest.fn(() => true) }));
+    const fresh = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
+    const dispatch = jest.fn().mockResolvedValue(undefined);
+    await fresh.attach(dispatch);
+
+    await handlers['room.message'](GROUP, { ...textEvent('Is the staff room free after lunch?'), origin_server_ts: Date.now() + 1000 });
+    expect(dispatch).not.toHaveBeenCalled();
+    // Chatter must not redirect the sender's replies into the group.
+    expect(fresh.getLastInboundRoom(T1)).toBeNull();
+
+    await handlers['room.message'](GROUP, {
+      ...textEvent('Rumi: one quick fractions idea'), origin_server_ts: Date.now() + 1000,
+    });
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    const msg = dispatch.mock.calls[0][0].body.entry[0].changes[0].value.messages[0];
+    expect(msg).toEqual(expect.objectContaining({ type: 'text', text: { body: 'one quick fractions idea' } }));
+    expect(fresh.getLastInboundRoom(T1)).toBe(GROUP);
+  });
+});

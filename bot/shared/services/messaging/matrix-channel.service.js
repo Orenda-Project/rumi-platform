@@ -439,6 +439,30 @@ function matrixErrorDetail(error) {
 /** One structured line per outbound send -- no message bodies (teacher privacy). */
 function logOutbound(roomId, eventId, type) {
   logToFile('✅ Matrix message sent', { channel: 'matrix', direction: 'outbound', roomId, eventId, type });
+  // So a teacher's reply to this message in a group room counts as addressed
+  // to Rumi -- see matrix-events.adapter.js's "Group rooms" section.
+  try {
+    // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load
+    require('./inbound/matrix-events.adapter').recordOwnEvent(eventId);
+  } catch (error) {
+    // best-effort
+  }
+}
+
+/**
+ * Records the room a numbered menu / text-flow question to `to` went to, so a
+ * "2" typed in a GROUP room is treated as an answer only when the menu was
+ * posted in that room (matrix-events.adapter.js#gateGroupMessage). Best-effort.
+ */
+async function notePromptRoom(to) {
+  try {
+    const userId = await matrixUserId(to);
+    const roomId = await resolveDmRoomId(userId);
+    // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load
+    require('./inbound/matrix-events.adapter').recordPromptRoom(userId, roomId);
+  } catch (error) {
+    logToFile('Matrix: could not record the menu prompt room (non-fatal)', { error: error.message });
+  }
 }
 
 async function sendMessage(to, message) {
@@ -824,6 +848,7 @@ async function rememberMenu(to, replyType, options) {
     replyType,
     options: withIds.map((o) => ({ id: o.id, title: o.title })),
   });
+  await notePromptRoom(to);
 }
 
 async function sendInteractiveButtons(to, options) {
@@ -969,6 +994,7 @@ function kindFromToken(flowToken) {
 
 /** Sends one rendered text-flow step (menu -> numbered list; text/empty -> plain message). */
 async function sendTextFlowStep(to, render) {
+  await notePromptRoom(to);
   const { header, body, footer } = render.prompt || {};
   if (render.kind === 'menu') {
     return sendMessage(to, renderOptionsAsText({ header, body, footer, options: render.options }));
