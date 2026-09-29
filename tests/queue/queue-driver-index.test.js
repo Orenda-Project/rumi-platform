@@ -38,6 +38,24 @@ describe('queue driver selector', () => {
     expect(idx).toBe(bullmq);
   });
 
+  it('returns the Memory singleton when QUEUE_DRIVER=memory', () => {
+    jest.resetModules();
+    mockCommon();
+    process.env.QUEUE_DRIVER = 'memory';
+    const idx = require('../../bot/shared/services/queue');
+    const memory = require('../../bot/shared/services/queue/memory-queue.service');
+    expect(idx).toBe(memory);
+  });
+
+  it('returns the Memory singleton when QUEUE_DRIVER=mock', () => {
+    jest.resetModules();
+    mockCommon();
+    process.env.QUEUE_DRIVER = 'mock';
+    const idx = require('../../bot/shared/services/queue');
+    const memory = require('../../bot/shared/services/queue/memory-queue.service');
+    expect(idx).toBe(memory);
+  });
+
   it('falls back to SQS for an unknown QUEUE_DRIVER value', () => {
     jest.resetModules();
     mockCommon();

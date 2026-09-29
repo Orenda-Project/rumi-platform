@@ -275,6 +275,18 @@ class SQSCoachingWorker {
     });
 
     switch (jobType) {
+      case 'inbound_message':
+      case 'inbound_envelope': {
+        const InboundMessageWorker = require('./inbound-message.worker');
+        const envelope = (body && body.payload) ? body.payload : payload;
+        await InboundMessageWorker.process(envelope, {
+          sessionId,
+          receiptHandle,
+          sourceQueue
+        });
+        break;
+      }
+
       case 'transcription':
         // Check if we need more time (transcription can be long)
         // Extend timeout to 20 minutes if audio is > 10 minutes

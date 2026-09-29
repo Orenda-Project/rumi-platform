@@ -20,7 +20,7 @@ const REQUIRED_METHODS = [
   'requeueJob', 'getQueueMetrics', 'getVideoQueueMetrics', 'cancelByGroupId',
 ];
 
-function loadBoth() {
+function loadAll() {
   jest.resetModules();
   jest.doMock('aws-sdk', () => ({ config: { update: jest.fn() }, SQS: jest.fn(() => ({})) }), { virtual: true });
   jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
@@ -29,6 +29,7 @@ function loadBoth() {
   return {
     sqs: require('../../bot/shared/services/queue/sqs-queue.service'),
     bullmq: require('../../bot/shared/services/queue/bullmq-queue.service'),
+    memory: require('../../bot/shared/services/queue/memory-queue.service'),
   };
 }
 
@@ -36,20 +37,26 @@ afterEach(() => jest.resetModules());
 
 describe('queue driver parity', () => {
   it.each(REQUIRED_METHODS)('SQS driver implements %s()', (m) => {
-    const { sqs } = loadBoth();
+    const { sqs } = loadAll();
     expect(typeof sqs[m]).toBe('function');
   });
 
   it.each(REQUIRED_METHODS)('BullMQ driver implements %s()', (m) => {
-    const { bullmq } = loadBoth();
+    const { bullmq } = loadAll();
     expect(typeof bullmq[m]).toBe('function');
   });
 
-  it('neither driver is missing a method the other has on the shared contract', () => {
-    const { sqs, bullmq } = loadBoth();
+  it.each(REQUIRED_METHODS)('Memory driver implements %s()', (m) => {
+    const { memory } = loadAll();
+    expect(typeof memory[m]).toBe('function');
+  });
+
+  it('no driver is missing a method any other has on the shared contract', () => {
+    const { sqs, bullmq, memory } = loadAll();
     for (const m of REQUIRED_METHODS) {
       expect(typeof sqs[m]).toBe('function');
       expect(typeof bullmq[m]).toBe('function');
+      expect(typeof memory[m]).toBe('function');
     }
   });
 });
