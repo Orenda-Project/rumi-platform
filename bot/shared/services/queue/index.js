@@ -15,10 +15,12 @@ const driver = (process.env.QUEUE_DRIVER || 'sqs').toLowerCase();
 
 if (driver === 'bullmq') {
   module.exports = require('./bullmq-queue.service');
+} else if (driver === 'memory' || driver === 'mock') {
+  module.exports = require('./memory-queue.service');
 } else {
   if (driver !== 'sqs') {
     require('../../utils/logger').logToFile(
-      `⚠️  Unknown QUEUE_DRIVER="${driver}" — falling back to sqs. Valid values: sqs | bullmq.`,
+      `⚠️  Unknown QUEUE_DRIVER="${driver}" — falling back to sqs. Valid values: sqs | bullmq | memory | mock.`,
       { level: 'warn' }
     );
   }

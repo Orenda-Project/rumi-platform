@@ -33,7 +33,20 @@ const { logToFile } = require('../utils/logger');
 const flowRegistry = require('./slack-flow-registry');
 const slackWebClient = require('./../services/messaging/slack-web-client');
 const { decodeMetadata } = require('../services/messaging/slack-modal-flow');
-const { getOrCreateUserByChannel } = require('../database/bot-helpers');
+function hasDatabaseCredentials() {
+  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
+let botHelpers = null;
+function getBotHelpers() {
+  if (!botHelpers) {
+    if (!hasDatabaseCredentials()) {
+      return null;
+    }
+    botHelpers = require('../database/bot-helpers');
+  }
+  return botHelpers;
+}
 const registrationView = require('./slack-views/registration.view');
 const { COUNTRIES_DROPDOWN } = require('../config/registration-data');
 
@@ -93,6 +106,11 @@ async function handleOpenModal(payload) {
   const action = payload?.actions?.[0];
   if (!action || !isOpenModalAction(action.action_id)) return false;
 
+  if (!hasDatabaseCredentials()) {
+    logToFile('⚠️ Standalone gateway mode: database credentials not configured, skipping Slack modal interaction', { action_id: action.action_id });
+    return false;
+  }
+
   flowRegistry.ensureRegistered();
   const { kind, sessionId } = parseOpenModalAction(action.action_id);
   const renderer = flowRegistry.get(kind);
@@ -114,14 +132,17 @@ async function handleOpenModal(payload) {
     // discord-modal-interactions.handler.js's tryHandleStartFlow() exactly.
     ctx = { userId: null, slackUserId, flowToken: sessionId };
   } else {
-    // registration/settings/attendance endpoints key everything off the DB
-    // user's UUID (flow_token = "userId:kind:timestamp", parsed as
-    // flow_token.split(':')[0] by the same convention flow-endpoint.routes.js
-    // uses for Meta) — never the Slack user id itself. Resolves/creates the
-    // multi-homed user row the same way whatsapp-bot.js's ordinary dispatch
-    // already does for messages.
-    const user = await getOrCreateUserByChannel('slack', slackUserId);
-    const flowToken = flowRegistry.buildFlowToken(user.id, kind);
+    if (!hasDatabaseCredentials()) {
+      logToFile('⚠️ Standalone gateway mode: database credentials not configured, skipping DB user lookup for Slack modal interaction', { kind, slackUserId });
+      return false;
+    }
+    const helpers = getBotHelpers();
+    if (!helpers) {
+      logToFile('⚠️ Standalone gateway mode: botHelpers unavailable, skipping Slack modal interaction', { kind, slackUserId });
+      return false;
+    }
+    const user = await helpers.getOrCreateUserByChannel('slack', slackUserId);
+    const flowToken = flowRegistry.buildFlowToken(user?.id || slackUserId, kind);
     ctx = buildCtx(slackUserId, flowToken);
   }
 
@@ -155,6 +176,11 @@ async function handleOpenModal(payload) {
 async function handleAttendanceFinish(payload) {
   const action = payload?.actions?.[0];
   if (!action || !isAttendanceFinishAction(action.action_id)) return false;
+
+  if (!hasDatabaseCredentials()) {
+    logToFile('⚠️ Standalone gateway mode: database credentials not configured, skipping Slack modal interaction', { action_id: action.action_id });
+    return false;
+  }
 
   flowRegistry.ensureRegistered();
   const { flowToken, carry } = decodeMetadata(payload.view?.private_metadata);
@@ -206,6 +232,11 @@ async function handleCountryBucketChange(payload) {
   const action = payload?.actions?.[0];
   if (!action || !isCountryBucketAction(action.action_id)) return false;
 
+  if (!hasDatabaseCredentials()) {
+    logToFile('⚠️ Standalone gateway mode: database credentials not configured, skipping Slack modal interaction', { action_id: action.action_id });
+    return false;
+  }
+
   const { kind, screen, flowToken } = decodeMetadata(payload.view?.private_metadata);
   if (kind !== 'registration' || screen !== 'PERSONAL_INFO') return true;
 
@@ -233,6 +264,11 @@ async function handleBackButton(payload) {
   const action = payload?.actions?.[0];
   if (!action || !isBackAction(action.action_id)) return false;
 
+  if (!hasDatabaseCredentials()) {
+    logToFile('⚠️ Standalone gateway mode: database credentials not configured, skipping Slack modal interaction', { action_id: action.action_id });
+    return false;
+  }
+
   flowRegistry.ensureRegistered();
   const kind = kindFromBackAction(action.action_id);
   const renderer = flowRegistry.get(kind);
@@ -258,6 +294,11 @@ async function handleBackButton(payload) {
  * (a `response_action`), or null if this kind has no registered renderer.
  */
 async function handleViewSubmission(payload) {
+  if (!hasDatabaseCredentials()) {
+    logToFile('⚠️ Standalone gateway mode: database credentials not configured, skipping Slack view submission');
+    return null;
+  }
+
   flowRegistry.ensureRegistered();
   const { kind, screen, flowToken, carry } = decodeMetadata(payload.view?.private_metadata);
   const renderer = flowRegistry.get(kind);

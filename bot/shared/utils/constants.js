@@ -1,4 +1,6 @@
-require('dotenv').config();
+try {
+  require('dotenv').config();
+} catch (_) {}
 const path = require('path');
 
 // Environment Variables

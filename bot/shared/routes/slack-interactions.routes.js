@@ -24,7 +24,6 @@
  */
 
 const express = require('express');
-const router = express.Router();
 const SlackSignatureService = require('../services/slack-signature.service');
 const { logToFile } = require('../utils/logger');
 const { makeEventsHandler, makeInteractionsHandler, makeSlashCommandHandler } = require('../services/messaging/inbound/slack-events.adapter');
@@ -132,6 +131,7 @@ function makeRoutedInteractionsHandler(dispatch) {
 }
 
 function mount(dispatch) {
+  const router = express.Router();
   router.post('/events', verifyAndParse('json'), makeEventsHandler(dispatch));
   router.post('/interactions', verifyAndParse('form'), makeRoutedInteractionsHandler(dispatch));
   router.post('/commands', verifyAndParse('form'), makeSlashCommandHandler(dispatch));

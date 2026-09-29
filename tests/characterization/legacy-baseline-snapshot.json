@@ -1,0 +1,196 @@
+{
+  "metaWebhookGetValid": {
+    "request": {
+      "method": "GET",
+      "path": "/webhook",
+      "query": {
+        "hub.mode": "subscribe",
+        "hub.verify_token": "test_meta_webhook_verify_token_123",
+        "hub.challenge": "1158201444_valid_meta_challenge"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "contentType": "text/html; charset=utf-8",
+      "body": "1158201444_valid_meta_challenge"
+    }
+  },
+  "metaWebhookGetInvalid": {
+    "request": {
+      "method": "GET",
+      "path": "/webhook",
+      "query": {
+        "hub.mode": "subscribe",
+        "hub.verify_token": "wrong_token",
+        "hub.challenge": "999999"
+      }
+    },
+    "response": {
+      "statusCode": 403,
+      "contentType": "text/html; charset=utf-8",
+      "body": "Forbidden"
+    }
+  },
+  "whatsappWebhookPostText": {
+    "request": {
+      "method": "POST",
+      "path": "/webhook",
+      "samplePayload": {
+        "object": "whatsapp_business_account",
+        "entry": [
+          {
+            "id": "123456789012345",
+            "changes": [
+              {
+                "value": {
+                  "messaging_product": "whatsapp",
+                  "metadata": {
+                    "display_phone_number": "15550100000",
+                    "phone_number_id": "100000000000001"
+                  },
+                  "contacts": [
+                    {
+                      "profile": {
+                        "name": "Amina Teacher"
+                      },
+                      "wa_id": "923001234567"
+                    }
+                  ],
+                  "messages": [
+                    {
+                      "from": "923001234567",
+                      "id": "wamid.HBgL1790680120395TextMsg",
+                      "timestamp": "1790680120",
+                      "text": {
+                        "body": "Hello Rumi, I need a lesson plan for Grade 4 Science"
+                      },
+                      "type": "text"
+                    }
+                  ]
+                },
+                "field": "messages"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "contentType": "text/html; charset=utf-8",
+      "body": "EVENT_RECEIVED"
+    }
+  },
+  "whatsappWebhookPostButton": {
+    "request": {
+      "method": "POST",
+      "path": "/webhook",
+      "samplePayload": {
+        "object": "whatsapp_business_account",
+        "entry": [
+          {
+            "id": "123456789012345",
+            "changes": [
+              {
+                "value": {
+                  "messaging_product": "whatsapp",
+                  "metadata": {
+                    "display_phone_number": "15550100000",
+                    "phone_number_id": "100000000000001"
+                  },
+                  "contacts": [
+                    {
+                      "profile": {
+                        "name": "Amina Teacher"
+                      },
+                      "wa_id": "923001234567"
+                    }
+                  ],
+                  "messages": [
+                    {
+                      "from": "923001234567",
+                      "id": "wamid.HBgL1790680120425ButtonReply",
+                      "timestamp": "1790680120",
+                      "type": "interactive",
+                      "interactive": {
+                        "type": "button_reply",
+                        "button_reply": {
+                          "id": "coaching_confirm_session_abc123",
+                          "title": "Yes, Start Reflection"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "field": "messages"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "contentType": "text/html; charset=utf-8",
+      "body": "EVENT_RECEIVED"
+    }
+  },
+  "slackEventsChallengeValid": {
+    "request": {
+      "method": "POST",
+      "path": "/api/slack/events",
+      "headers": {
+        "x-slack-request-timestamp": "1790680120",
+        "x-slack-signature": "[HMAC-SHA256 signature]"
+      },
+      "body": {
+        "token": "slack_verification_token_dummy",
+        "challenge": "slack_test_challenge_token_8899aabbcc",
+        "type": "url_verification"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "contentType": "application/json; charset=utf-8",
+      "body": {
+        "challenge": "slack_test_challenge_token_8899aabbcc"
+      }
+    }
+  },
+  "slackEventsChallengeInvalidSig": {
+    "request": {
+      "method": "POST",
+      "path": "/api/slack/events",
+      "headers": {
+        "x-slack-request-timestamp": "1790680120",
+        "x-slack-signature": "[Invalid HMAC-SHA256 signature]"
+      },
+      "body": {
+        "token": "slack_verification_token_dummy",
+        "challenge": "unauthorized_challenge_attempt",
+        "type": "url_verification"
+      }
+    },
+    "response": {
+      "statusCode": 401,
+      "contentType": "text/html; charset=utf-8",
+      "body": "Invalid signature"
+    }
+  },
+  "slackRootPostNotFound": {
+    "request": {
+      "method": "POST",
+      "path": "/api/slack",
+      "body": {
+        "token": "slack_token",
+        "challenge": "root_challenge",
+        "type": "url_verification"
+      }
+    },
+    "response": {
+      "statusCode": 404,
+      "contentType": "text/html; charset=utf-8",
+      "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot POST /api/slack</pre>\n</body>\n</html>\n"
+    }
+  }
+}

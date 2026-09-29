@@ -28,7 +28,8 @@
     "setup": "node bin/rumi.js setup",
     "status": "node bin/rumi.js status",
     "pair": "node bin/rumi.js pair",
-    "start": "node bin/rumi.js start"
+    "start": "node bin/rumi.js start",
+    "dashboard:architecture": "node tools/architecture-dashboard/server.js"
   },
   "keywords": [
     "whatsapp",

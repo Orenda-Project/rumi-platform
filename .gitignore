@@ -20,6 +20,7 @@ bun.lockb
 # its own header that this directory is not committed — but no rule existed, so
 # the whole directory was one `git add .` away from a public repo.
 docs/internal/
+.agents/
 
 # Secrets and credentials
 keys/

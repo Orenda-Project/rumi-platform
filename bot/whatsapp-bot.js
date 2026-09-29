@@ -59,21 +59,34 @@ function resolveChannelIdentity(from) {
 // Create Express app
 const app = express();
 
-// Slack's request signature is an HMAC over the EXACT raw bytes it sent —
-// must be captured before ANY body parser (including the global
-// express.json() below) reconstructs the body, since a reconstruction can
-// differ in whitespace/key order from the wire bytes. Mounted first, and
-// scoped to the Slack path only so every other route's body-parsing is
-// untouched.
-app.use('/api/slack', express.raw({ type: '*/*' }), (req, res, next) => {
-  req.rawBody = req.body; // a Buffer, from express.raw() above
-  next();
-});
-// handleWebhookPost is a hoisted function declaration defined further down
-// this file — safe to reference here since this code only ever RUNS at
-// require-time, after every top-level declaration has already been hoisted.
-const mountSlackRoutes = require('./shared/routes/slack-interactions.routes');
-app.use('/api/slack', mountSlackRoutes(handleWebhookPost));
+// Decoupled Webhook Ingestion Gateway (WhatsApp, Slack, and multi-channel ingress)
+// Handles raw body capture for HMAC verification, Meta verification handshakes,
+// and canonical envelope normalization before in-process dispatching.
+const { createWebhookRoutes } = require('./gateway/webhook.routes');
+const { defaultDispatcher } = require('./gateway/ingress-dispatcher');
+
+// Support queue mode or synchronous in-process mode (default)
+const isQueueMode = process.env.GATEWAY_QUEUE_MODE === 'true' || process.env.QUEUE_MODE === 'async';
+
+if (isQueueMode) {
+  const queueService = require('./shared/services/queue');
+  defaultDispatcher.setQueueProducer(async (envelope) => {
+    return await queueService.queueJob(
+      envelope.from || envelope.id,
+      'inbound_message',
+      envelope,
+      { deduplicationId: envelope.id }
+    );
+  });
+} else {
+  // Register synchronous in-process execution handler for Phase 1 (default)
+  defaultDispatcher.registerHandler(async (envelope, { req, res }) => {
+    return await handleWebhookPost(req, res);
+  });
+}
+
+// Mount the decoupled gateway routes (handles /api/slack raw capture and /webhook)
+app.use(createWebhookRoutes(defaultDispatcher));
 
 app.use(express.json());
 
@@ -289,26 +302,7 @@ async function trackBroadcastReply(userId) {
   }
 }
 
-/**
- * Webhook verification endpoint (GET)
- */
-app.get('/webhook', (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-
-  console.log('Webhook verification request received');
-  console.log('Mode:', mode);
-  console.log('Token:', token);
-
-  if (mode === 'subscribe' && token === constants.WEBHOOK_VERIFY_TOKEN) {
-    console.log('Webhook verified successfully!');
-    res.status(200).send(challenge);
-  } else {
-    console.log('Webhook verification failed');
-    res.status(403).send('Forbidden');
-  }
-});
+// Webhook verification endpoint (GET) is mounted via bot/gateway/webhook.routes.js
 
 /**
  * Webhook endpoint to receive messages (POST).
@@ -399,7 +393,7 @@ async function handleWebhookPost(req, res) {
     }
 
     // Check if already processed (Redis-backed duplicate detection)
-    const alreadyProcessed = await SessionService.isProcessed(message.id);
+    const alreadyProcessed = req.__skipDuplicateCheck ? false : await SessionService.isProcessed(message.id);
     if (alreadyProcessed) {
       logToFile('⚠️  Duplicate message detected and skipped', {
         messageId: message.id,
@@ -411,7 +405,9 @@ async function handleWebhookPost(req, res) {
     }
 
     // Mark as processed
-    await SessionService.markAsProcessed(message.id);
+    if (!req.__skipDuplicateCheck) {
+      await SessionService.markAsProcessed(message.id);
+    }
 
     logToFile('✅ Message accepted for processing', {
       messageId: message.id,
@@ -1510,7 +1506,7 @@ async function handleWebhookPost(req, res) {
   }); // End of runWithCorrelation
 }
 
-app.post('/webhook', handleWebhookPost);
+// Webhook endpoint (POST) is mounted via bot/gateway/webhook.routes.js
 
 /**
  * Handle document messages (classroom audio or lesson plan uploads for coaching)
@@ -2067,4 +2063,4 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { app, startServer };
+module.exports = { app, startServer, handleWebhookPost };

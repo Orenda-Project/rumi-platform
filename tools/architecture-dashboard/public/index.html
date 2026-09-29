@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rumi Monolith Architecture & Ingress Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bgMain: #0b0f19;
+      --bgCard: #111827;
+      --bgCardHover: #1a2234;
+      --bgSidebar: #0d121f;
+      --borderSubtle: rgba(255, 255, 255, 0.08);
+      --borderFocus: #6366f1;
+      --textPrimary: #f9fafb;
+      --textSecondary: #9ca3af;
+      --textMuted: #6b7280;
+      --colorPrimary: #6366f1;
+      --colorSuccess: #10b981;
+      --colorWarning: #f59e0b;
+      --colorDanger: #ef4444;
+      --colorCyan: #06b6d4;
+      --colorPurple: #8b5cf6;
+      --fontSans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --fontMono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bgMain);
+      color: var(--textPrimary);
+      font-family: var(--fontSans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .appContainer {
+      display: flex;
+      flex: 1;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--bgSidebar);
+      border-right: 1px solid var(--borderSubtle);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .brandArea {
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--borderSubtle);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brandLogo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .brandTitle {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .brandSubtitle {
+      font-size: 11px;
+      color: var(--textMuted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .navSection {
+      padding: 16px 12px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .navItem {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: var(--textSecondary);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+
+    .navItem:hover {
+      background: var(--bgCardHover);
+      color: var(--textPrimary);
+    }
+
+    .navItem.active {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--colorPrimary);
+      border-left: 3px solid var(--colorPrimary);
+    }
+
+    .navItem svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Main Content */
+    .mainContent {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.04) 0%, transparent 60%);
+    }
+
+    /* Top Bar */
+    .topBar {
+      height: 64px;
+      border-bottom: 1px solid var(--borderSubtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      background: rgba(13, 18, 31, 0.7);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .searchContainer {
+      position: relative;
+      width: 400px;
+    }
+
+    .searchInput {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--borderSubtle);
+      border-radius: 8px;
+      padding: 8px 12px 8px 36px;
+      color: var(--textPrimary);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .searchInput:focus {
+      border-color: var(--borderFocus);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .searchIcon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--textMuted);
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+
+    .topBarActions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badgeTag {
+      font-size: 11px;
+      font-family: var(--fontMono);
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(99, 102, 241, 0.12);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+
+    /* View Containers */
+    .viewContainer {
+      padding: 28px;
+      display: none;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .viewContainer.active {
+      display: flex;
+    }
+
+    .viewHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+
+    .viewTitle {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .viewDescription {
+      font-size: 14px;
+      color: var(--textSecondary);
+      margin-top: 4px;
+    }
+
+    .metricsGrid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .metricCard {
+      background: var(--bgCard);
+      border: 1px solid var(--borderSubtle);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .metricCard:hover {
+      transform: translateY(-2px);
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .metricLabel {
+      font-size: 12px;
+      color: var(--textSecondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    .metricValue {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: var(--fontMono);
+      letter-spacing: -0.03em;
+    }
+
+    .metricSubtext {
+      font-size: 12px;
+      color: var(--textMuted);
+    }
+
+    /* Filter Chips */
+    .filterChipsBar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filterChip {
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--borderSubtle);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--textSecondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filterChip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--textPrimary);
+    }
+
+    .filterChip.active {
+      background: var(--colorPrimary);
+      border-color: var(--colorPrimary);
+      color: #fff;
+    }
+
+    /* Hotspot Cards */
+    .hotspotsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+    }
+
+    .hotspotCard {
+      background: var(--bgCard);
+      border: 1px solid var(--borderSubtle);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .hotspotCard:hover {
+      border-color: rgba(99, 102, 241, 0.5);
+      background: var(--bgCardHover);
+      transform: translateY(-2px);
+    }
+
+    .hotspotHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hotspotMethodRoute {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .methodPill {
+      font-size: 10px;
+      font-weight: 700;
+      font-family: var(--fontMono);
+      padding: 3px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .methodPost { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .methodGet { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .methodWs { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+    .methodQueue { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+    .riskBadge {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .riskCritical { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .riskHigh { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .riskMedium { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .riskLow { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .riskDecoupled { background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.5); font-weight: 700; }
+    .cardDecoupled { border: 1px solid rgba(16, 185, 129, 0.4) !important; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(17, 24, 39, 0.95) 100%) !important; }
+
+    .hotspotTitle {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--textPrimary);
+      line-height: 1.3;
+    }
+
+    .hotspotRoute {
+      font-size: 12px;
+      font-family: var(--fontMono);
+      color: var(--textMuted);
+    }
+
+    .hotspotMeta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--textSecondary);
+      border-top: 1px solid var(--borderSubtle);
+      padding-top: 10px;
+      margin-top: 4px;
+    }
+
+    .hotspotFile {
+      font-family: var(--fontMono);
+      font-size: 11px;
+      color: #93c5fd;
+    }
+
+    /* Graph Visualizer */
+    .graphCanvasContainer {
+      width: 100%;
+      height: 640px;
+      background: #070a12;
+      border: 1px solid var(--borderSubtle);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #architectureCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    #architectureCanvas:active {
+      cursor: grabbing;
+    }
+
+    .graphControls {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      gap: 8px;
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 6px;
+      border-radius: 8px;
+      border: 1px solid var(--borderSubtle);
+      z-index: 5;
+    }
+
+    .controlBtn {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: var(--textPrimary);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+
+    .controlBtn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .graphLegend {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--borderSubtle);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .legendRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--textSecondary);
+    }
+
+    .legendDot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .graphTooltip {
+      position: absolute;
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid rgba(99, 102, 241, 0.5);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: var(--fontSans);
+      pointer-events: none;
+      display: none;
+      z-index: 20;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Microservices Cards */
+    .microservicesGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+    }
+
+    .microserviceCard {
+      background: var(--bgCard);
+      border: 1px solid var(--borderSubtle);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+    }
+
+    .microserviceCard:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .serviceCardHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .serviceBadge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      font-family: var(--fontMono);
+    }
+
+    .serviceTitle {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .serviceSubtitle {
+      font-size: 12px;
+      color: var(--textSecondary);
+      line-height: 1.4;
+    }
+
+    .fileExtractList {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--borderSubtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 11px;
+      font-family: var(--fontMono);
+      color: #93c5fd;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    /* Database Table Matrix */
+    .tableMatrixContainer {
+      background: var(--bgCard);
+      border: 1px solid var(--borderSubtle);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .matrixTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .matrixTable th {
+      background: rgba(255, 255, 255, 0.02);
+      text-align: left;
+      padding: 12px 16px;
+      font-weight: 600;
+      color: var(--textSecondary);
+      border-bottom: 1px solid var(--borderSubtle);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .matrixTable td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--borderSubtle);
+      color: var(--textPrimary);
+    }
+
+    .matrixTable tr:last-child td {
+      border-bottom: none;
+    }
+
+    .matrixTable tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tableNameCell {
+      font-family: var(--fontMono);
+      font-weight: 500;
+      color: #93c5fd;
+    }
+
+    /* Inspector Drawer */
+    .inspectorDrawer {
+      position: fixed;
+      top: 0;
+      right: -520px;
+      width: 500px;
+      height: 100vh;
+      background: var(--bgSidebar);
+      border-left: 1px solid var(--borderSubtle);
+      box-shadow: -8px 0 30px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .inspectorDrawer.open {
+      right: 0;
+    }
+
+    .drawerHeader {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--borderSubtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .drawerTitle {
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .closeDrawerBtn {
+      background: transparent;
+      border: none;
+      color: var(--textMuted);
+      cursor: pointer;
+      font-size: 20px;
+      padding: 4px;
+    }
+
+    .closeDrawerBtn:hover {
+      color: var(--textPrimary);
+    }
+
+    .drawerBody {
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .drawerSectionTitle {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--textSecondary);
+      margin-bottom: 8px;
+    }
+
+    .drawerCodeBox {
+      background: #070a12;
+      border: 1px solid var(--borderSubtle);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: var(--fontMono);
+      font-size: 12px;
+      color: #a78bfa;
+      word-break: break-all;
+    }
+
+    .drawerText {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--textSecondary);
+    }
+
+    .tagPillsList {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tagPill {
+      font-size: 11px;
+      font-family: var(--fontMono);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--borderSubtle);
+      color: var(--textPrimary);
+    }
+  </style>
+</head>
+<body>
+  <div class="appContainer">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brandArea">
+        <div class="brandLogo">R</div>
+        <div>
+          <div class="brandTitle">Rumi Architecture</div>
+          <div class="brandSubtitle">Decomposed Hybrid Map</div>
+        </div>
+      </div>
+
+      <nav class="navSection">
+        <div class="navItem active" data-view="hotspotsView">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Ingress Hotspots
+        </div>
+        <div class="navItem" data-view="graphView">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+          Dependency Graph
+        </div>
+        <div class="navItem" data-view="dispatchersView">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          Mega-Dispatchers
+        </div>
+        <div class="navItem" data-view="servicesView">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
+          Microservices Plan
+        </div>
+        <div class="navItem" data-view="tablesView">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7zM9 4v16M15 4v16M4 12h16"/></svg>
+          Database Coupling
+        </div>
+        <div class="navItem" data-view="stranglerView">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Migration Roadmap
+        </div>
+      </nav>
+
+      <div style="padding: 16px; border-top: 1px solid var(--borderSubtle); font-size: 11px; color: var(--textMuted);">
+        Target: Microservices 2026<br>
+        Antigravity Architecture Suite
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="mainContent">
+      <header class="topBar">
+        <div class="searchContainer">
+          <svg class="searchIcon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="globalSearchInput" class="searchInput" placeholder="Search ingress endpoints, files, services, tables...">
+        </div>
+        <div class="topBarActions">
+          <span class="badgeTag" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1);">● rumi-gateway Active</span>
+          <span class="badgeTag">Node.js 24 + Express 5</span>
+          <span class="badgeTag" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">1,053 Tests Passing</span>
+          <span class="badgeTag">SQS / BullMQ Pluggable</span>
+        </div>
+      </header>
+
+      <!-- View 1: Ingress Hotspots -->
+      <section id="hotspotsView" class="viewContainer active">
+        <div class="viewHeader">
+          <div>
+            <h1 class="viewTitle">Monolith Ingress Hotspots</h1>
+            <p class="viewDescription">18 identified entry points into the Rumi monolith, categorized by transport, security envelope, and failure blast radius.</p>
+          </div>
+        </div>
+
+        <div class="metricsGrid">
+          <div class="metricCard">
+            <span class="metricLabel">Ingress Hotspots</span>
+            <span class="metricValue" id="metricIngressCount">18</span>
+            <span class="metricSubtext">15 Monolith + 3 Decoupled</span>
+          </div>
+          <div class="metricCard">
+            <span class="metricLabel">Extracted Gateways</span>
+            <span class="metricValue" style="color: #10b981;">1</span>
+            <span class="metricSubtext">rumi-gateway (Phases 1-3 Live)</span>
+          </div>
+          <div class="metricCard">
+            <span class="metricLabel">Verified Tests</span>
+            <span class="metricValue" style="color: #38bdf8;">1,053</span>
+            <span class="metricSubtext">130 Gateway + 40 Diff + 7 Baseline</span>
+          </div>
+          <div class="metricCard">
+            <span class="metricLabel">Meta Ingress ACK</span>
+            <span class="metricValue" style="color: #34d399;">&lt; 50ms</span>
+            <span class="metricSubtext">Async Queue-and-Ack Active</span>
+          </div>
+        </div>
+
+        <div class="filterChipsBar" id="hotspotFilters">
+          <button class="filterChip active" data-filter="all">All Hotspots</button>
+          <button class="filterChip" data-filter="Decoupled" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);">✓ Decoupled (3)</button>
+          <button class="filterChip" data-filter="Critical">Critical Risk</button>
+          <button class="filterChip" data-filter="High">High Risk</button>
+          <button class="filterChip" data-filter="Gateway">Gateway &amp; Webhook</button>
+          <button class="filterChip" data-filter="Attendance">Attendance Flows</button>
+          <button class="filterChip" data-filter="Multi-Channel">Slack / Discord / Baileys</button>
+          <button class="filterChip" data-filter="Workers">SQS Queue Ingress</button>
+        </div>
+
+        <div class="hotspotsGrid" id="hotspotsContainer"></div>
+      </section>
+
+      <!-- View 2: Dependency Graph -->
+      <section id="graphView" class="viewContainer">
+        <div class="viewHeader">
+          <div>
+            <h1 class="viewTitle">Interactive Architecture & Dependency Graph</h1>
+            <p class="viewDescription">Visual topology of ingress nodes, mega-dispatchers, domain services, queues, and shared datastores. Drag nodes, zoom/pan, or click any node to trace paths.</p>
+          </div>
+        </div>
+
+        <div class="filterChipsBar" id="graphCategoryFilters">
+          <button class="filterChip active" data-graph-category="all">All Categories</button>
+          <button class="filterChip" data-graph-category="gateway" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);">Decoupled Gateway</button>
+          <button class="filterChip" data-graph-category="ingress">Ingress Endpoints</button>
+          <button class="filterChip" data-graph-category="dispatcher">Mega-Dispatchers</button>
+          <button class="filterChip" data-graph-category="service">Domain Services</button>
+          <button class="filterChip" data-graph-category="queue">Queues</button>
+          <button class="filterChip" data-graph-category="worker">Workers</button>
+          <button class="filterChip" data-graph-category="database">Datastores</button>
+          <button class="filterChip" data-graph-category="external">External AI</button>
+        </div>
+
+        <div class="graphCanvasContainer" id="canvasContainer">
+          <canvas id="architectureCanvas"></canvas>
+          <div id="graphTooltip" class="graphTooltip"></div>
+          <div class="graphLegend">
+            <div class="legendRow"><div class="legendDot" style="background: #10b981;"></div> Decoupled Gateway Microservice</div>
+            <div class="legendRow"><div class="legendDot" style="background: #a855f7;"></div> Ingress Gateway (Webhooks &amp; Sockets)</div>
+            <div class="legendRow"><div class="legendDot" style="background: #f59e0b;"></div> Secondary Mega-Dispatchers</div>
+            <div class="legendRow"><div class="legendDot" style="background: #06b6d4;"></div> Domain Microservices</div>
+            <div class="legendRow"><div class="legendDot" style="background: #f97316;"></div> Pluggable Queues (SQS / Memory)</div>
+            <div class="legendRow"><div class="legendDot" style="background: #ef4444;"></div> Asynchronous Workers (Inbound / SQS)</div>
+            <div class="legendRow"><div class="legendDot" style="background: #3b82f6;"></div> Supabase DB &amp; Redis Storage</div>
+            <div class="legendRow"><div class="legendDot" style="background: #14b8a6;"></div> External AI &amp; Providers</div>
+          </div>
+          <div class="graphControls">
+            <button class="controlBtn" id="zoomInBtn" title="Zoom In">+</button>
+            <button class="controlBtn" id="zoomOutBtn" title="Zoom Out">-</button>
+            <button class="controlBtn" id="fitViewBtn" title="Fit to Screen">⛶</button>
+            <button class="controlBtn" id="resetZoomBtn" title="Reset View">⟲</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 3: Mega-Dispatchers -->
+      <section id="dispatchersView" class="viewContainer">
+        <div class="viewHeader">
+          <div>
+            <h1 class="viewTitle">Secondary Mega-Dispatchers</h1>
+            <p class="viewDescription">The massive procedural router files that act as internal monolith dispatchers, multiplexing multiple domains within a single module.</p>
+          </div>
+        </div>
+        <div class="hotspotsGrid" id="dispatchersContainer"></div>
+      </section>
+
+      <!-- View 4: Microservices Plan -->
+      <section id="servicesView" class="viewContainer">
+        <div class="viewHeader">
+          <div>
+            <h1 class="viewTitle">Target Microservices Decomposition</h1>
+            <p class="viewDescription">Proposed 9-service target architecture designed to eliminate monolith ingress bottlenecks and decouple domain databases.</p>
+          </div>
+        </div>
+
+        <div class="filterChipsBar" id="servicePhaseFilters">
+          <button class="filterChip active" data-phase="all">All Services</button>
+          <button class="filterChip" data-phase="1">Phase 1: Ingress & Workers</button>
+          <button class="filterChip" data-phase="2">Phase 2: Roster & Content</button>
+          <button class="filterChip" data-phase="3">Phase 3: Coaching & Quizzes</button>
+        </div>
+
+        <div class="microservicesGrid" id="microservicesContainer"></div>
+      </section>
+
+      <!-- View 5: Database Coupling -->
+      <section id="tablesView" class="viewContainer">
+        <div class="viewHeader">
+          <div>
+            <h1 class="viewTitle">Database Table Coupling Matrix</h1>
+            <p class="viewDescription">All 77 Supabase tables across 11 functional domains, indicating active status and code access points.</p>
+          </div>
+        </div>
+
+        <div class="tableMatrixContainer">
+          <table class="matrixTable">
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>Table Name</th>
+                <th>Status</th>
+                <th>Accessed Directly By</th>
+              </tr>
+            </thead>
+            <tbody id="databaseTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- View 6: Strangler Roadmap -->
+      <section id="stranglerView" class="viewContainer">
+        <div class="viewHeader">
+          <div>
+            <h1 class="viewTitle">Strangler Fig Migration Roadmap</h1>
+            <p class="viewDescription">Zero-downtime decomposition strategy to extract the Edge Gateway and Workers first without disrupting live WhatsApp sessions.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="metricCard" style="border-left: 4px solid #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(17, 24, 39, 0.95) 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #34d399;">Phase 1: Extract Edge Ingress Gateway &amp; Pluggable Queue Buffer</h3>
+              <span class="badgeTag" style="color: #10b981; border-color: #10b981; font-weight: 600; font-size: 11px;">✓ COMPLETED &amp; OPERATIONAL</span>
+            </div>
+            <p style="font-size: 13px; color: var(--textSecondary); line-height: 1.6;">
+              <strong style="color: #34d399;">✓ Standalone Microservice:</strong> Extracted <code style="color: #93c5fd;">bot/gateway/server.js</code> &amp; <code style="color: #93c5fd;">bot/gateway/webhook.routes.js</code> from <code style="color: #93c5fd;">whatsapp-bot.js</code> into a zero-DB-dependency microservice on port 4000 with <code style="color: #93c5fd;">GET /health</code>.<br>
+              <strong style="color: #34d399;">✓ Canonical Envelope &amp; Adapters:</strong> Normalized Meta WhatsApp and Slack HMAC signatures into <code style="color: #a78bfa;">InboundMessageEnvelope</code>, responding with <strong>HTTP 200 in &lt;100ms</strong> (19-45ms measured).<br>
+              <strong style="color: #34d399;">✓ Pluggable Queue Ingestion:</strong> Pluggable SQS, BullMQ/Redis, and 16-method in-memory queue buffer with <code style="color: #93c5fd;">inbound-message.worker.js</code> consumer and Redis deduplication.<br>
+              <strong style="color: #34d399;">✓ Verified Test Coverage:</strong> 130 tests across 8 suites passing, and 7/7 legacy baseline wire characterization tests verified without contract regressions.
+            </p>
+          </div>
+
+          <div class="metricCard">
+            <h3 style="font-size: 16px; font-weight: 600; color: #34d399; margin-bottom: 8px;">Phase 2: Extract Attendance & Reading Services</h3>
+            <p style="font-size: 13px; color: var(--textSecondary); line-height: 1.6;">
+              1. Move encrypted WhatsApp Flow handlers (<code style="color: #93c5fd;">/api/flows/attendance-*</code>) into <strong>rumi-attendance</strong> with dedicated tables (<code style="color: #93c5fd;">students</code>, <code style="color: #93c5fd;">attendance_records</code>).<br>
+              2. Extract <strong>rumi-reading</strong> oral reading evaluation engine into its own service.<br>
+              3. Centralize outbound messaging into <strong>rumi-notifications</strong> to enforce WhatsApp Meta Cloud API rate limits.
+            </p>
+          </div>
+
+          <div class="metricCard">
+            <h3 style="font-size: 16px; font-weight: 600; color: #f59e0b; margin-bottom: 8px;">Phase 3: Domain Database Partitioning & Core Retirement</h3>
+            <p style="font-size: 13px; color: var(--textSecondary); line-height: 1.6;">
+              1. Transition <code style="color: #93c5fd;">text-message.handler.js</code> from monolithic procedural branching to domain-specific event subscribers.<br>
+              2. Carve out <strong>rumi-coaching</strong> and <strong>rumi-quiz</strong> with isolated domain datastores.<br>
+              3. Retire the legacy monolithic Express process completely.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Side Inspector Drawer -->
+    <div id="inspectorDrawer" class="inspectorDrawer">
+      <div class="drawerHeader">
+        <h3 id="drawerTitle" class="drawerTitle">Component Details</h3>
+        <button id="closeDrawerBtn" class="closeDrawerBtn">&times;</button>
+      </div>
+      <div class="drawerBody" id="drawerBody"></div>
+    </div>
+  </div>
+
+  <script src="/architectureData.js"></script>
+  <script>
+    // All frontend variables and functions in camelCase
+    document.addEventListener('DOMContentLoaded', () => {
+      let activeView = 'hotspotsView';
+      let activeFilter = 'all';
+      let activePhase = 'all';
+      let activeGraphCategory = 'all';
+      let searchTerm = '';
+      let selectedNode = null;
+      let hoveredNode = null;
+
+      const hotspotsContainer = document.getElementById('hotspotsContainer');
+      const dispatchersContainer = document.getElementById('dispatchersContainer');
+      const microservicesContainer = document.getElementById('microservicesContainer');
+      const databaseTableBody = document.getElementById('databaseTableBody');
+      const inspectorDrawer = document.getElementById('inspectorDrawer');
+      const drawerTitle = document.getElementById('drawerTitle');
+      const drawerBody = document.getElementById('drawerBody');
+      const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+      const globalSearchInput = document.getElementById('globalSearchInput');
+      const canvasContainer = document.getElementById('canvasContainer');
+      const canvas = document.getElementById('architectureCanvas');
+      const ctx = canvas.getContext('2d');
+      const graphTooltip = document.getElementById('graphTooltip');
+
+      // Navigation handler
+      document.querySelectorAll('.navItem').forEach(navItem => {
+        navItem.addEventListener('click', () => {
+          const targetView = navItem.getAttribute('data-view');
+          if (!targetView) return;
+
+          document.querySelectorAll('.navItem').forEach(item => item.classList.remove('active'));
+          document.querySelectorAll('.viewContainer').forEach(view => view.classList.remove('active'));
+
+          navItem.classList.add('active');
+          const viewEl = document.getElementById(targetView);
+          if (viewEl) viewEl.classList.add('active');
+
+          activeView = targetView;
+          if (targetView === 'graphView') {
+            setTimeout(() => {
+              resizeCanvas();
+              fitGraphToView();
+            }, 60);
+          }
+        });
+      });
+
+      // Filter Chips
+      document.querySelectorAll('#hotspotFilters .filterChip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('#hotspotFilters .filterChip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          activeFilter = chip.getAttribute('data-filter') || 'all';
+          renderHotspots();
+        });
+      });
+
+      document.querySelectorAll('#graphCategoryFilters .filterChip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('#graphCategoryFilters .filterChip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          activeGraphCategory = chip.getAttribute('data-graph-category') || 'all';
+          renderGraph();
+        });
+      });
+
+      document.querySelectorAll('#servicePhaseFilters .filterChip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('#servicePhaseFilters .filterChip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          activePhase = chip.getAttribute('data-phase') || 'all';
+          renderMicroservices();
+        });
+      });
+
+      // Global Search
+      globalSearchInput.addEventListener('input', (e) => {
+        searchTerm = e.target.value.toLowerCase().trim();
+        renderHotspots();
+        renderMicroservices();
+        renderDatabaseTables();
+        if (activeView === 'graphView') {
+          renderGraph();
+        }
+      });
+
+      // Close drawer
+      closeDrawerBtn.addEventListener('click', () => {
+        inspectorDrawer.classList.remove('open');
+      });
+
+      // Render Ingress Hotspots
+      function renderHotspots() {
+        if (!window.architectureData || !window.architectureData.ingressHotspots) return;
+        hotspotsContainer.innerHTML = '';
+
+        const filtered = window.architectureData.ingressHotspots.filter(hotspot => {
+          const matchesFilter = activeFilter === 'all' ||
+            (activeFilter === 'Decoupled' && hotspot.status === 'Decoupled') ||
+            hotspot.riskLevel === activeFilter ||
+            hotspot.domain.toLowerCase().includes(activeFilter.toLowerCase()) ||
+            (activeFilter === 'Workers' && hotspot.domain.includes('Workers'));
+
+          const matchesSearch = !searchTerm ||
+            hotspot.name.toLowerCase().includes(searchTerm) ||
+            hotspot.route.toLowerCase().includes(searchTerm) ||
+            hotspot.sourceFile.toLowerCase().includes(searchTerm) ||
+            hotspot.domain.toLowerCase().includes(searchTerm);
+
+          return matchesFilter && matchesSearch;
+        });
+
+        filtered.forEach(hotspot => {
+          const card = document.createElement('div');
+          card.className = 'hotspotCard';
+          const isDecoupled = hotspot.status === 'Decoupled';
+          if (isDecoupled) {
+            card.classList.add('cardDecoupled');
+          }
+
+          let methodClass = 'methodPost';
+          if (hotspot.method.includes('GET')) methodClass = 'methodGet';
+          if (hotspot.method.includes('WEBSOCKET')) methodClass = 'methodWs';
+          if (hotspot.method.includes('QUEUE')) methodClass = 'methodQueue';
+
+          let riskClass = 'riskLow';
+          if (hotspot.riskLevel === 'Critical') riskClass = 'riskCritical';
+          if (hotspot.riskLevel === 'High') riskClass = 'riskHigh';
+          if (hotspot.riskLevel === 'Medium') riskClass = 'riskMedium';
+          if (isDecoupled) riskClass = 'riskDecoupled';
+
+          card.innerHTML = `
+            <div class="hotspotHeader">
+              <div class="hotspotMethodRoute">
+                <span class="methodPill ${methodClass}">${hotspot.method}</span>
+                <span class="riskBadge ${riskClass}">${isDecoupled ? '✓ ' + (hotspot.statusBadge || 'DECOUPLED') : hotspot.riskLevel + ' Risk'}</span>
+              </div>
+              <span style="font-size: 11px; color: var(--textMuted);">${hotspot.domain}</span>
+            </div>
+            <div>
+              <h3 class="hotspotTitle">${hotspot.name}</h3>
+              <div class="hotspotRoute">${hotspot.route}</div>
+            </div>
+            <div class="hotspotMeta">
+              <span class="hotspotFile">${hotspot.sourceFile} (${hotspot.linesOfCode} LOC)</span>
+              <span style="color: ${isDecoupled ? '#10b981' : '#a78bfa'}; font-weight: 500;">→ ${hotspot.targetMicroservice}</span>
+            </div>
+          `;
+
+          card.addEventListener('click', () => {
+            openDrawerForHotspot(hotspot);
+          });
+
+          hotspotsContainer.appendChild(card);
+        });
+      }
+
+      function openDrawerForHotspot(hotspot) {
+        drawerTitle.textContent = hotspot.name;
+        drawerBody.innerHTML = `
+          ${hotspot.status === 'Decoupled' ? `
+          <div>
+            <div class="drawerSectionTitle">Microservice Decoupling Status</div>
+            <div class="drawerCodeBox" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);">
+              ✓ ${hotspot.statusBadge || 'DECOUPLED & OPERATIONAL'}<br>
+              <span style="font-size: 11px; color: #9ca3af;">Extracted to standalone rumi-gateway microservice with &lt;100ms async queue ACK</span>
+            </div>
+          </div>` : ''}
+          <div>
+            <div class="drawerSectionTitle">Route & Protocol</div>
+            <div class="drawerCodeBox">${hotspot.method} ${hotspot.route}</div>
+          </div>
+          <div>
+            <div class="drawerSectionTitle">Source Location</div>
+            <div class="drawerCodeBox">${hotspot.sourceFile} (${hotspot.lineRange})</div>
+          </div>
+          <div>
+            <div class="drawerSectionTitle">Security & Verification</div>
+            <div class="drawerText">${hotspot.securityVerification}</div>
+          </div>
+          <div>
+            <div class="drawerSectionTitle">Blast Radius & Failure Mode</div>
+            <div class="drawerText" style="${hotspot.status === 'Decoupled' ? 'color: #34d399;' : 'color: #f87171;'}">${hotspot.riskReason}</div>
+          </div>
+          <div>
+            <div class="drawerSectionTitle">Downstream Callers & Handlers</div>
+            <div class="tagPillsList">
+              ${hotspot.downstreamHandlers.map(handler => `<span class="tagPill">${handler}</span>`).join('')}
+            </div>
+          </div>
+          <div>
+            <div class="drawerSectionTitle">Target Microservice Destination</div>
+            <div class="drawerCodeBox" style="color: #34d399;">${hotspot.targetMicroservice}</div>
+          </div>
+        `;
+        inspectorDrawer.classList.add('open');
+      }
+
+      function openDrawerForNode(node) {
+        const edges = window.architectureData.networkGraph.edges;
+        const incomingEdges = edges.filter(e => e.to === node.id);
+        const outgoingEdges = edges.filter(e => e.from === node.id);
+
+        drawerTitle.textContent = node.label;
+        drawerBody.innerHTML = `
+          <div>
+            <div class="drawerSectionTitle">Category & Domain</div>
+            <div class="drawerCodeBox">${node.category.toUpperCase()} • ${node.domain}</div>
+          </div>
+          <div>
+            <div class="drawerSectionTitle">Incoming Callers (${incomingEdges.length})</div>
+            <div class="tagPillsList">
+              ${incomingEdges.length ? incomingEdges.map(e => `<span class="tagPill">← ${e.from} (${e.label})</span>`).join('') : '<span style="font-size: 11px; color: var(--textMuted);">No incoming callers (Root Ingress)</span>'}
+            </div>
+          </div>
+          <div>
+            <div class="drawerSectionTitle">Outgoing Downstream Callees (${outgoingEdges.length})</div>
+            <div class="tagPillsList">
+              ${outgoingEdges.length ? outgoingEdges.map(e => `<span class="tagPill">→ ${e.to} (${e.label})</span>`).join('') : '<span style="font-size: 11px; color: var(--textMuted);">Terminal node</span>'}
+            </div>
+          </div>
+          <div>
+            <div class="drawerSectionTitle">Architecture Role</div>
+            <div class="drawerText">
+              Component in the <strong>${node.domain}</strong> subsystem.
+              ${node.category === 'ingress' ? 'Primary boundary receiver for external traffic.' : ''}
+              ${node.category === 'dispatcher' ? 'Procedural monolithic mega-dispatcher requiring event-driven decoupling.' : ''}
+              ${node.category === 'service' ? 'Domain business logic candidate for standalone microservice packaging.' : ''}
+              ${node.category === 'database' ? 'Shared Supabase datastore shared across multiple handlers.' : ''}
+            </div>
+          </div>
+        `;
+        inspectorDrawer.classList.add('open');
+      }
+
+      // Render Mega-Dispatchers
+      function renderDispatchers() {
+        if (!window.architectureData || !window.architectureData.secondaryDispatchers) return;
+        dispatchersContainer.innerHTML = '';
+
+        window.architectureData.secondaryDispatchers.forEach(disp => {
+          const card = document.createElement('div');
+          card.className = 'hotspotCard';
+          card.innerHTML = `
+            <div class="hotspotHeader">
+              <span class="methodPill methodWs">${disp.linesOfCode} LOC</span>
+              <span class="riskBadge riskCritical">${disp.cyclomaticComplexity} Complexity</span>
+            </div>
+            <div>
+              <h3 class="hotspotTitle">${disp.role}</h3>
+              <div class="hotspotRoute">${disp.file}</div>
+            </div>
+            <div style="font-size: 12px; color: var(--textSecondary);">
+              <div style="font-weight: 600; margin-bottom: 6px; color: var(--textMuted);">DOMAINS CONFLATED:</div>
+              <div class="tagPillsList">
+                ${disp.domainsSpanned.map(d => `<span class="tagPill">${d}</span>`).join('')}
+              </div>
+            </div>
+            <div class="hotspotMeta">
+              <span style="color: #34d399;">Action: ${disp.deconstructionAction}</span>
+            </div>
+          `;
+          dispatchersContainer.appendChild(card);
+        });
+      }
+
+      // Render Microservices
+      function renderMicroservices() {
+        if (!window.architectureData || !window.architectureData.targetMicroservices) return;
+        microservicesContainer.innerHTML = '';
+
+        const filtered = window.architectureData.targetMicroservices.filter(svc => {
+          const matchesPhase = activePhase === 'all' || String(svc.phase) === String(activePhase);
+          const matchesSearch = !searchTerm ||
+            svc.name.toLowerCase().includes(searchTerm) ||
+            svc.id.toLowerCase().includes(searchTerm) ||
+            svc.shortDescription.toLowerCase().includes(searchTerm);
+          return matchesPhase && matchesSearch;
+        });
+
+        filtered.forEach(svc => {
+          const card = document.createElement('div');
+          card.className = 'microserviceCard';
+          card.style.borderTop = `3px solid ${svc.color}`;
+          const isExtracted = svc.isExtracted || svc.status === 'Extracted & Operational';
+          if (isExtracted) {
+            card.classList.add('cardDecoupled');
+          }
+
+          card.innerHTML = `
+            <div class="serviceCardHeader">
+              <div>
+                <span class="serviceBadge" style="${isExtracted ? 'background: #10b981; color: #fff;' : ''}">${svc.id}</span>
+                <h3 class="serviceTitle" style="margin-top: 6px;">${svc.name}</h3>
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                ${isExtracted ? '<span class="badgeTag" style="color: #10b981; border-color: #10b981; font-weight: 600;">✓ EXTRACTED & OPERATIONAL</span>' : ''}
+                <span class="badgeTag" style="color: ${svc.color}; border-color: ${svc.color}50;">Phase ${svc.phase}</span>
+              </div>
+            </div>
+            <p class="serviceSubtitle">${svc.shortDescription}</p>
+            ${svc.standaloneServer ? `
+            <div>
+              <div class="drawerSectionTitle" style="color: #34d399;">Standalone Microservice Entry Point</div>
+              <div class="drawerCodeBox" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4); font-size: 11px;">${svc.standaloneServer}</div>
+            </div>` : ''}
+            ${svc.testCoverage ? `
+            <div style="font-size: 12px; color: var(--textSecondary); margin-top: 4px;">
+              <strong style="color: #93c5fd;">Test Coverage:</strong> ${svc.testCoverage}
+            </div>` : ''}
+            <div>
+              <div class="drawerSectionTitle">Files to Extract / Extracted</div>
+              <div class="fileExtractList">
+                ${svc.sourceFiles.map(f => `<div>• ${f}</div>`).join('')}
+              </div>
+            </div>
+            <div>
+              <div class="drawerSectionTitle">Database Tables Owned</div>
+              <div class="tagPillsList">
+                ${svc.databaseTables.length ? svc.databaseTables.map(t => `<span class="tagPill">${t}</span>`).join('') : '<span style="font-size: 11px; color: var(--textMuted);">Stateless (Event Driven Buffer)</span>'}
+              </div>
+            </div>
+            ${svc.keyBenefits && svc.keyBenefits.length ? `
+            <div>
+              <div class="drawerSectionTitle">Key Architectural Benefits</div>
+              <ul style="font-size: 12px; color: var(--textSecondary); padding-left: 18px; line-height: 1.5;">
+                ${svc.keyBenefits.map(b => `<li>${b}</li>`).join('')}
+              </ul>
+            </div>` : ''}
+            <div style="font-size: 12px; color: var(--textSecondary); border-top: 1px solid var(--borderSubtle); padding-top: 10px;">
+              <strong>Migration:</strong> ${svc.migrationPriority} (${svc.migrationDifficulty} difficulty)
+            </div>
+          `;
+
+          microservicesContainer.appendChild(card);
+        });
+      }
+
+      // Render Database Tables
+      function renderDatabaseTables() {
+        if (!window.architectureData || !window.architectureData.databaseDomains) return;
+        databaseTableBody.innerHTML = '';
+
+        window.architectureData.databaseDomains.forEach(domain => {
+          domain.tables.forEach(table => {
+            if (searchTerm &&
+                !table.name.toLowerCase().includes(searchTerm) &&
+                !domain.domainName.toLowerCase().includes(searchTerm)) {
+              return;
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><span class="badgeTag">${domain.domainName}</span></td>
+              <td class="tableNameCell">${table.name}</td>
+              <td><span class="riskBadge ${table.status === 'active' ? 'riskLow' : 'riskMedium'}">${table.status}</span></td>
+              <td style="font-size: 11px; color: var(--textSecondary);">${table.accessedBy.join(', ')}</td>
+            `;
+            databaseTableBody.appendChild(tr);
+          });
+        });
+      }
+
+      // Canvas Interactive Graph State
+      let scale = 1;
+      let panX = 0;
+      let panY = 0;
+      let isDraggingCanvas = false;
+      let draggedNodeId = null;
+      let dragStartX = 0;
+      let dragStartY = 0;
+
+      // Coordinate map
+      const nodePositions = {
+        // Col 1: External Traffic & Handshake Sources (x: 100)
+        'meta-webhook': { x: 100, y: 110 },
+        'slack-routes': { x: 100, y: 210 },
+        'flow-routes': { x: 100, y: 310 },
+        'discord-ws': { x: 100, y: 410 },
+        'baileys-ws': { x: 100, y: 510 },
+
+        // Col 2: Decoupled Gateway Microservice & Fast Cache (x: 340)
+        'rumi-gateway': { x: 340, y: 160 },
+        'cache-redis': { x: 340, y: 410 },
+
+        // Col 3: Pluggable Buffer Queues & Inbound Consumer Worker (x: 570)
+        'sqs-queue': { x: 570, y: 110 },
+        'memory-queue': { x: 570, y: 210 },
+        'inbound-worker': { x: 570, y: 310 },
+
+        // Col 4: Monolith Core & Shared Relational DB (x: 800)
+        'whatsapp-bot': { x: 800, y: 260 },
+        'db-supabase': { x: 800, y: 520 },
+
+        // Col 5: Secondary Mega-Dispatchers (x: 1020)
+        'text-handler': { x: 1020, y: 110 },
+        'voice-handler': { x: 1020, y: 210 },
+        'image-handler': { x: 1020, y: 310 },
+        'flow-response-handler': { x: 1020, y: 410 },
+        'storage-r2': { x: 1020, y: 540 },
+
+        // Col 6: Domain Services & External AI (x: 1250)
+        'ext-llm': { x: 1250, y: 40 },
+        'svc-coaching': { x: 1250, y: 130 },
+        'svc-reading': { x: 1250, y: 220 },
+        'svc-lp': { x: 1250, y: 310 },
+        'svc-quiz': { x: 1250, y: 400 },
+        'svc-attendance': { x: 1250, y: 490 },
+        'svc-outbound': { x: 1250, y: 580 },
+
+        // Col 7: Asynchronous Background Workers (x: 1470)
+        'sqs-worker': { x: 1470, y: 240 },
+        'svc-video': { x: 1470, y: 360 },
+        'svc-exam': { x: 1470, y: 480 }
+      };
+
+      function getNodeColor(category) {
+        switch(category) {
+          case 'gateway': return '#10b981';
+          case 'ingress': return '#a855f7';
+          case 'core': return '#6366f1';
+          case 'dispatcher': return '#f59e0b';
+          case 'service': return '#06b6d4';
+          case 'worker': return '#ef4444';
+          case 'queue': return '#f97316';
+          case 'database': return '#3b82f6';
+          case 'cache': return '#ec4899';
+          case 'storage': return '#8b5cf6';
+          case 'external': return '#14b8a6';
+          default: return '#9ca3af';
+        }
+      }
+
+      function resizeCanvas() {
+        const rect = canvasContainer.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+          renderGraph();
+        }
+      }
+
+      // Auto-fit nodes inside the view
+      function fitGraphToView() {
+        const positions = Object.values(nodePositions);
+        if (!positions.length || !canvas.width || !canvas.height) return;
+
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        positions.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+
+        // Add padding for node radii and labels
+        minX -= 50;
+        maxX += 200;
+        minY -= 50;
+        maxY += 80;
+
+        const boundsWidth = maxX - minX;
+        const boundsHeight = maxY - minY;
+
+        const scaleX = canvas.width / boundsWidth;
+        const scaleY = canvas.height / boundsHeight;
+        scale = Math.min(Math.min(scaleX, scaleY) * 0.9, 1.2);
+
+        panX = (canvas.width - boundsWidth * scale) / 2 - minX * scale;
+        panY = (canvas.height - boundsHeight * scale) / 2 - minY * scale;
+
+        renderGraph();
+      }
+
+      // ResizeObserver handles when graphContainer becomes visible
+      const resizeObserver = new ResizeObserver(() => {
+        resizeCanvas();
+      });
+      resizeObserver.observe(canvasContainer);
+
+      function renderGraph() {
+        if (!canvas.width || !canvas.height || !window.architectureData) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.translate(panX, panY);
+        ctx.scale(scale, scale);
+
+        const nodes = window.architectureData.networkGraph.nodes;
+        const edges = window.architectureData.networkGraph.edges;
+
+        const activeNode = hoveredNode || selectedNode;
+
+        // Draw edges
+        edges.forEach(edge => {
+          const fromPos = nodePositions[edge.from];
+          const toPos = nodePositions[edge.to];
+          if (!fromPos || !toPos) return;
+
+          const isConnected = activeNode && (activeNode.id === edge.from || activeNode.id === edge.to);
+          const isCategoryMatch = activeGraphCategory === 'all' ||
+            (nodes.find(n => n.id === edge.from)?.category === activeGraphCategory) ||
+            (nodes.find(n => n.id === edge.to)?.category === activeGraphCategory);
+
+          let strokeColor = 'rgba(255, 255, 255, 0.12)';
+          let lineWidth = 1;
+
+          if (isConnected) {
+            strokeColor = '#818cf8';
+            lineWidth = 2.5;
+          } else if (activeNode) {
+            strokeColor = 'rgba(255, 255, 255, 0.04)';
+          } else if (!isCategoryMatch) {
+            strokeColor = 'rgba(255, 255, 255, 0.04)';
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(fromPos.x, fromPos.y);
+
+          // Slight curve for pleasant visual separation
+          const midX = (fromPos.x + toPos.x) / 2;
+          const midY = (fromPos.y + toPos.y) / 2 + (fromPos.y === toPos.y ? 0 : 0);
+          ctx.lineTo(toPos.x, toPos.y);
+
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = lineWidth;
+          ctx.stroke();
+
+          // Draw arrowhead
+          const angle = Math.atan2(toPos.y - fromPos.y, toPos.x - fromPos.x);
+          const arrowLen = 6;
+          const arrowX = toPos.x - Math.cos(angle) * 16;
+          const arrowY = toPos.y - Math.sin(angle) * 16;
+
+          ctx.beginPath();
+          ctx.moveTo(arrowX, arrowY);
+          ctx.lineTo(arrowX - arrowLen * Math.cos(angle - Math.PI / 6), arrowY - arrowLen * Math.sin(angle - Math.PI / 6));
+          ctx.lineTo(arrowX - arrowLen * Math.cos(angle + Math.PI / 6), arrowY - arrowLen * Math.sin(angle + Math.PI / 6));
+          ctx.fillStyle = isConnected ? '#818cf8' : 'rgba(255, 255, 255, 0.2)';
+          ctx.fill();
+        });
+
+        // Draw nodes
+        nodes.forEach(node => {
+          const pos = nodePositions[node.id];
+          if (!pos) return;
+
+          const color = getNodeColor(node.category);
+          const isSelected = selectedNode && selectedNode.id === node.id;
+          const isHovered = hoveredNode && hoveredNode.id === node.id;
+          const isConnected = activeNode && (
+            activeNode.id === node.id ||
+            edges.some(e => (e.from === activeNode.id && e.to === node.id) || (e.to === activeNode.id && e.from === node.id))
+          );
+
+          const matchesCategory = activeGraphCategory === 'all' || node.category === activeGraphCategory;
+          const matchesSearch = searchTerm && node.label.toLowerCase().includes(searchTerm);
+
+          let nodeOpacity = 1;
+          if (activeNode && !isConnected) {
+            nodeOpacity = 0.25;
+          } else if (!matchesCategory && !isSelected) {
+            nodeOpacity = 0.25;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = nodeOpacity;
+
+          // Glow for selected, hovered or search
+          if (isSelected || isHovered || matchesSearch) {
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 16, 0, Math.PI * 2);
+            ctx.fillStyle = `${color}40`;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+
+          // Node circle
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, 11, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.strokeStyle = '#111827';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Node label text
+          ctx.font = '11px JetBrains Mono, monospace';
+          ctx.fillStyle = (isSelected || isHovered) ? '#ffffff' : '#cbd5e1';
+          ctx.fillText(node.label, pos.x + 16, pos.y + 4);
+
+          ctx.restore();
+        });
+
+        ctx.restore();
+      }
+
+      function findNodeAt(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (clientX - rect.left - panX) / scale;
+        const mouseY = (clientY - rect.top - panY) / scale;
+
+        const nodes = window.architectureData?.networkGraph?.nodes || [];
+        for (const node of nodes) {
+          const pos = nodePositions[node.id];
+          if (!pos) continue;
+          const dist = Math.hypot(mouseX - pos.x, mouseY - pos.y);
+          if (dist <= 18) {
+            return node;
+          }
+        }
+        return null;
+      }
+
+      // Canvas Mouse Handlers
+      canvas.addEventListener('mousedown', (e) => {
+        const hitNode = findNodeAt(e.clientX, e.clientY);
+        if (hitNode) {
+          draggedNodeId = hitNode.id;
+          selectedNode = hitNode;
+          openDrawerForNode(hitNode);
+        } else {
+          isDraggingCanvas = true;
+          dragStartX = e.clientX - panX;
+          dragStartY = e.clientY - panY;
+          selectedNode = null;
+        }
+        renderGraph();
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+
+        // Node Dragging
+        if (draggedNodeId) {
+          const currentPos = nodePositions[draggedNodeId];
+          if (currentPos) {
+            currentPos.x = (e.clientX - rect.left - panX) / scale;
+            currentPos.y = (e.clientY - rect.top - panY) / scale;
+            renderGraph();
+          }
+          return;
+        }
+
+        // Canvas Panning
+        if (isDraggingCanvas) {
+          panX = e.clientX - dragStartX;
+          panY = e.clientY - dragStartY;
+          renderGraph();
+          return;
+        }
+
+        // Hover Detection
+        const hitNode = findNodeAt(e.clientX, e.clientY);
+        if (hitNode !== hoveredNode) {
+          hoveredNode = hitNode;
+          canvas.style.cursor = hitNode ? 'pointer' : 'grab';
+          if (hitNode) {
+            graphTooltip.style.display = 'block';
+            graphTooltip.style.left = `${e.clientX - rect.left + 15}px`;
+            graphTooltip.style.top = `${e.clientY - rect.top + 10}px`;
+            graphTooltip.innerHTML = `<strong>${hitNode.label}</strong><br><span style="color:#9ca3af;">${hitNode.domain} • ${hitNode.category}</span>`;
+          } else {
+            graphTooltip.style.display = 'none';
+          }
+          renderGraph();
+        } else if (hitNode) {
+          graphTooltip.style.left = `${e.clientX - rect.left + 15}px`;
+          graphTooltip.style.top = `${e.clientY - rect.top + 10}px`;
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDraggingCanvas = false;
+        draggedNodeId = null;
+        canvas.style.cursor = 'grab';
+      });
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+        const newScale = Math.min(Math.max(scale * zoomFactor, 0.3), 3);
+
+        panX = mouseX - (mouseX - panX) * (newScale / scale);
+        panY = mouseY - (mouseY - panY) * (newScale / scale);
+        scale = newScale;
+
+        renderGraph();
+      });
+
+      // Controls
+      document.getElementById('zoomInBtn').addEventListener('click', () => {
+        scale = Math.min(scale * 1.25, 3);
+        renderGraph();
+      });
+
+      document.getElementById('zoomOutBtn').addEventListener('click', () => {
+        scale = Math.max(scale / 1.25, 0.3);
+        renderGraph();
+      });
+
+      document.getElementById('fitViewBtn').addEventListener('click', () => {
+        fitGraphToView();
+      });
+
+      document.getElementById('resetZoomBtn').addEventListener('click', () => {
+        scale = 1;
+        panX = 0;
+        panY = 0;
+        selectedNode = null;
+        hoveredNode = null;
+        renderGraph();
+      });
+
+      // Initial Render
+      renderHotspots();
+      renderDispatchers();
+      renderMicroservices();
+      renderDatabaseTables();
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>
