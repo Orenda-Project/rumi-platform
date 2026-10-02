@@ -345,6 +345,15 @@ class SQSCoachingWorker {
         break;
       }
 
+      case 'exam_deadline_reminder': {
+        // Cost Compass opt-in deadline nudges. Pure reads + short text sends —
+        // no timeout extension needed. The worker itself decides what is due
+        // from the current clock, so a re-delivered job is harmless.
+        const ExamDeadlineReminderWorker = require('./exam-deadline-reminder.worker');
+        await ExamDeadlineReminderWorker.process(payload);
+        break;
+      }
+
       // Quiz jobs (v2 envelope with body.groupId). Producers enqueue via
       // SQSQueueService.queueJob(); each handler in quiz-job-handler does a
       // cancel-flag check, an optional cascade re-queue (quiz_report/quiz_expire),

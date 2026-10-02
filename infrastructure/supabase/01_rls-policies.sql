@@ -230,3 +230,8 @@ DROP POLICY IF EXISTS "service_role_quiz_share_codes" ON quiz_share_codes;
 CREATE POLICY "service_role_quiz_share_codes" ON quiz_share_codes FOR ALL USING (auth.role() = 'service_role');
 DROP POLICY IF EXISTS "service_role_video_quiz_deliveries" ON video_quiz_deliveries;
 CREATE POLICY "service_role_video_quiz_deliveries" ON video_quiz_deliveries FOR ALL USING (auth.role() = 'service_role');
+
+-- Exam Cost Compass deadline reminders
+ALTER TABLE deadline_reminder_optins ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "service_role_deadline_reminder_optins" ON deadline_reminder_optins;
+CREATE POLICY "service_role_deadline_reminder_optins" ON deadline_reminder_optins FOR ALL USING (auth.role() = 'service_role');

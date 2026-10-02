@@ -1,0 +1,152 @@
+{
+  "as_of": "2026-09-09",
+  "deadlines": [
+    {
+      "board": "edexcel",
+      "session": "Oct/Nov 2026",
+      "stage": "Late",
+      "date": "2026-09-17",
+      "fee_impact": "Late-stage entry; carries a higher fee than the normal-stage deadline (24 Aug 2026, already passed). Exact PKR surcharge not confirmed.",
+      "source": "https://learnersacademy.com.pk/blog/private-candidate-registration-pakistan-oct-nov-2026/",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "aku-eb",
+      "session": "Annual Examinations 2027 (SSC)",
+      "stage": "Hard-copy submission",
+      "date": "2026-10-30",
+      "fee_impact": "No late fee if hard-copy registration form reaches AKU-EB Karachi Office by this date. CONFIRMED 2026-09-09 (fee table, page 4 of the official form): Late Penalty Fee Stage 1 (Nov 2-14, 2026) = PKR 10,000/candidate; Stage 2 (Nov 15-21, 2026) = PKR 15,000/candidate; Stage 3 (Nov 22-30, 2026) = PKR 20,000/candidate. Flat per candidate, not per subject.",
+      "source": "https://examinationboard.aku.edu/services/Publication/SSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "aku-eb",
+      "session": "Annual Examinations 2027 (HSSC)",
+      "stage": "Hard-copy submission",
+      "date": "2026-10-30",
+      "fee_impact": "No late fee if hard-copy registration form reaches AKU-EB Karachi Office by this date. CONFIRMED 2026-09-09 (fee table, page 4 of the official form): Late Penalty Fee Stage 1 (Nov 2-14, 2026) = PKR 10,000/candidate; Stage 2 (Nov 15-21, 2026) = PKR 15,000/candidate; Stage 3 (Nov 22-30, 2026) = PKR 20,000/candidate. Flat per candidate, not per subject.",
+      "source": "https://examinationboard.aku.edu/services/Publication/HSSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "cambridge",
+      "session": "Oct/Nov 2026",
+      "stage": "Late",
+      "date": "2026-09-03",
+      "fee_impact": "Late-stage/retake deadline for Cambridge Oct/Nov 2026 private-candidate entries; already passed relative to as_of but kept for reference since exams (late Sept-mid Nov 2026) and results (7 Jan 2027 AS/A Level, 14 Jan 2027 IGCSE/O Level) still lie ahead in the next 12 months.",
+      "source": "https://learnersacademy.com.pk/blog/private-candidate-registration-pakistan-oct-nov-2026/",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "cambridge",
+      "session": "May/June 2027",
+      "stage": "Normal",
+      "date": "2027-02-10",
+      "fee_impact": "Estimated by pattern-matching the confirmed May/June 2026 Normal-entry date (10-12 Feb 2026) forward one year \u2014 Cambridge/British Council had not yet published the 2027 May/June cycle dates as of this research pass (they are typically announced only a few months ahead). Treat as a planning placeholder, not a committed date.",
+      "source": "https://www.academiauk.com/caie-registrations-octnov-2025-pk ; https://www.academiauk.com/cambridge-registrations-pakistan-for-2026-mayjune-deadlines",
+      "confidence": "estimated"
+    },
+    {
+      "board": "cambridge",
+      "session": "May/June 2027",
+      "stage": "Late",
+      "date": "2027-03-17",
+      "fee_impact": "Estimated by pattern-matching the confirmed May/June 2026 Late Stage 1 date (17 Mar 2026) forward one year. Not yet officially published \u2014 planning placeholder only, re-confirm once British Council Pakistan opens May/June 2027 registration (typically announced around Dec 2026).",
+      "source": "https://www.academiauk.com/cambridge-registrations-pakistan-for-2026-mayjune-deadlines",
+      "confidence": "estimated"
+    },
+    {
+      "board": "edexcel",
+      "session": "Oct/Nov 2026",
+      "stage": "Normal",
+      "date": "2026-08-24",
+      "fee_impact": "Already passed relative to as_of; kept for reference/next-year pattern-matching only. Do not present as an open action item.",
+      "source": "https://learnersacademy.com.pk/blog/private-candidate-registration-pakistan-oct-nov-2026/",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "bise-lahore",
+      "session": "SSC/HSSC Annual 2027",
+      "stage": "Normal",
+      "date": null,
+      "fee_impact": null,
+      "source": null,
+      "confidence": "estimated",
+      "note": "BISE Lahore private-candidate registration for the following year's Annual exam typically opens in the preceding autumn, but no confirmed 2027-cycle date was found in this pass. date left null per the 'never guess' rule \u2014 check registration.biselahore.com / privatereginter.biselahore.com directly each cycle."
+    },
+    {
+      "board": "bise-karachi",
+      "session": "SSC/HSSC Annual 2027",
+      "stage": "Normal",
+      "date": null,
+      "fee_impact": null,
+      "source": null,
+      "confidence": "estimated",
+      "note": "No confirmed BISE Karachi private-candidate deadline found in this pass. date left null per the 'never guess' rule \u2014 check the board's current private-candidate portal each cycle."
+    },
+    {
+      "board": "bise-rawalpindi",
+      "session": "SSC/HSSC Annual 2027",
+      "stage": "Normal",
+      "date": null,
+      "fee_impact": null,
+      "source": null,
+      "confidence": "estimated",
+      "note": "No confirmed BISE Rawalpindi private-candidate deadline found in this pass. date left null per the 'never guess' rule \u2014 check the board's current private-candidate portal each cycle."
+    },
+    {
+      "board": "aku-eb",
+      "session": "Annual Examinations 2027 (SSC)",
+      "stage": "Late Stage 1",
+      "date": "2026-11-02",
+      "fee_impact": "Late penalty fee of PKR 10,000/candidate applies for hard-copy registration forms submitted in this window (stage start date shown; each stage runs to the day before the next stage/deadline). Flat per candidate, not per subject.",
+      "source": "https://examinationboard.aku.edu/services/Publication/SSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "aku-eb",
+      "session": "Annual Examinations 2027 (SSC)",
+      "stage": "Late Stage 2",
+      "date": "2026-11-15",
+      "fee_impact": "Late penalty fee of PKR 15,000/candidate applies for hard-copy registration forms submitted in this window (stage start date shown; each stage runs to the day before the next stage/deadline). Flat per candidate, not per subject.",
+      "source": "https://examinationboard.aku.edu/services/Publication/SSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "aku-eb",
+      "session": "Annual Examinations 2027 (SSC)",
+      "stage": "Late Stage 3",
+      "date": "2026-11-22",
+      "fee_impact": "Late penalty fee of PKR 20,000/candidate applies for hard-copy registration forms submitted in this window (stage start date shown; each stage runs to the day before the next stage/deadline). Flat per candidate, not per subject.",
+      "source": "https://examinationboard.aku.edu/services/Publication/SSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "aku-eb",
+      "session": "Annual Examinations 2027 (HSSC)",
+      "stage": "Late Stage 1",
+      "date": "2026-11-02",
+      "fee_impact": "Late penalty fee of PKR 10,000/candidate applies for hard-copy registration forms submitted in this window (stage start date shown; each stage runs to the day before the next stage/deadline). Flat per candidate, not per subject.",
+      "source": "https://examinationboard.aku.edu/services/Publication/HSSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "aku-eb",
+      "session": "Annual Examinations 2027 (HSSC)",
+      "stage": "Late Stage 2",
+      "date": "2026-11-15",
+      "fee_impact": "Late penalty fee of PKR 15,000/candidate applies for hard-copy registration forms submitted in this window (stage start date shown; each stage runs to the day before the next stage/deadline). Flat per candidate, not per subject.",
+      "source": "https://examinationboard.aku.edu/services/Publication/HSSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf",
+      "confidence": "confirmed"
+    },
+    {
+      "board": "aku-eb",
+      "session": "Annual Examinations 2027 (HSSC)",
+      "stage": "Late Stage 3",
+      "date": "2026-11-22",
+      "fee_impact": "Late penalty fee of PKR 20,000/candidate applies for hard-copy registration forms submitted in this window (stage start date shown; each stage runs to the day before the next stage/deadline). Flat per candidate, not per subject.",
+      "source": "https://examinationboard.aku.edu/services/Publication/HSSC%20Private%20CRF%20-%20Annual%20Examinations%202027.pdf",
+      "confidence": "confirmed"
+    }
+  ]
+}
