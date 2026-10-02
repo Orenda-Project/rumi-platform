@@ -20,6 +20,7 @@ Run **`npm run doctor`** at any time to see which features are live for your cur
 | ✅ [Attendance](attendance.md) | Tap-based attendance via WhatsApp Flows | _core — always on_ |
 | 🧮 [Exam Checker](exam-checker.md) | Photograph answer sheets → vision OCR + AI grading | `MISTRAL_API_KEY` |
 | 🌅 [Morning Brief](morning-brief.md) | Every morning, one thread of programme-health panels to your team on WhatsApp/Slack/Discord, plus a live dashboard page | `BRIEF_RECIPIENTS` + a read-only `BRIEF_DATABASE_URL` |
+| 💛 [Grandparent Bridge](grandparent-bridge.md) | Three questions → a warm one-pager in Urdu + English for a skeptical relative | _core — powered by `OPENROUTER_API_KEY`; PDF needs a Chromium install_ |
 
 **How lesson plans get routed** (pre-generated vs Gamma vs photo): see [LP_PATHS.md](../LP_PATHS.md).
 

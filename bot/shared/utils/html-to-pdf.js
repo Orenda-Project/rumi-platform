@@ -43,6 +43,21 @@ function resolveChromiumPath() {
   return null; // playwright-core will throw a clear "browser not found" error
 }
 
+/**
+ * Is a Chromium binary present for this deployment?
+ *
+ * This engine is presence-gated on a BINARY, not an API key — so a feature
+ * that wants to degrade gracefully (text instead of PDF) can ask before
+ * rendering rather than catching a launch failure after the fact. Callers
+ * that are happy to fall back on error (the reading/quiz reports) don't need
+ * it; callers that offer the PDF as an optional extra do.
+ *
+ * @returns {boolean}
+ */
+function isPdfEngineAvailable() {
+  return resolveChromiumPath() !== null;
+}
+
 /** @type {import('playwright-core').Browser|null} */
 let _browser = null;
 
@@ -214,4 +229,4 @@ process.on('exit', () => {
 process.on('SIGINT', () => closeBrowser().finally(() => process.exit()));
 process.on('SIGTERM', () => closeBrowser().finally(() => process.exit()));
 
-module.exports = { htmlToPdf, htmlToImage, closeBrowser };
+module.exports = { htmlToPdf, htmlToImage, closeBrowser, isPdfEngineAvailable };

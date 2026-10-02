@@ -1,0 +1,335 @@
+{
+  "ur_reviewed": false,
+  "ur_review_note": "The Urdu below is written in spoken register (the way a Pakistani mother actually speaks to her mother-in-law), not literal translation. It has NOT yet been checked by a fluent reviewer. Do not launch to real families until a fluent Urdu speaker reads every objection_ur / reassurance_ur / invitation_ur line aloud and signs it off, then set ur_reviewed to true.",
+  "version": "1.0.0",
+  "voice_rules": [
+    "Warm, 'we', zero judgment (Rumi Sparks 'Delivery Engine' register).",
+    "Assume the relative is coming from care, never from malice.",
+    "Open by honouring their concern. Never argue, never score a point.",
+    "End with ONE concrete invitation into the child's actual learning day."
+  ],
+  "evidence_note": "Every claim below is taken from the homeschooling research sweep (vault/research/homeschooling: 00-MASTER Appendix A + §2/§8/§10, 04-student-side-outcomes, 08-pakistan-muslim-global-south, 11-opportunities-faith-curriculum-starting) and carries that sweep's own lean/quality flag. Nothing here may be added without a source (a URL where the sweep recorded one, otherwise the sweep's own file/section reference) and a lean flag. Where the evidence is genuinely mixed the one-pager says so — an honest 'this is what we watch' reads warmer than a claim a grandparent can disprove.",
+  "objections": [
+    {
+      "id": "no_friends",
+      "aliases": [
+        "no friends",
+        "friends",
+        "socialisation",
+        "socialization",
+        "social",
+        "lonely",
+        "alone",
+        "dost",
+        "دوست",
+        "تنہا",
+        "میل جول"
+      ],
+      "objection_en": "The child will have no friends — where is the socialisation?",
+      "objection_ur": "بچی کے دوست کہاں بنیں گے؟ میل جول کیسے ہوگا؟",
+      "reassurance_en": "You are right that friends do not just happen at home the way they happen in a school corridor. That is the one part of this we have to arrange on purpose, and we do — the same way we arrange her lessons. We would rather you kept asking us this than stopped asking, because it keeps us honest about the week she is actually having, not the week we planned.",
+      "reassurance_ur": "آپ ٹھیک کہتی ہیں — گھر پر دوست خود سے نہیں بن جاتے، جیسے اسکول کی راہداری میں بن جاتے ہیں۔ یہ ایک کام ہے جو ہمیں جان بوجھ کر کرنا پڑتا ہے، اور ہم کرتے ہیں — بالکل ویسے ہی جیسے ہم اُس کی پڑھائی کا وقت رکھتے ہیں۔ آپ یہ سوال پوچھتی رہیں، اِس سے ہمیں یاد رہتا ہے کہ اُس کا اصل ہفتہ کیسا گزرا، صرف وہ نہیں جو ہم نے سوچا تھا۔",
+      "invitation_en": "Come sit in on Tuesday's reading time and stay for the play hour after it — you will see exactly who she spends her week with.",
+      "invitation_ur": "منگل کو پڑھائی کے وقت آ کر ہمارے ساتھ بیٹھیں، اور اُس کے بعد کھیل کے وقت تک رُکیں — آپ خود دیکھ لیں گی کہ اُس کا ہفتہ کن بچوں کے ساتھ گزرتا ہے۔",
+      "evidence_summary_en": "The standard homeschool week is built out of arranged things — visits, sports, group classes, volunteering — because it has to be arranged.\nAnd in the one honest alumni survey, about a quarter of grown home-educated children said their own socialising was poor. That number is why we keep count of her week.",
+      "evidence_summary_ur": "گھر پر پڑھنے والے بچوں کا ہفتہ جان بوجھ کر بنایا جاتا ہے — ملنا ملانا، کھیل، گروپ کلاس، خدمت کے کام — کیونکہ یہ خود سے نہیں ہوتا۔\nاور ایک ایمان دار سروے میں تقریباً چوتھائی ایسے بچوں نے، جو بڑے ہو گئے، کہا کہ اُن کا میل جول کمزور رہا۔ اِسی لیے ہم اُس کے ہفتے کا حساب رکھتے ہیں۔",
+      "evidence": [
+        {
+          "claim": "Homeschooling families arrange social life deliberately — field trips, scouting, 4-H, sports teams and community volunteer work are the standard list of what homeschooled children actually do each week.",
+          "source": "https://www.nheri.org/research-facts-on-homeschooling/",
+          "lean_flag": "low — NHERI is advocacy-run and its samples are volunteer-recruited, not random; the research sweep also reads this list as conceding these are add-ons a family must arrange, not built into the day."
+        },
+        {
+          "claim": "About 25% of homeschool alumni in the independent Homeschool Alumni Reaching Out survey (n=3,702) rated their own socialisation poor or very poor, and how they rated it predicted how prepared they felt for adult life.",
+          "source": "https://responsiblehomeschooling.org/research/summaries/homeschool-outcomes/",
+          "lean_flag": "medium — large sample and independent of the advocacy funding stream, but self-selected and self-reported. Included deliberately: this is the risk we watch, not a point in our favour."
+        },
+        {
+          "claim": "The one large randomly-sampled, background-controlled study (Cardus 2011) found homeschool graduates MORE likely than public-school peers to report feeling prepared for relationships — while a large body of alumni testimony says the opposite. The research calls this a genuine tension, not a settled fact.",
+          "source": "https://responsiblehomeschooling.org/research/summaries/homeschool-outcomes/",
+          "lean_flag": "contested — best-sampled study in the field, but it directly disagrees with a consistent testimony corpus; honest answer is 'the evidence is mixed'."
+        }
+      ]
+    },
+    {
+      "id": "not_real_school",
+      "aliases": [
+        "not a real school",
+        "not real school",
+        "real school",
+        "proper school",
+        "no school",
+        "asli school",
+        "اصلی اسکول",
+        "سکول نہیں"
+      ],
+      "objection_en": "This is not a real school — it does not count for anything.",
+      "objection_ur": "یہ کوئی اصلی اسکول تو نہیں — اِس کا کوئی حساب کہاں ہے؟",
+      "reassurance_en": "We hear the worry underneath it: that she will do all this work and hold nothing at the end. That is a fair thing to want for her. The certificate she will hold is not issued by a building — it is issued by an examination board, and she sits those exams as a private candidate, exactly like thousands of Pakistani children already do.",
+      "reassurance_ur": "ہمیں پتہ ہے کہ اِس بات کے پیچھے فکر کیا ہے — کہ وہ اتنی محنت کرے اور آخر میں ہاتھ میں کچھ نہ ہو۔ یہ فکر بالکل جائز ہے۔ لیکن سند کسی عمارت سے نہیں ملتی، بورڈ سے ملتی ہے — اور وہ پرائیویٹ کینڈیڈیٹ کے طور پر پیپر دے گی، جیسے پاکستان کے ہزاروں بچے پہلے ہی دیتے ہیں۔",
+      "invitation_en": "Come sit with us on Tuesday when we go through her board-exam file — the registration route is written down and you can read every line of it.",
+      "invitation_ur": "منگل کو ہمارے ساتھ بیٹھیں جب ہم اُس کے بورڈ کے کاغذات دیکھتے ہیں — رجسٹریشن کا سارا طریقہ لکھا ہوا ہے، آپ ایک ایک بات پڑھ لیں۔",
+      "evidence_summary_en": "Pakistan has no law that requires a child to sit inside a particular building; the duty in Article 25-A is the state's.\nThe certificate comes from a board — Cambridge through the British Council, or Matric/FSc through BISE — and both take private candidates.",
+      "evidence_summary_ur": "پاکستان میں کوئی قانون یہ نہیں کہتا کہ بچے کو کسی خاص عمارت میں بیٹھنا لازم ہے؛ آرٹیکل 25-A کی ذمہ داری ریاست پر ہے۔\nسند بورڈ سے آتی ہے — برٹش کونسل کے ذریعے کیمبرج، یا بورڈ کے ذریعے میٹرک/ایف ایس سی — اور دونوں پرائیویٹ امیدوار لیتے ہیں۔",
+      "evidence": [
+        {
+          "claim": "Pakistan has no law regulating or prohibiting home education — Article 25-A places the obligation to provide education on the state, not a requirement to attend a particular building on the parent.",
+          "source": "https://cambrilearn.com/homeschooling-in-pakistan",
+          "lean_flag": "medium — widely repeated secondary source; there is no Pakistani statute or court ruling to cite either way, which is itself the point."
+        },
+        {
+          "claim": "Pakistani home-educated children certify through Cambridge O/A-Level as British Council private candidates and then get IBCC equivalence, or through provincial BISE Matric/FSc private-candidate schemes.",
+          "source": "https://www.britishcouncil.pk/exam/international-schools-igcse-a-levels/private-candidates",
+          "lean_flag": "medium-high — official examination-body and IBCC portals, confirmed in the research sweep's Pakistan file."
+        },
+        {
+          "claim": "Open schooling at scale is normal in our region: India's NIOS has taken 4 million-plus learners and is UGC-recognised.",
+          "source": "https://www.homelearn.co.in/boards/nios",
+          "lean_flag": "medium — secondary aggregator page for official NIOS figures; India, not Pakistan, so it is a precedent, not our own route."
+        }
+      ]
+    },
+    {
+      "id": "exams_certificates",
+      "aliases": [
+        "exams",
+        "exam",
+        "board exam",
+        "certificate",
+        "matric",
+        "o level",
+        "o-level",
+        "result",
+        "ایگزام",
+        "امتحان",
+        "بورڈ",
+        "سند",
+        "نتیجہ"
+      ],
+      "objection_en": "What about exams and certificates — how will she ever sit a board exam?",
+      "objection_ur": "امتحان اور سند کا کیا بنے گا؟ بورڈ کا پیپر کیسے دے گی؟",
+      "reassurance_en": "This is the most practical question anyone has asked us, and we have an answer with dates on it. She registers as a private candidate, sits the same paper on the same morning as every school child, and is marked by the same examiner. What we carry instead of a school office is the calendar — and we would honestly rather have two people watching those deadlines than one.",
+      "reassurance_ur": "یہ سب سے کام کی بات ہے جو کسی نے ہم سے پوچھی، اور اِس کا جواب تاریخوں کے ساتھ موجود ہے۔ وہ پرائیویٹ کینڈیڈیٹ کے طور پر رجسٹر ہوگی، اُسی صبح وہی پیپر دے گی جو اسکول کے بچے دیتے ہیں، اور وہی ممتحن اُسے نمبر دے گا۔ اسکول کے دفتر کی جگہ ہمارے پاس کیلنڈر ہے — اور سچ یہ ہے کہ اِن تاریخوں پر ایک کی بجائے دو نظریں ہوں تو بہتر ہے۔",
+      "invitation_en": "Come on Tuesday and look at the exam calendar on our wall with us — if you will keep an eye on those dates too, that genuinely helps her.",
+      "invitation_ur": "منگل کو آئیں اور ہمارے ساتھ دیوار پر لگا امتحان کا کیلنڈر دیکھیں — اگر آپ بھی اِن تاریخوں پر نظر رکھیں تو اُس کا واقعی فائدہ ہوگا۔",
+      "evidence_summary_en": "Cambridge private-candidate entry runs on published British Council deadlines, and the fee is now roughly Rs 35,000–60,000 a subject — high enough that a Senate committee asked for a review.\nAKU-EB and the provincial boards take private candidates too, and cost far less.",
+      "evidence_summary_ur": "کیمبرج کے پرائیویٹ امیدوار برٹش کونسل کی مقرر تاریخوں پر رجسٹر ہوتے ہیں۔\nفیس اب فی مضمون تقریباً 35 سے 60 ہزار روپے ہے — اِتنی زیادہ کہ سینیٹ کی کمیٹی نے نظرِ ثانی کا مطالبہ کیا۔\nاے کے یو-ای بی اور صوبائی بورڈ بھی پرائیویٹ امیدوار لیتے ہیں، اور بہت سستے ہیں۔",
+      "evidence": [
+        {
+          "claim": "Cambridge private-candidate registration runs through the British Council SRS portal on published deadlines (for the May/June 2026 series: normal entry 12 February 2026, first late entry 17 March 2026).",
+          "source": "https://www.britishcouncil.pk/exam/international-schools-igcse-a-levels/private-candidates",
+          "lean_flag": "medium-high — dates taken from the research sweep's opportunities file and must be re-checked each session; they move every year."
+        },
+        {
+          "claim": "Cambridge exam fees in Pakistan have risen to roughly PKR 35,000–60,000 per subject in 2025-26, up from about 8,000–15,000 a few years ago, and a Senate Standing Committee formally asked in July 2025 for the fee to be reviewed.",
+          "source": "https://stateofchildren.com/parliamentary-body-calls-for-reviewing-rs60000-fee-for-each-cambridge-exam-in-pakistan/",
+          "lean_flag": "medium — press-reported figures and a parliamentary demand rather than a Cambridge fee schedule; treat as directional."
+        },
+        {
+          "claim": "There are cheaper certification routes than Cambridge: AKU-EB accepts private candidates by form, and provincial BISE Matric/FSc private-candidate fees are nominal by comparison.",
+          "source": "https://examinationboard.aku.edu/services/Pages/e-enrolment.aspx",
+          "lean_flag": "medium — official enrolment pages, but the research sweep found no published fee schedule for AKU-EB and BISE fees are not itemised in any source it could verify."
+        }
+      ]
+    },
+    {
+      "id": "no_discipline",
+      "aliases": [
+        "no discipline",
+        "discipline",
+        "no routine",
+        "lazy",
+        "no timetable",
+        "spoiled",
+        "ڈسپلن",
+        "نظم",
+        "سستی",
+        "بگڑ"
+      ],
+      "objection_en": "There is no discipline at home — she is just skipping school.",
+      "objection_ur": "گھر میں ڈسپلن کہاں ہے؟ یہ تو بس اسکول سے چھٹی ہے۔",
+      "reassurance_en": "You are pointing at something real: without a bell and a register, the day can drift. So we borrowed the discipline instead of dropping it — fixed hours, work checked the same day, and a monthly test we do not get to grade generously. If you ever see the routine slipping, tell us. That is exactly the kind of thing family notices before parents do.",
+      "reassurance_ur": "آپ ایک سچی بات کی طرف اشارہ کر رہی ہیں: گھنٹی اور حاضری کے بغیر دن بہہ سکتا ہے۔ اِسی لیے ہم نے ڈسپلن چھوڑا نہیں، اُدھار لیا ہے — مقرر اوقات، اُسی دن کام کی جانچ، اور مہینے میں ایک ٹیسٹ جس میں ہم رعایت نہیں دے سکتے۔ اگر آپ کو کبھی لگے کہ معمول ڈھیلا پڑ رہا ہے، ضرور بتائیں۔ یہ چیز گھر والوں کو ماں باپ سے پہلے نظر آتی ہے۔",
+      "invitation_en": "Come sit in on Tuesday's reading time — nine to ten, same as every Tuesday — and see the routine for yourself.",
+      "invitation_ur": "منگل کو پڑھائی کے وقت آ کر بیٹھیں — نو سے دس، ہر منگل یہی وقت — اور معمول خود دیکھ لیں۔",
+      "evidence_summary_en": "The research on this is blunt: software and screens alone move a child barely at all — a randomised trial called human attention the key ingredient.\nAnd where home study slips it slips quietly, usually in maths. So maths gets tested every month.",
+      "evidence_summary_ur": "اِس پر تحقیق صاف کہتی ہے: صرف سافٹ ویئر اور اسکرین سے بچہ برائے نام آگے بڑھتا ہے — ایک تحقیق نے بڑے کی توجہ کو اصل چیز کہا۔\nاور گھر کی پڑھائی جہاں ڈھیلی پڑتی ہے، چپکے سے پڑتی ہے، اکثر حساب میں۔ اِسی لیے حساب کا ٹیسٹ ہر مہینے ہوتا ہے۔",
+      "evidence": [
+        {
+          "claim": "A 2026 randomised trial of AI tutoring in Tennessee found engagement 'thin' (about one day in three) despite near-universal access, and concluded 'human attention is the key ingredient'.",
+          "source": "https://www.chalkbeat.org/2026/08/25/ai-tutoring-students-khanmigo-khan-academy-engagement-study/",
+          "lean_flag": "high — randomised controlled trial, though it studies AI tutoring in schools rather than home education; we read it as 'the adult sitting there is what works'."
+        },
+        {
+          "claim": "An independent review of the much-marketed Alpha School model found the same software without human guides and incentives produced only 1x learning velocity — the structure around the child, not the material, is the active ingredient.",
+          "source": "https://www.astralcodexten.com/p/your-review-alpha-school",
+          "lean_flag": "medium — careful independent review of a single school's claims, not a controlled study."
+        },
+        {
+          "claim": "Where home education slips, it slips unevenly and quietly: Arkansas data (1997-2004) showed homeschooled children scoring 10-plus percentile points better in reading than in maths, reversing the public-school pattern.",
+          "source": "https://www.responsiblehomeschooling.org/the-homeschool-math-gap/",
+          "lean_flag": "medium — one state, dated data, from an organisation critical of homeschooling; we treat it as the blind spot to check for, which is why maths gets tested monthly."
+        }
+      ]
+    },
+    {
+      "id": "girls_dont_need_this",
+      "aliases": [
+        "girls don't need",
+        "girls dont need",
+        "girl",
+        "beti",
+        "daughter",
+        "shaadi",
+        "marriage",
+        "لڑکی",
+        "بیٹی",
+        "شادی",
+        "زیادہ پڑھائی"
+      ],
+      "objection_en": "Girls do not need this much schooling anyway.",
+      "objection_ur": "لڑکی کو اِتنی پڑھائی کی کیا ضرورت ہے؟",
+      "reassurance_en": "We know this comes from wanting her settled and safe, not from wanting less for her. We want the same thing. Keeping her learning at home is not us stepping back from her education — it is how she gets a calm room, our full attention, and a certificate with her own name on it. Whatever life she chooses later, nobody can take that page away from her.",
+      "reassurance_ur": "ہم جانتے ہیں کہ یہ بات اُس کی حفاظت اور آرام کی فکر سے نکلتی ہے، کم چاہنے سے نہیں۔ ہم بھی وہی چاہتے ہیں۔ گھر پر پڑھانے کا مطلب یہ نہیں کہ ہم اُس کی تعلیم سے پیچھے ہٹ گئے ہیں — بلکہ اِسی طرح اُسے پُرسکون کمرہ، ہماری پوری توجہ، اور اپنے نام کی سند ملے گی۔ آگے وہ جو زندگی چُنے، وہ کاغذ اُس سے کوئی نہیں چھین سکتا۔",
+      "invitation_en": "Come sit in on Tuesday's reading time and hear her read a page aloud to you — then tell us honestly what you think she is ready for.",
+      "invitation_ur": "منگل کو پڑھائی کے وقت آئیں اور اُس سے ایک صفحہ اپنے سامنے پڑھوائیں — پھر سچ سچ بتائیں کہ آپ کو وہ کہاں تک تیار لگتی ہے۔",
+      "evidence_summary_en": "Home study for girls is not new in our families — it was already common enough among Pakistani families abroad to be reported on in 2008.\nAnd the law here asks whether a child is being educated, not where she sits.",
+      "evidence_summary_ur": "لڑکیوں کی گھر پر پڑھائی ہمارے خاندانوں میں نئی بات نہیں — 2008 میں بھی بیرونِ ملک پاکستانی گھرانوں میں یہ عام تھی۔\nاور یہاں کا قانون یہ پوچھتا ہے کہ بچی پڑھ رہی ہے یا نہیں، یہ نہیں کہ وہ کہاں بیٹھی ہے۔",
+      "evidence": [
+        {
+          "claim": "Home study for girls is a long-standing choice in Pakistani and South Asian families, not a new fashion — a New York Times report (2008) described about 40% of Pakistani and other South Asian high-school-age girls enrolled in one US district as home-schooled.",
+          "source": "research sweep: vault/research/homeschooling/08-pakistan-muslim-global-south.md §P-5, quoting New York Times (2008) — the sweep records the quote without a URL",
+          "lean_flag": "low-medium — one US school district, 2008, and the research sweep flags that no Pakistani study quantifies girls-homeschooled-for-modesty inside Pakistan at all."
+        },
+        {
+          "claim": "Dawn (2020) profiled a Pakistani family where the home-educated daughter thrived academically after being bullied at school, while her brother felt stigmatised — the same choice can solve one child's problem and create another's.",
+          "source": "research sweep: vault/research/homeschooling/08-pakistan-muslim-global-south.md, quoting Dawn (2020) on the Javeria Kamil family — the sweep records the quote without a URL",
+          "lean_flag": "medium — one newspaper family profile, not data; included because it is the closest thing the sweep found to a Pakistani account, and it cuts both ways."
+        },
+        {
+          "claim": "Under Article 25-A the state owes every child education, and Pakistan has no law requiring a particular kind of school — so the question is whether she is learning, not where she is sitting.",
+          "source": "https://cambrilearn.com/homeschooling-in-pakistan",
+          "lean_flag": "medium — widely repeated secondary source; no Pakistani statute or ruling exists to cite either way."
+        }
+      ]
+    },
+    {
+      "id": "mother_not_a_teacher",
+      "aliases": [
+        "not a teacher",
+        "not qualified",
+        "you are not a teacher",
+        "no degree",
+        "how will you teach",
+        "استانی",
+        "ٹیچر نہیں",
+        "ڈگری",
+        "کیسے پڑھاؤ"
+      ],
+      "objection_en": "You are not a trained teacher — how can you teach all the subjects?",
+      "objection_ur": "آپ تو ٹیچر نہیں ہیں — سارے مضمون کیسے پڑھائیں گی؟",
+      "reassurance_en": "You are right that no one person can teach everything, and we never planned to. Some subjects we teach, some go to a tutor or a study group, and the hard ones get checked by someone who actually knows them. What we bring is the part no timetable can supply: an adult who sits with her every single day and notices the moment she stops understanding.",
+      "reassurance_ur": "آپ ٹھیک کہتی ہیں — ایک آدمی سب کچھ نہیں پڑھا سکتا، اور ہمارا ایسا ارادہ بھی نہیں تھا۔ کچھ مضمون ہم پڑھاتے ہیں، کچھ ٹیوٹر یا گروپ کے پاس جاتے ہیں، اور مشکل مضمون وہ جانچتا ہے جسے واقعی آتا ہے۔ ہمارے پاس وہ چیز ہے جو کوئی ٹائم ٹیبل نہیں دے سکتا: ایک بڑا جو روز اُس کے ساتھ بیٹھتا ہے اور فوراً بھانپ لیتا ہے کہ کہاں سمجھ رُک گئی۔",
+      "invitation_en": "Come sit in on Tuesday's reading time — and if you would take her Urdu reading one afternoon a week, she would be luckier than any class of forty.",
+      "invitation_ur": "منگل کو پڑھائی کے وقت آ کر بیٹھیں — اور اگر آپ ہفتے میں ایک دوپہر اُس کی اردو پڑھائی سنبھال لیں، تو وہ چالیس بچوں کی کلاس سے زیادہ خوش نصیب ہوگی۔",
+      "evidence_summary_en": "Nobody serious claims one parent teaches everything — shared teaching, tutors and co-ops are the normal shape of this.\nWhat the evidence does keep saying is that a present adult matters more than a platform.",
+      "evidence_summary_ur": "کوئی سمجھدار یہ نہیں کہتا کہ ایک ماں سب کچھ پڑھا لے — بانٹ کر پڑھانا، ٹیوٹر اور گروپ، یہی اِس کا اصل طریقہ ہے۔\nتحقیق بار بار ایک ہی بات کہتی ہے: ساتھ بیٹھا بڑا کسی ایپ سے زیادہ اہم ہے۔",
+      "evidence": [
+        {
+          "claim": "The claim that homeschool achievement holds 'regardless of parental education level or family income' comes from NHERI and is directly disputed by CRHE and the scholars Kunzman and Gaither, because the underlying samples are neither random nor income-adjusted.",
+          "source": "https://responsiblehomeschooling.org/research/academic-achievement/",
+          "lean_flag": "contested — two advocacy ecosystems reading the same weak samples in opposite directions; the honest reading is that parent capability is not settled either way."
+        },
+        {
+          "claim": "A 2026 randomised trial of AI tutoring concluded 'human attention is the key ingredient' — engagement stayed thin even with near-universal access to the software.",
+          "source": "https://www.chalkbeat.org/2026/08/25/ai-tutoring-students-khanmigo-khan-academy-engagement-study/",
+          "lean_flag": "high — randomised trial, but about AI tutoring in schools; we use it only for the narrow point that a present adult matters more than a platform."
+        },
+        {
+          "claim": "Shared teaching is the norm in this sector, not an admission of weakness: the 2025 US microschooling sector analysis found median enrolment of 16-22 students and 86% of founders holding an education background.",
+          "source": "https://pineapplereport.com/exclusive-report-as-movement-grows-microschools-arent-so-micro-anymore/",
+          "lean_flag": "medium — sector self-report survey, US-based; relevant as a model (co-op / tutor sharing), not as evidence about our own household."
+        }
+      ]
+    },
+    {
+      "id": "child_will_fall_behind",
+      "aliases": [
+        "fall behind",
+        "behind",
+        "weak in studies",
+        "academics",
+        "level",
+        "peeche",
+        "پیچھے",
+        "کمزور",
+        "معیار"
+      ],
+      "objection_en": "She will fall behind children her age.",
+      "objection_ur": "وہ اپنی عمر کے بچوں سے پیچھے رہ جائے گی۔",
+      "reassurance_en": "This is the fear we sit with too, so we did not take anybody's word for it. The cheerful statistics about homeschooling come from weak samples, and the best-sampled study is not flattering at all. So we do not rely on the claim — we test her, on paper, against the same syllabus, and we tell you the result whether it is good or bad.",
+      "reassurance_ur": "یہ ڈر ہمیں بھی رہتا ہے، اِسی لیے ہم نے کسی کی بات پر یقین نہیں کیا۔ گھر پر پڑھائی کے حق میں جو خوش کن اعداد و شمار ہیں وہ کمزور نمونوں سے نکلے ہیں، اور سب سے بہتر تحقیق تو حق میں بھی نہیں۔ اِس لیے ہم دعوے پر نہیں چلتے — ہم اُسے کاغذ پر، اُسی سلیبس سے جانچتے ہیں، اور نتیجہ اچھا ہو یا برا، آپ کو بتاتے ہیں۔",
+      "invitation_en": "Come on Tuesday and mark her last monthly test yourself — be as strict as you like, that is the whole point of it.",
+      "invitation_ur": "منگل کو آئیں اور اُس کا پچھلے مہینے کا ٹیسٹ خود چیک کریں — جتنی سختی کرنی ہو کریں، ٹیسٹ کا مقصد بھی یہی ہے۔",
+      "evidence_summary_en": "We do not lean on the cheerful homeschool statistics — they come from volunteer samples that were never income-adjusted.\nThe best-sampled study is actually unflattering, and maths is the documented weak spot. That is why she sits a written test every month.",
+      "evidence_summary_ur": "ہم گھر کی پڑھائی کے حق میں خوش کن اعداد و شمار پر نہیں چلتے — وہ اپنی مرضی سے شامل ہونے والے نمونوں سے نکلے ہیں۔\nسب سے بہتر تحقیق تو حق میں بھی نہیں، اور کمزوری حساب میں لکھی ہوئی ہے۔ اِسی لیے وہ ہر مہینے لکھا ٹیسٹ دیتی ہے۔",
+      "evidence": [
+        {
+          "claim": "NHERI rollups report homeschooled children scoring 15-25 percentile points above the public-school average.",
+          "source": "https://www.nheri.org/research-facts-on-homeschooling/",
+          "lean_flag": "low — non-random, advocacy-recruited samples skewed to white, married, higher-income, higher-education households and not adjusted for background. Quoted here as the claim we do NOT lean on."
+        },
+        {
+          "claim": "The only large randomly-sampled, background-controlled study (Cardus 2011) found homeschool graduates 'attained less education on average' than public and Christian-school peers, and more often reported a lack of clear direction.",
+          "source": "https://responsiblehomeschooling.org/research/summaries/homeschool-outcomes/",
+          "lean_flag": "high relative to the field — the best-sampled study available, and it cuts against homeschooling; saying so out loud is what makes the rest of the page believable."
+        },
+        {
+          "claim": "The documented weak spot is maths and science specifically: home-educated students in Austin College and Grove City College studies took fewer maths and science courses and majored in STEM at substantially lower rates.",
+          "source": "https://www.responsiblehomeschooling.org/the-homeschool-math-gap/",
+          "lean_flag": "medium — small US college samples from an organisation critical of homeschooling; treated as the specific thing to guard against."
+        }
+      ]
+    },
+    {
+      "id": "what_will_people_say",
+      "aliases": [
+        "what will people say",
+        "log kya kahenge",
+        "people talk",
+        "reputation",
+        "society",
+        "shame",
+        "لوگ کیا کہیں گے",
+        "بدنامی",
+        "معاشرہ",
+        "برادری"
+      ],
+      "objection_en": "What will people say? The family will be talked about.",
+      "objection_ur": "لوگ کیا کہیں گے؟ خاندان میں باتیں بنیں گی۔",
+      "reassurance_en": "We know this lands on you more than on us — you are the one sitting at the gathering when the question comes. We are not asking you to defend anything. Just say she is studying at home for her board exams, and send them to us. And if you tell us the comments are getting hard, we will listen, because families do give this up under that pressure and we would rather not be one of them.",
+      "reassurance_ur": "ہم جانتے ہیں کہ یہ بوجھ ہم سے زیادہ آپ پر پڑتا ہے — دعوت میں بیٹھی آپ ہوتی ہیں جب سوال آتا ہے۔ ہم آپ سے صفائی دینے کو نہیں کہہ رہے۔ بس اِتنا کہہ دیں کہ وہ گھر پر بورڈ کے امتحان کی تیاری کر رہی ہے، اور بات ہماری طرف بھیج دیں۔ اور اگر آپ کو باتیں سہنا مشکل ہو رہا ہو تو ہمیں بتائیں، ہم سنیں گے — کیونکہ اِسی دباؤ میں لوگ یہ راستہ چھوڑ دیتے ہیں، اور ہم اُن میں شامل نہیں ہونا چاہتے۔",
+      "invitation_en": "Come sit in on Tuesday's reading time — once you have seen an ordinary morning here, the answer you give people will be your own, not ours.",
+      "invitation_ur": "منگل کو پڑھائی کے وقت آ کر بیٹھیں — ایک عام سی صبح یہاں دیکھ لیں گی تو لوگوں کو جو جواب دیں گی وہ آپ کا اپنا ہوگا، ہمارا نہیں۔",
+      "evidence_summary_en": "This pressure is real and it is documented: family and social judgment is one of the named reasons Pakistani families give up home study.\nWhat does not exist anywhere is support for the person carrying that pressure — which is usually you and us.",
+      "evidence_summary_ur": "یہ دباؤ سچ ہے اور لکھا ہوا ہے: خاندان اور لوگوں کی باتیں اُن وجوہات میں شامل ہیں جن سے پاکستانی گھرانے گھر کی پڑھائی چھوڑ دیتے ہیں۔\nاور جو کہیں موجود نہیں وہ اُس شخص کا سہارا ہے جو یہ دباؤ اٹھاتا ہے — یعنی عموماً آپ اور ہم۔",
+      "evidence": [
+        {
+          "claim": "Extended-family and social stigma is named as a cause of Pakistani families dropping home education — one homeschooling mother's own video describes 'unspoken pressure and constant judgment... how I faced society's mindset and found strength'.",
+          "source": "research sweep: vault/research/homeschooling/08-pakistan-muslim-global-south.md §P-6, quoting a Pakistani homeschool mother's vlog (Dec 2025) — the sweep records the title without a URL",
+          "lean_flag": "low-medium — self-reported vlog testimony, no study; the research sweep found no Pakistani research quantifying this at all."
+        },
+        {
+          "claim": "Families visibly cycle in and out of home education under that pressure — one Pakistani homeschooling channel titled its own video 'We Stopped Homeschooling For 175 Days! (Here's Why...)'.",
+          "source": "research sweep: vault/research/homeschooling/08-pakistan-muslim-global-south.md §P-6, quoting a Pakistani homeschool channel's own video title — the sweep records the title without a URL",
+          "lean_flag": "low — a single video title read as evidence of a pattern; suggestive, not measured."
+        },
+        {
+          "claim": "There is no peer-support structure anywhere for homeschooling mothers under family pressure — public Facebook groups are not built for that kind of disclosure, which is why the pressure is usually carried alone.",
+          "source": "research sweep: vault/research/homeschooling/08-pakistan-muslim-global-south.md §P-6 (gap finding; the sweep's own cited group is facebook.com/groups/homeschoolingpakistan)",
+          "lean_flag": "medium — a gap finding from the research sweep's Pakistan file (P-6) rather than a measured statistic."
+        }
+      ]
+    }
+  ]
+}
