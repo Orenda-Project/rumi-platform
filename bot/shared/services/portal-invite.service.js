@@ -66,6 +66,11 @@ const COACH_LINE = {
 };
 
 class PortalInviteService {
+  /** The phone number a user signs in to the portal with, or null (see signInNumberFor above). */
+  static async signInNumberFor(user) {
+    return signInNumberFor(user);
+  }
+
   /**
    * Send portal invitation to the user on their own channel
    * Creates unique token, stores in database, sends localized message

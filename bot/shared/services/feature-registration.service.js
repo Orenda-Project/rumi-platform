@@ -323,8 +323,13 @@ class FeatureRegistrationService {
         return { success: false, error: 'Could not extract name' };
       }
 
-      // Generate portal token
-      const token = uuidv4();
+      // Generate portal token, unless the user has no phone number to sign
+      // in with (a Matrix username that is a name): a password set from that
+      // link could never be used, so they get the portal-free welcome.
+      const PortalInviteService = require('./portal-invite.service');
+      const { data: user } = await supabase.from('users').select('id, phone_number').eq('id', userId).single();
+      const canSignIn = Boolean(user && await PortalInviteService.signInNumberFor(user));
+      const token = canSignIn ? uuidv4() : null;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
@@ -337,8 +342,10 @@ class FeatureRegistrationService {
           registration_completed: true,
           registration_completed_at: new Date().toISOString(),
           registration_pending_name: false,
-          portal_invite_token: token,
-          portal_invite_expires_at: expiresAt.toISOString()
+          ...(token ? {
+            portal_invite_token: token,
+            portal_invite_expires_at: expiresAt.toISOString()
+          } : {})
         })
         .eq('id', userId);
 
@@ -350,7 +357,7 @@ class FeatureRegistrationService {
       // Send confirmation. portalUrl is null if PORTAL_URL is unset, in
       // which case sendConfirmation omits the link from the message.
       const portalBase = require('../config/branding').portalUrl();
-      const portalUrl = portalBase ? `${portalBase}/portal/setup/${token}` : null;
+      const portalUrl = portalBase && token ? `${portalBase}/portal/setup/${token}` : null;
       await this.sendConfirmation(firstName, portalUrl, phoneNumber, language, format);
 
       logToFile('Registration completed successfully', {
