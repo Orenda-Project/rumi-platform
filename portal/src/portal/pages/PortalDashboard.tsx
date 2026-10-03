@@ -13,6 +13,7 @@ import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { welcomeBack } from '@/lib/greeting';
 import type { DashboardStats, LessonPlan, CoachingSession } from '../types/portal';
 
 const PortalDashboard = () => {
@@ -124,7 +125,7 @@ const PortalDashboard = () => {
         {/* Welcome Header */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-light mb-2">
-            Welcome back, {user?.firstName}! 👋
+            {welcomeBack(user?.firstName)} 👋
           </h1>
           <p className="text-muted-foreground">
             Here's an overview of your teaching journey
