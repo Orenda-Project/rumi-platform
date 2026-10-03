@@ -262,12 +262,18 @@ CREATE POLICY "service_role_coach_directory" ON coach_directory FOR ALL USING (a
 
 -- =============================================================================
 -- The admin dashboard's role (portal_app_user, created in 00_complete-schema.sql)
--- The dashboard reads and writes as portal_app_user once an admin has signed
--- in. It is not a bypass-RLS role, so on a table with RLS on and only the
--- service_role policy it would see zero rows. One policy per RLS table lets it
--- in, but only while set_portal_user_context() has set a signed-in admin on the
--- connection. Runs over every RLS table so none is missed; a table that turns
--- RLS on later needs this run again (V2.11.0 does the same). Safe to re-run.
+-- The dashboard reads and writes as portal_app_user once a dashboard user has
+-- signed in. It is not a bypass-RLS role, so on a table with RLS on and only
+-- the service_role policy it would see zero rows. One policy per RLS table lets
+-- it in, but only while the dashboard user set on the connection
+-- (set_portal_user_context) is active and has an unscoped role: super_admin,
+-- admin or viewer (portal_user_is_unscoped(), in 00). Partner roles get no
+-- rows at all, teacher data included, until policies that apply a partner's
+-- access_scopes row exist; "signed in" alone would hand a school-scoped partner
+-- every teacher and conversation. The check is wrapped in a SELECT so it runs
+-- once per query, not once per row. Runs over every RLS table so none is
+-- missed; a table that turns RLS on later needs this run again (V2.11.0 does
+-- the same). Dropping by name replaces the earlier, open policy. Safe to re-run.
 -- =============================================================================
 DO $$
 DECLARE
@@ -280,7 +286,7 @@ BEGIN
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS portal_app_user_access ON public.%I', t.relname);
     EXECUTE format($p$CREATE POLICY portal_app_user_access ON public.%I FOR ALL TO portal_app_user
-      USING (NULLIF(current_setting('app.portal_user_id', true), '') IS NOT NULL)
-      WITH CHECK (NULLIF(current_setting('app.portal_user_id', true), '') IS NOT NULL)$p$, t.relname);
+      USING ((SELECT public.portal_user_is_unscoped()))
+      WITH CHECK ((SELECT public.portal_user_is_unscoped()))$p$, t.relname);
   END LOOP;
 END $$;

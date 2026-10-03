@@ -12,7 +12,10 @@
  * Checked here without a database, against what the dashboard really uses:
  *   - 00 creates the role (guarded: roles are cluster-wide), lets the schema's
  *     own role switch to it, and grants it the tables;
- *   - 01 gives it a policy on every RLS table, or it would read zero rows;
+ *   - 01 gives it a policy on every RLS table, or it would read zero rows, and
+ *     that policy lets rows through only for the unscoped dashboard roles
+ *     (super_admin, admin, viewer): a partner role gets no teacher data until
+ *     scoped policies exist;
  *   - 02 and V2.11.0 seed a row for every feature key a route checks, for every
  *     role the dashboard signs in;
  *   - V2.11.0 has the shape migrate.js needs and records only its own version.
@@ -111,14 +114,101 @@ describe('00_complete-schema.sql', () => {
   });
 });
 
+/**
+ * Each portal_app_user policy in a SQL text: its name, USING and WITH CHECK.
+ * The policies are built inside a format() call, so the text between the
+ * policy and the end of that call is what grants rows.
+ */
+function portalPolicies(sql) {
+  const out = [];
+  for (const m of sql.matchAll(/CREATE POLICY (\w+) ON [^\n]*?TO portal_app_user([\s\S]*?)\$p\$/g)) {
+    const body = m[2];
+    const using = body.match(/USING\s*([\s\S]*?)(?:\s+WITH CHECK|$)/);
+    const check = body.match(/WITH CHECK\s*([\s\S]*)$/);
+    out.push({ name: m[1], body, using: using && using[1].trim(), check: check && check[1].trim() });
+  }
+  return out;
+}
+
+const UNSCOPED_CHECK = '((SELECT public.portal_user_is_unscoped()))';
+
 describe.each([
   ['01_rls-policies.sql', RLS],
   ['V2.11.0', MIGRATION],
 ])('%s: rows the role can see', (_name, sql) => {
-  test('every RLS table gets a portal_app_user policy, live only once a signed-in admin is set', () => {
+  test('every RLS table gets a portal_app_user policy', () => {
     expect(sql).toMatch(/c\.relrowsecurity/);
     expect(sql).toMatch(/CREATE POLICY portal_app_user_access ON public\.%I FOR ALL TO portal_app_user/);
-    expect(sql).toMatch(/NULLIF\(current_setting\('app\.portal_user_id', true\), ''\) IS NOT NULL/);
+  });
+
+  // The dashboard signs in partner roles too, and the policy runs over every
+  // RLS table (users, conversations, coaching_sessions, ...). A policy that
+  // only asks "is someone signed in" hands a school-scoped partner every
+  // teacher in the database. Until scoped policies exist, rows go only to the
+  // unscoped dashboard roles.
+  test('every portal_app_user policy grants rows only through the unscoped-role check, reading and writing', () => {
+    const policies = portalPolicies(sql);
+    expect(policies.length).toBeGreaterThan(0);
+    for (const p of policies) {
+      expect({ name: p.name, using: p.using, check: p.check })
+        .toEqual({ name: p.name, using: UNSCOPED_CHECK, check: UNSCOPED_CHECK });
+    }
+  });
+
+  test('no portal_app_user policy names a partner role, or lets in anyone merely signed in', () => {
+    for (const p of portalPolicies(sql)) {
+      expect(p.body).not.toMatch(/partner_admin|partner_viewer/);
+      expect(p.body).not.toMatch(/IS NOT NULL/);
+    }
+  });
+
+  test('replaces a policy of the same name left by an earlier run', () => {
+    expect(sql).toMatch(/DROP POLICY IF EXISTS portal_app_user_access ON public\.%I/);
+  });
+});
+
+/** The body of the portal_user_is_unscoped() definition in a SQL text. */
+function unscopedFunction(sql) {
+  const m = sql.match(/CREATE OR REPLACE FUNCTION public\.portal_user_is_unscoped\(\)([\s\S]*?)\$function\$([\s\S]*?)\$function\$/);
+  return m && { header: m[1], body: m[2] };
+}
+
+describe.each([
+  ['00_complete-schema.sql', SCHEMA],
+  ['V2.11.0', MIGRATION],
+])('%s: portal_user_is_unscoped()', (_name, sql) => {
+  test('is defined, takes no arguments, and answers only about the signed-in dashboard user', () => {
+    const fn = unscopedFunction(sql);
+    expect(fn).not.toBeNull();
+    expect(fn.body).toMatch(/current_setting\('app\.portal_user_id', true\)/);
+    expect(fn.body).toMatch(/FROM public\.dashboard_users/);
+  });
+
+  test('lets in only super_admin, admin and viewer, and only while active', () => {
+    const { body } = unscopedFunction(sql);
+    const list = body.match(/role IN \(([^)]*)\)/);
+    expect(list).not.toBeNull();
+    const roles = [...list[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+    expect(roles).toEqual(['admin', 'super_admin', 'viewer']);
+    expect(body).not.toMatch(/partner/);
+    expect(body).toMatch(/is_active IS TRUE/);
+  });
+
+  // It reads dashboard_users, which has RLS and this same policy: as an
+  // invoker function it would see no rows (or recurse). It runs as its owner
+  // instead, with a fixed search_path so nothing on the caller's path is used.
+  test('is SECURITY DEFINER with a fixed search_path, stable, returning boolean', () => {
+    const { header } = unscopedFunction(sql);
+    expect(header).toMatch(/RETURNS boolean/);
+    expect(header).toMatch(/SECURITY DEFINER/);
+    expect(header).toMatch(/STABLE/);
+    expect(header).toMatch(/SET search_path = pg_catalog, public/);
+  });
+
+  test('only portal_app_user may call it', () => {
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.portal_user_is_unscoped\(\) FROM PUBLIC/);
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.portal_user_is_unscoped\(\) FROM anon, authenticated/);
+    expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION public\.portal_user_is_unscoped\(\) TO portal_app_user/);
   });
 });
 

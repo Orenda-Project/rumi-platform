@@ -9,11 +9,19 @@
 --
 -- ADDITIVE ONLY. Creates the role if it is missing (roles are cluster-wide),
 -- lets the role running this switch to it, grants it DML on the tables and use
--- of the sequences, adds one portal_app_user_access policy to each RLS table
--- (rows visible only once a signed-in admin is set on the connection), and
--- inserts the permission rows that are missing; rows already there are left as
--- they are. Not BYPASSRLS and no function rights beyond PUBLIC's: the
--- one-time SQL helper stays service_role only. If the dashboard connects as a
+-- of the sequences, adds one portal_app_user_access policy to each RLS table,
+-- and inserts the permission rows that are missing; rows already there are
+-- left as they are. Not BYPASSRLS, and the only function right beyond PUBLIC's
+-- is portal_user_is_unscoped(): the one-time SQL helper stays service_role
+-- only.
+--
+-- WHO SEES ROWS. The policy lets rows through only while the dashboard user set
+-- on the connection is active and has an unscoped role: super_admin, admin or
+-- viewer. Partner roles (partner_admin, partner_viewer) get no rows from any
+-- RLS table, teacher data included, until policies that apply a partner's
+-- access_scopes row exist; "signed in" alone would hand a school-scoped partner
+-- every teacher and conversation. An earlier build of this file created that
+-- open policy under the same name; running this one replaces it. If the dashboard connects as a
 -- different role from the one running this, grant portal_app_user to that
 -- role too.
 -- Fresh installs get the same from 00_complete-schema.sql, 01_rls-policies.sql
@@ -44,8 +52,41 @@ BEGIN
   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO portal_app_user;
   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO portal_app_user;
 
+  -- The one check every portal_app_user policy makes (same as
+  -- 00_complete-schema.sql). SECURITY DEFINER because it reads dashboard_users,
+  -- which has RLS and this same policy; it runs as the schema's owner with a
+  -- fixed search_path. No arguments: it answers only about the dashboard user
+  -- set on this connection. Compared as text, so a malformed setting answers
+  -- false rather than raising an error.
+  CREATE OR REPLACE FUNCTION public.portal_user_is_unscoped()
+   RETURNS boolean
+   LANGUAGE sql
+   STABLE
+   SECURITY DEFINER
+   SET search_path = pg_catalog, public
+  AS $function$
+    SELECT EXISTS (
+      SELECT 1
+      FROM public.dashboard_users du
+      WHERE du.id::text = NULLIF(current_setting('app.portal_user_id', true), '')
+        AND du.is_active IS TRUE
+        AND du.role IN ('super_admin', 'admin', 'viewer')
+    )
+  $function$;
+
+  -- Only the dashboard's role may call it. Supabase grants new functions to its
+  -- API roles by default, so those are revoked by name where they exist.
+  REVOKE ALL ON FUNCTION public.portal_user_is_unscoped() FROM PUBLIC;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
+     AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON FUNCTION public.portal_user_is_unscoped() FROM anon, authenticated;
+  END IF;
+  GRANT EXECUTE ON FUNCTION public.portal_user_is_unscoped() TO portal_app_user;
+
   -- Every RLS table has only its service_role policy, so the role would read
-  -- zero rows. Same loop as 01_rls-policies.sql.
+  -- zero rows. Same loop as 01_rls-policies.sql: rows only for the unscoped
+  -- roles, the check run once per query rather than once per row. Dropping by
+  -- name replaces the open policy an earlier build of this file created.
   FOR t IN
     SELECT c.relname
     FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -53,12 +94,14 @@ BEGIN
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS portal_app_user_access ON public.%I', t.relname);
     EXECUTE format($p$CREATE POLICY portal_app_user_access ON public.%I FOR ALL TO portal_app_user
-      USING (NULLIF(current_setting('app.portal_user_id', true), '') IS NOT NULL)
-      WITH CHECK (NULLIF(current_setting('app.portal_user_id', true), '') IS NOT NULL)$p$, t.relname);
+      USING ((SELECT public.portal_user_is_unscoped()))
+      WITH CHECK ((SELECT public.portal_user_is_unscoped()))$p$, t.relname);
   END LOOP;
 
   -- The same rows as 02_seed-data.sql: each feature, for each role the
-  -- dashboard signs in. can_access=false rows are explicit denials.
+  -- dashboard signs in. can_access=false rows are explicit denials. The
+  -- partner rows open pages, not data: until scoped policies exist those pages
+  -- show only what the scoped materialized views give them.
   INSERT INTO feature_permissions (role, feature_key, can_access)
   VALUES
     -- super_admin: every feature.
@@ -161,7 +204,7 @@ BEGIN
   -- Recorded inside the block, so the version is never marked applied unless
   -- everything above was.
   INSERT INTO schema_versions (version, description)
-  VALUES ('2.11.0', 'Admin dashboard access: portal_app_user role, grants and policies; feature_permissions rows')
+  VALUES ('2.11.0', 'Admin dashboard access: portal_app_user role, grants and unscoped-role policies; feature_permissions rows')
   ON CONFLICT (version) DO NOTHING;
 END $$;
 

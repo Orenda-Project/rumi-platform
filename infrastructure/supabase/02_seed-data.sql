@@ -77,6 +77,11 @@ ON CONFLICT (version) DO NOTHING;
 -- each feature and each role the dashboard signs in; can_access=false
 -- rows are explicit denials. Existing rows are left as they are, so an
 -- operator's edits survive a re-run.
+-- The partner rows open pages, not data. The dashboard's database role gives
+-- partner roles no rows from the tables themselves (01_rls-policies.sql), so
+-- until scoped policies exist a partner sees what the scoped materialized
+-- views give them and nothing on the table-backed pages. Kept true so those
+-- pages come back without a seed change once scoped policies exist.
 -- ============================================================================
 INSERT INTO feature_permissions (role, feature_key, can_access)
 VALUES
