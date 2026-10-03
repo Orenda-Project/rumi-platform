@@ -12,6 +12,7 @@ const mockRedis = {
   expire: jest.fn(),
   set: jest.fn(),
   get: jest.fn(),
+  getTTL: jest.fn(),
 };
 jest.mock('../../bot/shared/services/cache/railway-redis.service', () => ({
   isAvailable: () => mockRedis.available,
@@ -21,6 +22,7 @@ jest.mock('../../bot/shared/services/cache/railway-redis.service', () => ({
   expire: (...a) => mockRedis.expire(...a),
   set: (...a) => mockRedis.set(...a),
   get: (...a) => mockRedis.get(...a),
+  getTTL: (...a) => mockRedis.getTTL(...a),
 }));
 const mockSend = jest.fn().mockResolvedValue(true);
 jest.mock('../../bot/shared/services/whatsapp.service', () => ({ sendMessage: (...a) => mockSend(...a) }));
@@ -242,8 +244,25 @@ describe('model budget', () => {
 
   it('isTripped sees another process\'s trip through Redis', async () => {
     mockRedis.get.mockResolvedValue('1');
+    mockRedis.getTTL.mockResolvedValue(200);
     expect(await ModelBudget.isTripped()).toBe(true);
     expect(ModelBudget.isTrippedLocally()).toBe(true);
+  });
+
+  it('isTripped from the shared flag trips locally only for the key\'s remaining TTL, not a full cooldown', async () => {
+    jest.useFakeTimers({ now: 1_000_000 });
+    try {
+      mockRedis.get.mockResolvedValue('1');
+      mockRedis.getTTL.mockResolvedValue(5);
+      expect(await ModelBudget.isTripped()).toBe(true);
+      expect(mockRedis.getTTL).toHaveBeenCalledWith('model_budget:tripped');
+      jest.setSystemTime(1_000_000 + 6_000);
+      expect(ModelBudget.isTrippedLocally()).toBe(false);
+      mockRedis.get.mockResolvedValue(null);
+      expect(await ModelBudget.isTripped()).toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('guard: a trip mid-message mutes its sends and tells the recipient "busy" once per cooldown', async () => {

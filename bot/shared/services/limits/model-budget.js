@@ -121,7 +121,12 @@ async function isTripped() {
   try {
     const v = await r.get(TRIPPED_KEY);
     if (v === null || v === undefined) return false;
-    trippedUntil = Date.now() + cooldownSeconds() * 1000;
+    // Trip here only until the shared flag expires, not for a fresh cooldown:
+    // otherwise a process that reads the flag just before it expires stays
+    // "busy" for up to twice the cooldown after the operator has topped up.
+    // No usable TTL: answer from the flag now and read it again next time.
+    const ttl = Number(await r.getTTL(TRIPPED_KEY));
+    if (ttl > 0) trippedUntil = Date.now() + ttl * 1000;
     return true;
   } catch (_) {
     return false;
