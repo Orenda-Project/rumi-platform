@@ -273,6 +273,45 @@ async function handlePlanPick(user, from, listId, opts = {}) {
 }
 
 /**
+ * The analysis reads the plan ONCE, after its bounded wait. A pick that lands
+ * after that read but before the analysis finishes is linked — and the coach
+ * is told "Section B will check the lesson against …" — yet was never graded.
+ * So when the form opens (observe-draft.onAnalysisReady), the row is
+ * reconciled: a linked plan other than the one graded is graded now, and a
+ * late "No plan" says so instead of "no plan was picked". Never throws.
+ * @returns {Promise<boolean>} true when Section B was rewritten
+ */
+async function reconcileLatePick(sessionId, { from, lang = 'en' } = {}) {
+  try {
+    const { isFidelityEnabled } = require('../coaching/fidelity/fidelity-orchestrator');
+    if (!isFidelityEnabled()) return false;
+    const s = await loadSession(sessionId, 'id, status, linked_lesson_plan_id, lesson_plan_link_method, analysis_data');
+    const ad = (s && s.analysis_data) || {};
+    if (!s || s.status !== IN_REVIEW_STATUS || !ad.section_b) return false;
+    const linked = s.linked_lesson_plan_id || null;
+    const graded = (ad.lp_fidelity && ad.lp_fidelity.lesson_plan_id) || null;
+    let written = false;
+    let topic = null;
+    if (linked && linked !== graded) {
+      written = (await regradeSectionB(sessionId)).written;
+      const marker = await readMarker(sessionId);
+      const plan = marker && Array.isArray(marker.plans) ? marker.plans.find((p) => p.id === linked) : null;
+      topic = plan && plan.topic;
+    } else if (!linked && s.lesson_plan_link_method === 'none' && ad.section_b.detail !== 'coach_said_no_plan') {
+      written = await markNoPlan(sessionId);
+    }
+    if (written && linked && from) {
+      await require('../whatsapp.service').sendMessage(from, t(lang, 'secb_plan_regraded', { topic: topic || '' }));
+    }
+    if (written) logToFile('🔭 observe-plan: a late pick reconciled as the form opened', { sessionId, linked: !!linked });
+    return written;
+  } catch (err) {
+    logToFile('⚠️ observe-plan: late-pick reconcile failed (Section B stands as graded)', { sessionId, error: err.message });
+    return false;
+  }
+}
+
+/**
  * The analysis waits here for an open plan question, bounded by
  * LP_FIDELITY_PLAN_WAIT_SECONDS. Returns at once when nothing was asked.
  * @returns {Promise<{asked:boolean, answered:boolean}>}
@@ -311,5 +350,6 @@ module.exports = {
   regradeSectionB,
   awaitPlanAnswer,
   planDetail,
+  reconcileLatePick,
   LP_PREFIX,
 };

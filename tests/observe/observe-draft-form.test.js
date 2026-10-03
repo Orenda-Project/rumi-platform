@@ -95,6 +95,16 @@ describe('onAnalysisReady', () => {
     expect(WhatsAppService.sendFlow).not.toHaveBeenCalled();
   });
 
+  test('a plan picked after the analysis read it is reconciled before the form is sent (Section B graded against it)', async () => {
+    const Plan = require('../../bot/shared/services/observe/observe-plan.service');
+    const spy = jest.spyOn(Plan, 'reconcileLatePick').mockResolvedValue(false);
+    seed('obs-r');
+    await ObserveDraft.onAnalysisReady('obs-r', TO);
+    expect(spy).toHaveBeenCalledWith('obs-r', { from: TO, lang: 'en' });
+    expect(spy.mock.invocationCallOrder[0]).toBeLessThan(WhatsAppService.sendMessage.mock.invocationCallOrder[0]);
+    spy.mockRestore();
+  });
+
   test('a v1 already frozen is never overwritten', async () => {
     seed('obs-2', { autofill_analysis_data: { frozen: true } });
     await ObserveDraft.onAnalysisReady('obs-2', TO);

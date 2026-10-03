@@ -110,6 +110,10 @@ async function onAnalysisReady(sessionId, from) {
 
   const recipient = await observerIdentity(session, from);
 
+  // A plan the coach picked after the analysis had read the row was linked and
+  // confirmed, but not graded: grade Section B now, before the form shows it.
+  await require('./observe-plan.service').reconcileLatePick(sessionId, { from: recipient, lang });
+
   const flowId = process.env.OBSERVE_FORM_FLOW_ID || '';
   if (flowId && canReceiveMetaFlow(recipient)) {
     const sent = await WhatsAppService.sendFlow(recipient, {
