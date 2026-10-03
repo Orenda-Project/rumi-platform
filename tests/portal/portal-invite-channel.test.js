@@ -33,11 +33,11 @@ const META = {
   PORTAL_URL: 'https://portal.example.org',
 };
 
-function load({ env, users, userChannels, matrixResult = true }) {
+function load({ env, users, userChannels, matrixResult = true, strictSingle = false }) {
   jest.resetModules();
   VARS.forEach((k) => delete process.env[k]);
   Object.assign(process.env, env);
-  const db = createFakeSupabase({ users, user_channels: userChannels || [] });
+  const db = createFakeSupabase({ users, user_channels: userChannels || [] }, { strictSingle });
   jest.doMock('../../bot/shared/config/supabase', () => db.client);
   jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
   const matrixSend = jest.fn(async () => matrixResult);
@@ -129,6 +129,20 @@ describe('a coach on the observe roster who uses only the messenger', () => {
       env: { ...MATRIX_ONLY, OBSERVE_ENABLED: 'true' },
       users: [{ ...coach }, { id: 'other', phone_number: '15551000011' }],
       userChannels: [link],
+    });
+    const result = await PortalInviteService.sendPortalInvite('c-1', null, 'en');
+    expect(result).toMatchObject({ success: false, reason: 'no_sign_in_number' });
+    expect(db.tables.users[0].phone_number).toBeNull();
+    expect(matrixSend).not.toHaveBeenCalled();
+  });
+
+  test('a number held by more than one other user is not taken over either', async () => {
+    // The taken-check must not read "two holders" as "none" (a .single() lookup errors on two rows).
+    const { db, PortalInviteService, matrixSend } = load({
+      env: { ...MATRIX_ONLY, OBSERVE_ENABLED: 'true' },
+      users: [{ ...coach }, { id: 'other-1', phone_number: '15551000011' }, { id: 'other-2', phone_number: '15551000011' }],
+      userChannels: [link],
+      strictSingle: true,
     });
     const result = await PortalInviteService.sendPortalInvite('c-1', null, 'en');
     expect(result).toMatchObject({ success: false, reason: 'no_sign_in_number' });

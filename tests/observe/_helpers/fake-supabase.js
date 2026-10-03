@@ -41,7 +41,7 @@ function parseInList(v) {
   return String(v).replace(/^\(|\)$/g, '').split(',').map((s) => s.trim().replace(/^"|"$/g, ''));
 }
 
-function createFakeSupabase(seed = {}) {
+function createFakeSupabase(seed = {}, { strictSingle = false } = {}) {
   const tables = {};
   for (const [name, rows] of Object.entries(seed)) tables[name] = rows.map((r) => ({ ...r }));
   const calls = [];
@@ -126,6 +126,8 @@ function createFakeSupabase(seed = {}) {
         if (!data || data.length === 0) {
           return state.single === 'maybe' ? { data: null, error: null } : { data: null, error: { message: 'no rows' } };
         }
+        // PostgREST refuses .single()/.maybeSingle() on more than one row; opt in to see what code does then.
+        if (strictSingle && data.length > 1) return { data: null, error: { code: 'PGRST116', message: 'multiple rows' } };
         return { data: data[0], error: null };
       }
       return { data, error: null };
