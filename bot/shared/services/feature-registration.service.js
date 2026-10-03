@@ -12,7 +12,7 @@
  * This is ultra-simple: just ask for name, nothing else.
  */
 
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const supabase = require('../config/supabase');
 const { logToFile } = require('../utils/logger');
 const WhatsAppService = require('./whatsapp.service');
@@ -329,7 +329,7 @@ class FeatureRegistrationService {
       const PortalInviteService = require('./portal-invite.service');
       const { data: user } = await supabase.from('users').select('id, phone_number').eq('id', userId).single();
       const canSignIn = Boolean(user && await PortalInviteService.signInNumberFor(user));
-      const token = canSignIn ? uuidv4() : null;
+      const token = canSignIn ? crypto.randomUUID() : null;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 

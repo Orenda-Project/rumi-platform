@@ -8,10 +8,6 @@
 
 const { createFakeSupabase } = require('../observe/_helpers/fake-supabase');
 
-// uuid lives in bot/node_modules; CI's root test job runs before bot deps install.
-let mockUuidN = 0;
-jest.mock('uuid', () => ({ v4: () => `00000000-0000-4000-8000-${String(++mockUuidN).padStart(12, '0')}` }), { virtual: true });
-
 const VARS = ['CHANNEL_DRIVER', 'MATRIX_HOMESERVER_URL', 'MATRIX_ACCESS_TOKEN', 'PORTAL_URL'];
 
 function load({ users, userChannels }) {

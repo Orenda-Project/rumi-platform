@@ -16,7 +16,7 @@
  * Related: TEACHER_PORTAL_IMPLEMENTATION_PLAN.md
  */
 
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const supabase = require('../config/supabase');
 const { logToFile } = require('../utils/logger');
 const WhatsAppService = require('./whatsapp.service');
@@ -110,7 +110,7 @@ class PortalInviteService {
       }
 
       // Generate unique token
-      const token = uuidv4();
+      const token = crypto.randomUUID();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
@@ -233,7 +233,7 @@ Este enlace expira en 7 días. Haz clic en él para crear tu contraseña e inici
       logToFile('🔑 Generating portal token (no message)', { userId });
 
       // Generate unique token
-      const token = uuidv4();
+      const token = crypto.randomUUID();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
