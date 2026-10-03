@@ -459,6 +459,15 @@ navigation. It opens **My observations** (`/portal/observe`):
   the coach has observed each and when they last did. Opening a teacher
   (`/portal/observe/teacher/<id>`) lists the coach's past observations of them.
 
+Under an observation that has a Section B record (did the lesson follow its
+plan?), a folded **Lesson plan (Section B)** block opens to the plan's moves in
+order, each with its verdict (As planned, Equal swap, Better swap, Partly, Not
+done, Can't tell) and **changed by you** where the coach changed it in chat. A
+recording that did not look like the plan's lesson carries a warning. When
+Section B was not assessed, the block says **Not assessed** and why (no plan
+linked, no timings in the transcript, and so on); it never shows a zero. The
+block shows no percentage, band or count, and no quotes from the recording.
+
 The page is read-only. Recording, checking the form, debriefing and sending the
 report all happen in chat with `/observe`; the portal shows where each one stands.
 
@@ -480,7 +489,8 @@ and only teachers in the schools assigned to them (`leader_schools`); asking for
 any other teacher returns `404`.
 
 Because the dashboard runs as its own service, it keeps a copy of the default
-role list and of the on/off rule; a test fails if either ever differs from the
+role list and of the on/off rule, and of Section B's verdict labels, phase names
+and not-assessed reasons; a test fails if any of them ever differs from the
 bot's.
 
 If the database cannot be read (for example, the dashboard was deployed before
@@ -490,7 +500,8 @@ waiting" in place of an error.
 
 ### What it never shows
 
-- **No scores or ratings.** None of the coach-view responses include a score.
+- **No scores or ratings.** None of the coach-view responses include a score,
+  including Section B's percentage and band.
 - **No coach-the-coach feedback.** The feedback a coach receives on their own
   debrief is never sent to the portal.
 - **Teachers never see a coach's observation of them.** The teacher pages
@@ -508,7 +519,11 @@ waiting" in place of an error.
 | `GET /api/portal/dashboard` | now also returns `user.isCoach` (observe on and in the role family), which shows or hides the nav item |
 
 Each observation carries `id, createdAt, stage, teacherUserId, teacherName,
-schoolName, reportStatus, reportSentAt`. The teacher is identified from the
+schoolName, reportStatus, reportSentAt, sectionB`. `sectionB` is `null` when the
+observation has no Section B record; `{ status: 'assessed', mismatch,
+editedByCoach, moves: [{ n, phase, phaseLabel, text, verdict, verdictLabel,
+coachChanged }] }` when it was assessed; or `{ status: 'not_assessed', reason,
+detail, message }`, where `message` is the sentence the coach sees. The teacher is identified from the
 visit the observation was linked to, then from the teacher it was filed under,
 then from the name typed when the report was sent. A recording the coach has
 not yet linked to a teacher shows as "Teacher not named yet", never under the
