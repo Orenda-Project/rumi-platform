@@ -5,6 +5,59 @@ invitation system, and admin user management, with testing notes below.
 
 ---
 
+## Partner roles get no teacher data from the released schema (2026-10-04)
+
+**What changed.** The released SQL (`infrastructure/supabase/00_complete-schema.sql`,
+`01_rls-policies.sql` and the migration `V2.11.0__portal_access.sql`) creates the
+`portal_app_user` role the dashboard switches to for every signed-in request, and one
+`portal_app_user_access` policy on every table with row-level security. That policy lets
+rows through only while the dashboard user set on the connection
+(`set_portal_user_context`) is active and has an **unscoped** role: `super_admin`, `admin`
+or `viewer`. The check lives in one function, `portal_user_is_unscoped()`, which only
+`portal_app_user` may call.
+
+**The known limit.** `partner_admin`, `partner_viewer` and any other role get **no rows**
+from any of those tables through the dashboard's database role: no teachers (`users`), no
+`conversations`, `coaching_sessions`, `lesson_plan_requests`, `video_requests`,
+`reading_assessments`, and none of the other teacher-data tables. This is deliberate: a
+policy that only asked "is someone signed in" handed a school-scoped partner every teacher
+and every private conversation in the database. The scoped policies in
+`dashboard/database/migrations/018_partner_rbac_system.sql` and
+`019_rls_related_tables.sql` (which apply a partner's `access_scopes` row) are not part of
+the released schema, and as written they target `service_role`, not `portal_app_user`, so
+they would not help even where an operator has run them.
+
+What a partner sees today:
+- Sign-in works, and the feature checks still open the partner pages (the
+  `feature_permissions` rows for the partner roles are seeded `true` on purpose, so those
+  pages come back without a seed change once scoped policies exist).
+- Pages that read the tables (a teacher's detail and conversations, coaching, videos,
+  lesson plans, reading) show nothing.
+- Pages that read the scoped materialized views (`mv_users_activity` and friends, filtered
+  in the query by `services/materialized-views.service.js`) work only where the dashboard
+  migrations that create those views (022, 024) have been run; the released schema does
+  not create them.
+
+**What an operator should do.**
+- Run the dashboard with `super_admin` (or the legacy `admin` / `viewer`) accounts for
+  internal staff. Those roles see everything, as before.
+- Do not invite partners yet, or tell them their pages will be empty. Do not "fix" empty
+  partner pages by adding a broad policy for `portal_app_user`: it would show every partner
+  every teacher.
+- If you applied an earlier, unreleased build of `V2.11.0__portal_access.sql` (its policy
+  was `NULLIF(current_setting('app.portal_user_id', true), '') IS NOT NULL`), run the
+  current file once by hand with `psql -v ON_ERROR_STOP=1 -f ...`. `migrate.js` skips a
+  version that is already recorded, and the file replaces the open policy by name. Check
+  with `SELECT count(*) FROM pg_policies WHERE policyname = 'portal_app_user_access' AND
+  qual LIKE '%IS NOT NULL%';` (expect 0).
+- To give partners data, port the scoped policies: add policies `TO portal_app_user` on the
+  teacher-data tables that match the partner's `access_scopes` row, reading
+  `dashboard_users` / `access_scopes` through a `SECURITY DEFINER` function (as
+  `portal_user_is_unscoped()` does) so the policy does not recurse through the RLS on those
+  tables. They are additive to the unscoped policy.
+
+---
+
 ## Phase 1: Database & Backend Foundation ✅ COMPLETE
 
 ### Database Schema
@@ -203,7 +256,7 @@ invitation system, and admin user management, with testing notes below.
   - **Policy Logic**: Super admins bypass all filters, partner admins filtered by access scope
 
 ### Open
-- None currently
+- Partner roles get no teacher data from the released schema: see "Partner roles get no teacher data from the released schema (2026-10-04)" above.
 
 ---
 
