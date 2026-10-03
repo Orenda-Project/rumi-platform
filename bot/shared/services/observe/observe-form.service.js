@@ -207,14 +207,24 @@ async function afterSectionA(user, to, lang, state, session) {
     await sendSectionBPage(to, lang, session, state);
     return true;
   }
-  if (inReview && analysis.section_b) {
-    // An assessed record with no moves to show cannot be reviewed either; the
-    // coach is told the check could not run rather than shown an empty page.
-    const record = analysis.section_b.status === 'not_assessed'
-      ? analysis.section_b : { ...analysis.section_b, reason: 'grader_failed' };
-    await WhatsAppService.sendMessage(to, SectionB.notAssessedText(lang, record, { teacherName: await teacherName(session) }));
-  }
+  const notice = inReview ? await sectionBNotice(session, lang) : null;
+  if (notice) await WhatsAppService.sendMessage(to, notice);
   return finish(user, to, lang, state);
+}
+
+/**
+ * Why Section B is left out, for an observation that has a Section B record
+ * but nothing to review; null when there is no record (fidelity off, or an
+ * observation older than Section B) or there is something to review.
+ */
+async function sectionBNotice(session, lang) {
+  const analysis = (session && session.analysis_data) || {};
+  if (!analysis.section_b || SectionB.isReviewable(analysis.lp_fidelity)) return null;
+  // An assessed record with no moves to show cannot be reviewed either; the
+  // coach is told the check could not run rather than shown an empty page.
+  const record = analysis.section_b.status === 'not_assessed'
+    ? analysis.section_b : { ...analysis.section_b, reason: 'grader_failed' };
+  return SectionB.notAssessedText(lang, record, { teacherName: await teacherName(session) });
 }
 
 /** A reply while Section B is open: "ok" turns the page, "<move> <verdict>" changes one. */
@@ -338,4 +348,4 @@ async function resume(user, from, sessionId) {
   return start(user, from, sessionId, { lang });
 }
 
-module.exports = { start, startSectionB, handleText, resume, renderDomain, parseEdits };
+module.exports = { start, startSectionB, sectionBNotice, handleText, resume, renderDomain, parseEdits };

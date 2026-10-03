@@ -81,6 +81,7 @@ const WhatsAppService = require('../../bot/shared/services/whatsapp.service');
 const ObserveState = require('../../bot/shared/services/observe/observe-state.service');
 const ObserveEdits = require('../../bot/shared/services/observe/observe-edits.service');
 const ObserveForm = require('../../bot/shared/services/observe/observe-form.service');
+const ObserveDraft = require('../../bot/shared/services/observe/observe-draft.service');
 const { handleObserveText } = require('../../bot/shared/handlers/observe-command.handler');
 
 const COACH = { id: 'coach-1', role: 'coach', preferred_language: 'en' };
@@ -342,5 +343,66 @@ describe('the chat form — Section B after the last domain', () => {
     const st = await ObserveState.getState('coach-1');
     expect(st).toMatchObject({ domainIndex: 0, edits: {} });
     expect(st.section).toBeUndefined();
+  });
+});
+
+describe('after a Meta Flow submission — the Flow has no Section B screen', () => {
+  const FROM = '15550100001';
+  const reply = (id) => ({ observe_action: 'submitted', session_id: id, flow_token: `coach-1:${id}` });
+  // As the form endpoint leaves the row: ratings merged, review complete.
+  function seedSubmitted(id, analysisOver = {}) {
+    seed(id, { status: 'observer_review_complete' }, analysisOver);
+    row(id).analysis_data.observer_edit_summary = { indicators_rescored: 2, text_fields_changed: 0 };
+  }
+
+  test('the chat opens Section B; the debrief waits for its last page', async () => {
+    seedSubmitted('obs-40');
+    await ObserveState.setState('coach-1', 'awaiting_form', { sessionId: 'obs-40', via: 'flow' });
+    expect(await ObserveDraft.completeFromFlow(COACH, FROM, reply('obs-40'))).toBe(true);
+    expect(sent()[0]).toMatch(/saved, with your edits/);
+    expect(lastText()).toMatch(/Section B/);
+    expect(mockDebrief.offerDebriefChoice).not.toHaveBeenCalled();
+    const st = await ObserveState.getState('coach-1');
+    expect(st).toMatchObject({ state: 'awaiting_form', sessionId: 'obs-40', section: 'b', page: 0, afterFlow: true });
+    expect(st.via).toBeUndefined();
+
+    await handleObserveText(COACH, FROM, '5 1');
+    await handleObserveText(COACH, FROM, 'ok');
+    const v2 = row('obs-40').analysis_data;
+    expect(v2.lp_fidelity.moves[4]).toMatchObject({ verdict: 'executed', coach_verdict: true });
+    expect(v2.lp_fidelity.fidelity_pct).toBe(90);
+    expect(v2.observer_edit_summary).toMatchObject({ indicators_rescored: 2, fidelity_verdicts_changed: 1 });
+    expect(row('obs-40').autofill_analysis_data.lp_fidelity.fidelity_pct).toBe(70);
+    expect(lastText()).toMatch(/You changed 1 plan verdict/);
+    expect(sent().filter((m) => /saved, with your edits/.test(m))).toHaveLength(1);   // the ratings were acknowledged once
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalledWith(expect.objectContaining({ id: 'coach-1' }), FROM, 'obs-40');
+  });
+
+  test('pages kept as they are: the debrief is offered, nothing is rewritten', async () => {
+    seedSubmitted('obs-41');
+    await ObserveDraft.completeFromFlow(COACH, FROM, reply('obs-41'));
+    const before = JSON.stringify(row('obs-41').analysis_data);
+    await handleObserveText(COACH, FROM, 'ok');
+    expect(JSON.stringify(row('obs-41').analysis_data)).toBe(before);
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalled();
+    expect(await ObserveState.getState('coach-1')).toBeNull();
+  });
+
+  test('nothing measured: the reason, then the debrief as today', async () => {
+    seedSubmitted('obs-42', {
+      lp_fidelity: { status: 'lp_unparseable' },
+      section_b: { status: 'not_assessed', reason: 'plan_unreadable' },
+    });
+    await ObserveDraft.completeFromFlow(COACH, FROM, reply('obs-42'));
+    expect(sent().join('\n')).toMatch(/not assessed[\s\S]*could not read the plan/);
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalled();
+    expect(await ObserveState.getState('coach-1')).toBeNull();
+  });
+
+  test('no Section B record: unchanged', async () => {
+    seedSubmitted('obs-43', { lp_fidelity: undefined, section_b: undefined });
+    await ObserveDraft.completeFromFlow(COACH, FROM, reply('obs-43'));
+    expect(sent()).toHaveLength(1);
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalled();
   });
 });
