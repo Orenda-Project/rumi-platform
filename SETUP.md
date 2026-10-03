@@ -485,6 +485,16 @@ Class attendance needs nothing. For a head teacher's **staff** attendance and re
    `INTERNAL_API_KEY` on both services, so reset codes reach each teacher's own chat.
 4. A teacher types `/portal`. Details, including Rumi Messenger users: [docs/features/teacher-portal.md](docs/features/teacher-portal.md).
 
+### Run Rumi in public (optional)
+
+For a link anyone can sign up on:
+
+1. Set the daily caps in `.env` (`DAILY_MESSAGE_CAP_UNREGISTERED=40`, `DAILY_LESSON_PLAN_CAP_UNREGISTERED=3`,
+   `DAILY_COACHING_CAP_UNREGISTERED=0`, `DAILY_QUIZ_CAP_UNREGISTERED=2`) and `SCHOOL_TIMEZONE`. The per-sender
+   rate limit (`INBOUND_RATE_LIMIT_PER_MINUTE`, 30) is already on.
+2. Use an OpenRouter key made for this deployment, with a credit limit, and make sure Redis is running.
+3. On Matrix, harden the homeserver too. Checklist: [docs/running-in-public.md](docs/running-in-public.md).
+
 ### Add regional-language speech-to-text (optional)
 
 Speech-to-text for regional Pakistani languages (Balochi, Sindhi, Pashto) uses Meta's MMS-ASR model deployed on [Modal.com](https://modal.com).
