@@ -336,8 +336,26 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     try {
       // A command (/menu, /reading test) still runs while a name is pending;
       // it is not the name. The name question comes back after a feature.
-      const isPendingName = !String(messageBody || '').trim().startsWith('/')
+      let isPendingName = !String(messageBody || '').trim().startsWith('/')
         && await FeatureRegistrationService.isPendingName(user.id);
+
+      // On Matrix the name question may have been offered unasked (see
+      // handleGeneralConversation), so it must not block use: a reply that is
+      // not a name is handled as a normal message and the question stays
+      // open, and "no thanks" closes it. Everywhere else the question follows
+      // a feature the teacher just used, and the next message is the answer.
+      if (isPendingName && driverForIdentifier(from) === 'matrix') {
+        if (FeatureRegistrationService.isDeclineReply(messageBody)) {
+          await FeatureRegistrationService.declineRegistration(user.id, from, user.preferred_language || 'en');
+          if (typingController) typingController.stop();
+          return;
+        }
+        if (!(await FeatureRegistrationService.readsAsNameReply(user.id, messageBody))) {
+          logToFile('📝 Name pending, but this reply is not a name; handling it as a message', { userId: user.id });
+          isPendingName = false;
+        }
+      }
+
       if (isPendingName) {
         logToFile('📝 User is pending name registration, handling name response', { userId: user.id });
 
@@ -1449,6 +1467,14 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       return;
     }
 
+    // Matrix has no form, but the same reasoning holds: the person opened a
+    // room with Rumi and asked to register, so the name question is not a
+    // cold message there. Ask it now, worded as the answer to their request.
+    if (user?.id && driverForIdentifier(from) === 'matrix') {
+      await FeatureRegistrationService.sendNameQuestion(user.id, from, responseLanguage, 'text', { variant: 'requested' });
+      return;
+    }
+
     // Check if user has features but missed registration (recovery path)
     // This handles users who used features but never got asked for name
     if (user?.id) {
@@ -1819,6 +1845,12 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     // command above for the full rationale.
     if (user?.id && (driverForIdentifier(from) === 'slack' || driverForIdentifier(from) === 'discord')) {
       await FeatureRegistrationService.sendNameQuestion(user.id, from, responseLanguage, 'text');
+      return;
+    }
+
+    // Matrix asks for the name straight away too (see /register above).
+    if (user?.id && driverForIdentifier(from) === 'matrix') {
+      await FeatureRegistrationService.sendNameQuestion(user.id, from, responseLanguage, 'text', { variant: 'requested' });
       return;
     }
 
@@ -2458,6 +2490,16 @@ async function handleGeneralConversation(from, messageBody, user, sessionId, res
 
     // Show stuck session reminder (non-blocking) if applicable
     await showStuckSessionReminder(from, user.id, responseLanguage);
+  }
+
+  // On Matrix a person can register without first using a feature, so the
+  // first conversation ends with an optional offer to register
+  // (offerRegistration skips anyone registered or already asked, and never
+  // throws). After the reply, so the offer never delays or replaces it.
+  // WhatsApp keeps asking only after a feature, where an unprompted name
+  // question reads as spam.
+  if (user?.id && driverForIdentifier(from) === 'matrix') {
+    await FeatureRegistrationService.offerRegistration(user.id, from, responseLanguage);
   }
 }
 
