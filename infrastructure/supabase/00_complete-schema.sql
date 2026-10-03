@@ -4387,6 +4387,50 @@ CREATE TABLE IF NOT EXISTS coach_directory (
     CHECK (match_method <> 'confirmed' OR confirmed_at IS NOT NULL)
 );
 
+-- =============================================================================
+-- portal_app_user: the role the admin dashboard works in
+-- For every signed-in admin request the dashboard runs SET ROLE portal_app_user
+-- and set_portal_user_context(<admin id>) on its own connection
+-- (dashboard/middleware/rbac/database-context.js), and reads and writes through
+-- it: users and activity, coaching, videos, retention, access scopes,
+-- invitations, the materialized views. Without the role every admin page fails.
+--
+-- Least privilege that works:
+--   - NOLOGIN: nobody connects as it. Only the role that ran this file (the one
+--     the dashboard connects as, SUPABASE_DB_USER) is granted it, so it is
+--     never reachable from the REST API. If the dashboard connects as a
+--     different role, grant portal_app_user to that role too.
+--   - Not BYPASSRLS (creating such a role needs a superuser on many hosts). It
+--     sees rows through one policy per RLS table (01_rls-policies.sql), live
+--     only once a signed-in admin is set.
+--   - Table DML and sequences, on every table: the dashboard's queries span most
+--     of the schema, and a missing grant is a failed admin page. No DDL, no
+--     function rights beyond what PUBLIC already has, so the one-time SQL
+--     helper from SETUP.md stays service_role only.
+-- Partner scoping (an admin who may see only some teachers) is done by the
+-- dashboard's own queries (the scoped materialized views), not by these
+-- policies.
+-- Roles are cluster-wide, so the CREATE is guarded; everything here is safe to
+-- run again. Kept last so the grants cover every table above.
+-- =============================================================================
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'portal_app_user') THEN
+    CREATE ROLE portal_app_user NOLOGIN;
+  END IF;
+END $$;
+
+-- SET ROLE needs membership unless the session user is a superuser (a hosted
+-- database's owner role usually is not).
+GRANT portal_app_user TO CURRENT_USER;
+
+GRANT USAGE ON SCHEMA public TO portal_app_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO portal_app_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO portal_app_user;
+-- Tables this role creates later (a migration) get the same grants.
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO portal_app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO portal_app_user;
+
 -- Reload PostgREST's schema cache last, so the reconciled columns + functions
 -- above are immediately visible to the REST API (the earlier NOTIFY predates these DDLs).
 NOTIFY pgrst, 'reload schema';

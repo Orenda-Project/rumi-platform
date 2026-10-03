@@ -71,6 +71,113 @@ VALUES ('2.0.0', 'Rumi Platform production-parity schema (73 tables, 40 function
 ON CONFLICT (version) DO NOTHING;
 
 -- ============================================================================
+-- Feature permissions for the admin dashboard
+-- Every guarded dashboard page checks (role, feature) here and answers 403 when
+-- there is no row (dashboard/middleware/rbac/feature-access.js). One row for
+-- each feature and each role the dashboard signs in; can_access=false
+-- rows are explicit denials. Existing rows are left as they are, so an
+-- operator's edits survive a re-run.
+-- ============================================================================
+INSERT INTO feature_permissions (role, feature_key, can_access)
+VALUES
+-- super_admin: every feature.
+('super_admin', 'dashboard', true),
+('super_admin', 'users', true),
+('super_admin', 'coaching', true),
+('super_admin', 'videos', true),
+('super_admin', 'retention', true),
+('super_admin', 'funnel', true),
+('super_admin', 'ama', true),
+('super_admin', 'forge', true),
+('super_admin', 'release_notes', true),
+('super_admin', 'broadcast', true),
+('super_admin', 'api_health', true),
+('super_admin', 'ab_testing', true),
+('super_admin', 'schema', true),
+('super_admin', 'settings', true),
+('super_admin', 'wordcloud', true),
+('super_admin', 'sessions', true),
+('super_admin', 'user_management', true),
+('super_admin', 'invites', true),
+-- admin (legacy full-access role): every feature but invites.
+('admin', 'dashboard', true),
+('admin', 'users', true),
+('admin', 'coaching', true),
+('admin', 'videos', true),
+('admin', 'retention', true),
+('admin', 'funnel', true),
+('admin', 'ama', true),
+('admin', 'forge', true),
+('admin', 'release_notes', true),
+('admin', 'broadcast', true),
+('admin', 'api_health', true),
+('admin', 'ab_testing', true),
+('admin', 'schema', true),
+('admin', 'settings', true),
+('admin', 'wordcloud', true),
+('admin', 'sessions', true),
+('admin', 'user_management', true),
+('admin', 'invites', false),
+-- viewer (legacy internal role): read-only use of most features; no broadcast, settings or invites.
+('viewer', 'dashboard', true),
+('viewer', 'users', true),
+('viewer', 'coaching', true),
+('viewer', 'videos', true),
+('viewer', 'retention', true),
+('viewer', 'funnel', true),
+('viewer', 'ama', true),
+('viewer', 'forge', true),
+('viewer', 'release_notes', true),
+('viewer', 'broadcast', false),
+('viewer', 'api_health', true),
+('viewer', 'ab_testing', true),
+('viewer', 'schema', true),
+('viewer', 'settings', false),
+('viewer', 'wordcloud', true),
+('viewer', 'sessions', true),
+('viewer', 'user_management', true),
+('viewer', 'invites', false),
+-- partner_admin: the core reporting pages for the users in their scope.
+('partner_admin', 'dashboard', true),
+('partner_admin', 'users', true),
+('partner_admin', 'coaching', true),
+('partner_admin', 'videos', true),
+('partner_admin', 'retention', true),
+('partner_admin', 'funnel', true),
+('partner_admin', 'ama', false),
+('partner_admin', 'forge', true),
+('partner_admin', 'release_notes', true),
+('partner_admin', 'broadcast', false),
+('partner_admin', 'api_health', false),
+('partner_admin', 'ab_testing', false),
+('partner_admin', 'schema', false),
+('partner_admin', 'settings', false),
+('partner_admin', 'wordcloud', false),
+('partner_admin', 'sessions', false),
+('partner_admin', 'user_management', false),
+('partner_admin', 'invites', false),
+-- partner_viewer: the same pages as partner_admin (writes are refused by role checks).
+('partner_viewer', 'dashboard', true),
+('partner_viewer', 'users', true),
+('partner_viewer', 'coaching', true),
+('partner_viewer', 'videos', true),
+('partner_viewer', 'retention', true),
+('partner_viewer', 'funnel', true),
+('partner_viewer', 'ama', false),
+('partner_viewer', 'forge', true),
+('partner_viewer', 'release_notes', true),
+('partner_viewer', 'broadcast', false),
+('partner_viewer', 'api_health', false),
+('partner_viewer', 'ab_testing', false),
+('partner_viewer', 'schema', false),
+('partner_viewer', 'settings', false),
+('partner_viewer', 'wordcloud', false),
+('partner_viewer', 'sessions', false),
+('partner_viewer', 'user_management', false),
+('partner_viewer', 'invites', false)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================================
 -- Region features (standardized region gating) — Phase 4A
 -- 'default': generic Gamma LP + pic-to-LP on, curriculum LP off. Every region
 -- with no explicit row inherits these defaults (fail-open). Add a row per
