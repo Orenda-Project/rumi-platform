@@ -3,8 +3,9 @@
  *
  * Flow: coach-the-coach feedback delivered → "Send report / Later" →
  * recipient resolved (the bound teacher, a roster pick, or typed name +
- * number) → the worker renders a PREVIEW (the scoreless hero report + the
- * companion note) back to the coach → "Send now / Someone else / Cancel" →
+ * number) → the worker renders a PREVIEW (the scoreless hero report, the
+ * kind plan note when Section B was assessed, and the companion note) back
+ * to the coach → "Send now / Someone else / Cancel" →
  * delivery.
  *
  * Delivery is channel-aware, decided by the recipient IDENTITY
@@ -20,7 +21,7 @@
  *
  * Delivery state lives in analysis_data.teacher_delivery (merge-write, no
  * DDL): { teacher_name, teacher_phone, teacher_user_id, target, status,
- * preview_id, caption, companion_text, report_kind,
+ * preview_id, caption, plan_text, companion_text, report_kind,
  * report_key|report_path|report_text, sent_at, ... }. status: previewing →
  * awaiting_confirm → sent | awaiting_teacher_tap | operator_review |
  * send_failed | preview_failed | cancelled.
@@ -73,7 +74,7 @@ const newPreviewId = () => crypto.randomBytes(6).toString('hex');
 // teacher never opened) is chased afresh rather than born given-up.
 const PACKAGE_RESET = Object.freeze({
   report_kind: null, report_key: null, report_path: null, report_text: null, caption: null,
-  companion_text: null, notes: null, previewed_at: null, last_error: null, failed_at: null,
+  plan_text: null, companion_text: null, notes: null, previewed_at: null, last_error: null, failed_at: null,
   template_sent_at: null, nudged_at: null, nudge_count: 0, gave_up_at: null, gave_up_reason: null,
   reminded_at: null, reminder_count: 0,
 });
@@ -653,7 +654,7 @@ async function _buildPackage(session, { teacherName, notes, teacherLang, materia
 /** The firewall, once more, over exactly what is about to leave. */
 function _assertPackageSafe(session, d) {
   const TR = require('./observe-teacher-report');
-  TR.assertTeacherSafe([d.caption, d.report_text, d.companion_text],
+  TR.assertTeacherSafe([d.caption, d.report_text, d.plan_text, d.companion_text],
     { material: TR.coachOnlyMaterial(session.analysis_data || {}) });
 }
 
@@ -667,6 +668,9 @@ async function _sendPackage(dest, session, d, { header } = {}) {
   } else {
     const body = [d.caption, d.report_text].filter(Boolean).join('\n\n');
     if ((await W.sendMessage(dest, body)) === false) throw new Error('observe send: text report send failed');
+  }
+  if (d.plan_text && (await W.sendMessage(dest, d.plan_text)) === false) {
+    throw new Error('observe send: plan note send failed');
   }
   if (d.companion_text && (await W.sendMessage(dest, d.companion_text)) === false) {
     throw new Error('observe send: companion send failed');
@@ -715,15 +719,25 @@ async function _preview(session, payload, ctx) {
   } catch (err) {
     logToFile('⚠️ observe send: companion dropped by the firewall', { sessionId: session.id, error: err.message });
   }
+  // Section B, the kind version: built from the coach's reviewed verdicts, null
+  // unless the lesson was assessed against its plan. Like the companion it
+  // never blocks the report — a note the firewall refuses is left out.
+  let planText = null;
+  try {
+    const { buildPlanNote } = require('./observe-section-b');
+    planText = buildPlanNote((session.analysis_data || {}).lp_fidelity, { lang: teacherLang, material });
+  } catch (err) {
+    logToFile('⚠️ observe send: plan note dropped by the firewall', { sessionId: session.id, error: err.message });
+  }
   const caption = t(teacherLang, 'report_caption_teacher', { fo: coachName });
   const pkg = await _buildPackage(session, { teacherName: delivery.teacher_name, notes, teacherLang, material, previewId });
-  const d = { ...delivery, caption, companion_text: companion, notes, ...pkg };
+  const d = { ...delivery, caption, plan_text: planText, companion_text: companion, notes, ...pkg };
   _assertPackageSafe(session, d);
 
   // Rendering takes a while: the coach may have picked someone else or
   // cancelled meanwhile. Then this package is for nobody — write and show nothing.
   const written = await mergeTeacherDelivery(session.id, {
-    status: 'awaiting_confirm', caption, companion_text: companion, notes, ...pkg, previewed_at: new Date().toISOString(),
+    status: 'awaiting_confirm', caption, plan_text: planText, companion_text: companion, notes, ...pkg, previewed_at: new Date().toISOString(),
   }, { ifPreviewId: previewId });
   if (!written) {
     if (pkg.report_path) fs.promises.unlink(pkg.report_path).catch(() => {});
