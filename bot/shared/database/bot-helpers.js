@@ -664,6 +664,7 @@ async function trackChatStart(user, phoneNumber, messageBody) {
 module.exports = {
   getOrCreateUser,
   getOrCreateUserByChannel,
+  matrixPhoneNumberFor,
   getSendTargetsForUser,
   getOrCreateSession,
   updateSessionType,
