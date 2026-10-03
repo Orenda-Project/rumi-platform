@@ -24,7 +24,7 @@ Most school systems already employ people whose job is to coach teachers: mentor
 - **Observer reliability.** Coaches still need training and reliability checks. The AI draft does not replace them.
 - **Language.** English only.
 - **Integration with fidelity.** The fidelity section is not yet in the observe report.
-- **Portal sign-in.** Coaches who use only the owned messenger cannot sign in to the portal yet.
+- **Portal sign-in.** A coach who uses only the owned messenger signs in with the number in their username; send their invite with `observe-roster.js portal-invite` (see [Teacher portal sign-in](teacher-portal.md)). A coach whose username is a name needs an operator to record their number first.
 - **Open should-fix.** A re-sent invite keeps its old reminder counters.
 
 ### Sources
@@ -199,6 +199,7 @@ node bot/scripts/observe-roster.js add-teacher <teacher-phone> <school-ext-id> [
 node bot/scripts/observe-roster.js import      roster.csv
 node bot/scripts/observe-roster.js list        <coach-phone>
 node bot/scripts/observe-roster.js set-email   <coach-phone> <email> [full name]
+node bot/scripts/observe-roster.js portal-invite <coach-phone>   # the portal setup link, on the coach's channel
 ```
 
 - CSV columns: `coach_phone,school_ext_id,school_name,teacher_phone,teacher_name`.
@@ -437,7 +438,10 @@ Tuning: `OBSERVE_UNTAPPED_EXPIRE_DAYS`, `OBSERVE_UNTAPPED_MAX_PER_TICK`, `OBSERV
 ## The coach's view in the portal
 
 A coach who has a portal account sees an **Observations** item in the portal's
-navigation. It opens **My observations** (`/portal/observe`):
+navigation. A coach gets one like any teacher (`/portal` in chat), or from the
+roster with `observe-roster.js portal-invite <coach-phone>`, which sends the
+setup link to the channel they use, Rumi Messenger included (see
+[Teacher portal sign-in](teacher-portal.md)). The item opens **My observations** (`/portal/observe`):
 
 - **Upcoming visits** — the visits they scheduled with `/observe`, earliest
   first. A visit whose date has passed is marked **Overdue**.
@@ -589,6 +593,5 @@ coach gets the chat form.
 - Visit notices to the teacher by Meta template (scheduled / moved / cancelled).
 - Coach-and-teacher speaker labels in the debrief transcript (the prompt is told the two voices' labels are
   arbitrary).
-- Portal login for a coach who reaches Rumi only on Matrix, Slack or Discord (the portal signs in by phone
-  number), and scheduling from the portal.
+- Scheduling from the portal.
 - Language packs other than English (`registerLanguagePack` in `observe-strings.js` adds one).
