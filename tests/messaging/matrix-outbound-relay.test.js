@@ -258,8 +258,10 @@ describe('matrix-outbound-relay -- process roles', () => {
     const controller = driver.startContinuousTypingIndicator(TO);
     controller.stop();
     await new Promise((resolve) => setImmediate(resolve));
-    expect(call).toHaveBeenCalledWith('showTypingIndicator', [TO]);
-    expect(call).toHaveBeenCalledWith('_stopTypingIndicator', [TO]);
+    // One call to hold the typing and one to let go; the owner does the refreshing.
+    const holder = call.mock.calls.find(([method]) => method === '_holdTyping')[1][1];
+    expect(call).toHaveBeenCalledWith('_holdTyping', [TO, holder]);
+    expect(call).toHaveBeenCalledWith('_releaseTyping', [TO, holder]);
     expect(getClient).not.toHaveBeenCalled();
   });
 });
