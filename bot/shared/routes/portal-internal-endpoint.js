@@ -38,12 +38,15 @@ async function sendPasswordReset(req, res) {
 
     const { phoneNumber, userId, code, firstName, language } = req.body;
 
-    if (!phoneNumber || !code || !firstName) {
+    // No firstName is fine: on the messenger a teacher can sign in to the
+    // portal before Rumi has learned their name (registration is a chat).
+    if (!phoneNumber || !code) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: phoneNumber, code, firstName'
+        error: 'Missing required fields: phoneNumber, code'
       });
     }
+    const name = firstName ? ` ${firstName}` : '';
 
     // The portal backend sends the userId it looked up; an older one sends
     // only the number, which is looked up here.
@@ -59,7 +62,7 @@ async function sendPasswordReset(req, res) {
 
     // Multilingual reset code messages
     const messages = {
-      en: `Hi ${firstName}! 👋
+      en: `Hi${name}! 👋
 
 Your Rumi portal password reset code is:
 
@@ -69,7 +72,7 @@ This code expires in 10 minutes.
 
 If you didn't request this, please ignore this message.`,
 
-      ur: `ہیلو ${firstName}! 👋
+      ur: `ہیلو${name}! 👋
 
 آپ کا Rumi پورٹل پاسورڈ ری سیٹ کوڈ ہے:
 
@@ -79,7 +82,7 @@ If you didn't request this, please ignore this message.`,
 
 اگر آپ نے یہ درخواست نہیں کی تو براہ کرم اس پیغام کو نظر انداز کریں۔`,
 
-      ar: `مرحباً ${firstName}! 👋
+      ar: `مرحباً${name}! 👋
 
 رمز إعادة تعيين كلمة مرور بوابة Rumi الخاص بك هو:
 
@@ -89,7 +92,7 @@ If you didn't request this, please ignore this message.`,
 
 إذا لم تطلب ذلك، يرجى تجاهل هذه الرسالة.`,
 
-      es: `¡Hola ${firstName}! 👋
+      es: `¡Hola${name}! 👋
 
 Tu código de restablecimiento de contraseña del portal Rumi es:
 

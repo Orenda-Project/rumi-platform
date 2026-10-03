@@ -110,6 +110,21 @@ describe('POST /api/internal/send-password-reset', () => {
     expect(metaSend).toHaveBeenCalledWith('15551000003', expect.stringMatching(/333444[\s\S]*10 minutos/));
   });
 
+  test('someone Rumi does not know by name yet still gets the code (found running the Matrix rig)', async () => {
+    // Registration on the messenger is conversational: a teacher can sign in to
+    // the portal before Rumi has learned their name, so first_name is null.
+    const { sendPasswordReset, matrixSend } = load({
+      env: MATRIX_ONLY,
+      users: [{ id: 'u-mx', phone_number: '15551000001', first_name: null }],
+      userChannels: [{ user_id: 'u-mx', channel: 'matrix', channel_user_id: '15551000001', last_message_at: '2026-10-03T09:00:00Z' }],
+    });
+    const res = fakeRes();
+    await sendPasswordReset(request({ phoneNumber: '15551000001', userId: 'u-mx', code: '777888', firstName: null }), res);
+    expect(res.body).toMatchObject({ success: true });
+    expect(matrixSend.mock.calls[0][1]).toMatch(/^Hi! 👋[\s\S]*777888/);
+    expect(matrixSend.mock.calls[0][1]).not.toMatch(/null|undefined/);
+  });
+
   test('a failed send is reported, not claimed', async () => {
     const { sendPasswordReset } = load({
       env: MATRIX_ONLY,
