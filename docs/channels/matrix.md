@@ -81,6 +81,7 @@ trip with one account. Stop the bot first: it opens its own connection.
 | `MATRIX_STORAGE_DIR` | no | `./.matrix-storage` | Sync position and the encryption store |
 | `MATRIX_E2EE` | no | `on` | Only `off` runs without encryption |
 | `MATRIX_WELCOME_ROOM_ALIAS` | no | `#rumi-announcements:<server>` | The room new accounts are auto-joined to; Rumi greets each newcomer in a DM |
+| `MATRIX_TYPING_MAX_SECONDS` | no | `300` | The longest Rumi shows "is typing…" for one piece of work (see [Typing and read receipts](#typing-and-read-receipts)) |
 | `RUMI_FEATURE_CHANNEL_MATRIX` | no | — | `off` pauses the channel without deleting its keys: the bot does not connect to Matrix and does not send to it, from the next restart (the console's Features page writes it) |
 
 **Matrix only, or alongside WhatsApp.** With `CHANNEL_DRIVER=none` there is no WhatsApp at all: no Meta
@@ -161,6 +162,18 @@ reads a file path from a call: a file comes only as the bytes the sender read, a
 or an `http(s)` URL. A send that is already uploading when its sender gives up can still arrive, so a retry
 can send it twice.
 
+## Typing and read receipts
+
+When Rumi takes a message it marks it read (an `m.read` receipt, so the teacher sees it was seen) and shows
+"Rumi is typing…" in that room. The typing stays on while the work runs, including a lesson plan, test paper,
+lesson quiz, photo lesson plan or homework bundle that the worker makes. It goes off as soon as Rumi's answer
+arrives, whether the bot sends it or the worker does through the relay. While the worker is still making
+something, Rumi's other messages to the room (the "I'm making your test paper…" note, a reminder) leave the
+typing on: it ends with the job's own delivery, or when the job ends. A safety cap ends it after
+`MATRIX_TYPING_MAX_SECONDS` (default 300). Rumi shows no typing and sends no receipt for a group message it
+ignores. If a typing call fails, the failure is logged and the answer is still sent. Receipts and typing
+notices are not encrypted on any Matrix server, so they work the same with `MATRIX_E2EE` on or off.
+
 ## Messages sent while the bot is down
 
 Rumi answers them when it comes back, once. It keeps a marker of the last message it processed next to the
@@ -218,7 +231,7 @@ on). "Degrades" means it works with a plainer experience; "breaks" means a teach
 
 | Feature | On Matrix | Notes |
 |---|---|---|
-| Chat (text) | works | Reaction, typing, reply |
+| Chat (text) | works | Reaction, read receipt, typing, reply |
 | Welcome for a new account | works | Greeting in a DM once the teacher joins it |
 | Registration | works | Offered after the first reply, or on `register` at any time; the name completes it. Asked as a question even when `REGISTRATION_FLOW_ID` is set for WhatsApp |
 | Menus and pickers | degrades | Numbered menu; reply with a number or the option's name |

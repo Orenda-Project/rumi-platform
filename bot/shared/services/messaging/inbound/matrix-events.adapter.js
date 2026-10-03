@@ -1154,7 +1154,15 @@ async function attach(dispatch) {
       await runWithReplyRoom(event.sender, roomId, async () => {
         const metaMessage = await mapMessageToMetaShape(roomId, gate.event, ownUserId, cutoffTs);
         if (!metaMessage) return;
-        await dispatch(buildSyntheticRequest(metaMessage), buildSyntheticResponse());
+        try {
+          await dispatch(buildSyntheticRequest(metaMessage), buildSyntheticResponse());
+        } finally {
+          // The dispatch held "Rumi is typing…" for this message
+          // (showTypingIndicator); its handling is over, so let go. A worker
+          // job it queued holds its own (job-typing.js).
+          // eslint-disable-next-line global-require -- lazy: avoids a require cycle at module load
+          require('../matrix-channel.service')._releaseInboundTyping(roomId, metaMessage.id);
+        }
       });
     } catch (error) {
       logToFile('❌ Matrix inbound: error processing message', { error: error.message, stack: error.stack });
