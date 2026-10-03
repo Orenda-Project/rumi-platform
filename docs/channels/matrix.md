@@ -220,11 +220,14 @@ for that teacher go to their own DM. If Rumi cannot read a room's members, it tr
 > By the way, what should I call you? Tell me your name to register — or just keep chatting; you can type
 > register any time.
 
-- Their name ("Ayesha", "my name is Ayesha", "Hi, I'm Ayesha") completes registration: the `users` row gets
-  `first_name` and `registration_completed = true`, and Rumi confirms ("Nice to meet you, Ayesha!"), with a portal
-  link when the account has a phone number to sign in with.
-- Anything that is not a name (a question, a request, "ok") is answered as usual and the offer stays open.
-  "no thanks", "later" or "skip" closes it. The offer is made once.
+- An introduction ("my name is Ayesha", "I'm Ayesha", "Hi, I'm Ayesha", "mera naam Ayesha hai") completes
+  registration: the `users` row gets `first_name` and `registration_completed = true`, and Rumi confirms ("Nice to
+  meet you, Ayesha!"), with a portal link when the account has a phone number to sign in with.
+- A bare word or two ("Ayesha") is asked about once, because keeping chatting is often one word ("fractions"):
+  *"Shall I call you Ayesha? Reply yes, or tell me your name."* "yes", the same name again, or an introduction
+  completes registration; anything else is answered as usual and the offer stays open.
+- Anything that is not a name (a question, a request, "ok", "got it") is answered as usual and the offer stays
+  open. "no thanks", "later" or "skip" closes it, also after the confirm question. The offer is made once.
 - `register` starts registration at any time; a registered person is told they already are.
 
 On WhatsApp nothing changes: Rumi asks for the name after a teacher's first finished feature, where an unprompted

@@ -71,7 +71,8 @@ back tomorrow."* Over a job cap, the teacher is told every time they ask, becaus
 thing. `register` (with or without the slash) and the name reply it asks for always get through, so an account
 can finish registering after hitting its message cap. On Rumi Messenger, where the name question is also offered
 unasked on first contact, an open offer lifts the cap only for a reply that reads as a name (or "no thanks"), not
-for everything that follows; there the cap message reads "send register".
+for everything that follows; after "Shall I call you …?" only "yes", the same name or an introduction gets
+through. There the cap message reads "send register".
 
 Counts use one Redis `INCR` per claim (`dailycap:<kind>:<account>:<school date>`, kept 36 hours). If Redis is
 down, each process counts in memory.
