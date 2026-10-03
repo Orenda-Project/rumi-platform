@@ -118,7 +118,7 @@ The server described here is a closed school server: an admin creates every acco
 first set the bot's limits and harden the homeserver. [Running Rumi in public](../running-in-public.md) has the
 full list. In short:
 
-- **Bot** (`.env`): `INBOUND_RATE_LIMIT_PER_MINUTE=30` (default), `DAILY_MESSAGE_CAP_UNREGISTERED=40`,
+- **Bot** (`.env`): `INBOUND_RATE_LIMIT_PER_MINUTE=30` (default), `DAILY_MESSAGE_CAP_UNREGISTERED=40`, `DAILY_MESSAGE_CAP_REGISTERED=300`,
   `DAILY_LESSON_PLAN_CAP_UNREGISTERED=3`, `DAILY_COACHING_CAP_UNREGISTERED=0`, `DAILY_QUIZ_CAP_UNREGISTERED=2`,
   and the deployment's own OpenRouter key with a credit limit. When the key runs dry, Rumi says "busy" once
   instead of failing ([how the limits work](../features/public-limits.md)).

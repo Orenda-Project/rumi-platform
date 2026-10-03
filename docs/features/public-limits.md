@@ -97,7 +97,7 @@ number you chose, and this breaker turns the moment it does into a polite pause.
 # .env — recommended for a public deployment (see .env.template)
 INBOUND_RATE_LIMIT_PER_MINUTE=30
 DAILY_MESSAGE_CAP_UNREGISTERED=40
-DAILY_MESSAGE_CAP_REGISTERED=
+DAILY_MESSAGE_CAP_REGISTERED=300
 DAILY_LESSON_PLAN_CAP_UNREGISTERED=3
 DAILY_COACHING_CAP_UNREGISTERED=0
 DAILY_QUIZ_CAP_UNREGISTERED=2
@@ -122,6 +122,12 @@ Every value is read per message, so you can change it without a restart.
 
 ## Known limits
 
+- **"Registered" is only as strong as your registration.** The tier is `users.registration_completed`. In
+  Rumi's own flow it is set once the teacher gives a name, and Rumi asks for the name right after their first
+  feature. A stranger can therefore move to the registered tier just by answering that question. On a
+  public link, either set `DAILY_MESSAGE_CAP_REGISTERED` as well (a generous ceiling such as 300), or have your
+  sign-up service mark accounts registered only once it has verified them (for example, linked to a known
+  teacher).
 - **Each replica counts on its own while Redis is down.** That covers the rate limit and the daily caps.
 - **A job cap counts the request, not the result.** A lesson plan that fails after it was queued still counts
   toward the day's cap.

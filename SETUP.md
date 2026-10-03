@@ -489,7 +489,7 @@ Class attendance needs nothing. For a head teacher's **staff** attendance and re
 
 For a link anyone can sign up on:
 
-1. Set the daily caps in `.env` (`DAILY_MESSAGE_CAP_UNREGISTERED=40`, `DAILY_LESSON_PLAN_CAP_UNREGISTERED=3`,
+1. Set the daily caps in `.env` (`DAILY_MESSAGE_CAP_UNREGISTERED=40`, `DAILY_MESSAGE_CAP_REGISTERED=300`, `DAILY_LESSON_PLAN_CAP_UNREGISTERED=3`,
    `DAILY_COACHING_CAP_UNREGISTERED=0`, `DAILY_QUIZ_CAP_UNREGISTERED=2`) and `SCHOOL_TIMEZONE`. The per-sender
    rate limit (`INBOUND_RATE_LIMIT_PER_MINUTE`, 30) is already on.
 2. Use an OpenRouter key made for this deployment, with a credit limit, and make sure Redis is running.

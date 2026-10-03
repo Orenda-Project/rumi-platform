@@ -13,7 +13,7 @@ Each limit is an `.env` value, read per message ([how they work](features/public
 |---|---|---|---|
 | Messages per sender per minute | `INBOUND_RATE_LIMIT_PER_MINUTE` | `30` | `30` |
 | Messages a day, unregistered account | `DAILY_MESSAGE_CAP_UNREGISTERED` | `40` | no cap |
-| Messages a day, registered account | `DAILY_MESSAGE_CAP_REGISTERED` | empty (no cap), or a generous ceiling such as `300` | no cap |
+| Messages a day, registered account | `DAILY_MESSAGE_CAP_REGISTERED` | `300` (a generous ceiling: Rumi's own registration is just a name, so "registered" alone is no barrier) | no cap |
 | Lesson plans a day, unregistered | `DAILY_LESSON_PLAN_CAP_UNREGISTERED` | `3` | no cap |
 | Coaching recordings a day, unregistered | `DAILY_COACHING_CAP_UNREGISTERED` | `0` (after registration only) | no cap |
 | Quizzes a day, unregistered | `DAILY_QUIZ_CAP_UNREGISTERED` | `2` | no cap |
@@ -23,6 +23,10 @@ Each limit is an `.env` value, read per message ([how they work](features/public
 
 Also:
 
+1. **Decide what "registered" means.** The daily caps distinguish accounts by `users.registration_completed`.
+   Rumi sets it once a teacher gives their name, so on a public link it says little about who someone is. If
+   your sign-up service verifies people (a link to a known teacher, a school token), let it decide when an
+   account counts as registered, and keep `DAILY_MESSAGE_CAP_REGISTERED` set either way.
 1. **Give the public deployment its own OpenRouter key with a credit limit.** Make the key in the OpenRouter
    dashboard and set its limit there. When the key reaches the limit, Rumi replies "Rumi is very busy right now"
    (once per sender), and you get one `model_budget_exhausted` alert in the log instead of an error per
