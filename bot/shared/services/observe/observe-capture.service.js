@@ -139,6 +139,19 @@ async function startFromAudio(user, from, audioId, sessionId, audioDurationSecon
     }
   }
 
+  // A BOUND capture knows its teacher, so the coach can say which of their
+  // plans the lesson was taught from (Section B). Same rules as the who-ask:
+  // after the ack, never blocking, never throwing. An unbound capture is asked
+  // once the teacher is named (observe-who).
+  if (boundTeacher && session.user_id !== user.id) {
+    try {
+      const ObservePlan = require('./observe-plan.service');
+      await ObservePlan.maybeAskForPlan(user, from, session.id);
+    } catch (err) {
+      logToFile('⚠️ observe: plan-ask failed (non-blocking)', { userId: user.id, error: err.message });
+    }
+  }
+
   logToFile('🔭 observe: observation capture started', {
     coachingSessionId: session.id, observerId: user.id, audioId, bound: !!boundTeacher,
   });

@@ -319,3 +319,102 @@ describe('teacher tap on the invite', () => {
     expect(await ObserveSend.handleReportTap('15554000002', 'menu_x')).toBe(false);
   });
 });
+
+describe('Section B — the teacher\'s plan note', () => {
+  const move = (n, phase, text, verdict) => ({
+    move_id: `m${n}`, phase, bucket: 'must_happen', selection: 'none', text, verdict,
+    evidence: verdict === 'not_done' ? '' : `[0${n}:10] "quote ${n}"`, rationale: `why ${n}`,
+    counted: verdict !== 'not_adjudicable', credit: null,
+  });
+  // The coach's reviewed measurement — it carries a percentage and a band.
+  const LP = {
+    status: 'ok', source: 'linked', lesson_plan_id: 'lp-1', fidelity_pct: 70, band: 'partial', prescribed_count: 4,
+    moderators: null, unusable_guard: null, not_assessed: [], observer_edited: true,
+    moves: [
+      move(1, 'warm_up', 'Greet the class and recall halves', 'executed'),
+      move(2, 'guided', 'Students compare fractions with strips', 'substituted_better'),
+      move(3, 'exit', 'Exit question on the board', 'not_done'),
+    ],
+  };
+  const SECTION_B = { status: 'assessed', reason: null, mismatch: false };
+  const TEACHER = 'mtx:15554000002';
+  const orderOf = (mockFn, pred) => mockFn.mock.invocationCallOrder[mockFn.mock.calls.findIndex(pred)];
+
+  test('preview: the coach sees the note the teacher will get — after the report, before the companion, no number', async () => {
+    seed({}, { lp_fidelity: LP, section_b: SECTION_B });
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'preview', from: COACH_TO, previewId: PID });
+
+    expect(mockHero.calls[0].analysis.lp_fidelity).toBeUndefined();   // the renderer never saw the measurement
+    expect(mockHero.calls[0].analysis.section_b).toBeUndefined();
+    const note = delivery().plan_text;
+    expect(note).toMatch(/Your lesson and its plan/);
+    expect(note).toMatch(/Greet the class and recall halves/);
+    expect(note).toMatch(/Exit question on the board/);
+
+    const texts = textsTo(COACH_TO);
+    expect(texts).toContain(note);
+    const noteAt = orderOf(WhatsAppService.sendMessage, (c) => c[1] === note);
+    expect(orderOf(WhatsAppService.sendImage, (c) => c[0] === COACH_TO)).toBeLessThan(noteAt);
+    expect(orderOf(WhatsAppService.sendMessage, (c) => /I will ask how they know/.test(c[1]))).toBeGreaterThan(noteAt);
+    for (const t of [...texts, ...imagesTo(COACH_TO).map((c) => c[2])]) expect(TR.findScoreLeak(t)).toBeNull();
+    expect(texts.join(' ')).not.toMatch(/70|partial/);
+  });
+
+  test('deliver: the teacher gets the same note, in the same place', async () => {
+    seed({}, { lp_fidelity: LP, section_b: SECTION_B });
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'preview', from: COACH_TO, previewId: PID });
+    const note = delivery().plan_text;
+    jest.clearAllMocks();
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'deliver', from: COACH_TO, previewId: PID });
+    const texts = textsTo(TEACHER);
+    expect(texts.indexOf(note)).toBeGreaterThan(-1);
+    expect(texts.indexOf(note)).toBeLessThan(texts.findIndex((t) => /I will ask how they know/.test(t)));
+    expect(delivery().status).toBe('sent');
+  });
+
+  test('a failed note send fails the delivery like any other part', async () => {
+    seed({}, { lp_fidelity: LP, section_b: SECTION_B });
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'preview', from: COACH_TO, previewId: PID });
+    const note = delivery().plan_text;
+    jest.clearAllMocks();
+    WhatsAppService.sendMessage.mockImplementation(async (to, text) => !(to === TEACHER && text === note));
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'deliver', from: COACH_TO, previewId: PID });
+    expect(delivery()).toMatchObject({ status: 'send_failed', last_error: 'observe send: plan note send failed' });
+    WhatsAppService.sendMessage.mockImplementation(async () => true);
+  });
+
+  test('the firewall runs over the note again at delivery: a tampered note never leaves', async () => {
+    seed({}, { lp_fidelity: LP, section_b: SECTION_B });
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'preview', from: COACH_TO, previewId: PID });
+    row().analysis_data.teacher_delivery.plan_text = 'You followed 70% of your plan.';
+    jest.clearAllMocks();
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'deliver', from: COACH_TO, previewId: PID });
+    expect(WhatsAppService.sendImage).not.toHaveBeenCalled();
+    expect(delivery()).toMatchObject({ status: 'send_failed', last_error: 'trust_firewall' });
+  });
+
+  test('a note the firewall refuses is dropped and logged — the report still goes', async () => {
+    // Each line is clean on its own; read together they quote the coach's
+    // private note, so the whole-note check refuses it.
+    seed({}, {
+      lp_fidelity: { ...LP, moves: [move(1, 'warm_up', 'Greet the class warmly', 'executed'), move(2, 'recall', 'then recall the halves', 'executed')] },
+      section_b: SECTION_B,
+      observer_notes: 'greet the class warmly then recall the halves',
+    });
+    const out = await ObserveSend.processTeacherReport('obs-1', { phase: 'preview', from: COACH_TO, previewId: PID });
+    expect(out.status).toBe('previewed');
+    expect(delivery().plan_text).toBeNull();
+    expect(textsTo(COACH_TO).join('\n')).not.toMatch(/Your lesson and its plan/);
+    const { logToFile } = require('../../bot/shared/utils/logger');
+    expect(logToFile).toHaveBeenCalledWith(expect.stringMatching(/plan note dropped/), expect.anything());
+  });
+
+  test('not assessed, or no Section B: no note', async () => {
+    seed({}, { lp_fidelity: { status: 'lp_absent' }, section_b: { status: 'not_assessed', reason: 'no_plan' } });
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'preview', from: COACH_TO, previewId: PID });
+    expect(delivery().plan_text).toBeNull();
+    seed();
+    await ObserveSend.processTeacherReport('obs-1', { phase: 'preview', from: COACH_TO, previewId: PID });
+    expect(delivery().plan_text).toBeNull();
+  });
+});

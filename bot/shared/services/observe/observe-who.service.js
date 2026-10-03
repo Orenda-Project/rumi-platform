@@ -179,6 +179,9 @@ async function handleObservedTeacherPick(user, from, listId) {
     if (error) throw new Error(error.message);
     await WhatsAppService.sendMessage(from, t(lang, 'who_ack', { name: record.teacher_name || '' }));
     logToFile('🔭 observe-who: observed teacher recorded', { userId: user.id, sessionId: parsed.sessionId });
+    // The teacher is only known now, so only now can their plans be offered
+    // (Section B). It never throws; the who-answer above already stands.
+    await require('./observe-plan.service').maybeAskForPlan(user, from, parsed.sessionId);
   } catch (err) {
     logToFile('❌ observe-who: failed to record observed teacher', {
       userId: user.id, sessionId: parsed.sessionId, error: err.message,

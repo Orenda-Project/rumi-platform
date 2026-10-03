@@ -65,6 +65,30 @@ describe('observe capture', () => {
     expect(mockDb.tables.observation_schedules[0]).toMatchObject({ status: 'done', session_id: session.id });
   });
 
+  test('a bound capture asks which lesson plan it was taught from (fidelity on), after the ack', async () => {
+    process.env.LP_FIDELITY_ENABLED = 'true';
+    mockDb.tables.lesson_plans = [{ id: 'lp-1', user_id: 't-1', type: 'lesson_plan', topic: 'Fractions', grade: '4', created_at: '2026-09-30T08:00:00Z' }];
+    await ObserveState.setState('coach-1', 'awaiting_audio', {
+      boundTeacher: { user_id: 't-1', teacher_ext_id: 't-1', school_ext_id: 'S-001', name: 'Sam Taylor' },
+    });
+    const session = await Capture.startFromAudio(COACH, '15550100001', 'media-4', 'chat-1', null);
+    delete process.env.LP_FIDELITY_ENABLED;
+    const lists = WhatsAppService.sendInteractiveMessage.mock.calls.map((c) => c[1].action.sections[0].rows.map((r) => r.id));
+    expect(lists).toEqual([[`observe_lp_${session.id}_0`, `observe_lp_${session.id}_none`]]);
+    expect(WhatsAppService.sendInteractiveButtons).toHaveBeenCalled();
+  });
+
+  test('a failed plan question never costs the capture', async () => {
+    process.env.LP_FIDELITY_ENABLED = 'true';
+    WhatsAppService.sendInteractiveMessage.mockRejectedValueOnce(new Error('down'));
+    await ObserveState.setState('coach-1', 'awaiting_audio', {
+      boundTeacher: { user_id: 't-1', teacher_ext_id: 't-1', school_ext_id: 'S-001', name: 'Sam Taylor' },
+    });
+    const session = await Capture.startFromAudio(COACH, '15550100001', 'media-5', 'chat-1', null);
+    delete process.env.LP_FIDELITY_ENABLED;
+    expect(session).toMatchObject({ user_id: 't-1', status: 'confirmed' });
+  });
+
   test('a failed insert says the save failed — not "no account"', async () => {
     const realFrom = mockDb.client.from;
     mockDb.client.from = (name) => {

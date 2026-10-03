@@ -63,6 +63,18 @@ function _redactScores(analysis) {
   delete clone.teacher_delivery;
   // Subject flags enter ONLY via the confidence-filtered block below.
   delete clone.subject_accuracy;
+  // Section B: the coach's reviewed verdicts are coaching material (a planned
+  // move not done is a natural "one thing to improve"), but the blob also
+  // carries the measurement — percentage, band, credit, every run's spread.
+  // Only the moves go in.
+  delete clone.section_b;
+  if (clone.lp_fidelity) {
+    const moves = Array.isArray(clone.lp_fidelity.moves) ? clone.lp_fidelity.moves : [];
+    if (moves.length) {
+      clone.lesson_plan_moves = moves.map((m) => ({ phase: m.phase, text: m.text, verdict: m.verdict, evidence: m.evidence || '' }));
+    }
+    delete clone.lp_fidelity;
+  }
   for (const container of [clone.domains, clone.areas]) {
     if (!container || typeof container !== 'object') continue;
     for (const dom of Object.values(container)) {

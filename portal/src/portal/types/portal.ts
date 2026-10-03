@@ -165,7 +165,34 @@ export interface CoachObservation {
   schoolName: string | null;
   reportStatus: string | null;
   reportSentAt: string | null;
+  /** Section B — did the lesson follow its plan? null when it was never looked at. */
+  sectionB?: CoachSectionB | null;
 }
+
+export type SectionBVerdict =
+  | 'executed'
+  | 'substituted_equivalent'
+  | 'substituted_better'
+  | 'partial'
+  | 'not_done'
+  | 'not_adjudicable';
+
+export interface SectionBMove {
+  /** The move's number in the plan, as in the chat form. */
+  n: number;
+  phase: string | null;
+  phaseLabel: string;
+  text: string;
+  verdict: SectionBVerdict;
+  verdictLabel: string;
+  /** The coach changed this verdict in chat. */
+  coachChanged: boolean;
+}
+
+/** The moves and their verdicts — never a percentage, band or count. */
+export type CoachSectionB =
+  | { status: 'assessed'; mismatch: boolean; editedByCoach: boolean; moves: SectionBMove[] }
+  | { status: 'not_assessed'; reason: string; detail: string | null; message: string };
 
 export interface CoachObservationsData {
   upcoming: CoachVisit[];

@@ -3,6 +3,12 @@
  * edit surfaces share: the stepwise chat form (observe-form.service) and the
  * Meta form Flow's endpoint. v1 (autofill_analysis_data) is never touched.
  *
+ * Section B (did the lesson follow its plan?) rides along: the coach's
+ * per-move verdicts (fid_<n>) are merged in the same write and re-scored by
+ * the scorer the measurement came from (observe-section-b). The Flow has no
+ * Section B screen, so after a Flow submission they arrive on their own —
+ * applySectionBEdits.
+ *
  * Also the field helpers both surfaces need to address an indicator and show
  * its evidence the same way.
  */
@@ -59,6 +65,22 @@ async function loadSession(sessionId) {
 }
 
 /**
+ * The coach's Section B verdicts (fid_<n> → verdict id) into v2, in place.
+ * Only the edited blob changes; section_b keeps what the analysis step
+ * recorded (the cause of a missing plan) and takes the re-scored status.
+ * @returns {number} how many verdicts the coach changed
+ */
+function mergeVerdicts(v2, edits) {
+  if (!v2.lp_fidelity) return 0;
+  const { applyVerdictEdits, sectionBRecord } = require('./observe-section-b');
+  const { lp, verdictsChanged } = applyVerdictEdits(v2.lp_fidelity, edits || {});
+  if (!verdictsChanged) return 0;
+  v2.lp_fidelity = lp;
+  v2.section_b = { ...(v2.section_b || {}), ...sectionBRecord(lp) };
+  return verdictsChanged;
+}
+
+/**
  * Merge the coach's edits (r_<id> rating, ev_<id> evidence, imp_<id>
  * improvement) into a v2 analysis, recompute scores, stamp the summary,
  * persist. v1 (autofill_analysis_data) is never touched here.
@@ -107,8 +129,12 @@ async function applyObserverEdits(sessionId, edits) {
   });
 
   pack.computeScores(v2);
+  const verdictsChanged = mergeVerdicts(v2, edits);
 
-  const summary = { indicators_rescored: rescored, text_fields_changed: textChanged, edited_at: new Date().toISOString() };
+  const summary = {
+    indicators_rescored: rescored, text_fields_changed: textChanged, fidelity_verdicts_changed: verdictsChanged,
+    edited_at: new Date().toISOString(),
+  };
   v2.observer_edit_summary = summary;
 
   // A wholesale analysis_data write from a read at entry — re-read the debrief
@@ -139,6 +165,58 @@ async function applyObserverEdits(sessionId, edits) {
   return summary;
 }
 
+/**
+ * The coach's Section B verdicts after a Flow submission: the ratings are
+ * already saved (observer_review_complete) and the chat has walked the coach
+ * through the plan's moves. Accepted only until anything has followed — once
+ * the debrief has started or a report is on its way, the measurement it was
+ * built from must not change under it. The write repeats every condition.
+ *
+ * @returns {Promise<object>} { fidelity_verdicts_changed }, or { refused: 'terminal' | 'not_in_review' }
+ */
+async function applySectionBEdits(sessionId, edits) {
+  const session = await loadSession(sessionId);
+  const analysis = session.analysis_data || {};
+  const followed = (session.debrief_status && session.debrief_status !== 'pending')
+    || !!(analysis.teacher_delivery && analysis.teacher_delivery.status);
+  if (isTerminalStatus(session.status) || session.status !== 'observer_review_complete' || followed) {
+    const refused = isTerminalStatus(session.status) ? 'terminal' : 'not_in_review';
+    logToFile('🚫 observe: Section B edits refused', { sessionId, status: session.status, refused });
+    return { refused };
+  }
+  const v2 = JSON.parse(JSON.stringify(analysis));
+  const verdictsChanged = mergeVerdicts(v2, edits);
+  if (!verdictsChanged) return { fidelity_verdicts_changed: 0 };
+
+  // Write only what this owns onto the row as it is now, so a debrief the
+  // worker merged meanwhile is kept.
+  const { data: freshRow } = await supabase.from('coaching_sessions').select('analysis_data').eq('id', sessionId).single();
+  const fresh = (freshRow && freshRow.analysis_data) || analysis;
+  const next = {
+    ...fresh,
+    lp_fidelity: v2.lp_fidelity,
+    section_b: v2.section_b,
+    observer_edit_summary: { ...(fresh.observer_edit_summary || {}), fidelity_verdicts_changed: verdictsChanged },
+  };
+
+  let q = supabase.from('coaching_sessions')
+    .update({ analysis_data: next })
+    .eq('id', sessionId)
+    .eq('status', 'observer_review_complete')
+    .is('analysis_data->teacher_delivery->>status', null);
+  q = session.debrief_status ? q.eq('debrief_status', 'pending') : q.is('debrief_status', null);
+  const { data: written, error } = await q.select('id');
+  if (error) throw new Error(`observe: failed to persist Section B edits: ${error.message}`);
+  if (!written || !written.length) {
+    const { data: now } = await supabase.from('coaching_sessions').select('status').eq('id', sessionId).maybeSingle();
+    const refused = isTerminalStatus(now && now.status) ? 'terminal' : 'not_in_review';
+    logToFile('🚫 observe: Section B edits refused at write — the observation moved on', { sessionId, refused });
+    return { refused };
+  }
+  logToFile('📋 observe: Section B verdicts applied', { sessionId, verdictsChanged });
+  return { fidelity_verdicts_changed: verdictsChanged };
+}
+
 module.exports = {
-  applyObserverEdits, clipWords, evidenceOf, improvementOf, fid, PREFILL_TEXT_CAP, IN_REVIEW_STATUS,
+  applyObserverEdits, applySectionBEdits, clipWords, evidenceOf, improvementOf, fid, PREFILL_TEXT_CAP, IN_REVIEW_STATUS,
 };

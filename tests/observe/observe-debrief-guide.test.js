@@ -69,6 +69,25 @@ describe('buildGuidePrompt', () => {
     expect(p).toContain('The children moved into groups');   // the real evidence is there
   });
 
+  test('Section B reaches the guide as the reviewed moves only — never its percentage, band or run spread', () => {
+    const withB = {
+      ...V2,
+      lp_fidelity: {
+        status: 'ok', fidelity_pct: 72.5, band: 'partial', executed_credit: 4.5, prescribed_count: 6, spread: 4.1,
+        runs: [{ pct: 72.5 }], narrative: 'Scored 72.5 against the plan.', observer_edited: true,
+        moves: [
+          { move_id: 'm1', phase: 'warm_up', text: 'Recall halves with the class', verdict: 'executed', evidence: '[01:10] "Who remembers halves?"', credit: 1, counted: true },
+          { move_id: 'm2', phase: 'exit', text: 'Exit question on the board', verdict: 'not_done', evidence: '', credit: 0, counted: true },
+        ],
+      },
+      section_b: { status: 'assessed', reason: null },
+    };
+    const prompt = buildGuidePrompt(withB, { language: 'en' });
+    expect(prompt).toContain('Exit question on the board');
+    expect(prompt).toContain('not_done');
+    expect(prompt).not.toMatch(/72\.5|"band"|"spread"|"runs"|"credit"|"executed_credit"|"fidelity_pct"|"prescribed_count"|"section_b"/);
+  });
+
   test('asks for exactly six steps in the research order', () => {
     expect(p).toMatch(/OPEN WITH INTENT/);
     expect(p).toMatch(/PRAISE WITH EVIDENCE/);
