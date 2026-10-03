@@ -13,12 +13,14 @@ import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useChatChannel } from '@/hooks/useChatChannel';
 import { welcomeBack } from '@/lib/greeting';
 import type { DashboardStats, LessonPlan, CoachingSession } from '../types/portal';
 
 const PortalDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const channel = useChatChannel();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({ totalLessonPlans: 0, totalCoachingSessions: 0 });
   const [recentLessonPlans, setRecentLessonPlans] = useState<LessonPlan[]>([]);
@@ -174,9 +176,11 @@ const PortalDashboard = () => {
               <EmptyState
                 icon={BookOpen}
                 title="No lesson plans yet"
-                description="Generate your first lesson plan using the WhatsApp bot"
-                actionLabel="Open WhatsApp"
-                actionHref="https://wa.me/message/WCYNS4DTDB2MD1"
+                description={channel.whatsapp
+                  ? "Generate your first lesson plan using the WhatsApp bot"
+                  : "Generate your first lesson plan in your chat with Rumi"}
+                actionLabel={channel.whatsapp ? "Open WhatsApp" : "Chat with Rumi"}
+                actionHref={channel.chatUrl ?? undefined}
               />
             )}
           </div>
@@ -238,17 +242,21 @@ const PortalDashboard = () => {
         <div className="mt-8 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg p-6 border border-accent/20">
           <h3 className="text-xl font-semibold mb-2">Ready to improve your teaching?</h3>
           <p className="text-muted-foreground mb-4">
-            Get personalized coaching and lesson plans through WhatsApp
+            {channel.whatsapp
+              ? "Get personalized coaching and lesson plans through WhatsApp"
+              : "Get personalized coaching and lesson plans in your chat with Rumi"}
           </p>
-          <Button asChild className="bg-accent hover:bg-accent/90">
-            <a 
-              href="https://wa.me/message/WCYNS4DTDB2MD1" 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
-              Open WhatsApp
-            </a>
-          </Button>
+          {channel.chatUrl && (
+            <Button asChild className="bg-accent hover:bg-accent/90">
+              <a
+                href={channel.chatUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {channel.whatsapp ? "Open WhatsApp" : "Chat with Rumi"}
+              </a>
+            </Button>
+          )}
         </div>
       </div>
     </PortalLayout>

@@ -3,10 +3,14 @@
     "features": "Características",
     "meetRumi": "Conoce a Rumi"
   },
+  "channel": {
+    "chatWithRumi": "Chatea con Rumi"
+  },
   "hero": {
     "title": "No estás",
     "titleContinued": "enseñando solo",
     "subtitle": "Tu compañero de enseñanza 24/7. Haz preguntas, comparte dificultades, obtén apoyo—en cualquier momento, a través de WhatsApp.",
+    "subtitleNeutral": "Tu compañero de enseñanza 24/7. Haz preguntas, comparte dificultades, obtén apoyo—en cualquier momento, en tu chat con Rumi.",
     "meetRumi": "Conoce a Rumi",
     "seeHowItWorks": "Ver Cómo Funciona"
   },

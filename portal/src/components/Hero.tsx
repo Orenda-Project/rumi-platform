@@ -1,12 +1,15 @@
 import { Button } from "@/components/ui/button";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import { MessageCircle } from "lucide-react";
 import heroImage from "@/assets/hero-sketch-2.png";
-import { getWhatsAppUrl, trackCtaClick } from "@/lib/funnelTracking";
+import { trackCtaClick } from "@/lib/funnelTracking";
+import { landingChatHref, useChatChannel } from "@/hooks/useChatChannel";
 import { useTranslation } from "react-i18next";
 
 const Hero = () => {
   const { t } = useTranslation();
-  const whatsappUrl = getWhatsAppUrl('https://wa.me/message/WCYNS4DTDB2MD1');
+  const channel = useChatChannel();
+  const chatHref = landingChatHref(channel);
 
   const handleCtaClickTracking = () => {
     trackCtaClick('hero');
@@ -25,21 +28,27 @@ const Hero = () => {
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed font-light">
-              {t('hero.subtitle')}
+              {channel.whatsapp ? t('hero.subtitle') : t('hero.subtitleNeutral')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button asChild variant="default" size="xl" className="group">
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handleCtaClickTracking}
-                >
-                  <WhatsAppIcon className="transition-transform group-hover:scale-110" size={20} />
-                  {t('hero.meetRumi')}
-                </a>
-              </Button>
+              {chatHref && (
+                <Button asChild variant="default" size="xl" className="group">
+                  <a
+                    href={chatHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleCtaClickTracking}
+                  >
+                    {channel.whatsapp ? (
+                      <WhatsAppIcon className="transition-transform group-hover:scale-110" size={20} />
+                    ) : (
+                      <MessageCircle className="transition-transform group-hover:scale-110" size={20} />
+                    )}
+                    {channel.whatsapp ? t('hero.meetRumi') : t('channel.chatWithRumi')}
+                  </a>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="xl"

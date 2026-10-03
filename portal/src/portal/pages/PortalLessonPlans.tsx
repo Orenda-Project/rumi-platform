@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { portal } from '../services/api';
 import { useToast } from '@/hooks/use-toast';
+import { useChatChannel } from '@/hooks/useChatChannel';
 import type { LessonPlan } from '../types/portal';
 
 const PortalLessonPlans = () => {
   const { toast } = useToast();
+  const channel = useChatChannel();
   const [loading, setLoading] = useState(true);
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [filter, setFilter] = useState<'all' | 'lesson_plan' | 'presentation'>('all');
@@ -158,12 +160,14 @@ const PortalLessonPlans = () => {
           <EmptyState
             icon={BookOpen}
             title="No lesson plans found"
-            description={filter === 'all' 
-              ? "Generate your first lesson plan using the WhatsApp bot"
+            description={filter === 'all'
+              ? (channel.whatsapp
+                ? "Generate your first lesson plan using the WhatsApp bot"
+                : "Generate your first lesson plan in your chat with Rumi")
               : `No ${filter === 'lesson_plan' ? 'lesson plans' : 'presentations'} found`
             }
-            actionLabel="Open WhatsApp"
-            actionHref="https://wa.me/message/WCYNS4DTDB2MD1"
+            actionLabel={channel.whatsapp ? "Open WhatsApp" : "Chat with Rumi"}
+            actionHref={channel.chatUrl ?? undefined}
           />
         )}
       </div>

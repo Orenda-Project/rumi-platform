@@ -2,15 +2,18 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import rumiLogo from "@/assets/rumi-logo.png";
-import { getWhatsAppUrl, trackCtaClick } from "@/lib/funnelTracking";
+import { trackCtaClick } from "@/lib/funnelTracking";
+import { landingChatHref, useChatChannel } from "@/hooks/useChatChannel";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import { MessageCircle } from "lucide-react";
 
 const Navigation = () => {
   const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
-  const whatsappUrl = getWhatsAppUrl('https://wa.me/message/WCYNS4DTDB2MD1');
+  const channel = useChatChannel();
+  const chatHref = landingChatHref(channel);
 
   const handleCtaClickTracking = () => {
     trackCtaClick('navigation');
@@ -46,18 +49,22 @@ const Navigation = () => {
             >
               {t('nav.features')}
             </a>
-            <Button asChild variant="default" size="sm">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="gap-2"
-                onClick={handleCtaClickTracking}
-              >
-                <WhatsAppIcon size={16} />
-                <span className="hidden sm:inline">{t('nav.meetRumi')}</span>
-              </a>
-            </Button>
+            {chatHref && (
+              <Button asChild variant="default" size="sm">
+                <a
+                  href={chatHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="gap-2"
+                  onClick={handleCtaClickTracking}
+                >
+                  {channel.whatsapp ? <WhatsAppIcon size={16} /> : <MessageCircle size={16} />}
+                  <span className="hidden sm:inline">
+                    {channel.whatsapp ? t('nav.meetRumi') : t('channel.chatWithRumi')}
+                  </span>
+                </a>
+              </Button>
+            )}
             <LanguageSwitcher />
           </div>
         </div>

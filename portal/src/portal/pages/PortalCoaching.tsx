@@ -9,10 +9,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { portal } from '../services/api';
 import { useToast } from '@/hooks/use-toast';
+import { useChatChannel } from '@/hooks/useChatChannel';
 import type { CoachingSession } from '../types/portal';
 
 const PortalCoaching = () => {
   const { toast } = useToast();
+  const channel = useChatChannel();
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<CoachingSession[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -149,9 +151,11 @@ const PortalCoaching = () => {
           <EmptyState
             icon={MessageSquare}
             title="No coaching sessions yet"
-            description="Complete your first coaching session using the WhatsApp bot"
-            actionLabel="Open WhatsApp"
-            actionHref="https://wa.me/message/WCYNS4DTDB2MD1"
+            description={channel.whatsapp
+              ? "Complete your first coaching session using the WhatsApp bot"
+              : "Complete your first coaching session in your chat with Rumi"}
+            actionLabel={channel.whatsapp ? "Open WhatsApp" : "Chat with Rumi"}
+            actionHref={channel.chatUrl ?? undefined}
           />
         )}
       </div>
