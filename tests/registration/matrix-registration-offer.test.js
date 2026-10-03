@@ -125,8 +125,11 @@ beforeAll(() => {
   if (botDepsInstalled) handler = require('../../bot/shared/handlers/text-message.handler');
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
+  // The word Rumi asked about is also held in memory (for when Redis is
+  // down), so clearing the Redis mock alone would carry it into the next test.
+  if (botDepsInstalled) await require('../../bot/shared/services/feature-registration.service')._clearNameCandidate('u-1');
   mockWa.sendMessage.mockReset().mockResolvedValue(true);
   mockAi.getResponseWithFormat.mockReset().mockResolvedValue(GENERAL_REPLY);
   mockRedisStore.clear();
@@ -144,6 +147,7 @@ async function say(from, body, rowPatch = {}) {
 }
 
 const nameWrites = () => mockDb.updates.filter((u) => 'first_name' in u);
+const CONFIRM = (name) => `Shall I call you ${name}? Reply yes, or tell me your name.`;
 
 describeWithBotDeps('Matrix: offered on first contact', () => {
   test('a new person says "Hi": the normal reply, then the registration offer, and the offer is now open', async () => {
@@ -208,8 +212,12 @@ describeWithBotDeps('Matrix: an open offer never blocks use', () => {
     expect(mockDb.row.registration_pending_name).toBe(true);
   });
 
-  test('a name while pending registers them', async () => {
-    const sent = await say(MATRIX, 'Ayesha', { registration_pending_name: true });
+  test('a bare name while pending is asked about once, then "yes" registers them', async () => {
+    const asked = await say(MATRIX, 'Ayesha', { registration_pending_name: true });
+    expect(asked).toEqual([CONFIRM('Ayesha')]);
+    expect(nameWrites()).toEqual([]);
+    mockWa.sendMessage.mockClear();
+    const sent = await say(MATRIX, 'yes');
     expect(mockDb.updates).toContainEqual(expect.objectContaining({
       first_name: 'Ayesha', registration_completed: true, registration_pending_name: false,
     }));
@@ -246,6 +254,97 @@ describeWithBotDeps('Matrix: an open offer never blocks use', () => {
   });
 });
 
+// While the offer is open, one-word chat ("fractions", "Shukriya") reads
+// exactly like a one-word name. So a bare word is a name only once the
+// teacher confirms it; an introduction ("my name is ...") needs no confirm.
+describeWithBotDeps('Matrix: a bare word is a name only once confirmed', () => {
+  const pending = { registration_pending_name: true };
+
+  test('"Sadia" is asked about, not stored', async () => {
+    const sent = await say(MATRIX, 'Sadia', pending);
+    expect(sent).toEqual(['Shall I call you Sadia? Reply yes, or tell me your name.']);
+    expect(nameWrites()).toEqual([]);
+    expect(mockDb.row.registration_pending_name).toBe(true);
+    expect(mockAi.getResponseWithFormat).not.toHaveBeenCalled();
+  });
+
+  test('"Sadia", then "yes": stored, registered, and told so', async () => {
+    await say(MATRIX, 'Sadia', pending);
+    mockWa.sendMessage.mockClear();
+    const sent = await say(MATRIX, 'yes');
+    expect(nameWrites()).toEqual([expect.objectContaining({
+      first_name: 'Sadia', registration_completed: true, registration_pending_name: false,
+    })]);
+    expect(sent).toEqual([expect.stringMatching(/Nice to meet you, Sadia/)]);
+  });
+
+  test('"Sadia", then "Sadia" again: stored', async () => {
+    await say(MATRIX, 'Sadia', pending);
+    mockWa.sendMessage.mockClear();
+    const sent = await say(MATRIX, 'Sadia');
+    expect(nameWrites()).toEqual([expect.objectContaining({ first_name: 'Sadia', registration_completed: true })]);
+    expect(sent).toEqual([expect.stringMatching(/Nice to meet you, Sadia/)]);
+  });
+
+  test('a confirm, then an introduction: stored', async () => {
+    await say(MATRIX, 'fractions', pending);
+    mockWa.sendMessage.mockClear();
+    await say(MATRIX, "I'm Sadia");
+    expect(nameWrites()).toEqual([expect.objectContaining({ first_name: 'Sadia', registration_completed: true })]);
+  });
+
+  test.each(['my name is Sadia', "I'm Sadia", 'Hi, I\'m Sadia', 'call me Sadia', 'mera naam Sadia hai'])(
+    '"%s" is stored directly, with no confirm', async (reply) => {
+      const sent = await say(MATRIX, reply, pending);
+      expect(nameWrites()).toEqual([expect.objectContaining({ first_name: 'Sadia', registration_completed: true })]);
+      expect(sent).toEqual([expect.stringMatching(/Nice to meet you, Sadia/)]);
+    },
+  );
+
+  test('"fractions" is asked about, not stored; a question next is answered and the candidate dropped', async () => {
+    expect(await say(MATRIX, 'fractions', pending)).toEqual([CONFIRM('Fractions')]);
+    mockWa.sendMessage.mockClear();
+    const sent = await say(MATRIX, 'How do I teach fractions to grade 3?');
+    expect(sent).toEqual([GENERAL_REPLY]);
+    expect(nameWrites()).toEqual([]);
+    expect(mockDb.row.registration_pending_name).toBe(true);
+    // The candidate is gone: "yes" now is just chat, not "Fractions".
+    mockWa.sendMessage.mockClear();
+    expect(await say(MATRIX, 'yes')).toEqual([GENERAL_REPLY]);
+    expect(nameWrites()).toEqual([]);
+  });
+
+  test('a confirm, then a different bare word: handled as a message, nothing stored', async () => {
+    await say(MATRIX, 'fractions', pending);
+    mockWa.sendMessage.mockClear();
+    expect(await say(MATRIX, 'decimals')).toEqual([GENERAL_REPLY]);
+    expect(nameWrites()).toEqual([]);
+  });
+
+  test('a confirm, then "no thanks": the offer is closed', async () => {
+    await say(MATRIX, 'Sadia', pending);
+    mockWa.sendMessage.mockClear();
+    const sent = await say(MATRIX, 'no thanks');
+    expect(sent).toEqual(["No problem — type register whenever you'd like to."]);
+    expect(nameWrites()).toEqual([]);
+    expect(mockDb.row.registration_pending_name).toBe(false);
+  });
+
+  test('a lone greeting word is asked about the same way, and taken when sent again', async () => {
+    expect(await say(MATRIX, 'Salam', pending)).toEqual([CONFIRM('Salam')]);
+    mockWa.sendMessage.mockClear();
+    await say(MATRIX, 'Salam');
+    expect(nameWrites()).toEqual([expect.objectContaining({ first_name: 'Salam' })]);
+  });
+
+  test('the confirm is asked in the teacher\'s language', async () => {
+    Object.assign(mockDb.row, pending);
+    const user = { id: 'u-1', preferred_language: 'ur', first_name: null };
+    await handler.handleTextMessage({ id: 'm-test' }, MATRIX, 'Sadia', user);
+    expect(mockWa.sendMessage.mock.calls.map(([, t]) => t)).toEqual(['کیا میں آپ کو Sadia کہہ کر بلاؤں؟ ہاں لکھ دیں، یا اپنا نام بتا دیں۔']);
+  });
+});
+
 describeWithBotDeps('WhatsApp and Slack are unchanged', () => {
   test('WhatsApp: a new person says "Hi" and gets the reply only', async () => {
     const sent = await say(WHATSAPP, 'Hi');
@@ -261,6 +360,11 @@ describeWithBotDeps('WhatsApp and Slack are unchanged', () => {
   test('WhatsApp: while pending, any reply is still read as the name', async () => {
     await say(WHATSAPP, 'How do I teach fractions?', { registration_pending_name: true });
     expect(nameWrites()).toEqual([expect.objectContaining({ first_name: 'How' })]);
+  });
+
+  test('WhatsApp: while pending, a bare name is stored at once, with no confirm', async () => {
+    await say(WHATSAPP, 'Sadia', { registration_pending_name: true });
+    expect(nameWrites()).toEqual([expect.objectContaining({ first_name: 'Sadia', registration_completed: true })]);
   });
 
   test('WhatsApp: while pending, "no thanks" is still read as the name', async () => {

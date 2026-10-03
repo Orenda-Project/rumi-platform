@@ -53,8 +53,30 @@ describe('looksLikeNameReply', () => {
     'Hello Rumi',
     'Hi there',
     'teach me something new today please',
+    'got it',
+    'Shukriya',
+    'thanks a lot',
   ])('"%s" is not a name reply', (text) => {
     expect(Svc.looksLikeNameReply(text)).toBe(false);
+  });
+});
+
+// On Matrix an introduction is stored as the name at once; a bare word is
+// only a candidate, asked about first.
+describe('introducesName', () => {
+  test.each([
+    'my name is Sadia', "I'm Sadia", 'I’m Sadia', 'I am Sadia', 'call me Sadia', 'this is Sadia',
+    "Hi, I'm Sadia", 'Hello, my name is Noor', 'mera naam Sadia hai', 'میرا نام عائشہ ہے', 'me llamo Sofia', 'اسمي ليلى',
+  ])('"%s" introduces a name', (text) => {
+    expect(Svc.introducesName(text)).toBe(true);
+  });
+
+  test.each([
+    'Sadia', 'Sadia Khan', 'fractions', 'Shukriya', 'got it', 'Salam', 'Hi', "it's Sadia",
+    "I'm fine", "I'm looking for a lesson plan on photosynthesis for my class", 'this is a quiz',
+    'How do I teach fractions?', '',
+  ])('"%s" does not', (text) => {
+    expect(Svc.introducesName(text)).toBe(false);
   });
 });
 

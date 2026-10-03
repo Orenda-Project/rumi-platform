@@ -348,17 +348,25 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         && await FeatureRegistrationService.isPendingName(user.id);
 
       // On Matrix the name question may have been offered unasked (see
-      // handleGeneralConversation), so it must not block use: a reply that is
-      // not a name is handled as a normal message and the question stays
-      // open, and "no thanks" closes it. Everywhere else the question follows
-      // a feature the teacher just used, and the next message is the answer.
-      if (isPendingName && driverForIdentifier(from) === 'matrix') {
+      // handleGeneralConversation), so it must not block use: "no thanks"
+      // closes it, and a reply that is not a name is handled as a normal
+      // message with the question left open. Keeping chatting is often one
+      // word ("fractions"), which reads like a name, so a bare word is asked
+      // about before it is stored (resolveOfferedNameReply). Everywhere else
+      // the question follows a feature the teacher just used, and the next
+      // message is the answer.
+      const offered = isPendingName && driverForIdentifier(from) === 'matrix';
+      let result = null;
+      if (offered) {
         if (FeatureRegistrationService.isDeclineReply(messageBody)) {
           await FeatureRegistrationService.declineRegistration(user.id, from, user.preferred_language || 'en');
           if (typingController) typingController.stop();
           return;
         }
-        if (!(await FeatureRegistrationService.readsAsNameReply(user.id, messageBody))) {
+        result = await FeatureRegistrationService.handleNameResponse(
+          user.id, messageBody, from, user.preferred_language || 'en', 'text', { confirmBareWord: true }
+        );
+        if (result.chat) {
           logToFile('📝 Name pending, but this reply is not a name; handling it as a message', { userId: user.id });
           isPendingName = false;
         }
@@ -370,17 +378,30 @@ async function handleTextMessage(message, from, messageBody, user = null) {
         // Get user's current language
         const userLanguage = user.preferred_language || 'en';
 
-        // Handle the name response
-        const result = await FeatureRegistrationService.handleNameResponse(
-          user.id,
-          messageBody,
-          from,
-          userLanguage,
-          'text'
-        );
+        // Handle the name response (on Matrix, already read above)
+        if (!result) {
+          result = await FeatureRegistrationService.handleNameResponse(
+            user.id,
+            messageBody,
+            from,
+            userLanguage,
+            'text'
+          );
+        }
 
         if (result.success) {
           logToFile('✅ Name registration completed via text', { userId: user.id, firstName: result.firstName });
+        } else if (result.confirm && offered) {
+          // A bare word on Matrix may be chat or the name: ask once. "Yes" or
+          // the same word again takes it; anything else is chat.
+          const name = result.confirm;
+          const confirmMessages = {
+            en: `Shall I call you ${name}? Reply yes, or tell me your name.`,
+            ur: `کیا میں آپ کو ${name} کہہ کر بلاؤں؟ ہاں لکھ دیں، یا اپنا نام بتا دیں۔`,
+            ar: `هل أناديك ${name}؟ أجب بنعم، أو أخبرني باسمك.`,
+            es: `¿Te llamo ${name}? Responde sí, o dime tu nombre.`
+          };
+          await WhatsAppService.sendMessage(from, confirmMessages[userLanguage] || confirmMessages.en);
         } else if (result.confirm) {
           // A lone greeting word ("Salam") may be a greeting or the name.
           // Ask in words that make plain it can be the name; the same word

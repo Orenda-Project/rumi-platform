@@ -46,9 +46,14 @@ const AFFIRMATIVE_RE = /^(?:yes|yeah|yep|ok|okay|haan|han|ji|jee|si|sí|نعم|�
 // greeting before it, if any, already stripped). Wider than INTRODUCTION_RE:
 // it also takes the forms that parseNameReply strips with no greeting first.
 const INTRODUCTION_PREFIX_RE = /^(?:my name is|i am|i'm|i’m|im|this is|it's|its|call me|mera naam|میرا نام|naam|نام|me llamo|soy|mi nombre es|اسمي|انا|أنا)\s+/i;
+// The introductions that say plainly a name follows, so the name is taken
+// with no confirm while the Matrix offer is open. Not "it's": "it's raining"
+// is chat, and "it's Sadia" still gets the confirm.
+const EXPLICIT_INTRODUCTION_RE = /^(?:my name is|i am|i'm|i’m|im|this is|call me|mera naam|میرا نام|naam|نام|me llamo|soy|mi nombre es|اسمي|انا|أنا)\s+/i;
 // Words a name reply does not start with: the first word of a question or a
-// request, a pronoun or article, a feature, or a word people send after a
-// greeting ("Hello Rumi", "Hi there"). Lower case.
+// request, a pronoun or article, a feature, a word people send after a
+// greeting ("Hello Rumi", "Hi there"), or a thanks or acknowledgement sent
+// while the Matrix offer is open ("got it", "Shukriya"). Lower case.
 const NOT_A_NAME_WORDS = new Set([
   'what', "what's", 'whats', 'how', 'why', 'when', 'where', 'who', 'whom', 'which',
   'can', 'could', 'would', 'will', 'should', 'shall', 'is', 'are', 'am', 'was', 'do', 'does', 'did', 'have', 'has',
@@ -59,6 +64,7 @@ const NOT_A_NAME_WORDS = new Set([
   'attendance', 'homework', 'grade', 'class', 'test', 'exam', 'worksheet',
   'rumi', 'there', 'everyone', 'all', 'sir', 'madam', 'miss', 'teacher',
   'yes', 'no', 'good', 'great', 'nice', 'cool', 'fine',
+  'got', 'thank', 'thanks', 'thx', 'shukriya', 'shukria', 'gracias', 'shukran',
 ]);
 // Letters (any script) and the marks that join a name: Mary-Jane, O'Neil.
 const NAME_WORD_RE = /^[\p{L}\p{M}'’.-]+$/u;
@@ -105,7 +111,8 @@ const DECLINE_MESSAGES = {
   es: "No hay problema — escribe register cuando quieras."
 };
 
-// The greeting-only word Rumi asked about, kept until the teacher answers.
+// The word Rumi asked about ("Is "Salam" your name?", or on Matrix "Shall I
+// call you Sadia?"), kept until the teacher answers.
 // Redis when available (so a deploy between the two messages does not lose
 // it), memory otherwise; losing it only means asking once more.
 const NAME_CANDIDATE_KEY = (userId) => `registration:name_candidate:${userId}`;
@@ -428,17 +435,28 @@ class FeatureRegistrationService {
    * @param {string} phoneNumber - User's phone number
    * @param {string} language - User's preferred language
    * @param {string} format - 'text' | 'voice' - to mirror response format
-   * @returns {Promise<{success: boolean, firstName?: string, error?: string}>}
+   * @param {Object} [options]
+   * @param {boolean} [options.confirmBareWord] - read the reply as on Matrix,
+   *   where the question can be ignored (resolveOfferedNameReply): a bare word
+   *   is asked about before it is stored, and a reply that is not a name
+   *   comes back as { chat: true } for the caller to handle as a message
+   * @returns {Promise<{success: boolean, firstName?: string, confirm?: string, chat?: boolean, error?: string}>}
    */
-  static async handleNameResponse(userId, nameResponse, phoneNumber, language = 'en', format = 'text') {
+  static async handleNameResponse(userId, nameResponse, phoneNumber, language = 'en', format = 'text', { confirmBareWord = false } = {}) {
     try {
       logToFile('Handling name response', { userId, nameResponse, language });
 
       // Extract first name (simple extraction - take first word or whole response)
-      const { name: firstName, confirm } = await this.resolveNameReply(userId, nameResponse);
+      const { name: firstName, confirm, chat } = confirmBareWord
+        ? await this.resolveOfferedNameReply(userId, nameResponse)
+        : await this.resolveNameReply(userId, nameResponse);
 
+      if (chat) {
+        logToFile('Name pending, but this reply is not a name; handling it as a message', { userId });
+        return { success: false, chat: true };
+      }
       if (confirm) {
-        logToFile('Name reply is a lone greeting word; asking to confirm', { userId, candidate: confirm });
+        logToFile('Name reply needs confirming; asking', { userId, candidate: confirm });
         return { success: false, confirm, error: 'Name needs confirming' };
       }
       if (!firstName) {
@@ -618,6 +636,67 @@ class FeatureRegistrationService {
   }
 
   /**
+   * Decide what a reply means while a name question that can be ignored is
+   * open (Matrix). There, keeping chatting is often one word ("fractions",
+   * "Shukriya"), which reads exactly like a name, so a bare word is a name
+   * only once the teacher confirms it:
+   * - an introduction ("my name is Sadia", "Hi, I'm Sadia") is the name;
+   * - a bare reply that looks like a name ("Sadia", "Salam") is stored as the
+   *   candidate and the caller asks about it, once;
+   * - after that question, "yes" or the same word again takes the candidate,
+   *   and anything else drops it and is chat (the offer stays open);
+   * - anything else is chat.
+   * A decline is the caller's to check first.
+   *
+   * @param {string} userId
+   * @param {string} response
+   * @returns {Promise<{name?: string, confirm?: string, chat?: boolean}>}
+   */
+  static async resolveOfferedNameReply(userId, response) {
+    const asked = await this._readNameCandidate(userId);
+    if (asked && this._confirmsCandidate(asked, response)) {
+      await this._clearNameCandidate(userId);
+      return { name: asked };
+    }
+    if (this.introducesName(response)) {
+      if (asked) await this._clearNameCandidate(userId);
+      return { name: this.parseNameReply(response).name };
+    }
+    if (!asked && this.looksLikeNameReply(response)) {
+      const parsed = this.parseNameReply(response);
+      const candidate = parsed.candidate || parsed.name;
+      await this._storeNameCandidate(userId, candidate);
+      return { confirm: candidate };
+    }
+    if (asked) await this._clearNameCandidate(userId);
+    return { chat: true };
+  }
+
+  /** "yes", or the same word again, after "Shall I call you <asked>?". */
+  static _confirmsCandidate(asked, response) {
+    if (AFFIRMATIVE_RE.test(bare(String(response || '').trim()))) return true;
+    if (!this.looksLikeNameReply(response)) return false;
+    const parsed = this.parseNameReply(response);
+    const word = parsed.candidate || parsed.name;
+    return Boolean(word) && word.toLowerCase() === asked.toLowerCase();
+  }
+
+  /**
+   * Does this reply say plainly that it gives a name ("my name is Sadia",
+   * "Hi, I'm Sadia", "mera naam Sadia hai")? A bare word does not.
+   *
+   * @param {string} response - User's reply
+   * @returns {boolean}
+   */
+  static introducesName(response) {
+    if (!this.looksLikeNameReply(response)) return false;
+    let text = response.trim();
+    const lead = text.match(GREETING_LEAD_RE);
+    if (lead) text = lead[3];
+    return EXPLICIT_INTRODUCTION_RE.test(text);
+  }
+
+  /**
    * Could this reply be an answer to "what should I call you?" at all?
    *
    * While a name is pending, the next message is read as the name. That suits
@@ -665,17 +744,20 @@ class FeatureRegistrationService {
   }
 
   /**
-   * looksLikeNameReply, plus the one answer that is a name only in context:
-   * "yes" after Rumi asked whether a greeting word is the teacher's name.
+   * Is this reply a step of registration where the name question can be
+   * ignored (Matrix)? The same reading as resolveOfferedNameReply, without
+   * storing anything: before Rumi asks about a word, anything that looks
+   * like a name (it gets the confirm, or is an introduction); after, "yes",
+   * the same word again, or an introduction. Chat is not.
    *
    * @param {string} userId - User's UUID
    * @param {string} response - User's reply
    * @returns {Promise<boolean>}
    */
   static async readsAsNameReply(userId, response) {
-    if (this.looksLikeNameReply(response)) return true;
-    if (!AFFIRMATIVE_RE.test(bare(String(response || '').trim()))) return false;
-    return Boolean(await this._readNameCandidate(userId));
+    const asked = await this._readNameCandidate(userId);
+    if (!asked) return this.looksLikeNameReply(response);
+    return this._confirmsCandidate(asked, response) || this.introducesName(response);
   }
 
   static async _wasOffered(userId) {
