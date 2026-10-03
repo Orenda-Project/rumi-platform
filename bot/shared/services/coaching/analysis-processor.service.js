@@ -41,6 +41,27 @@ async function _resolveSessionLanguage(coachingSessionId) {
   }
 }
 
+/**
+ * An observation's plan is linked by the coach, possibly while this job runs (observe-plan.service asks once the
+ * teacher is known). Wait for an open plan question (bounded by LP_FIDELITY_PLAN_WAIT_SECONDS), then re-read the
+ * row's plan fields — and its owner, which a late "who was observed?" answer re-binds. Any failure here costs only
+ * the wait: the row as loaded is graded.
+ */
+async function _observationPlanRow(session) {
+  try {
+    await require('../observe/observe-plan.service').awaitPlanAnswer(session.id);
+    const { data } = await supabase
+      .from('coaching_sessions')
+      .select('user_id, lesson_plan_text, lesson_plan_link_method, linked_lesson_plan_id, lesson_plan_extraction_status')
+      .eq('id', session.id)
+      .maybeSingle();
+    return data ? { ...session, ...data } : session;
+  } catch (err) {
+    logToFile('[lp-fidelity] observation plan re-read failed — grading the row as loaded', { sessionId: session.id, error: err.message });
+    return session;
+  }
+}
+
 class AnalysisProcessorService {
   /**
    * Process analysis job (called by background worker)
@@ -133,6 +154,8 @@ class AnalysisProcessorService {
       // fidelity tasks NON-BLOCKING — if either rejects, the critical-path analysis persist
       // still proceeds and the report falls back gracefully.
       const langCode = session.transcript_language || metadata.language || 'en';
+      const fidelityOn = isFidelityEnabled();   // read once: the task below and the Section B status must agree
+      let observedRow = session;   // an observation's plan fields, as re-read after the plan question
       const [analysisSettled, corpusSettled, fidelitySettled] = await Promise.allSettled([
         GPT5MiniService.analyzePedagogy(
           session.transcript_text,
@@ -140,10 +163,13 @@ class AnalysisProcessorService {
           session.lesson_plan_structured || null,
           framework,
         ),
-        // The reflective corpus feeds the teacher's own reflective chat, and lesson-plan
-        // fidelity checks the teacher's own plan: an observation runs neither.
+        // The reflective corpus feeds the teacher's own reflective chat: an observation skips it.
         isObservation ? Promise.resolve(null) : GPT5MiniService.extractReflectiveCorpus(session.transcript_text, langCode),
-        !isObservation && isFidelityEnabled() ? computeFidelityForSession(session, { waitForPlan: true }) : Promise.resolve(null),
+        // Lesson-plan fidelity checks the lesson against its plan. For an observation it is Section B, graded
+        // against the plan the COACH linked (observe-plan.service) — so it waits for an open plan question first.
+        !fidelityOn ? Promise.resolve(null)
+          : isObservation ? _observationPlanRow(session).then((row) => { observedRow = row; return computeFidelityForSession(row); })
+            : computeFidelityForSession(session, { waitForPlan: true }),
       ]);
       if (analysisSettled.status === 'rejected') throw analysisSettled.reason;
       const analysisResult = analysisSettled.value;
@@ -196,6 +222,15 @@ class AnalysisProcessorService {
         : analysisResult.analysis;
       if (lpFidelity) {
         analysisData = applyFrameworkFidelity(framework, { ...analysisData, lp_fidelity: lpFidelity }, lpFidelity);
+      }
+      // An observation's Section B status: assessed, or not assessed and why — never a zero for a lesson nobody
+      // could measure. Only when fidelity ran: fidelity off leaves an observation exactly as it was.
+      if (isObservation && fidelityOn) {
+        const { sectionBRecord } = require('../observe/observe-section-b');
+        const ObservePlan = require('../observe/observe-plan.service');
+        let detail;
+        try { detail = await ObservePlan.planDetail(observedRow); } catch (_) { detail = undefined; }
+        analysisData = { ...analysisData, section_b: sectionBRecord(lpFidelity, { detail }) };
       }
       await supabase
         .from('coaching_sessions')
