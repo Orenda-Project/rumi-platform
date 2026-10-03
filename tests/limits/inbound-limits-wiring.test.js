@@ -21,9 +21,10 @@ let Text;
 let user;
 let msgSeq = 0;
 let fetchSpy;
+const Images = { handleImageMessage: jest.fn(async () => {}) };
 
 const ENV_KEYS = [
-  'INBOUND_RATE_LIMIT_PER_MINUTE', 'RATE_LIMIT_BYPASS_NUMBERS', 'DAILY_MESSAGE_CAP_UNREGISTERED', 'DAILY_MESSAGE_CAP_REGISTERED',
+  'INBOUND_RATE_LIMIT_PER_MINUTE', 'INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE', 'RATE_LIMIT_BYPASS_NUMBERS', 'DAILY_MESSAGE_CAP_UNREGISTERED', 'DAILY_MESSAGE_CAP_REGISTERED',
   'MODEL_BUDGET_COOLDOWN_SECONDS', 'CHANNEL_DRIVER', 'OPENROUTER_API_KEY', 'LLM_PROVIDER', 'PHONE_NUMBER_ID', 'REDIS_URL',
 ];
 const saved = {};
@@ -86,6 +87,7 @@ function load(account) {
     }),
   };
   jest.doMock('../../bot/shared/handlers/text-message.handler', () => Text);
+  jest.doMock('../../bot/shared/handlers/image-message.handler', () => Images);
 
   const { app } = require('../../bot/whatsapp-bot');
   const router = app.router || app._router;
@@ -112,14 +114,25 @@ function metaWebhook(text) {
   };
 }
 
-async function post(text) {
+function metaImage() {
+  const body = metaWebhook('x');
+  const m = body.entry[0].changes[0].value.messages[0];
+  delete m.text;
+  m.type = 'image';
+  m.image = { id: `media-${msgSeq}`, mime_type: 'image/jpeg' };
+  return body;
+}
+
+async function postBody(body) {
   const res = { statusCode: null };
   res.status = jest.fn((code) => { res.statusCode = code; return res; });
   res.send = jest.fn(() => res);
   res.sendStatus = jest.fn((code) => { res.statusCode = code; return res; });
-  await handleWebhookPost({ method: 'POST', url: '/webhook', headers: {}, body: metaWebhook(text) }, res);
+  await handleWebhookPost({ method: 'POST', url: '/webhook', headers: {}, body }, res);
   return res;
 }
+const post = (text) => postBody(metaWebhook(text));
+const postImage = () => postBody(metaImage());
 
 const textsSent = () => WA.sendMessage.mock.calls.map((c) => c[1]);
 const modelCalls = () => fetchSpy.mock.calls.filter(([url]) => /chat\/completions/.test(String(url && url.url ? url.url : url))).length;
@@ -130,6 +143,7 @@ function providerAnswers(status, body) {
 const OK = { id: 'c1', object: 'chat.completion', created: 1, model: 'openai/gpt-4o-mini', choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: 'Hello, teacher!' } }] };
 
 beforeEach(() => {
+  Images.handleImageMessage.mockClear();
   for (const k of ENV_KEYS) { saved[k] = process.env[k]; delete process.env[k]; }
   fetchSpy = jest.spyOn(global, 'fetch');
   providerAnswers(200, OK);
@@ -152,6 +166,26 @@ describe('per-sender inbound rate limit', () => {
     const slow = textsSent().filter((t) => /faster than I can answer/.test(t));
     expect(slow).toHaveLength(1);
     expect(textsSent()).toHaveLength(31);
+  });
+
+  // exam-checker.orchestrator.js tells the teacher "Send photos of student exams … You can send multiple
+  // images at once." A class set is often more than 30 sheets, and a refused message is already marked
+  // processed, so it could never come back. An existing deployment that upgrades and sets nothing new must
+  // not start losing them. (Reported by the v1 review of this release.)
+  it('an upgraded deployment (no new env set) receives a class set of 35 exam photos', async () => {
+    load(REGISTERED);
+    for (let i = 0; i < 35; i += 1) await postImage();
+    expect(Images.handleImageMessage).toHaveBeenCalledTimes(35);
+    expect(textsSent().filter((t) => /faster than I can answer/.test(t))).toHaveLength(0);
+  });
+
+  it('media has its own bucket: 120 photos a minute pass, the 121st hears "slow down"; text is counted apart', async () => {
+    load(REGISTERED);
+    for (let i = 0; i < 125; i += 1) await postImage();
+    expect(Images.handleImageMessage).toHaveBeenCalledTimes(120);
+    expect(textsSent().filter((t) => /faster than I can answer/.test(t))).toHaveLength(1);
+    await post('are they all there?');
+    expect(Text.handleTextMessage).toHaveBeenCalledTimes(1);
   });
 
   it('INBOUND_RATE_LIMIT_PER_MINUTE=off lets every message through', async () => {

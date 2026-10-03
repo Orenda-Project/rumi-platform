@@ -420,9 +420,9 @@ async function handleWebhookPost(req, res) {
     // lookup and before anything can reach a model. A sender over the
     // per-minute rate hears "slow down" once per window, then nothing; while
     // the model budget is out every sender hears "busy" once, then nothing.
-    const rate = await InboundRateLimit.admit(from);
+    const rate = await InboundRateLimit.admit(from, { kind: InboundRateLimit.kindOf(messageType) });
     if (!rate.allowed) {
-      logToFile('🚦 Inbound rate limit: message dropped', { from, count: rate.count, limit: rate.limit, notified: rate.notify });
+      logToFile('🚦 Inbound rate limit: message dropped', { from, type: messageType, count: rate.count, limit: rate.limit, notified: rate.notify });
       if (rate.notify) await WhatsAppService.sendMessage(from, InboundRateLimit.slowDownMessage());
       ack();
       return;

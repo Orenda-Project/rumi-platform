@@ -15,8 +15,11 @@ can go wrong that never happen with a closed group of teachers:
   reply and an error log.
 
 Public limits handles each one. All of them are set in `.env`, and the defaults leave an existing deployment as
-it was. The one exception is the per-minute rate limit: it is on by default (30 a minute), far above what a
-teacher types.
+it was. The one exception is the per-minute rate limit: it is on by default (30 text messages and 120 photos,
+documents or voice notes a minute), far above what a teacher types or sends.
+
+**Upgrading?** Nothing else changes unless you set it. If 30 or 120 a minute is too few for your teachers, raise
+`INBOUND_RATE_LIMIT_PER_MINUTE` / `INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE`, or set them to `off`.
 
 For the full checklist of running in public, including the messenger side, see
 [Running Rumi in public](../running-in-public.md).
@@ -30,6 +33,10 @@ Every channel (WhatsApp, Slack, Discord, Matrix) delivers its messages to one en
 and before any model call**, each message is counted against its sender:
 
 - Up to `INBOUND_RATE_LIMIT_PER_MINUTE` messages (default 30) in any rolling minute are handled as usual.
+- Media (images, documents, audio, voice notes, video, stickers) is counted in its own bucket,
+  `INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE` (default 120). Media is what a teacher sends in bulk: the exam checker
+  asks for a class set of photos at once, and a dropped photo cannot be sent back to Rumi by the channel. A
+  photo reaches a model only through a feature that the daily caps and the budget breaker already bound.
 - The first message over the limit gets one reply: *"You're sending messages faster than I can answer. Please
   wait a minute, then send your message again."*
 - Every message after that in the same minute is dropped silently. Rumi does not react, show typing, or call a
@@ -86,7 +93,8 @@ breaker (`bot/shared/services/limits/model-budget.js`):
 - **What the operator sees.** One log line per cooldown, `🚨 MODEL BUDGET EXHAUSTED …` with
   `alert: "model_budget_exhausted"`.
   Thousands of refused messages produce one alert, not thousands. The tripped state is kept in Redis, so the bot
-  and the worker share it.
+  and the worker share it. A process that learns of the trip from Redis waits only until that shared flag
+  expires, so every process recovers when the cooldown ends.
 
 Give a public deployment **its own OpenRouter key with a credit limit**. That way the budget runs out at a
 number you chose, and this breaker turns the moment it does into a polite pause.
@@ -96,6 +104,7 @@ number you chose, and this breaker turns the moment it does into a polite pause.
 ```bash
 # .env — recommended for a public deployment (see .env.template)
 INBOUND_RATE_LIMIT_PER_MINUTE=30
+INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE=120
 DAILY_MESSAGE_CAP_UNREGISTERED=40
 DAILY_MESSAGE_CAP_REGISTERED=300
 DAILY_LESSON_PLAN_CAP_UNREGISTERED=3
@@ -108,6 +117,7 @@ SCHOOL_TIMEZONE=Africa/Nairobi        # whichever zone your schools are in
 | Variable | Default | Meaning |
 |---|---|---|
 | `INBOUND_RATE_LIMIT_PER_MINUTE` | `30` | messages per sender per rolling minute; `off` (or `0`) = no limit |
+| `INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE` | `120` | media (image, document, audio, voice, video, sticker) per sender per rolling minute, counted apart from text; `off` (or `0`) = no limit |
 | `RATE_LIMIT_BYPASS_NUMBERS` | empty | senders never rate limited (comma-separated, as the channel delivers them) |
 | `DAILY_MESSAGE_CAP_UNREGISTERED` | empty = no cap | see above |
 | `DAILY_MESSAGE_CAP_REGISTERED` | empty = no cap | see above |

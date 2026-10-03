@@ -12,6 +12,7 @@ Each limit is an `.env` value, read per message ([how they work](features/public
 | Limit | Variable | Recommended in public | Default |
 |---|---|---|---|
 | Messages per sender per minute | `INBOUND_RATE_LIMIT_PER_MINUTE` | `30` | `30` |
+| Photos, documents, voice notes and other media per sender per minute (counted apart from text) | `INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE` | `120` | `120` |
 | Messages a day, unregistered account | `DAILY_MESSAGE_CAP_UNREGISTERED` | `40` | no cap |
 | Messages a day, registered account | `DAILY_MESSAGE_CAP_REGISTERED` | `300` (a generous ceiling: Rumi's own registration is just a name, so "registered" alone is no barrier) | no cap |
 | Lesson plans a day, unregistered | `DAILY_LESSON_PLAN_CAP_UNREGISTERED` | `3` | no cap |

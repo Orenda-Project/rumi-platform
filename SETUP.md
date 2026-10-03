@@ -491,7 +491,7 @@ For a link anyone can sign up on:
 
 1. Set the daily caps in `.env` (`DAILY_MESSAGE_CAP_UNREGISTERED=40`, `DAILY_MESSAGE_CAP_REGISTERED=300`, `DAILY_LESSON_PLAN_CAP_UNREGISTERED=3`,
    `DAILY_COACHING_CAP_UNREGISTERED=0`, `DAILY_QUIZ_CAP_UNREGISTERED=2`) and `SCHOOL_TIMEZONE`. The per-sender
-   rate limit (`INBOUND_RATE_LIMIT_PER_MINUTE`, 30) is already on.
+   rate limit (`INBOUND_RATE_LIMIT_PER_MINUTE`, 30; media `INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE`, 120) is already on.
 2. Use an OpenRouter key made for this deployment, with a credit limit, and make sure Redis is running.
 3. On Matrix, harden the homeserver too. Checklist: [docs/running-in-public.md](docs/running-in-public.md).
 

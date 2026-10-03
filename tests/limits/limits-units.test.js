@@ -31,7 +31,7 @@ const RateLimit = require('../../bot/shared/services/limits/inbound-rate-limit')
 const DailyCaps = require('../../bot/shared/services/limits/daily-caps');
 const ModelBudget = require('../../bot/shared/services/limits/model-budget');
 
-const ENV_KEYS = ['INBOUND_RATE_LIMIT_PER_MINUTE', 'RATE_LIMIT_BYPASS_NUMBERS', 'SCHOOL_TIMEZONE', 'MODEL_BUDGET_COOLDOWN_SECONDS',
+const ENV_KEYS = ['INBOUND_RATE_LIMIT_PER_MINUTE', 'INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE', 'RATE_LIMIT_BYPASS_NUMBERS', 'SCHOOL_TIMEZONE', 'MODEL_BUDGET_COOLDOWN_SECONDS',
   ...Object.values(DailyCaps.KINDS).flatMap((k) => Object.values(k))];
 const saved = {};
 beforeEach(() => {
@@ -98,6 +98,39 @@ describe('inbound rate limit', () => {
     process.env.RATE_LIMIT_BYPASS_NUMBERS = '15550100009, 15550100008';
     expect((await RateLimit.admit('15550100008')).allowed).toBe(true);
     expect(mockRedis.checkRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('media counts in its own bucket: inbound_media:<sender>, 120 a minute by default', async () => {
+    mockRedis.checkRateLimit.mockResolvedValue({ allowed: true, count: 31, remaining: 89, resetAt: new Date() });
+    const r = await RateLimit.admit('15550100009', { kind: 'media' });
+    expect(mockRedis.checkRateLimit).toHaveBeenCalledWith('inbound_media:15550100009', 120, 60);
+    expect(r).toEqual(expect.objectContaining({ allowed: true, count: 31, limit: 120 }));
+  });
+
+  it('Redis down: text and media keep separate local windows, each with its own limit', async () => {
+    mockRedis.available = false;
+    process.env.INBOUND_RATE_LIMIT_PER_MINUTE = '2';
+    process.env.INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE = '3';
+    const t0 = 1_000_000;
+    const text = [];
+    const media = [];
+    for (let i = 0; i < 3; i += 1) text.push((await RateLimit.admit('s3', { now: t0 + i })).allowed);
+    for (let i = 0; i < 4; i += 1) media.push((await RateLimit.admit('s3', { kind: 'media', now: t0 + i })).allowed);
+    expect(text).toEqual([true, true, false]);
+    expect(media).toEqual([true, true, true, false]);
+  });
+
+  it('INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE: off/0 disables the media bucket only; junk keeps 120', () => {
+    process.env.INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE = 'off';
+    expect(RateLimit.limit('media')).toBeNull();
+    expect(RateLimit.limit()).toBe(30);
+    process.env.INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE = 'lots';
+    expect(RateLimit.limit('media')).toBe(120);
+  });
+
+  it('kindOf: image, document, audio, voice, video and sticker are media; everything else is text', () => {
+    for (const t of ['image', 'document', 'audio', 'voice', 'video', 'sticker']) expect(RateLimit.kindOf(t)).toBe('media');
+    for (const t of ['text', 'interactive', 'button', 'location', undefined]) expect(RateLimit.kindOf(t)).toBe('text');
   });
 });
 
