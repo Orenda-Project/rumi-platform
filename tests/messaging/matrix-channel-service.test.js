@@ -614,3 +614,101 @@ describe('matrix-channel.service -- pure helpers', () => {
     expect(service._removeEmotionTags('[warmly] hello')).toBe('hello');
   });
 });
+
+// While Rumi works on a reply the room shows "Rumi is typing…": held by the
+// inbound message, a handler's controller or a worker job, refreshed inside
+// Matrix's typing timeout, ended by the first message Rumi sends to the room
+// and, whatever else happens, by a hard maximum (MATRIX_TYPING_MAX_SECONDS).
+describe('matrix-channel.service -- typing sessions', () => {
+  const ROOM = '!room:example.org';
+  const typingCalls = (client) => client.setTyping.mock.calls.map(([room, on, timeout]) => ({ room, on, timeout }));
+  const onsAfter = (client, index) => typingCalls(client).slice(index).filter((c) => c.on).length;
+
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    jest.useRealTimers();
+    delete process.env.MATRIX_TYPING_MAX_SECONDS;
+  });
+
+  it('a held typing is refreshed before Matrix expires it, for as long as the work runs', async () => {
+    const { service, client } = loadService();
+    await service.showTypingIndicator(TO, '$inbound1');
+    await jest.advanceTimersByTimeAsync(60000);
+    const ons = typingCalls(client).filter((c) => c.on);
+    // One at the start plus a refresh every few seconds: never a gap longer than the timeout it asked for.
+    expect(ons.length).toBeGreaterThanOrEqual(7);
+    expect(typingCalls(client).some((c) => !c.on)).toBe(false);
+    for (const call of ons) expect(call.timeout).toBeGreaterThan(8000);
+  });
+
+  it('the first message Rumi sends to the room ends the typing, and no refresh brings it back', async () => {
+    const { service, client } = loadService();
+    await service.showTypingIndicator(TO, '$inbound1');
+    const controller = service.startContinuousTypingIndicator(TO);
+    await jest.advanceTimersByTimeAsync(0);
+    await service.sendMessage(TO, 'Here is the answer');
+    await jest.advanceTimersByTimeAsync(0);
+    const afterReply = client.setTyping.mock.calls.length;
+    expect(typingCalls(client)[afterReply - 1]).toEqual({ room: ROOM, on: false, timeout: expect.any(Number) });
+    await jest.advanceTimersByTimeAsync(30000);
+    expect(onsAfter(client, afterReply)).toBe(0);
+    controller.stop(); // a handler that stops late changes nothing
+    await jest.advanceTimersByTimeAsync(0);
+    expect(onsAfter(client, afterReply)).toBe(0);
+  });
+
+  it('a reaction is not a reply: the typing stays on', async () => {
+    const { service, client } = loadService();
+    await service.showTypingIndicator(TO, '$inbound1');
+    await service.sendReaction(TO, '$inbound1', '👍');
+    await jest.advanceTimersByTimeAsync(0);
+    expect(typingCalls(client).some((c) => !c.on)).toBe(false);
+  });
+
+  it('a hold nobody releases ends at the hard maximum', async () => {
+    process.env.MATRIX_TYPING_MAX_SECONDS = '60';
+    const { service, client } = loadService();
+    service.startContinuousTypingIndicator(TO); // never stopped
+    await jest.advanceTimersByTimeAsync(59000);
+    expect(typingCalls(client).some((c) => !c.on)).toBe(false);
+    await jest.advanceTimersByTimeAsync(2000);
+    const n = client.setTyping.mock.calls.length;
+    expect(typingCalls(client)[n - 1].on).toBe(false);
+    await jest.advanceTimersByTimeAsync(60000);
+    expect(onsAfter(client, n)).toBe(0);
+  });
+
+  it('an unset or invalid MATRIX_TYPING_MAX_SECONDS falls back to five minutes', async () => {
+    process.env.MATRIX_TYPING_MAX_SECONDS = 'soon';
+    const { service, client } = loadService();
+    service.startContinuousTypingIndicator(TO);
+    await jest.advanceTimersByTimeAsync(299000);
+    expect(typingCalls(client).some((c) => !c.on)).toBe(false);
+    await jest.advanceTimersByTimeAsync(2000);
+    expect(typingCalls(client).some((c) => !c.on)).toBe(true);
+  });
+
+  it('typing stays on until the LAST holder lets go', async () => {
+    const { service, client } = loadService();
+    const handler = service.startContinuousTypingIndicator(TO);
+    const job = service.startContinuousTypingIndicator(TO);
+    await jest.advanceTimersByTimeAsync(0);
+    handler.stop();
+    await jest.advanceTimersByTimeAsync(0);
+    expect(typingCalls(client).some((c) => !c.on)).toBe(false);
+    job.stop();
+    await jest.advanceTimersByTimeAsync(0);
+    expect(typingCalls(client).pop()).toEqual({ room: ROOM, on: false, timeout: expect.any(Number) });
+  });
+
+  it('a failing typing call never throws into the caller (fail open)', async () => {
+    const { service, client, logger } = loadService();
+    client.setTyping.mockRejectedValue(new Error('M_FORBIDDEN'));
+    const controller = service.startContinuousTypingIndicator(TO);
+    await jest.advanceTimersByTimeAsync(10000);
+    expect(() => controller.stop()).not.toThrow();
+    await jest.advanceTimersByTimeAsync(0);
+    await expect(service.sendMessage(TO, 'still answered')).resolves.toBe(true);
+    expect(logger.logToFile).toHaveBeenCalledWith(expect.stringMatching(/typing/i), expect.objectContaining({ message: 'M_FORBIDDEN' }));
+  });
+});

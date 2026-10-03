@@ -51,6 +51,7 @@ const LessonPlanExtractionWorker = require('./lesson-plan-extraction.worker');
 const LessonPlanGenerationWorker = require('./lesson-plan-generation.worker');
 const VideoGenerationWorker = require('./video-generation.worker');
 const ExamGradingWorker = require('./exam-grading.worker');
+const { withJobTyping } = require('../shared/services/messaging/job-typing');
 const os = require('os');
 
 // Configuration
@@ -230,7 +231,9 @@ class SQSCoachingWorker {
     // instead of its own failure message (limits/model-budget.js).
     const recipient = (payload && (payload.from || payload.to || payload.phoneNumber || payload.phone)) || null;
     const jobPromise = runWithCorrelation(correlationId, async () => {
-      return ModelBudget.guard(recipient, () => this.executeJob(sessionId, jobType, payload, receiptHandle, sourceQueue, body), {
+      // A teacher on Matrix waiting on this job sees "Rumi is typing…" while it runs; a job the
+      // model budget refuses never starts, so it shows no typing.
+      return ModelBudget.guard(recipient, () => withJobTyping(jobType, payload, () => this.executeJob(sessionId, jobType, payload, receiptHandle, sourceQueue, body)), {
         send: (to, text) => WhatsAppService.sendMessage(to, text),
       })
         .then(async () => {

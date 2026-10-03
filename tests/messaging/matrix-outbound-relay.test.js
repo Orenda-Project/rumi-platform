@@ -142,6 +142,20 @@ describe('matrix-outbound-relay -- round trip through the sync owner', () => {
   });
 });
 
+describe('matrix-outbound-relay -- the job a call belongs to', () => {
+  // The owner ends a job's "Rumi is typing…" only on that job's own send
+  // (matrix-channel.service.js), so a call made inside forJob() tells it which job.
+  it('a call made inside forJob() runs on the owner with that job; any other call with none', async () => {
+    loadRelay();
+    const seen = [];
+    relay.startOwner({ sendMessage: jest.fn(async () => { seen.push(relay.relayedCall()); return true; }) });
+    await relay.forJob('lesson_plan_generation:42', () => relay.call('sendMessage', [TO, 'your plan']));
+    await relay.call('sendMessage', [TO, 'a nudge']);
+    expect(seen).toEqual([{ job: 'lesson_plan_generation:42' }, { job: null }]);
+    expect(relay.relayedCall()).toBeNull(); // outside a relayed call
+  });
+});
+
 describe('matrix-outbound-relay -- failures are reported the way the driver reports them', () => {
   it('an owner-side exception becomes false for a send, and a throw for the media lookups', async () => {
     loadRelay();
@@ -258,8 +272,10 @@ describe('matrix-outbound-relay -- process roles', () => {
     const controller = driver.startContinuousTypingIndicator(TO);
     controller.stop();
     await new Promise((resolve) => setImmediate(resolve));
-    expect(call).toHaveBeenCalledWith('showTypingIndicator', [TO]);
-    expect(call).toHaveBeenCalledWith('_stopTypingIndicator', [TO]);
+    // One call to hold the typing and one to let go; the owner does the refreshing.
+    const holder = call.mock.calls.find(([method]) => method === '_holdTyping')[1][1];
+    expect(call).toHaveBeenCalledWith('_holdTyping', [TO, holder]);
+    expect(call).toHaveBeenCalledWith('_releaseTyping', [TO, holder]);
     expect(getClient).not.toHaveBeenCalled();
   });
 });
