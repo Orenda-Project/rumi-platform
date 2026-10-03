@@ -12,9 +12,10 @@
 -- of the sequences, adds one portal_app_user_access policy to each RLS table
 -- (rows visible only once a signed-in admin is set on the connection), and
 -- inserts the permission rows that are missing; rows already there are left as
--- they are. Not BYPASSRLS and no function rights beyond PUBLIC's: exec_sql
--- stays service_role only. If the dashboard connects as a different role from
--- the one running this, grant portal_app_user to that role too.
+-- they are. Not BYPASSRLS and no function rights beyond PUBLIC's: the
+-- one-time SQL helper stays service_role only. If the dashboard connects as a
+-- different role from the one running this, grant portal_app_user to that
+-- role too.
 -- Fresh installs get the same from 00_complete-schema.sql, 01_rls-policies.sql
 -- and 02_seed-data.sql.
 --
