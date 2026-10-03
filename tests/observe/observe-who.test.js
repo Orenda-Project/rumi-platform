@@ -72,6 +72,17 @@ describe('observe-who', () => {
     expect(WhatsAppService.sendMessage.mock.calls.pop()[1]).toBe('Thanks — noted Sam Taylor.');
   });
 
+  test('once the teacher is named, the coach is asked which of their plans the lesson used (fidelity on)', async () => {
+    process.env.LP_FIDELITY_ENABLED = 'true';
+    mockDb.tables.lesson_plans = [{ id: 'lp-1', user_id: 't-1', type: 'lesson_plan', topic: 'Fractions', grade: '4', created_at: '2026-09-30T08:00:00Z' }];
+    await Who.maybeAskObservedTeacher(COACH, '15550100001', 'obs-1');
+    await Who.handleObservedTeacherPick(COACH, '15550100001', 'observe_who_obs-1_1');
+    delete process.env.LP_FIDELITY_ENABLED;
+    const last = WhatsAppService.sendInteractiveMessage.mock.calls.pop()[1];
+    expect(last.action.sections[0].rows.map((r) => r.id)).toEqual(['observe_lp_obs-1_0', 'observe_lp_obs-1_none']);
+    expect(WhatsAppService.sendMessage.mock.calls.pop()[1]).toBe('Thanks — noted Sam Taylor.');
+  });
+
   test('a re-tap never moves an observation already bound to another teacher', async () => {
     // Bound to Sam Taylor (t-1) by the tap above; the list is still live for 2 h.
     const schedulesBefore = JSON.stringify(mockDb.tables.observation_schedules);

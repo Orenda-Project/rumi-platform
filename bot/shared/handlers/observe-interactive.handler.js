@@ -11,6 +11,7 @@
  *   observe_cancel_yes_<id>  cancel confirmed
  *   observe_cancel_<id>      "Cancel observation" — ask first
  *   observe_who_<id>_<n>     who was observed (bare capture)
+ *   observe_lp_<id>_<n|none> which lesson plan the lesson was taught from (Section B)
  *   observe_form_<id>        reopen the coach's rating form (pending list)
  *   observe_debrief_now_<id> "Debrief now" — build the guide, arm the recording
  *   observe_debrief_later_<id> "Later" — leave it pending in the /observe list
@@ -39,6 +40,7 @@ const ROUTES = [
   ['observe_send_', (user, from, rest, id) => require('../services/observe/observe-send.service').handleSendButton(user, from, id)],
   ['observe_pickt_', (user, from, rest, id) => require('../services/observe/observe-send.service').handleTeacherPick(user, from, id)],
   ['observe_who_', (user, from, rest, id) => require('../services/observe/observe-who.service').handleObservedTeacherPick(user, from, id)],
+  ['observe_lp_', (user, from, rest, id) => require('../services/observe/observe-plan.service').handlePlanPick(user, from, id)],
   // Longest prefix first: the two buttons share the list row's prefix.
   ['observe_debrief_now_', (user, from, rest) => require('../services/observe/observe-debrief.service').startDebrief(rest, from, user)],
   ['observe_debrief_later_', (user, from, rest) => require('../services/observe/observe-debrief.service').handleDebriefLater(rest, from, user)],

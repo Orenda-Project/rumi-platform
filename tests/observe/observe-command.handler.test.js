@@ -88,6 +88,14 @@ describe('observe tap dispatcher', () => {
     expect(mockDb.tables.coaching_sessions[0].status).toBe('cancelled');
   });
 
+  test('observe_lp_ rows go to the plan service', async () => {
+    const Plan = require('../../bot/shared/services/observe/observe-plan.service');
+    const spy = jest.spyOn(Plan, 'handlePlanPick');
+    expect(await handleObserveInteractive(coach(), '15550100001', 'observe_lp_obs-1_none')).toBe(true);
+    expect(spy).toHaveBeenCalledWith(coach(), '15550100001', 'observe_lp_obs-1_none');
+    spy.mockRestore();
+  });
+
   test('observe_who_ rows go to the who service', async () => {
     expect(await handleObserveInteractive(coach(), '15550100001', 'observe_who_obs-1_other')).toBe(true);
     expect(sent()[0]).toMatch(/type the name/);
