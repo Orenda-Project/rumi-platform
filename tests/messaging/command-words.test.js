@@ -91,6 +91,13 @@ describe('normalizeCommand — a bare command word is the slash command', () => 
       expect(normalizeCommand('quiz fractions.', MATRIX)).toBe('/quiz fractions');
     });
 
+    test('"quiz me on fractions" asks for a quiz on fractions: the lead-in is not the topic', () => {
+      expect(normalizeCommand('quiz me on fractions', MATRIX)).toBe('/quiz fractions');
+      expect(normalizeCommand('Quiz on the water cycle', MTX)).toBe('/quiz the water cycle');
+      expect(normalizeCommand('quiz about plants', MATRIX)).toBe('/quiz plants');
+      expect(normalizeCommand('quiz me', MATRIX)).toBe('/quiz');
+    });
+
     test('on WhatsApp/Slack/Discord a bare word with an argument is left as it is today', () => {
       expect(normalizeCommand('quiz fractions', WA)).toBe('quiz fractions');
       expect(normalizeCommand('quiz fractions', SLACK)).toBe('quiz fractions');

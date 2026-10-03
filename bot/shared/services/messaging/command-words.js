@@ -101,11 +101,12 @@ function normalizeCommand(text, from) {
   if (!m) return text;
   const command = m[1].toLowerCase();
   if (!MATRIX_ARG_COMMANDS.includes(command)) return text;
-  const args = m[2].trim();
-  if (NOT_A_TOPIC.has(args.split(/\s+/)[0].toLowerCase())) return text;
+  if (NOT_A_TOPIC.has(m[2].trim().split(/\s+/)[0].toLowerCase())) return text;
   // "quiz please" / "quiz dikhao" ask for the quiz menu; "please" is not a topic.
   if (command === 'quiz' && isQuizMenuRequest(body)) return '/quiz';
-  return `/${command} ${args}`;
+  // "quiz me on fractions" is a quiz on fractions: the lead-in is not the topic.
+  const args = m[2].trim().replace(/^(?:me(?:\s+|$))?(?:(?:on|about)\s+)?/i, '').trim();
+  return args ? `/${command} ${args}` : `/${command}`;
 }
 
 /**

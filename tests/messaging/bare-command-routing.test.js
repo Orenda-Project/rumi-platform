@@ -90,6 +90,7 @@ jest.mock('../../bot/shared/services/feature-registration.service', () => ({
   checkAndTriggerRegistration: jest.fn(),
   sendNameQuestion: jest.fn(),
   countUserFeatures: jest.fn().mockResolvedValue(0),
+  offerRegistration: jest.fn().mockResolvedValue(false),
 }));
 jest.mock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn(), logError: jest.fn() }));
 jest.mock('../../bot/shared/services/region-features.service', () => ({
