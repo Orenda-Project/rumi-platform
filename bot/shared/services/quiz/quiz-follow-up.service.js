@@ -16,6 +16,7 @@ const supabase = require('../../config/supabase');
 const redisService = require('../cache/railway-redis.service');
 const WhatsAppService = require('../whatsapp.service');
 const LessonPlanQueueService = require('../lesson-plan-queue.service');
+const DailyCaps = require('../limits/daily-caps');
 const QuizInsightService = require('./quiz-insight.service');
 const { logToFile } = require('../../utils/logger');
 
@@ -179,6 +180,9 @@ async function handleNextTopicReply(userId, from, language, replyText) {
       'I didn\'t catch that. Type the next topic name (e.g. "Atomic Structures").');
     return true;
   }
+
+  // Today's lesson-plan allowance for an unregistered account (limits/daily-caps.js).
+  if (!(await DailyCaps.allowOrExplainForUserId(userId, 'lesson_plan', from))) return true;
 
   // Friendly chat ack while LP generates (~30s)
   const verbForBand = (state.kind === 'extension_after_mastery') ? 'an extension lesson on'

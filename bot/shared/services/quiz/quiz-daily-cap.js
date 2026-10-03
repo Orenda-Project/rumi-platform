@@ -72,10 +72,13 @@ async function evalOnCache(script, keys, args) {
 }
 
 /**
+ * @param {{now?: Date, tierCap?: number|null}} [opts] tierCap: a lower cap for
+ *   this teacher's account tier (limits/daily-caps.js; 0 = none) — the smaller wins
  * @returns {Promise<{allowed:boolean, count:number|null, limit:number|null, degraded?:boolean}>}
  */
-async function claim(teacherId, quizId, { now = new Date() } = {}) {
-  const limit = cap();
+async function claim(teacherId, quizId, { now = new Date(), tierCap = null } = {}) {
+  const base = cap();
+  const limit = tierCap === null || tierCap === undefined ? base : (base === null ? tierCap : Math.min(base, tierCap));
   if (limit === null || !teacherId || !quizId) return { allowed: true, count: null, limit };
   const res = await evalOnCache(CLAIM_LUA, [`quizcap:${teacherId}:${schoolDate(now)}`], [String(quizId), limit, TTL_SECONDS]);
   if (res === null || res === undefined) return { allowed: true, count: null, limit, degraded: true };

@@ -113,6 +113,23 @@ with, not a verified number, and it decides which teacher (and which portal sign
 the homeserver the way rumi-messenger does: accounts created by an admin only (registration closed) and
 federation off. Never allow a server where people pick their own usernames.
 
+### Running Rumi in public
+
+The server described here is a closed school server: an admin creates every account. To let anyone sign up,
+first set the bot's limits and harden the homeserver. [Running Rumi in public](../running-in-public.md) has the
+full list. In short:
+
+- **Bot** (`.env`): `INBOUND_RATE_LIMIT_PER_MINUTE=30` and `INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE=120` (defaults), `DAILY_MESSAGE_CAP_UNREGISTERED=40`, `DAILY_MESSAGE_CAP_REGISTERED=300`,
+  `DAILY_LESSON_PLAN_CAP_UNREGISTERED=3`, `DAILY_COACHING_CAP_UNREGISTERED=0`, `DAILY_QUIZ_CAP_UNREGISTERED=2`,
+  and the deployment's own OpenRouter key with a credit limit. When the key runs dry, Rumi says "busy" once
+  instead of failing ([how the limits work](../features/public-limits.md)).
+- **Synapse:** keep `enable_registration: false` and create accounts from a sign-up service (captcha, per-IP
+  limits) through `registration_shared_secret`; give public accounts random `@t<digits>` usernames, not phone
+  numbers. Keep federation off, set `user_directory.search_all_users: false` and
+  `limit_profile_requests_to_users_who_share_rooms: true`, send announcements as DMs rather than through a room
+  every account joins, keep `rc_message` and set a low `rc_invites.per_issuer`, and block `/_synapse/admin` at
+  the proxy.
+
 ## Portal sign-in on the messenger
 
 The [teacher portal](../features/teacher-portal.md) signs people in by phone number and a password. A teacher

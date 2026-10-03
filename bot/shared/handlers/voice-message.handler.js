@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const WhatsAppService = require('../services/whatsapp.service');
+const DailyCaps = require('../services/limits/daily-caps');
 const OpenAIService = require('../services/openai.service');
 const AudioService = require('../services/audio.service');
 const ContentService = require('../services/content.service');
@@ -1225,6 +1226,8 @@ async function handleVoiceMessage(message, from, user = null) {
  */
 async function handleVoiceLessonPlanRequest(from, transcription, user, sessionId, detectedLanguage) {
   logToFile('Queueing lesson plan from voice request...');
+  // Today's lesson-plan allowance for an unregistered account (limits/daily-caps.js).
+  if (!(await DailyCaps.allowOrExplain(user, 'lesson_plan', from))) return;
   try {
     // Extract topic
     const topic = await OpenAIService.extractTopic(transcription);
@@ -1285,6 +1288,8 @@ async function handleVoiceLessonPlanRequest(from, transcription, user, sessionId
  */
 async function handleVoicePresentationRequest(from, transcription, user, sessionId, detectedLanguage) {
   logToFile('Queueing presentation from voice request...');
+  // Today's lesson-plan allowance for an unregistered account (limits/daily-caps.js).
+  if (!(await DailyCaps.allowOrExplain(user, 'lesson_plan', from))) return;
   try {
     // Extract topic
     const topic = await OpenAIService.extractTopic(transcription);

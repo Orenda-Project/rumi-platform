@@ -5,6 +5,7 @@
 const { logToFile } = require('../../utils/logger');
 const supabase = require('../../config/supabase');
 const WhatsAppService = require('../whatsapp.service');
+const DailyCaps = require('../limits/daily-caps');
 const redisService = require('../cache/railway-redis.service');
 
 class QuizOrchestrator {
@@ -685,6 +686,9 @@ class QuizOrchestrator {
    * @private
    */
   static async _generateAndDeliver(user, from, topic, classId, classData, language) {
+    // Today's quiz allowance for an unregistered account (limits/daily-caps.js).
+    if (!(await DailyCaps.allowOrExplainForUserId(user && user.id, 'quiz', from))) return;
+
     const classDisplay = classData
       ? (classData.section ? `${classData.class_name} - ${classData.section}` : classData.class_name)
       : '';
