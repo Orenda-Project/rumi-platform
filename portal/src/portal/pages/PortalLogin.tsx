@@ -77,7 +77,7 @@ const PortalLogin = () => {
                 className="w-full"
                 required
               />
-              <p className="text-xs text-muted-foreground mt-1">Enter without + or spaces</p>
+              <p className="text-xs text-muted-foreground mt-1">Enter without + or spaces. On Rumi Messenger, it is the number in your username.</p>
             </div>
 
             <div>
