@@ -49,6 +49,7 @@ const { logToFile } = require('../../../utils/logger');
 const { prefixFor } = require('../channel-registry');
 const matrixIdentity = require('../matrix-identity');
 const pendingOptions = require('../pending-options');
+const { isCommandText } = require('../command-words');
 
 const MATRIX_PREFIX = prefixFor('matrix');
 // A stable, non-test, non-zero entry id -- passes validators.isTestWebhook().
@@ -211,14 +212,16 @@ const textFlow = () => require('../text-flow');
 
 /**
  * Whether this message is a command in its own right and must never be
- * consumed as a flow answer -- "/..." or one of the plain-phrase commands
- * ("add class", "attendance", ...), asked of the same detector the text
- * handler routes on so the two cannot drift.
+ * consumed as a flow answer -- "/...", a bare command word ("menu", "quiz
+ * fractions": Element eats "/" as its own client command, so on Matrix the
+ * bare word IS how a command is typed; see command-words.js), or one of the
+ * plain-phrase commands ("add class", "attendance", ...), asked of the same
+ * detector the text handler routes on so the two cannot drift.
  */
-function isCommandLike(text) {
+function isCommandLike(text, from = `${MATRIX_PREFIX}:`) {
   const trimmed = String(text || '').trim();
   if (!trimmed) return false;
-  if (trimmed.startsWith('/')) return true;
+  if (isCommandText(trimmed, from)) return true;
   try {
     // eslint-disable-next-line global-require -- keeps this adapter's load light
     const detector = require('../../attendance-detector.service');
@@ -321,7 +324,7 @@ async function mapMessageToMetaShape(roomId, event, ownUserId, cutoffTs) {
   // Baileys ordering: its menu lives in the same pending-options store, so
   // whichever runs first consumes the reply. A command always wins over the
   // flow so a teacher can never get stuck in one.
-  if (isCommandLike(content.body)) {
+  if (isCommandLike(content.body, from)) {
     if (await textFlow().isActive(from)) {
       await textFlow().clear(from);
       await pendingOptions.clear(from);
