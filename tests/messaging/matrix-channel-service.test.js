@@ -186,6 +186,62 @@ describe('matrix-channel.service -- outbound text', () => {
   });
 });
 
+// Element swallows anything starting with "/" as a client command, so on
+// Matrix "type /quiz" is advice nobody can follow. Every command also works as
+// the bare word, and this driver -- the one place every Matrix send passes --
+// names that form instead (command-words.js#channelCommandCopy).
+describe('matrix-channel.service -- command copy names the bare word', () => {
+  it('sendMessage turns "type /quiz" into "type quiz"', async () => {
+    const { service, sentMessages } = loadService();
+    await service.sendMessage(TO, 'Type /quiz to start a new quiz, or /menu for more.');
+    expect(sentMessages[0].content.body).toBe('Type quiz to start a new quiz, or menu for more.');
+  });
+
+  it('bold command copy is rewritten in both body and formatted_body; URLs are left alone', async () => {
+    const { service, sentMessages } = loadService();
+    await service.sendMessage(TO, 'Send */reading test* or open https://portal.example.org/portal');
+    expect(sentMessages[0].content.body).toBe('Send *reading test* or open https://portal.example.org/portal');
+    expect(sentMessages[0].content.formatted_body).toContain('<strong>reading test</strong>');
+    expect(sentMessages[0].content.formatted_body).toContain('https://portal.example.org/portal');
+  });
+
+  it('sendTextReturningId rewrites too', async () => {
+    const { service, sentMessages } = loadService();
+    await service.sendTextReturningId(TO, 'Type /status anytime');
+    expect(sentMessages[0].content.body).toBe('Type status anytime');
+  });
+
+  it('an interactive menu rendered as text is rewritten', async () => {
+    const { service, sentMessages } = loadService();
+    await service.sendInteractiveMessage(TO, {
+      body: 'Pick one, or type /menu',
+      footer: 'Type /language to change language',
+      action: { sections: [{ rows: [{ id: 'a', title: 'A' }] }] },
+    });
+    expect(sentMessages[0].content.body).toContain('Pick one, or type menu');
+    expect(sentMessages[0].content.body).toContain('Type language to change language');
+    expect(sentMessages[0].content.body).not.toMatch(/\/(menu|language)/);
+  });
+
+  it('a media caption is rewritten', async () => {
+    const fetchImpl = jest.fn(async () => ({ ok: true, arrayBuffer: async () => Buffer.from('img').buffer }));
+    const { service, sentMessages } = loadService({ fetchImpl });
+    await service.sendImageFromUrl(TO, 'https://example.com/x.png', 'Your quiz. Type /quiz again for another.');
+    expect(sentMessages[0].content.body).toBe('Your quiz. Type quiz again for another.');
+  });
+
+  it('the language picker footer reads correctly on Matrix', async () => {
+    const { service, sentMessages } = loadService();
+    jest.doMock('../../bot/shared/services/region-features.service', () => ({
+      getRegionFeatures: jest.fn(async () => ({})),
+    }));
+    await service.sendLanguageSelectionList(TO, 'en');
+    const body = sentMessages[0].content.body;
+    expect(body).not.toContain('/language');
+    expect(body).toMatch(/"language"/);
+  });
+});
+
 describe('matrix-channel.service -- reactions and typing', () => {
   it('sendReaction sends a real m.reaction event with an m.annotation relation', async () => {
     const { service, client } = loadService();
