@@ -4,10 +4,19 @@
  * to send reset codes through the main bot, which owns the messaging channels.
  *
  * Security: API key authentication required (INTERNAL_API_KEY, shared by the
- * portal backend and the bot).
+ * portal backend and the bot). With no key set on the bot, every call is
+ * refused: an unset key used to equal a missing header, which let anyone who
+ * could reach the bot send messages through it.
+ *
+ * Where the code goes: the person's own channel identity (the channel they
+ * last used, from user_channels), not the number they typed. A bare number
+ * reaches only WhatsApp, so on a messenger-only deployment (CHANNEL_DRIVER=none)
+ * a teacher on Rumi Messenger never got a code. A WhatsApp-only user resolves
+ * to their number, as before.
  */
 
 const WhatsAppService = require('../services/whatsapp.service');
+const { identityForUser, userIdForIdentity } = require('../services/messaging/user-identity');
 const { logToFile } = require('../utils/logger');
 
 async function sendPasswordReset(req, res) {
@@ -16,7 +25,7 @@ async function sendPasswordReset(req, res) {
     const apiKey = req.headers['x-api-key'];
     const expectedApiKey = process.env.INTERNAL_API_KEY;
 
-    if (apiKey !== expectedApiKey) {
+    if (!expectedApiKey || apiKey !== expectedApiKey) {
       logToFile('❌ Unauthorized internal API call', {
         endpoint: '/api/internal/send-password-reset',
         ip: req.ip
@@ -27,7 +36,7 @@ async function sendPasswordReset(req, res) {
       });
     }
 
-    const { phoneNumber, code, firstName, language } = req.body;
+    const { phoneNumber, userId, code, firstName, language } = req.body;
 
     if (!phoneNumber || !code || !firstName) {
       return res.status(400).json({
@@ -36,8 +45,14 @@ async function sendPasswordReset(req, res) {
       });
     }
 
+    // The portal backend sends the userId it looked up; an older one sends
+    // only the number, which is looked up here.
+    const resolvedUserId = userId || await userIdForIdentity(phoneNumber);
+    const recipient = (resolvedUserId && await identityForUser(resolvedUserId)) || phoneNumber;
+
     logToFile('📞 Internal API: Sending password reset code', {
       phoneNumber,
+      recipient,
       language,
       caller: 'portal-backend'
     });
@@ -88,12 +103,13 @@ Si no solicitaste esto, ignora este mensaje.`
     // Get localized message (fallback to English)
     const message = messages[language] || messages.en;
 
-    // Send WhatsApp message using main bot's WhatsApp service
-    const sent = await WhatsAppService.sendMessage(phoneNumber, message);
+    // Through the messaging facade, which routes the identity to its channel
+    const sent = await WhatsAppService.sendMessage(recipient, message);
 
     if (sent) {
-      logToFile('✅ Password reset code sent via WhatsApp', {
+      logToFile('✅ Password reset code sent', {
         phoneNumber,
+        recipient,
         language
       });
       res.json({
@@ -102,11 +118,12 @@ Si no solicitaste esto, ignora este mensaje.`
       });
     } else {
       logToFile('❌ Failed to send password reset code', {
-        phoneNumber
+        phoneNumber,
+        recipient
       });
       res.status(500).json({
         success: false,
-        error: 'Failed to send WhatsApp message'
+        error: 'Failed to send the reset code'
       });
     }
   } catch (error) {

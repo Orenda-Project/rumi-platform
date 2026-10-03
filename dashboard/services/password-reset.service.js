@@ -4,13 +4,14 @@
  *
  * Responsibilities:
  * - Generate 6-digit verification codes
- * - Call Main Bot's internal API to send codes via WhatsApp
+ * - Call Main Bot's internal API to send codes on the user's own channel
  * - Verify codes within 10-minute expiry window
  * - Rate limiting to prevent abuse
  *
  * Flow:
  * 1. User requests reset on portal (enters phone number)
- * 2. Backend calls sendResetCode() → Calls Main Bot API → WhatsApp message sent
+ * 2. Backend calls sendResetCode() → Calls Main Bot API → the bot sends the code
+ *    to the channel the user last used (WhatsApp, or their Rumi Messenger DM)
  * 3. User enters code on portal
  * 4. Frontend calls verifyResetCode() → validates code
  * 5. If valid, frontend allows password reset
@@ -107,6 +108,9 @@ class PasswordResetService {
         const response = await axios.post(
           `${MAIN_BOT_URL}/api/internal/send-password-reset`,
           {
+            // userId lets the bot send to this person's own channel (their
+            // Matrix DM on a messenger-only deployment), not to a bare number.
+            userId: user.id,
             phoneNumber,
             code,
             firstName: user.first_name,
