@@ -4,6 +4,7 @@
  * Version: 2.8.1 - Reading Assessments Integration
  *
  * Endpoints:
+ * - GET /api/portal/channels - Does this deployment run WhatsApp; the chat link (public)
  * - POST /api/portal/validate-token - Validate invitation token
  * - POST /api/portal/setup - Complete portal setup (set password)
  * - POST /api/portal/login - Log in to portal
@@ -34,6 +35,7 @@ const supabase = require('../config/supabase');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { generatePresignedUrl, generatePresignedUrls, isValidR2Url } = require('../services/r2.service');
 const { widenPortalAppSession } = require('../lib/portal-app-origins');
+const { portalChannels } = require('../lib/portal-channels');
 const { createCoachRouter } = require('./portal-coach.routes');
 const { canUseCoachView } = require('../services/coach-observations.service');
 
@@ -211,6 +213,22 @@ async function getUserById(userId) {
 
   return user;
 }
+
+// ============================================================================
+// PUBLIC DEPLOYMENT INFO
+// ============================================================================
+
+/**
+ * GET /api/portal/channels
+ * { whatsapp, chatUrl }: whether the bot answers on WhatsApp here, and where
+ * "chat with Rumi" links go (PORTAL_CHAT_URL, or null). Public: the landing
+ * page asks before anyone signs in. Read from env on each request, so a
+ * restart with new settings is all a change needs.
+ */
+router.get('/channels', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300');
+  res.json(portalChannels(process.env));
+});
 
 // ============================================================================
 // AUTHENTICATION ENDPOINTS
