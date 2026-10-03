@@ -7,12 +7,20 @@ const { Resend } = require('resend');
 
 class ResendEmailService {
   constructor() {
-    this.resend = new Resend(process.env.RESEND_API_KEY);
+    this._resend = null;
     // EMAIL_FROM should be a deliverable from address you control. There is
     // no safe default — if unset, send attempts surface an explicit error so
     // a misconfigured clone fails loudly instead of silently spamming.
     this.fromEmail = process.env.EMAIL_FROM || null;
     this.dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:4000';
+  }
+
+  // Built on first send, not at startup: the Resend SDK throws on a missing
+  // key, and the dashboard (which serves the teacher portal) must boot on a
+  // clone with no email provider. Without a key, a send reports the error.
+  get resend() {
+    if (!this._resend) this._resend = new Resend(process.env.RESEND_API_KEY);
+    return this._resend;
   }
 
   /**
