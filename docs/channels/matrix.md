@@ -167,7 +167,9 @@ can send it twice.
 When Rumi takes a message it marks it read (an `m.read` receipt, so the teacher sees it was seen) and shows
 "Rumi is typing…" in that room. The typing stays on while the work runs, including a lesson plan, test paper,
 lesson quiz, photo lesson plan or homework bundle that the worker makes. It goes off as soon as Rumi's answer
-arrives, whether the bot sends it or the worker does through the relay. A safety cap ends it after
+arrives, whether the bot sends it or the worker does through the relay. While the worker is still making
+something, Rumi's other messages to the room (the "I'm making your test paper…" note, a reminder) leave the
+typing on: it ends with the job's own delivery, or when the job ends. A safety cap ends it after
 `MATRIX_TYPING_MAX_SECONDS` (default 300). Rumi shows no typing and sends no receipt for a group message it
 ignores. If a typing call fails, the failure is logged and the answer is still sent. Receipts and typing
 notices are not encrypted on any Matrix server, so they work the same with `MATRIX_E2EE` on or off.

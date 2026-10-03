@@ -9,6 +9,7 @@
  * through the Matrix relay to the bot, which owns the connection and does the
  * refreshing; the first file or message the job delivers ends the typing
  * there (matrix-channel.service.js), and the job's end lets go either way.
+ * Other sends to the room meanwhile (the bot's ack, a reminder) leave it on.
  *
  * Matrix only: WhatsApp's typing call needs the inbound message id (the
  * worker has none) and a Baileys worker owns no socket; Slack has no typing
@@ -17,6 +18,7 @@
  */
 
 const { driverForIdentifier } = require('./channel-registry');
+const { forJob } = require('./matrix-outbound-relay');
 const { logToFile } = require('../../utils/logger');
 
 // job type -> the payload field naming the teacher who asked.
@@ -40,10 +42,22 @@ function typingRecipientForJob(jobType, payload) {
   return String(to);
 }
 
-/** Runs `fn` with the typing held for the job's teacher (when there is one). Fail-open. */
+let jobSeq = 0;
+
+/**
+ * Runs `fn` with the typing held for the job's teacher (when there is one). Fail-open.
+ * The hold and every send the job makes go over the relay tagged with the same
+ * job, so the bot ends this typing on the job's own delivery, not on its own
+ * "I'm making it…" or on a reminder sent meanwhile.
+ */
 async function withJobTyping(jobType, payload, fn) {
   const to = typingRecipientForJob(jobType, payload);
   if (!to) return fn();
+  jobSeq += 1;
+  return forJob(`${jobType}:${process.pid}:${jobSeq}:${Date.now()}`, () => holdTypingWhile(to, jobType, fn));
+}
+
+async function holdTypingWhile(to, jobType, fn) {
   let controller = null;
   try {
     // eslint-disable-next-line global-require -- lazy: the facade loads every configured driver

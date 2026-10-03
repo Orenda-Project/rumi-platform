@@ -193,6 +193,50 @@ it('a worker job holds the typing through the relay, and the worker\'s reply end
   expect(typingIn(wire, DM)).toEqual(['typing:on', 'typing:off']);
 });
 
+// Test paper, quiz and lesson-plan paths queue the job FIRST and then send the
+// "I'm making it…" ack (testpaper-orchestrator.service.js). A worker that picks
+// the job up at once takes its hold while the inbound message is still being
+// handled, before the ack is sent. (Found in review: the ack used to end the
+// job's hold with the rest, and the room went quiet for the whole job.)
+it('a job the worker picked up before the ack keeps "typing" while it runs', async () => {
+  const { say, hooks, wire } = await boot({ reply: 'I am making your test paper. It takes a minute or two.' });
+  hooks.during = async () => {
+    await relay.call('_holdTyping', [T_ID, 'job:tp-1']); // withJobTyping in the worker, job still running
+    await settle();
+  };
+  await say(DM, 'make the test paper');
+  await settle();
+  const typing = typingIn(wire, DM);
+  // The job has not finished and has not released its hold: the teacher should still see "Rumi is typing…".
+  expect(typing[typing.length - 1]).toBe('typing:on');
+});
+
+it('a job\'s typing ends with the job\'s own delivery, not with a send that has nothing to do with it', async () => {
+  const { service, say, hooks, wire } = await boot({ reply: 'I am making your test paper.' });
+  const job = (fn) => relay.forJob('testpaper_generate:tp-2', fn);
+  hooks.during = async () => {
+    await job(() => relay.call('_holdTyping', [T_ID, 'hold:worker:1']));
+    await settle();
+  };
+  await say(DM, 'make the test paper');
+  await settle();
+  const last = () => typingIn(wire, DM).slice(-1)[0];
+  expect(last()).toBe('typing:on');
+  // A reminder the bot sends meanwhile, and a nudge from another process over the relay.
+  await service.sendMessage(T_ID, 'Reminder: staff meeting at 2.');
+  await relay.call('sendMessage', [T_ID, 'How did the fractions lesson go?']);
+  await settle();
+  expect(last()).toBe('typing:on');
+  // The job delivers its paper: the typing ends there, and the job's release afterwards changes nothing.
+  await job(() => relay.call('sendMessage', [T_ID, 'Your test paper is ready.']));
+  await settle();
+  expect(last()).toBe('typing:off');
+  const n = typingIn(wire, DM).length;
+  await job(() => relay.call('_releaseTyping', [T_ID, 'hold:worker:1']));
+  await settle();
+  expect(typingIn(wire, DM)).toHaveLength(n);
+});
+
 it('typing failures never break a reply (fail open, logged)', async () => {
   const { say, client, wire, logToFile } = await boot();
   client.setTyping.mockRejectedValue(new Error('M_LIMIT_EXCEEDED'));

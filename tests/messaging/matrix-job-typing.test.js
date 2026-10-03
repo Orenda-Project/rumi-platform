@@ -51,6 +51,19 @@ it('a lesson plan for a Matrix teacher: typing held from before the job runs unt
   expect(events).toEqual(['typing:start', 'job:run', 'typing:stop']);
 });
 
+it('the job\'s typing hold and everything the job sends are tagged with the same job', async () => {
+  const { run, messaging, lessonPlan } = load();
+  // eslint-disable-next-line global-require
+  const jobOf = () => require('../../bot/shared/services/messaging/matrix-outbound-relay').currentJob();
+  let heldFor;
+  let sentFor;
+  messaging.startContinuousTypingIndicator.mockImplementation(() => { heldFor = jobOf(); return { stop: jest.fn() }; });
+  lessonPlan.process.mockImplementation(async () => { sentFor = jobOf(); });
+  await run('lesson_plan_generation', { requestId: 'r1', phoneNumber: 'mtx:15550100001' });
+  expect(heldFor).toMatch(/^lesson_plan_generation:/);
+  expect(sentFor).toBe(heldFor);
+});
+
 it('a job that fails still lets the typing go', async () => {
   const { run, events, lessonPlan, worker } = load();
   lessonPlan.process.mockImplementation(async () => { events.push('job:run'); throw new Error('Gamma 500'); });

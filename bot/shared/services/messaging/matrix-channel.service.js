@@ -390,7 +390,7 @@ function matrixErrorDetail(error) {
 function logOutbound(roomId, eventId, type) {
   logToFile('✅ Matrix message sent', { channel: 'matrix', direction: 'outbound', roomId, eventId, type });
   // A reply ends "Rumi is typing…" in that room (a reaction is not a reply).
-  if (type !== 'reaction') endTypingSession(roomId, 'replied');
+  if (type !== 'reaction') typingAnsweredBy(roomId, typingOrigin());
   // So a teacher's reply to this message in a group room counts as addressed
   // to Rumi -- see matrix-events.adapter.js's "Group rooms" section.
   try {
@@ -475,10 +475,14 @@ async function sendReaction(to, messageId, emoji = '❤️') {
 //     startContinuousTypingIndicator controller, a worker job (job-typing.js);
 //   - the owner refreshes m.typing inside Matrix's timeout, so a two-minute
 //     lesson plan shows typing for two minutes, not ten seconds;
-//   - the first message Rumi sends to the room ends it at once (logOutbound),
-//     whichever process sent it; a holder from before that send cannot bring it
-//     back, so typing never reappears under an answer (on the rig a handler
-//     that never stopped its controller left it on ~15 s after the reply);
+//   - a message Rumi sends to the room (logOutbound) answers the bot's own
+//     holders and those of whoever sent it: a bot-side send drops the bot's
+//     holders, a worker job's send drops the bot's and that job's. A holder
+//     dropped this way cannot bring it back, so typing never reappears under
+//     an answer (on the rig a handler that never stopped its controller left
+//     it on ~15 s after the reply). A job still running keeps it on: a test
+//     paper is queued before the bot's "I'm making it…", so the worker can
+//     hold before that ack, and a reminder sent mid-job is not the job's reply;
 //   - a hard maximum (MATRIX_TYPING_MAX_SECONDS) ends it whatever else happens:
 //     a handler that forgets stop(), a worker that dies mid-job.
 // Every typing call is fail-open: logged, never thrown into a reply.
@@ -486,7 +490,7 @@ const TYPING_TIMEOUT_MS = 10000;
 const TYPING_REFRESH_MS = 8000; // just under the timeout, like Discord's ~8s-under-~10s
 const DEFAULT_TYPING_MAX_SECONDS = 300;
 
-const typingSessions = new Map(); // roomId -> { holders: Set, refresh, maxTimer }
+const typingSessions = new Map(); // roomId -> { holders: Map(holderId -> origin), refresh, maxTimer }
 let typingHolderSeq = 0;
 
 function typingMaxMs() {
@@ -516,21 +520,45 @@ function endTypingSession(roomId, reason) {
   return true;
 }
 
-function holdRoomTyping(roomId, holderId) {
+/**
+ * Who a typing hold or a send comes from: 'bot' on the bot's own path, and
+ * for a call the bot runs for the relay, 'job:<key>' (a worker job, see
+ * job-typing.js) or 'relay' (a caller that named no job, e.g. a nudge cron).
+ */
+function typingOrigin() {
+  // eslint-disable-next-line global-require -- lazy, like relayable() below
+  const call = require('./matrix-outbound-relay').relayedCall();
+  if (!call) return 'bot';
+  return call.job ? `job:${call.job}` : 'relay';
+}
+
+// A send answers the bot's own holders and those of whoever sent it; the
+// typing ends unless someone else (a worker job still running) holds it.
+function typingAnsweredBy(roomId, origin) {
+  const session = typingSessions.get(roomId);
+  if (!session) return;
+  for (const [holderId, holderOrigin] of session.holders) {
+    if (holderOrigin === 'bot' || holderOrigin === origin) session.holders.delete(holderId);
+  }
+  if (session.holders.size === 0) endTypingSession(roomId, 'replied');
+  else setRoomTyping(roomId, true); // shown again under the message just sent
+}
+
+function holdRoomTyping(roomId, holderId, origin = 'bot') {
   let session = typingSessions.get(roomId);
   if (!session) {
     session = {
-      holders: new Set(),
+      holders: new Map(),
       refresh: setInterval(() => { setRoomTyping(roomId, true); }, TYPING_REFRESH_MS),
       maxTimer: setTimeout(() => endTypingSession(roomId, 'max'), typingMaxMs()),
     };
     if (session.refresh.unref) session.refresh.unref();
     if (session.maxTimer.unref) session.maxTimer.unref();
     typingSessions.set(roomId, session);
-    session.holders.add(holderId);
+    session.holders.set(holderId, origin);
     return setRoomTyping(roomId, true).then(() => true);
   }
-  session.holders.add(holderId);
+  session.holders.set(holderId, origin);
   return Promise.resolve(true);
 }
 
@@ -544,7 +572,7 @@ function releaseRoomTyping(roomId, holderId) {
 /** Starts (or joins) the room's typing session under `holderId`. Fail-open. */
 async function holdTyping(to, holderId) {
   try {
-    return await holdRoomTyping(await getRoomId(to), String(holderId));
+    return await holdRoomTyping(await getRoomId(to), String(holderId), typingOrigin());
   } catch (error) {
     logToFile('❌ Matrix: error holding typing indicator', { ...matrixErrorDetail(error) });
     return false;
