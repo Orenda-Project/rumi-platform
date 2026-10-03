@@ -77,7 +77,16 @@ jest.mock('../../bot/shared/services/whatsapp.service', () => ({
 const mockDebrief = { offerDebriefChoice: jest.fn(async () => true) };
 jest.mock('../../bot/shared/services/observe/observe-debrief.service', () => mockDebrief);
 
+const WhatsAppService = require('../../bot/shared/services/whatsapp.service');
+const ObserveState = require('../../bot/shared/services/observe/observe-state.service');
 const ObserveEdits = require('../../bot/shared/services/observe/observe-edits.service');
+const ObserveForm = require('../../bot/shared/services/observe/observe-form.service');
+const { handleObserveText } = require('../../bot/shared/handlers/observe-command.handler');
+
+const COACH = { id: 'coach-1', role: 'coach', preferred_language: 'en' };
+const TO = 'mtx:15550100001';
+const sent = () => WhatsAppService.sendMessage.mock.calls.map((c) => c[1]);
+const lastText = () => sent()[sent().length - 1];
 
 const row = (id) => mockDb.tables.coaching_sessions.find((s) => s.id === id);
 
@@ -202,5 +211,136 @@ describe('applySectionBEdits — the verdicts after a Flow submission', () => {
     }
     expect(row('obs-16').analysis_data.observer_debrief).toEqual({ feedback: 'kept' });
     expect(row('obs-16').analysis_data.lp_fidelity.fidelity_pct).toBe(90);
+  });
+});
+
+describe('the chat form — Section B after the last domain', () => {
+  // Through the four Section A domains: the last "ok" leaves Section A.
+  async function throughSectionA(id) {
+    await ObserveForm.start(COACH, TO, id, { lang: 'en' });
+    for (let i = 0; i < 4; i += 1) expect(await handleObserveText(COACH, TO, 'ok')).toBe(true);
+  }
+
+  test('ok through Section A → the plan\'s moves → "5 1" → ok: one write, the coach\'s verdict is the measurement', async () => {
+    seed('obs-20');
+    await ObserveForm.start(COACH, TO, 'obs-20', { lang: 'en' });
+    await handleObserveText(COACH, TO, '1 1');                        // a Section A edit, kept for the same write
+    for (let i = 0; i < 4; i += 1) await handleObserveText(COACH, TO, 'ok');
+
+    expect(lastText()).toMatch(/Section B/);
+    expect(lastText()).toMatch(/1 of 1/);
+    expect(lastText()).toMatch(/Exit question on the board/);
+    expect(mockDebrief.offerDebriefChoice).not.toHaveBeenCalled();
+    expect(row('obs-20').status).toBe('awaiting_observer_review');   // nothing written yet
+    expect(await ObserveState.getState('coach-1')).toMatchObject({ state: 'awaiting_form', section: 'b', page: 0 });
+
+    expect(await handleObserveText(COACH, TO, '5 1')).toBe(true);
+    const page = lastText();
+    expect(page).toMatch(/Section B/);
+    expect(page.slice(page.indexOf('5. '))).toMatch(/As planned.*\(changed\)/);
+    expect(await handleObserveText(COACH, TO, 'ok')).toBe(true);
+
+    const s = row('obs-20');
+    expect(s.status).toBe('observer_review_complete');
+    expect(s.analysis_data.lp_fidelity.moves[4]).toMatchObject({ verdict: 'executed', coach_verdict: true });
+    expect(s.analysis_data.lp_fidelity.observer_edited).toBe(true);
+    expect(s.analysis_data.lp_fidelity.fidelity_pct).toBeGreaterThan(70);
+    expect(s.analysis_data.observer_edit_summary).toMatchObject({ indicators_rescored: 1, fidelity_verdicts_changed: 1 });
+    expect(s.autofill_analysis_data).toEqual(JSON.parse(JSON.stringify({ ...teachAnalysis(3), lp_fidelity: measured(), section_b: ASSESSED })));
+    const ack = lastText();
+    expect(ack).toMatch(/saved, with your edits/);
+    expect(ack).toMatch(/You changed 1 rating/);
+    expect(ack).toMatch(/You changed 1 plan verdict/);
+    expect(await ObserveState.getState('coach-1')).toBeNull();
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalledWith(expect.objectContaining({ id: 'coach-1' }), TO, 'obs-20');
+  });
+
+  test('in Section B a reply is a move and a verdict, never an indicator and a rating', async () => {
+    seed('obs-21');
+    await throughSectionA('obs-21');
+    await handleObserveText(COACH, TO, '9 1');
+    expect(lastText()).toMatch(/pick a move from 1 to 6/);
+    await handleObserveText(COACH, TO, '2 9');
+    expect(lastText()).toMatch(/Verdicts go from 1 to 6/);
+    expect((await ObserveState.getState('coach-1')).edits).toEqual({});
+    await handleObserveText(COACH, TO, '2 4');                         // a Section A "2 4" would be a rating
+    expect((await ObserveState.getState('coach-1')).edits).toEqual({ fid_2: 'partial' });
+    expect(await handleObserveText(COACH, TO, 'what time is it?')).toBe(false);
+  });
+
+  test('a long plan is paged; a move on another page can be named from any page', async () => {
+    seed('obs-22', {}, { lp_fidelity: measured(8) });              // 14 moves → 3 pages
+    await throughSectionA('obs-22');
+    expect(lastText()).toMatch(/1 of 3/);
+    await handleObserveText(COACH, TO, '12 5');
+    await handleObserveText(COACH, TO, 'ok');
+    expect(lastText()).toMatch(/2 of 3/);
+    await handleObserveText(COACH, TO, 'ok');
+    expect(lastText()).toMatch(/3 of 3/);
+    expect(mockDebrief.offerDebriefChoice).not.toHaveBeenCalled();
+    await handleObserveText(COACH, TO, 'ok');
+    expect(row('obs-22').analysis_data.lp_fidelity.moves[11]).toMatchObject({ verdict: 'not_done', coach_verdict: true });
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalled();
+  });
+
+  test('ok on every page with no change: saved, no plan-verdict line', async () => {
+    seed('obs-23');
+    await throughSectionA('obs-23');
+    await handleObserveText(COACH, TO, 'ok');
+    expect(row('obs-23').analysis_data.lp_fidelity.fidelity_pct).toBe(70);
+    expect(row('obs-23').analysis_data.lp_fidelity.observer_edited).toBeUndefined();
+    expect(lastText()).not.toMatch(/plan verdict/);
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalled();
+  });
+
+  test('nothing measured: the coach is told why, then the form finishes', async () => {
+    seed('obs-24', {}, {
+      lp_fidelity: { status: 'ok', unusable_guard: 'no_timestamps', fidelity_pct: null, moves: [] },
+      section_b: { status: 'not_assessed', reason: 'no_timings' },
+    });
+    await throughSectionA('obs-24');
+    const text = sent().join('\n');
+    expect(text).toMatch(/not assessed/);
+    expect(text).toMatch(/no timings/);
+    expect(row('obs-24').status).toBe('observer_review_complete');
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalled();
+  });
+
+  test('no plan: the cause is named, with the teacher\'s name', async () => {
+    seed('obs-25', {}, {
+      lp_fidelity: { status: 'lp_absent' },
+      section_b: { status: 'not_assessed', reason: 'no_plan', detail: 'teacher_has_no_plans' },
+    });
+    await throughSectionA('obs-25');
+    expect(sent().join('\n')).toMatch(/Sam Taylor has no lesson plan made with Rumi/);
+  });
+
+  test('no Section B at all (an older observation): finishes exactly as before', async () => {
+    seed('obs-26', {}, { lp_fidelity: undefined, section_b: undefined });
+    await throughSectionA('obs-26');
+    expect(sent().join('\n')).not.toMatch(/Section B/);
+    expect(row('obs-26').status).toBe('observer_review_complete');
+    expect(mockDebrief.offerDebriefChoice).toHaveBeenCalled();
+  });
+
+  test('ratings saved elsewhere meanwhile: no Section B pages, the coach is told', async () => {
+    seed('obs-27');
+    await ObserveForm.start(COACH, TO, 'obs-27', { lang: 'en' });
+    row('obs-27').status = 'observer_review_complete';
+    for (let i = 0; i < 4; i += 1) await handleObserveText(COACH, TO, 'ok');
+    expect(sent().join('\n')).not.toMatch(/Section B/);
+    expect(lastText()).toMatch(/already saved/);
+    expect(mockDebrief.offerDebriefChoice).not.toHaveBeenCalled();
+  });
+
+  test('resuming the form starts again at the first Section A domain', async () => {
+    seed('obs-28');
+    await throughSectionA('obs-28');
+    await handleObserveText(COACH, TO, '5 1');
+    await ObserveForm.resume(COACH, TO, 'obs-28');
+    expect(lastText()).toMatch(/Time on Task/);
+    const st = await ObserveState.getState('coach-1');
+    expect(st).toMatchObject({ domainIndex: 0, edits: {} });
+    expect(st.section).toBeUndefined();
   });
 });

@@ -17,10 +17,23 @@
  * reaches. Its replies are plain text on purpose: a numbered button menu would
  * make a typed "1" ambiguous with "indicator 1".
  *
+ * Section B — did the lesson follow its plan? — follows the last domain when
+ * the analysis measured it (analysis_data.lp_fidelity): the plan's moves a page
+ * at a time, each with its verdict and the quoted moment; "ok" keeps a page,
+ * "<move> <verdict>" changes one (moves are numbered across the whole plan, so
+ * any page can name any move). The ratings and the verdicts are merged in ONE
+ * write. When nothing could be measured the coach is told why instead; an
+ * observation with no Section B record finishes exactly as before.
+ *
  * State: observe:state:<coachId> = { state:'awaiting_form', sessionId,
- * domainIndex, edits: { r_<id>: rating } }. Edits live in the state until the
- * last domain — losing the state costs the coach their unsaved changes, never
- * the observation (the pending list reopens it from the start).
+ * domainIndex, edits: { r_<id>: rating, fid_<n>: verdict }, section?: 'b',
+ * page?, afterFlow? }. Edits live in the state until the end — losing the
+ * state costs the coach their unsaved changes, never the observation (the
+ * pending list reopens it from the start).
+ *
+ * afterFlow: on Meta the published Flow has no Section B screen, so after a
+ * Flow submission the chat opens Section B alone (startSectionB); the ratings
+ * are already saved and only the verdicts are merged (applySectionBEdits).
  */
 
 const supabase = require('../../config/supabase');
@@ -31,6 +44,7 @@ const { getObservePack, scaleBounds } = require('./observe-framework');
 const { isTerminalStatus } = require('./observe-terminal');
 const { isSchoolLeader } = require('./observe-gate');
 const ObserveEdits = require('./observe-edits.service');
+const SectionB = require('./observe-section-b');
 const { logToFile } = require('../../utils/logger');
 
 const EVIDENCE_CAP = 160;
@@ -117,6 +131,33 @@ async function start(coach, to, sessionId, { lang, domainIndex = 0 } = {}) {
   return true;
 }
 
+async function sendSectionBPage(to, lang, session, state) {
+  const lp = (session.analysis_data || {}).lp_fidelity;
+  await WhatsAppService.sendMessage(to, SectionB.renderCoachPage({ lang, lp, page: state.page || 0, edits: state.edits || {} }));
+}
+
+/**
+ * Open Section B on its own, after a Flow submission saved the ratings. Same
+ * rule as start(): a debrief being recorded for another observation is never
+ * clobbered.
+ * @returns {Promise<boolean>} false when there is nothing to review (or the
+ *   coach is mid-debrief elsewhere) — the caller goes on without it
+ */
+async function startSectionB(coach, to, sessionId, { lang, afterFlow = false } = {}) {
+  const session = await loadSession(sessionId);
+  if (!session || !SectionB.isReviewable((session.analysis_data || {}).lp_fidelity)) return false;
+  const current = await ObserveState.getState(coach.id);
+  if (current && current.state === 'awaiting_debrief_audio' && current.sessionId !== sessionId) {
+    logToFile('🔭 observe: Section B skipped — coach is mid-debrief on another observation', { sessionId });
+    return false;
+  }
+  const state = { sessionId, domainIndex: 0, edits: {}, section: 'b', page: 0, ...(afterFlow ? { afterFlow: true } : {}) };
+  await ObserveState.setState(coach.id, 'awaiting_form', state);
+  await sendSectionBPage(to, lang || observeLang(coach), session, state);
+  logToFile('📋 observe: Section B opened', { sessionId, observerId: coach.id, afterFlow });
+  return true;
+}
+
 /** Parse "2 5" / "2=5" / "1 2, 4 4" → [{n, rating}] or null when it isn't an edit at all. */
 function parseEdits(text) {
   const parts = String(text || '').split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean);
@@ -131,16 +172,87 @@ function parseEdits(text) {
 }
 
 async function finish(user, to, lang, state) {
-  const applied = await ObserveEdits.applyObserverEdits(state.sessionId, state.edits || {});
+  const applied = state.afterFlow
+    ? await ObserveEdits.applySectionBEdits(state.sessionId, state.edits || {})
+    : await ObserveEdits.applyObserverEdits(state.sessionId, state.edits || {});
   await ObserveState.clearState(user.id);
   if (applied && applied.refused) {
     await WhatsAppService.sendMessage(to, t(lang, applied.refused === 'terminal' ? 'flow_terminal_refused' : 'form_already_saved'));
     return true;
   }
   const changed = applied.indicators_rescored || 0;
-  await WhatsAppService.sendMessage(to, `${t(lang, 'submitted_ack')}${changed ? `\n${t(lang, 'form_changes_count', { count: changed })}` : ''}`);
+  const verdicts = applied.fidelity_verdicts_changed || 0;
+  // After a Flow the ratings were acknowledged already; only the verdicts are news.
+  const lines = state.afterFlow ? [] : [t(lang, 'submitted_ack')];
+  if (changed) lines.push(t(lang, 'form_changes_count', { count: changed }));
+  if (verdicts) lines.push(t(lang, 'secb_changes_count', { count: verdicts }));
+  if (lines.length) await WhatsAppService.sendMessage(to, lines.join('\n'));
   const ObserveDebrief = require('./observe-debrief.service');
   await ObserveDebrief.offerDebriefChoice(user, to, state.sessionId);
+  return true;
+}
+
+/**
+ * The last Section A domain is done: Section B when there is a measurement to
+ * review, the reason when there is a record but no measurement, otherwise
+ * finish as before. Section B opens only while the ratings are still in
+ * review — saved elsewhere meanwhile, finish() says so.
+ */
+async function afterSectionA(user, to, lang, state, session) {
+  const analysis = session.analysis_data || {};
+  const inReview = session.status === ObserveEdits.IN_REVIEW_STATUS;
+  if (inReview && SectionB.isReviewable(analysis.lp_fidelity)) {
+    Object.assign(state, { section: 'b', page: 0 });
+    await ObserveState.setState(user.id, 'awaiting_form', state);
+    await sendSectionBPage(to, lang, session, state);
+    return true;
+  }
+  if (inReview && analysis.section_b) {
+    // An assessed record with no moves to show cannot be reviewed either; the
+    // coach is told the check could not run rather than shown an empty page.
+    const record = analysis.section_b.status === 'not_assessed'
+      ? analysis.section_b : { ...analysis.section_b, reason: 'grader_failed' };
+    await WhatsAppService.sendMessage(to, SectionB.notAssessedText(lang, record, { teacherName: await teacherName(session) }));
+  }
+  return finish(user, to, lang, state);
+}
+
+/** A reply while Section B is open: "ok" turns the page, "<move> <verdict>" changes one. */
+async function handleSectionB(user, from, lang, state, trimmed) {
+  if (OK_RX.test(trimmed)) {
+    const session = await loadSession(state.sessionId);
+    if (!session || isTerminalStatus(session.status)) {
+      await ObserveState.clearState(user.id);
+      await WhatsAppService.sendMessage(from, t(lang, 'flow_terminal_refused'));
+      return true;
+    }
+    const pages = SectionB.pageCount((session.analysis_data || {}).lp_fidelity);
+    if (state.page + 1 >= pages) return finish(user, from, lang, state);
+    state.page += 1;
+    await ObserveState.setState(user.id, 'awaiting_form', state);
+    await sendSectionBPage(from, lang, session, state);
+    return true;
+  }
+
+  const edits = SectionB.parseVerdictEdits(trimmed);
+  if (!edits) return false;   // not an answer — leave it to normal chat
+  const session = await loadSession(state.sessionId);
+  if (!session) return false;
+  const lp = (session.analysis_data || {}).lp_fidelity;
+  const count = (lp && Array.isArray(lp.moves) ? lp.moves : []).length;
+  for (const e of edits) {
+    if (e.n < 1 || e.n > count) {
+      await WhatsAppService.sendMessage(from, t(lang, 'secb_bad_move', { count }));
+      return true;
+    }
+    if (!e.verdict) {
+      await WhatsAppService.sendMessage(from, t(lang, 'secb_bad_verdict'));
+      return true;
+    }
+  }
+  for (const e of edits) state.edits[`fid_${e.n}`] = e.verdict;
+  await ObserveState.setState(user.id, 'awaiting_form', state);
+  await sendSectionBPage(from, lang, session, state);
   return true;
 }
 
@@ -158,6 +270,10 @@ async function handleText(user, from, text) {
   const lang = observeLang(user);
   const pack = getObservePack();
   const state = { sessionId: st.sessionId, domainIndex: st.domainIndex || 0, edits: st.edits || {} };
+  if (st.section === 'b') {
+    Object.assign(state, { section: 'b', page: st.page || 0, ...(st.afterFlow ? { afterFlow: true } : {}) });
+    return handleSectionB(user, from, lang, state, trimmed);
+  }
 
   if (OK_RX.test(trimmed)) {
     const session = await loadSession(state.sessionId);
@@ -166,7 +282,7 @@ async function handleText(user, from, text) {
       await WhatsAppService.sendMessage(from, t(lang, 'flow_terminal_refused'));
       return true;
     }
-    if (state.domainIndex + 1 >= pack.domainOrder.length) return finish(user, from, lang, state);
+    if (state.domainIndex + 1 >= pack.domainOrder.length) return afterSectionA(user, from, lang, state, session);
     state.domainIndex += 1;
     await ObserveState.setState(user.id, 'awaiting_form', state);
     await sendDomain(from, lang, session, state);
@@ -222,4 +338,4 @@ async function resume(user, from, sessionId) {
   return start(user, from, sessionId, { lang });
 }
 
-module.exports = { start, handleText, resume, renderDomain, parseEdits };
+module.exports = { start, startSectionB, handleText, resume, renderDomain, parseEdits };
