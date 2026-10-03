@@ -23,7 +23,9 @@
  *
  * Trust firewall: every payload here is a whitelist. No score, no rating, no
  * coach-the-coach feedback (analysis_data.observer_debrief) and nothing else
- * from analysis_data except the report's delivery state ever leaves this file.
+ * from analysis_data except the report's delivery state and Section B's moves
+ * and verdicts (shaped by coach-section-b.js — never its percentage or band)
+ * ever leaves this file.
  *
  * The dashboard is deployed on its own (a service rooted at dashboard/), so it
  * cannot require the bot's modules at runtime. The coach role family is
@@ -43,6 +45,8 @@
  * throws: an empty answer would tell the coach "nothing waiting" when there
  * may be, so the route turns it into a 500 and the page shows its error state.
  */
+
+const { shapeSectionB } = require('./coach-section-b');
 
 // Mirror of observe-gate.js DEFAULT_LEADER_ROLES (drift-guarded by test).
 // The shared role vocabulary: principal / school_leader are read aliases of head_teacher.
@@ -160,15 +164,17 @@ async function loadObservations(db, coachId) {
     const sched = bySession.get(r.id) || null;
     const bound = r.user_id && r.user_id !== coachId ? r.user_id : null;
     const delivery = ((r.analysis_data || {}).teacher_delivery) || {};
+    const teacherName = (sched && sched.teacher_name) || (bound && names.get(bound)) || delivery.teacher_name || null;
     return {
       id: r.id,
       createdAt: r.created_at || null,
       stage: stageOf(r),
       teacherUserId: bound || (sched && sched.teacher_ext_id) || null,
-      teacherName: (sched && sched.teacher_name) || (bound && names.get(bound)) || delivery.teacher_name || null,
+      teacherName,
       schoolName: (sched && sched.school_name) || null,
       reportStatus: delivery.status || null,
       reportSentAt: delivery.sent_at || null,
+      sectionB: shapeSectionB(r.analysis_data, { teacherName }),
     };
   });
 }
