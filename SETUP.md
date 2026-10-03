@@ -480,6 +480,11 @@ Class attendance needs nothing. For a head teacher's **staff** attendance and re
 ### Add the teacher portal (optional)
 
 1. Build it into the dashboard: `cd portal && npm ci && npm run build && cp -R dist ../dashboard/portal-frontend/dist`.
+   A production install works for both (`npm ci --omit=dev`): what the dashboard loads and what the portal build
+   needs are dependencies.
+   On a deployment with no WhatsApp (`CHANNEL_DRIVER=none`), set the same `CHANNEL_DRIVER` on the dashboard, and
+   optionally `PORTAL_CHAT_URL` (where "Chat with Rumi" goes, e.g. your messenger's address): the landing page and the
+   portal then name WhatsApp only when the bot runs it.
 2. Run the dashboard on an `https://` address (its session cookie is `Secure`).
 3. Set `PORTAL_URL` (the dashboard's address) on the bot, and `MAIN_BOT_URL` plus the same random
    `INTERNAL_API_KEY` on both services, so reset codes reach each teacher's own chat.
