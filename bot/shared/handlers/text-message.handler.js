@@ -41,20 +41,13 @@ const {
   storeConversation,
   storeLessonPlan
 } = require('../database/bot-helpers');
-const { driverForIdentifier } = require('../services/messaging/channel-registry');
+// resolveChannelIdentity: the one split of a prefixed sender, shared with
+// whatsapp-bot.js. A copy here once sliced by the driver name's length, which
+// cut "mtx:1555…" short and made a second account for the same teacher.
+const { driverForIdentifier, resolveChannelIdentity } = require('../services/messaging/channel-registry');
 const { nativeFlowIdFor } = require('../services/messaging/channel-capabilities');
 const supabase = require('../config/supabase');
 const fs = require('fs');
-
-const CHANNEL_FAMILY = { slack: 'slack', discord: 'discord' };
-
-/** Mirrors whatsapp-bot.js's resolveChannelIdentity — see that file for the full rationale. */
-function resolveChannelIdentity(from) {
-  const driverName = driverForIdentifier(from);
-  if (!driverName) return null;
-  const prefix = `${driverName}:`;
-  return { channel: CHANNEL_FAMILY[driverName] || driverName, channelUserId: String(from).slice(prefix.length) };
-}
 
 /**
  * Curriculum pre-gen intercept. If the teacher's region enables curriculum LPs

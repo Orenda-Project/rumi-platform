@@ -83,7 +83,8 @@ breaker (`bot/shared/services/limits/model-budget.js`):
   answered "busy" before any handler runs, at most once per sender per cooldown, and then nothing. A model call
   made in that time fails at once, with no network call. Once the cooldown ends, the next message tries the
   provider again. If the budget has been topped up, everything works as before.
-- **What the operator sees.** One log line per cooldown, at level `error`, with `alert: "model_budget_exhausted"`.
+- **What the operator sees.** One log line per cooldown, `🚨 MODEL BUDGET EXHAUSTED …` with
+  `alert: "model_budget_exhausted"`.
   Thousands of refused messages produce one alert, not thousands. The tripped state is kept in Redis, so the bot
   and the worker share it.
 
