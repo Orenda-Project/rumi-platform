@@ -41,6 +41,7 @@ const {
   storeLessonPlan
 } = require('../database/bot-helpers');
 const { driverForIdentifier } = require('../services/messaging/channel-registry');
+const { normalizeCommand } = require('../services/messaging/command-words');
 const { nativeFlowIdFor } = require('../services/messaging/channel-capabilities');
 const supabase = require('../config/supabase');
 const fs = require('fs');
@@ -195,6 +196,19 @@ async function handleTextMessage(message, from, messageBody, user = null) {
 
   // Start continuous typing indicator immediately
   const typingController = WhatsAppService.startContinuousTypingIndicator(from, message.id);
+
+  // A bare command word ("menu", "quiz", "reading test") is the slash command,
+  // on every channel: Element (Matrix) eats anything starting with "/" as its
+  // own client command, so there the bare word is the only way to send one.
+  // Done first, so every check below — the `=== '/menu'` matches and each
+  // "a slash command is never an answer" guard — sees the slash form. The exam
+  // checker reads the message object, so it gets the same text.
+  const normalizedBody = normalizeCommand(messageBody, from);
+  if (normalizedBody !== messageBody) {
+    logToFile('⌨️ Bare command word taken as the slash command', { command: normalizedBody.split(' ')[0] });
+    messageBody = normalizedBody;
+    if (message && message.text) message = { ...message, text: { ...message.text, body: normalizedBody } };
+  }
 
   try {
     // The share-code JOIN itself runs before anything else, including the
