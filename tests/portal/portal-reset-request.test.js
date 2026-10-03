@@ -38,6 +38,17 @@ describe('PasswordResetService.sendResetCode', () => {
     expect(body.code).toBe(mockDb.tables.users[0].password_reset_code);
   });
 
+  test('a code the bot could not send is not kept, so the teacher can ask again at once', async () => {
+    // Otherwise the stored expiry rate-limits the next request for 10 minutes
+    // although no code ever arrived.
+    mockDb.tables.users.push({ id: 'u-mx', phone_number: '15551000001', first_name: null, portal_activated: true });
+    mockPost.mockRejectedValueOnce(Object.assign(new Error('Request failed with status code 500'), { response: { data: { success: false } } }));
+    const result = await PasswordResetService.sendResetCode('15551000001');
+    expect(result.success).toBe(false);
+    expect(mockDb.tables.users[0]).toMatchObject({ password_reset_code: null, password_reset_expires_at: null });
+    expect(await PasswordResetService.checkRateLimit('15551000001')).toEqual({ allowed: true });
+  });
+
   test('an unknown number: nothing is stored and nothing is sent', async () => {
     const result = await PasswordResetService.sendResetCode('15559999999');
     expect(result.success).toBe(false);

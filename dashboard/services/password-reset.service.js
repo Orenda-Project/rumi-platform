@@ -138,6 +138,7 @@ class PasswordResetService {
             phoneNumber,
             error: response.data.error
           });
+          await this.clearResetCode(user.id);
           return {
             success: false,
             error: 'Failed to send reset code. Please try again.'
@@ -149,6 +150,9 @@ class PasswordResetService {
           error: apiError.message,
           response: apiError.response?.data
         });
+        // No code reached them: drop it, or its expiry would rate-limit their
+        // next request for 10 minutes (checkRateLimit).
+        await this.clearResetCode(user.id);
         return {
           success: false,
           error: 'Failed to send reset code. Please try again.'
