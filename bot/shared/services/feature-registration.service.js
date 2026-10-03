@@ -111,6 +111,12 @@ const DECLINE_MESSAGES = {
 const NAME_CANDIDATE_KEY = (userId) => `registration:name_candidate:${userId}`;
 const NAME_CANDIDATE_TTL_SECONDS = 24 * 3600;
 const nameCandidates = new Map();
+// The unasked offer is made once. registration_pending_name alone cannot say
+// so: "no thanks" clears it, and the next reply would offer again. Redis when
+// available, memory when Redis is down; losing it only means one more offer.
+const OFFERED_KEY = (userId) => `registration:offered:${userId}`;
+const OFFERED_TTL_SECONDS = 90 * 24 * 3600;
+const offeredInMemory = new Set();
 
 /**
  * Redis is required lazily: railway-redis.service.js connects on require, and
@@ -383,8 +389,10 @@ class FeatureRegistrationService {
         return false;
       }
       if (user.first_name || user.registration_completed === true || user.registration_pending_name) return false;
+      if (await this._wasOffered(userId)) return false;
 
       await this.sendNameQuestion(userId, phoneNumber, language, 'text', { variant: 'offer' });
+      await this._markOffered(userId);
       logToFile('Registration offered on first contact', { userId });
       return true;
     } catch (error) {
@@ -668,6 +676,24 @@ class FeatureRegistrationService {
     if (this.looksLikeNameReply(response)) return true;
     if (!AFFIRMATIVE_RE.test(bare(String(response || '').trim()))) return false;
     return Boolean(await this._readNameCandidate(userId));
+  }
+
+  static async _wasOffered(userId) {
+    if (offeredInMemory.has(userId)) return true;
+    try {
+      return Boolean(await redis().get(OFFERED_KEY(userId)));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static async _markOffered(userId) {
+    let stored = false;
+    try {
+      stored = await redis().set(OFFERED_KEY(userId), { at: new Date().toISOString() }, OFFERED_TTL_SECONDS);
+    } catch (_) { /* memory below */ }
+    // The cache answers false rather than throwing when Redis is down.
+    if (!stored) offeredInMemory.add(userId);
   }
 
   static async _readNameCandidate(userId) {

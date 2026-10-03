@@ -229,6 +229,16 @@ describeWithBotDeps('Matrix: an open offer never blocks use', () => {
     expect(mockAi.getResponseWithFormat).not.toHaveBeenCalled();
   });
 
+  test('after "no thanks" the offer is not made again; register still works', async () => {
+    expect((await say(MATRIX, 'Hi'))[1]).toMatch(OFFER);
+    await say(MATRIX, 'no thanks');
+    expect(mockDb.row.registration_pending_name).toBe(false);
+    mockWa.sendMessage.mockClear();
+    expect(await say(MATRIX, 'Give me a warm-up for grade 3 English')).toEqual([GENERAL_REPLY]);
+    mockWa.sendMessage.mockClear();
+    expect(await say(MATRIX, 'register')).toEqual([expect.stringMatching(/What should I call you\?/)]);
+  });
+
   test('"register" while pending asks again rather than becoming the name', async () => {
     const sent = await say(MATRIX, 'register', { registration_pending_name: true });
     expect(nameWrites()).toEqual([]);
