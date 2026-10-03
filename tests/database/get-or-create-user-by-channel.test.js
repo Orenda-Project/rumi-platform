@@ -42,6 +42,10 @@ jest.mock('../../bot/shared/config/supabase', () => {
           ? Promise.resolve({ data: mockState.existingWhatsappUser, error: null })
           : Promise.resolve({ data: null, error: { code: 'PGRST116' } });
       },
+      // The phone-number taken-check (matrixPhoneNumberFor): who already holds it.
+      limit() {
+        return Promise.resolve({ data: mockState.existingWhatsappUser ? [mockState.existingWhatsappUser] : [], error: null });
+      },
       insert(row) {
         api._mode = 'insert';
         api._lastInsert = row;
