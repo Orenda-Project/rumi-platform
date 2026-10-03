@@ -19,23 +19,29 @@
  */
 
 const OpenAI = require('openai');
+const ModelBudget = require('./limits/model-budget');
 
 const PROVIDER = (process.env.LLM_PROVIDER || 'openrouter').toLowerCase();
 const DEFAULT_MODEL = process.env.LLM_MODEL || 'openai/gpt-4o';
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+// Overridable for an OpenRouter-compatible gateway (or a test double of one).
+const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
 
 let _client = null;
 
 /**
  * Create a new LLM client configured for the current provider.
  * For OpenRouter, wraps chat.completions.create to auto-prefix model names.
+ * Either way every completion passes the budget breaker (limits/model-budget.js):
+ * a provider refusing for money becomes one "busy" reply and one alert.
  */
 function createLLMClient() {
   if (PROVIDER === 'openai') {
     // Direct OpenAI — no baseURL override
-    return new OpenAI({
+    const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
+    client.chat.completions.create = ModelBudget.guardCreate(client.chat.completions.create.bind(client.chat.completions));
+    return client;
   }
 
   // Default: OpenRouter — uses OpenAI-compatible API
@@ -50,12 +56,12 @@ function createLLMClient() {
 
   // Auto-prefix model names for OpenRouter (e.g. 'gpt-4o-mini' → 'openai/gpt-4o-mini')
   const originalCreate = client.chat.completions.create.bind(client.chat.completions);
-  client.chat.completions.create = (params, options) => {
+  client.chat.completions.create = ModelBudget.guardCreate((params, options) => {
     if (params.model && !params.model.includes('/')) {
       params = { ...params, model: `openai/${params.model}` };
     }
     return originalCreate(params, options);
-  };
+  });
 
   return client;
 }

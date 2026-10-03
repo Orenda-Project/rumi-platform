@@ -11,6 +11,9 @@ const fs = require('fs');
 // Import Services
 const WhatsAppService = require('./shared/services/whatsapp.service');
 const SessionService = require('./shared/services/session.service');
+const InboundRateLimit = require('./shared/services/limits/inbound-rate-limit');
+const DailyCaps = require('./shared/services/limits/daily-caps');
+const ModelBudget = require('./shared/services/limits/model-budget');
 const OpenAIService = require('./shared/services/openai.service');
 const CoachingService = require('./shared/services/coaching-orchestrator.service');
 const PortalInviteService = require('./shared/services/portal-invite.service');
@@ -309,6 +312,8 @@ app.get('/webhook', (req, res) => {
  * Zero behavior change from the previous inline handler; see
  * wireBaileysInboundIfSelected() below for where the Baileys path plugs in.
  */
+const sendText = (to, text) => WhatsAppService.sendMessage(to, text);
+
 async function handleWebhookPost(req, res) {
   // A branch that is done early (`return` out of the list_reply routes) must
   // still answer Meta, or the request hangs until it times out and Meta
@@ -318,9 +323,14 @@ async function handleWebhookPost(req, res) {
   // Generate correlation ID for tracing this request across all logs
   const correlationId = generateCorrelationId();
 
+  // Who hears "busy" if the model budget runs out while this message is
+  // handled (limits/model-budget.js): known once the message is validated.
+  let sender = null;
+  let senderLang = null;
+
   // Wrap the entire request processing with correlation context
   // All console.log calls inside will automatically include correlationId
-  await runWithCorrelation(correlationId, async () => {
+  await runWithCorrelation(correlationId, () => ModelBudget.guard(() => sender, async () => {
     logToFile('=== INCOMING WEBHOOK ===', { correlationId });
 
     // Issue #58 FIX: Add button payload diagnostic logging
@@ -406,6 +416,25 @@ async function handleWebhookPost(req, res) {
     // Mark as processed
     await SessionService.markAsProcessed(message.id);
 
+    // Public-deployment limits (shared/services/limits/), before the user
+    // lookup and before anything can reach a model. A sender over the
+    // per-minute rate hears "slow down" once per window, then nothing; while
+    // the model budget is out every sender hears "busy" once, then nothing.
+    const rate = await InboundRateLimit.admit(from);
+    if (!rate.allowed) {
+      logToFile('🚦 Inbound rate limit: message dropped', { from, count: rate.count, limit: rate.limit, notified: rate.notify });
+      if (rate.notify) await WhatsAppService.sendMessage(from, InboundRateLimit.slowDownMessage());
+      ack();
+      return;
+    }
+    if (await ModelBudget.isTripped()) {
+      logToFile('💸 Model budget exhausted: message not handled', { from });
+      await ModelBudget.tellBusy(from, null, sendText);
+      ack();
+      return;
+    }
+    sender = from;
+
     logToFile('✅ Message accepted for processing', {
       messageId: message.id,
       from,
@@ -432,6 +461,22 @@ async function handleWebhookPost(req, res) {
     } catch (error) {
       logToFile('⚠️ Error with database user operation', { error: error.message });
       // Continue without database - bot will still work
+    }
+    senderLang = (user && user.preferred_language) || null;
+
+    // Today's message allowance for this account's tier (limits/daily-caps.js;
+    // no cap unless the operator set one). Told once, then quiet until the
+    // next school day. Finishing registration stays possible: /register and
+    // the name reply it asks for are never capped.
+    const finishingRegistration = user && (user.registration_pending_name === true || /^\/register\b/i.test(String(messageBody || '').trim()));
+    if (user && !finishingRegistration) {
+      const daily = await DailyCaps.claim(user, 'message');
+      if (!daily.allowed) {
+        logToFile('🚧 Daily message cap reached: message dropped', { userId: user.id, tier: daily.tier, limit: daily.limit, notified: daily.first });
+        if (daily.first) await WhatsAppService.sendMessage(from, DailyCaps.capMessage('message', daily));
+        ack();
+        return;
+      }
     }
 
     // Track chat start for funnel analysis (for all message types)
@@ -1637,7 +1682,7 @@ async function handleWebhookPost(req, res) {
     });
     res.status(200).send('EVENT_RECEIVED'); // Still send 200 to avoid retries
   }
-  }); // End of runWithCorrelation
+  }, { send: sendText, lang: () => senderLang })); // End of runWithCorrelation
 }
 
 app.post('/webhook', handleWebhookPost);
