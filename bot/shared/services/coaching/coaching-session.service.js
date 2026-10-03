@@ -15,6 +15,7 @@ const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
 const WhatsAppService = require('../whatsapp.service');
 const { getCoachingMessage } = require('../../config/coaching-messages');
+const DailyCaps = require('../limits/daily-caps');
 
 class CoachingSessionService {
   /**
@@ -39,13 +40,18 @@ class CoachingSessionService {
       // Feature-based registration happens after first feature completion
       const { data: user, error: userError} = await supabase
         .from('users')
-        .select('name, first_name, last_name')
+        .select('id, name, first_name, last_name, registration_completed')
         .eq('id', userId)
         .single();
 
       if (userError || !user) {
         throw new Error('User not found');
       }
+
+      // Today's coaching allowance for an unregistered account
+      // (limits/daily-caps.js): every recording sent for coaching starts here,
+      // so a refused one never reaches transcription or a model.
+      if (!(await DailyCaps.allowOrExplain(user, 'coaching', from))) return null;
 
       // Create coaching_sessions record
       const { data: coachingSession, error: createError } = await supabase

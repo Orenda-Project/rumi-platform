@@ -1,4 +1,5 @@
 const WhatsAppService = require('../services/whatsapp.service');
+const DailyCaps = require('../services/limits/daily-caps');
 const OpenAIService = require('../services/openai.service');
 const ContentService = require('../services/content.service');
 const LanguageDetectorService = require('../services/language-detector.service');
@@ -2168,6 +2169,13 @@ async function handleTextMessage(message, from, messageBody, user = null) {
  */
 async function handleLessonPlanRequest(from, messageBody, user, sessionId, responseLanguage, typingController) {
   try {
+    // Today's lesson-plan allowance for an unregistered account
+    // (limits/daily-caps.js) — checked before the topic is read or a plan queued.
+    if (!(await DailyCaps.allowOrExplain(user, 'lesson_plan', from))) {
+      typingController.stop();
+      return;
+    }
+
     // Multi-language message maps
     const lessonPlanMessages = {
       en: {
@@ -2286,6 +2294,13 @@ async function handleLessonPlanRequest(from, messageBody, user, sessionId, respo
  */
 async function handlePresentationRequest(from, messageBody, user, sessionId, responseLanguage, typingController) {
   try {
+    // Today's lesson-plan allowance for an unregistered account
+    // (limits/daily-caps.js) — checked before the topic is read or a plan queued.
+    if (!(await DailyCaps.allowOrExplain(user, 'lesson_plan', from))) {
+      typingController.stop();
+      return;
+    }
+
     // Multi-language message maps
     const presentationMessages = {
       en: {

@@ -100,6 +100,7 @@ beforeEach(() => {
   mockRedis.available = true;
   delete process.env.QUIZ_DAILY_CAP;
   delete process.env.SCHOOL_TIMEZONE;
+  delete process.env.DAILY_QUIZ_CAP_UNREGISTERED;
   jest.spyOn(Gen, 'sleep').mockResolvedValue(undefined);
   installAgreeingSolver(Gen);
   installNoPictureRepair(Gen);
@@ -173,6 +174,32 @@ describe('the per-teacher daily cap', () => {
     wire();
     await Gen.process(QID, {});
     expect(evalCall().args[1]).toBe(25);
+  });
+
+  test('an unregistered account gets DAILY_QUIZ_CAP_UNREGISTERED when it is lower (the smaller cap wins)', async () => {
+    process.env.DAILY_QUIZ_CAP_UNREGISTERED = '2';
+    mockEval.mockResolvedValueOnce(-2);   // the 3rd quiz today
+    wire();   // USER has not finished registration
+    const r = await Gen.process(QID, {});
+    delete process.env.DAILY_QUIZ_CAP_UNREGISTERED;
+    expect(evalCall().args[1]).toBe(2);
+    expect(r).toEqual({ failed: true, reason: 'daily_cap' });
+    expect(Author.author).not.toHaveBeenCalled();
+    expect(WhatsAppService.sendMessage).toHaveBeenCalledWith(USER.phone_number, UX_STRINGS.tqDailyCap.en);
+  });
+
+  test('a registered account keeps QUIZ_DAILY_CAP whatever DAILY_QUIZ_CAP_UNREGISTERED says', async () => {
+    process.env.DAILY_QUIZ_CAP_UNREGISTERED = '2';
+    mockEval.mockResolvedValueOnce(3);
+    installFrom(supabase.from, ({
+      quizzes: (calls) => (calls.some((c) => c[0] === 'update') ? { data: [{ id: QID }] } : { data: [PLAN_QUIZ] }),
+      lesson_plans: { data: [PLAN] },
+      quiz_questions: (calls) => (calls.some((c) => c[0] === 'insert' || c[0] === 'delete') ? { data: null, error: null } : { data: [] }),
+      users: { data: [{ ...USER, registration_completed: true }] },
+    }));
+    await Gen.process(QID, {});
+    delete process.env.DAILY_QUIZ_CAP_UNREGISTERED;
+    expect(evalCall().args[1]).toBe(10);
   });
 
   test('Redis down: the quiz is made (the guard fails open)', async () => {
