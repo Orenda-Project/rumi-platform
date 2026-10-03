@@ -76,9 +76,9 @@ The portal is optional. With `PORTAL_URL` unset, no message carries a portal lin
 |---|---|---|
 | `PORTAL_URL` | bot | The dashboard's public address; links are `<PORTAL_URL>/portal/setup/<token>` |
 | `MAIN_BOT_URL` | dashboard | Where the dashboard reaches the bot, to send reset codes |
-| `INTERNAL_API_KEY` | bot **and** dashboard | The same random secret on both. The bot refuses every internal send while it is unset |
+| `INTERNAL_API_KEY` | bot **and** dashboard | The same random secret on both. **Required for reset codes:** the bot refuses every internal send while it is unset |
 | `SESSION_SECRET` | dashboard | Signs the portal session |
-| `OBSERVE_ENABLED=true` | dashboard too | Shows coaches the Observations view (see [Observe](observe.md)) |
+| `OBSERVE_ENABLED=true` | bot **and** dashboard | The bot's decides whether a coach's invite mentions Observations; the dashboard's shows them the view (see [Observe](observe.md)). Set it on both |
 
 4. **Coaches** on the observe roster can be sent their invite from the roster, on whichever channel they use:
 
@@ -88,8 +88,8 @@ node bot/scripts/observe-roster.js portal-invite mtx:15550100011
 ```
 
    It runs as a one-off process; on Rumi Messenger the message goes through the bot's
-   [relay](../channels/matrix.md#the-relay), so the bot must be running. It refuses someone who has already set
-   up the portal, someone not on the roster, and someone with no phone number.
+   [relay](../channels/matrix.md#the-relay), so the bot must be running. It refuses a number or identity Rumi has
+   no account for, someone who has already set up the portal, and someone with no phone number.
 
 ## Limits
 
