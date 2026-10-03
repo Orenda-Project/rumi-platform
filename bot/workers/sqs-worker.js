@@ -50,6 +50,7 @@ const LessonPlanExtractionWorker = require('./lesson-plan-extraction.worker');
 const LessonPlanGenerationWorker = require('./lesson-plan-generation.worker');
 const VideoGenerationWorker = require('./video-generation.worker');
 const ExamGradingWorker = require('./exam-grading.worker');
+const { withJobTyping } = require('../shared/services/messaging/job-typing');
 const os = require('os');
 
 // Configuration
@@ -226,7 +227,8 @@ class SQSCoachingWorker {
     // Create job promise wrapped with correlation context
     // All logs within the job will automatically include correlationId
     const jobPromise = runWithCorrelation(correlationId, async () => {
-      return this.executeJob(sessionId, jobType, payload, receiptHandle, sourceQueue, body)
+      // A teacher on Matrix waiting on this job sees "Rumi is typing…" while it runs.
+      return withJobTyping(jobType, payload, () => this.executeJob(sessionId, jobType, payload, receiptHandle, sourceQueue, body))
         .then(async () => {
           // Job succeeded - delete from queue using correct completion method
           if (sourceQueue === 'video') {
