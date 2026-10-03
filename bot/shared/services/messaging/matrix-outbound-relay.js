@@ -59,6 +59,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
+const { AsyncLocalStorage } = require('async_hooks');
 const { logToFile } = require('../../utils/logger');
 
 const KEY_ROOT = 'rumi:matrix:relay:';
@@ -105,6 +106,28 @@ let callerRedis = null;
 let stopOwner = null;
 
 let replyTimeoutMs = DEFAULT_TIMEOUT_MS;
+
+// The job a call belongs to (caller side), and the relayed call being run
+// (owner side). A worker job's typing hold and its sends carry the same job, so
+// the owner ends a job's "Rumi is typing…" on that job's own send and not on an
+// unrelated one (matrix-channel.service.js, typing sessions).
+const jobContext = new AsyncLocalStorage();
+const relayedCallContext = new AsyncLocalStorage();
+
+/** Runs `fn` with every relayed call it makes tagged with `jobKey`. */
+function forJob(jobKey, fn) {
+  return jobContext.run(String(jobKey), fn);
+}
+
+/** The job the current code runs for (forJob), or null. */
+function currentJob() {
+  return jobContext.getStore() || null;
+}
+
+/** On the owner, while it runs a relayed call: `{ job }` (job null when the caller named none); otherwise null. */
+function relayedCall() {
+  return relayedCallContext.getStore() || null;
+}
 
 function timeoutMs() {
   return replyTimeoutMs;
@@ -311,6 +334,8 @@ async function call(method, args) {
     const request = {
       v: PROTOCOL_VERSION, id, method, args: encodeArgs(method, args), issuedAt: started, expiresAt: started + waitMs,
     };
+    const job = currentJob();
+    if (job) request.job = job;
     if (!callerRedis) callerRedis = newRedis();
     await callerRedis.lpush(keys.requestList, signed(keys.signingKey, request));
 
@@ -392,7 +417,9 @@ async function runRequest(redis, raw, implementations, owner) {
   try {
     if (typeof impl !== 'function') throw new Error(`unknown Matrix driver method "${request.method}"`);
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rumi-matrix-relay-'));
-    const result = await impl(...decodeArgs(request.method, request.args, tmpDir));
+    const decoded = decodeArgs(request.method, request.args, tmpDir);
+    const context = { job: typeof request.job === 'string' ? request.job : null };
+    const result = await relayedCallContext.run(context, () => impl(...decoded));
     reply = { ok: true, result: encodeValue(result === undefined ? null : result) };
   } catch (error) {
     if (error instanceof RelayRefusal) {
@@ -481,6 +508,9 @@ module.exports = {
   useRelayForThisProcess,
   isRelayMode,
   call,
+  forJob,
+  currentJob,
+  relayedCall,
   startOwner,
   close,
   // exported for unit tests
