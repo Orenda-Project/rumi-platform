@@ -256,6 +256,31 @@ describe('daily message caps by tier', () => {
     expect(Text.handleTextMessage.mock.calls[1][2]).toBe('Ayesha');
   });
 
+  // A bare word gets "Shall I call you Fractions?" (the handler, not mocked
+  // here, stores that word). After it, "yes" finishes registering; more chat
+  // is chat and is capped.
+  const askedAbout = (word) => require('../../bot/shared/services/feature-registration.service')
+    ._storeNameCandidate(UNREGISTERED.id, word);
+
+  it('Matrix, after a confirm question: "yes" goes through past the cap', async () => {
+    process.env.DAILY_MESSAGE_CAP_UNREGISTERED = '1';
+    load({ ...UNREGISTERED, registration_pending_name: true });
+    await askedAbout('Fractions');
+    await fromMatrix('How do I teach fractions?');
+    await fromMatrix('yes');
+    expect(Text.handleTextMessage).toHaveBeenCalledTimes(2);
+    expect(Text.handleTextMessage.mock.calls[1][2]).toBe('yes');
+  });
+
+  it('Matrix, after a confirm question: a different word is chat and is capped', async () => {
+    process.env.DAILY_MESSAGE_CAP_UNREGISTERED = '1';
+    load({ ...UNREGISTERED, registration_pending_name: true });
+    await askedAbout('Fractions');
+    await fromMatrix('How do I teach fractions?');
+    await fromMatrix('decimals');
+    expect(Text.handleTextMessage).toHaveBeenCalledTimes(1);
+  });
+
   it('a registered account is not capped by the unregistered cap (and the defaults cap nobody)', async () => {
     process.env.DAILY_MESSAGE_CAP_UNREGISTERED = '2';
     load(REGISTERED);
