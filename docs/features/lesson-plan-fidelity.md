@@ -4,6 +4,8 @@
 > with the teacher's own words as proof — and never blames a teacher for a bad recording.
 
 Part of [Classroom Coaching](coaching.md). Off by default; turn it on with `LP_FIDELITY_ENABLED=true`.
+With [Observe](observe.md#section-b--did-the-lesson-follow-its-plan) on too, it is also **Section B** of a coach's
+observation: the coach links the teacher's plan, reviews every verdict, and the teacher gets a kind, scoreless version.
 
 ## In programme terms
 

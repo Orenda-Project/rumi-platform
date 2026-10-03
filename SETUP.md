@@ -474,6 +474,16 @@ Class attendance needs nothing. For a head teacher's **staff** attendance and re
    `node bot/scripts/observe-roster.js import roster.csv` (columns `coach_phone,school_ext_id,school_name,teacher_phone,teacher_name`),
    or one at a time with `grant-coach`, `add-school` and `add-teacher`.
 5. Redeploy. A coach types `/observe`. Details: [docs/features/observe.md](docs/features/observe.md).
+6. Optional: send each coach their portal invite on the channel they use:
+   `node bot/scripts/observe-roster.js portal-invite <coach-phone>` (needs the portal, below).
+
+### Add the teacher portal (optional)
+
+1. Build it into the dashboard: `cd portal && npm ci && npm run build && cp -R dist ../dashboard/portal-frontend/dist`.
+2. Run the dashboard on an `https://` address (its session cookie is `Secure`).
+3. Set `PORTAL_URL` (the dashboard's address) on the bot, and `MAIN_BOT_URL` plus the same random
+   `INTERNAL_API_KEY` on both services, so reset codes reach each teacher's own chat.
+4. A teacher types `/portal`. Details, including Rumi Messenger users: [docs/features/teacher-portal.md](docs/features/teacher-portal.md).
 
 ### Add regional-language speech-to-text (optional)
 

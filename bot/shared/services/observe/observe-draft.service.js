@@ -10,8 +10,9 @@
  * buildScreenPrefill: analysis_data → one domain screen's ${data.*} bindings
  *                     (the Meta Flow).
  * completeFromFlow  : the Flow's nfm_reply after the last screen — clear the
- *                     form state, acknowledge, offer the debrief (Meta only;
- *                     the chat form does the same in observe-form.service).
+ *                     form state, acknowledge, then Section B in the chat
+ *                     (the Flow has no screen for it) or the debrief (Meta
+ *                     only; the chat form does the same in observe-form.service).
  * applyObserverEdits: merge the coach's edits into analysis_data (v2),
  *                     re-run the pack's scorer, stamp observer_edit_summary
  *                     (the v1→v2 diff is the record of what the coach changed).
@@ -108,6 +109,10 @@ async function onAnalysisReady(sessionId, from) {
   }
 
   const recipient = await observerIdentity(session, from);
+
+  // A plan the coach picked after the analysis had read the row was linked and
+  // confirmed, but not graded: grade Section B now, before the form shows it.
+  await require('./observe-plan.service').reconcileLatePick(sessionId, { from: recipient, lang });
 
   const flowId = process.env.OBSERVE_FORM_FLOW_ID || '';
   if (flowId && canReceiveMetaFlow(recipient)) {
@@ -234,6 +239,17 @@ async function completeFromFlow(user, from, responseJson = {}) {
   const lang = await languageFor('coach', session);
   const changed = ((session.analysis_data || {}).observer_edit_summary || {}).indicators_rescored || 0;
   await WhatsAppService.sendMessage(from, `${t(lang, 'submitted_ack')}${changed ? `\n${t(lang, 'form_changes_count', { count: changed })}` : ''}`);
+
+  // Section B: the published Flow has no screen for it, so the chat walks the
+  // coach through the plan's moves and offers the debrief after the last page.
+  // With nothing to review the coach is told why, then the debrief as before.
+  const ObserveForm = require('./observe-form.service');
+  if (await ObserveForm.startSectionB(user, from, sessionId, { lang, afterFlow: true })) {
+    logToFile('🔭 observe: form Flow submission acknowledged — Section B opened in the chat', { sessionId, changed });
+    return true;
+  }
+  const notice = await ObserveForm.sectionBNotice(session, lang);
+  if (notice) await WhatsAppService.sendMessage(from, notice);
   const ObserveDebrief = require('./observe-debrief.service');
   await ObserveDebrief.offerDebriefChoice(user, from, sessionId);
   logToFile('🔭 observe: form Flow submission acknowledged', { sessionId, changed });

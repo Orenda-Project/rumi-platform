@@ -5,6 +5,109 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2026-10-03
+
+**Observe gets Section B: did the lesson follow its plan?** When an observed lesson was taught from a plan Rumi made
+for the teacher, the coach's observation now checks the recording against that plan, move by move, with the
+lesson-plan fidelity engine from v2.3.0. The coach sees every verdict pre-filled after the ratings and can change
+any of them; the coach's version is the one used. The teacher's report gets the kind version — what went as planned,
+the substitutions that kept the purpose named as strengths, one thing to try — and never a score.
+
+**Sign in to the portal from Rumi Messenger.** Teachers and coaches who use only Rumi Messenger can now sign in
+to the teacher portal. The portal still signs people in with a phone number and a password. What changed is
+where the setup link and the password reset code go: to the person's own chat with Rumi. That is their
+WhatsApp, their Rumi Messenger DM, or their Slack or Discord account, and it works on a deployment with no
+WhatsApp at all (`CHANNEL_DRIVER=none`).
+
+> **Upgrade notes — read before you update.**
+> - **Set `INTERNAL_API_KEY` to the same secret on the bot and the dashboard**, or portal reset codes stop. An unset
+>   key used to let every call to the bot's internal API through; it now refuses them all.
+> - Section B is on when both `OBSERVE_ENABLED=true` and `LP_FIDELITY_ENABLED=true`. No migration: results live in
+>   `coaching_sessions.analysis_data` (`lp_fidelity`, `section_b`). With fidelity off, observations behave as in v2.6.0.
+> - Tested end to end on Rumi Messenger with real models: Section B 5 of 5 scenarios (a coach's correction re-scores
+>   83.3% → 91.7%; a swap that kept the purpose earns full credit and is named as a strength; no plan → not assessed,
+>   with the cause named), portal sign-in 5 of 5.
+
+### Added
+
+- **Linking the plan.** Once Rumi knows whose lesson it is (the visit picker, or "who did you observe?"), the coach is
+  asked which of that teacher's recent Rumi plans the lesson was taught from, or **No plan** (a list on Meta,
+  numbered text elsewhere; `observe_lp_<sessionId>_<n|none>`). The pick goes through the same linker as a teacher's
+  own session, owned by the teacher, so a coach can only link the observed teacher's own plan. A teacher with no
+  plans is not asked about. The analysis waits for an open question at most `LP_FIDELITY_PLAN_WAIT_SECONDS`; a pick
+  that lands after the analysis, while the form is still open, grades Section B then.
+- **Grading.** The analysis runs `computeFidelityForSession` on the observation's transcript (the same input contract:
+  no `[MM:SS]` timings → refused in code, no model call). It stores `analysis_data.lp_fidelity` and
+  `analysis_data.section_b = { status: 'assessed' | 'not_assessed', reason, detail }`.
+- **The coach reviews it in chat.** After the last Section A domain, Section B arrives six moves a message: the plan's
+  move, the verdict, the quoted moment. `ok` keeps a page; `<move> <verdict 1-6>` changes one. Ratings and verdicts
+  are saved in one write; the coach's verdicts go back through the same scorer (`observer_edited`, `coach_verdict`),
+  and the AI's first pass stays in `autofill_analysis_data`. On Meta, the published form Flow has no Section B
+  screen, so Section B follows in chat after the Flow is submitted.
+- **Not assessed, and why.** No plan (the teacher has none, the coach said none, nobody answered, or the teacher was
+  not known), no timings, an unusable recording, an unreadable plan or a grader failure: Section B is left out with
+  `status: 'not_assessed'` — never a zero — and the coach gets one message naming the actual state.
+- **The teacher's kind version.** One more message in the teacher's package, after the report and before the
+  companion note, built from the coach's verdicts. No percentage, band or count; every line passes the observe trust
+  firewall, and the coach previews it first. No note when nothing was assessed or the lesson did not match its plan.
+- **The coach portal** shows a collapsible "Lesson plan (Section B)" block under each observation: the moves with a
+  verdict chip each and "changed by you" marks, or "Not assessed — <reason>". No score, band or quote
+  (`sectionB` in `/api/portal/coach/*`).
+- Docs: a Section B chapter in `docs/features/observe.md` (with "In programme terms": fidelity of implementation inside
+  the coaching visit), a cross-reference in `lesson-plan-fidelity.md`, the README row and an `.env.template` note.
+- **`observe-roster.js portal-invite <coach-phone>`** sends a coach the portal setup link on the channel they
+  use, so a coach who uses only the messenger can get it before ever writing to Rumi. Their invite names the
+  portal's **Observations** view.
+- **`docs/features/teacher-portal.md`** covers who can sign in, where the link and the code go, what a
+  messenger user with no phone number sees and how an operator fixes it, the variables on each service, and the
+  setup steps. Also new: a portal section in `docs/channels/matrix.md`, README and feature-index rows, SETUP
+  steps, and comments on the dashboard-to-bot block in `.env.template`.
+
+### Changed
+
+- The hero report renderer never sees `lp_fidelity` or `section_b` (`teacherSafeAnalysis` removes them).
+- The debrief guide is given the coach-reviewed moves (phase, text, verdict, quote) and never the measurement.
+- Observations now run the fidelity task in the analysis (they skipped it in v2.6.0); the reflective corpus is still
+  skipped for them.
+- The password reset code goes to the user's channel identity (the channel they last used, from
+  `user_channels`), not to the number typed on the portal. The dashboard now passes the `userId` it found; a
+  dashboard that sends only the number still works.
+- Off WhatsApp, the setup link says which number to sign in with. WhatsApp copy is unchanged.
+- Someone with no phone number to sign in with (a Matrix username that is a name, or a Slack or Discord
+  account) gets an explanation from `/portal` and no setup link. Registration ends without a portal link for
+  them.
+- A coach on the roster whose Matrix username is their phone number has it recorded when the invite is sent,
+  under the bot's own rule: only if no other user holds it.
+- The portal's reset pages say "your chat with Rumi" instead of "WhatsApp" and use a fictional example number.
+  The sign-in page says which number a Rumi Messenger user signs in with.
+- `observe/observe-identity.js` moved to `messaging/user-identity.js`. The old path re-exports it.
+- Portal setup tokens now come from `crypto.randomUUID()` instead of the `uuid` package.
+
+### Fixed
+
+- On a messenger-only deployment, a teacher who used only Rumi Messenger never got a reset code.
+- The bot's reset endpoint required a first name, so anyone Rumi did not know by name yet got no code.
+- A code the bot could not send rate-limited the teacher for 10 minutes. It is now cleared.
+- A failed invite send was reported as sent.
+- `/api/internal/send-password-reset` accepted any call while `INTERNAL_API_KEY` was unset on the bot. It now
+  refuses every call in that case.
+- The dashboard (which serves the portal) crashed at boot without `RESEND_API_KEY`.
+- The portal dashboard said "Welcome back, !" to someone without a name on file.
+- A phone number already held by two users could be recorded for a third (the taken-check read an error as
+  "free").
+
+No schema change and no new environment variables. `PORTAL_URL`, `MAIN_BOT_URL` and `INTERNAL_API_KEY` already
+existed. **Upgrading: set `INTERNAL_API_KEY` to the same secret on the bot and the dashboard, or reset codes
+stop.** An unset key used to let every call through.
+
+### Not in this release
+
+- Uploading or pasting a plan in the coach's flow (only plans Rumi made for the teacher can be linked).
+- A Section B screen in the Meta form Flow (Section B follows in chat).
+- The teacher's "done your own way" line names the planned move it replaced, not the teacher's own activity.
+- Signing in to the portal with a Matrix, Slack or Discord identity instead of a phone number: a messenger user whose
+  username is a name needs an operator to record a phone number (`docs/features/teacher-portal.md`).
+
 ## [2.9.0] - 2026-10-03
 
 **The lesson quiz.** A teacher has no time to write homework, and no time to mark forty copies of it. Rumi

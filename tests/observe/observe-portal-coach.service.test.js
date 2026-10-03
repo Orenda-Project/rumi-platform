@@ -259,3 +259,112 @@ describe('roster', () => {
     }
   });
 });
+
+describe('Section B in the coach view: the moves and their verdicts, never the score', () => {
+  const lp = (extra = {}) => ({
+    fidelity_pct: 62,
+    band: 'partial',
+    credit: 4.5,
+    counted_moves: 6,
+    observer_edited: false,
+    moderators: { note: null },
+    moves: [
+      { move_id: 'm1', phase: 'warm_up', text: 'Sing the counting song together.', verdict: 'executed', evidence: '[00:42] "Let us sing the counting song."', counted: true },
+      { move_id: 'm2', phase: 'guided_practice', text: 'Model two sums on the board.', verdict: 'substituted_better', evidence: '[05:10] "Come and show us."', counted: true, coach_verdict: true },
+      { move_id: 'm3', phase: 'exit', text: 'Exit check: three questions.', verdict: 'not_done', evidence: '', counted: true },
+      { move_id: 'm4', phase: 'mystery', text: 'Tidy away.', verdict: 'something_new', evidence: '', counted: false },
+    ],
+    ...extra,
+  });
+  const row = (id, analysis) => ({
+    id, observation_type: 'leader_observation', observer_user_id: 'coach-1', user_id: 't-1', status: 'completed', debrief_status: 'done',
+    created_at: '2026-03-02T09:00:00Z', analysis_data: { teacher_delivery: { status: 'sent' }, ...analysis },
+  });
+  async function load(...rows) {
+    const mockDb = seed();
+    mockDb.tables.coaching_sessions.push(...rows);
+    const out = await Coach.getCoachObservations(mockDb.client, 'coach-1', { today: TODAY });
+    return (id) => out.completed.find((o) => o.id === id);
+  }
+
+  test('an observation without a Section B record carries sectionB: null', async () => {
+    const get = await load();
+    expect(get('cs-done').sectionB).toBeNull();
+  });
+
+  test('assessed: every move in plan order, with its phase, verdict label and whether the coach changed it', async () => {
+    const get = await load(row('cs-b', { lp_fidelity: lp({ observer_edited: true }), section_b: { status: 'assessed', reason: null, mismatch: false } }));
+    expect(get('cs-b').sectionB).toEqual({
+      status: 'assessed',
+      mismatch: false,
+      editedByCoach: true,
+      moves: [
+        { n: 1, phase: 'warm_up', phaseLabel: 'Warm-up', text: 'Sing the counting song together.', verdict: 'executed', verdictLabel: 'As planned', coachChanged: false },
+        { n: 2, phase: 'guided', phaseLabel: 'Guided practice', text: 'Model two sums on the board.', verdict: 'substituted_better', verdictLabel: 'Better swap', coachChanged: true },
+        { n: 3, phase: 'exit', phaseLabel: 'Exit check', text: 'Exit check: three questions.', verdict: 'not_done', verdictLabel: 'Not done', coachChanged: false },
+        { n: 4, phase: null, phaseLabel: '', text: 'Tidy away.', verdict: 'not_adjudicable', verdictLabel: "Can't tell", coachChanged: false },
+      ],
+    });
+  });
+
+  test('a lesson that did not match its plan is flagged', async () => {
+    const get = await load(
+      row('cs-mis', { lp_fidelity: lp({ moderators: { note: 'lesson_mismatch' } }), section_b: { status: 'assessed', reason: null, mismatch: true } }),
+      row('cs-mis2', { lp_fidelity: lp({ moderators: { note: 'lesson_mismatch' } }), section_b: { status: 'assessed', reason: null } }),
+    );
+    expect(get('cs-mis').sectionB).toMatchObject({ status: 'assessed', mismatch: true, editedByCoach: true });
+    expect(get('cs-mis2').sectionB.mismatch).toBe(true);
+  });
+
+  test('the Section B payload never carries the percentage, band, credit, counts or evidence', async () => {
+    const get = await load(row('cs-b', { lp_fidelity: lp(), section_b: { status: 'assessed', reason: null, mismatch: false } }));
+    const text = JSON.stringify(get('cs-b'));
+    expect(text).not.toMatch(/62|partial"|band|credit|counted|fidelity|percent|evidence|\[00:42\]|Let us sing|move_id|coach_verdict/i);
+  });
+
+  test('not assessed: the reason and the coach-facing sentence, never a zero', async () => {
+    const get = await load(
+      row('cs-na1', { section_b: { status: 'not_assessed', reason: 'no_timings' } }),
+      row('cs-na2', { section_b: { status: 'not_assessed', reason: 'no_plan', detail: 'teacher_has_no_plans' } }),
+      row('cs-na3', { section_b: { status: 'not_assessed', reason: 'something_new' }, lp_fidelity: lp() }),
+    );
+    expect(get('cs-na1').sectionB).toEqual({
+      status: 'not_assessed', reason: 'no_timings', detail: null,
+      message: 'The plan was linked, but the transcript of this recording has no timings, so the moves could not be checked one by one.',
+    });
+    expect(get('cs-na2').sectionB).toEqual({
+      status: 'not_assessed', reason: 'no_plan', detail: 'teacher_has_no_plans',
+      message: 'Sam Taylor has no lesson plan made with Rumi yet, so there was nothing to check the lesson against.',
+    });
+    expect(get('cs-na3').sectionB).toMatchObject({ status: 'not_assessed', reason: 'grader_failed' });
+    expect(JSON.stringify(get('cs-na3'))).not.toMatch(/moves|62|0%/);
+  });
+
+  test('labels, phases and reason copy mirror the bot (drift guard)', () => {
+    const SectionB = require('../../dashboard/services/coach-section-b');
+    const Bot = require('../../bot/shared/services/observe/observe-section-b');
+    const { observeStrings } = require('../../bot/shared/services/observe/observe-strings');
+    const Phases = require('../../bot/shared/services/coaching/fidelity/fidelity-phases');
+    const en = observeStrings('en');
+
+    expect(SectionB.VERDICTS.map((v) => v.id)).toEqual(Bot.VERDICTS.map((v) => v.id));
+    for (const v of Bot.VERDICTS) expect([v.id, SectionB.verdictLabel(v.id)]).toEqual([v.id, en[v.key]]);
+    expect(SectionB.verdictLabel('anything else')).toBe(en.secb_v_cant_tell);
+
+    for (const p of [...Phases.PHASES, 'guided_practice', 'independent_practice', 'warmup', 'exit_ticket', ' Hook ', 'mystery', null]) {
+      expect([p, SectionB.phaseLabel(p), SectionB.canonicalPhase(p)]).toEqual([p, Phases.phaseLabel(p), Phases.canonicalPhase(p)]);
+    }
+
+    const records = [
+      { reason: 'no_plan' }, { reason: 'no_timings' }, { reason: 'recording_unusable' }, { reason: 'plan_unreadable' },
+      { reason: 'grader_failed' }, { reason: 'something_new' }, {},
+      ...['teacher_has_no_plans', 'coach_said_no_plan', 'no_answer', 'teacher_unknown', 'unknown_detail'].map((detail) => ({ reason: 'no_plan', detail })),
+    ];
+    for (const rec of records) {
+      for (const teacherName of ['Sam Taylor', null]) {
+        const bot = Bot.notAssessedText('en', rec, teacherName ? { teacherName } : {}).split('\n')[1];
+        expect([rec, teacherName, SectionB.notAssessedMessage(rec, teacherName)]).toEqual([rec, teacherName, bot]);
+      }
+    }
+  });
+});

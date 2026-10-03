@@ -74,6 +74,18 @@ describe('coach-only material', () => {
     // the input is not mutated
     expect(ADVERSARIAL.observer_debrief).toBeDefined();
   });
+
+  test('teacherSafeAnalysis also strips Section B (its measurement carries a percentage)', () => {
+    const analysis = {
+      ...ADVERSARIAL,
+      lp_fidelity: { status: 'ok', fidelity_pct: 70, band: 'partial', moves: [] },
+      section_b: { status: 'assessed', reason: null },
+    };
+    const safe = TR.teacherSafeAnalysis(analysis);
+    expect(safe.lp_fidelity).toBeUndefined();
+    expect(safe.section_b).toBeUndefined();
+    expect(analysis.lp_fidelity).toBeDefined();
+  });
 });
 
 const material = TR.coachOnlyMaterial(ADVERSARIAL);

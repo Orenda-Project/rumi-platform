@@ -26,7 +26,9 @@ npm run dev    # Development server
 npm run build  # Production build
 ```
 
-Deploy the `dist/` folder to any static hosting service.
+Deploy the `dist/` folder to any static hosting service, or copy it to `dashboard/portal-frontend/dist`
+so the dashboard serves the portal next to its API. How teachers get a password (on WhatsApp or Rumi
+Messenger) and the variables it needs: [docs/features/teacher-portal.md](../docs/features/teacher-portal.md).
 
 ## Tech Stack
 

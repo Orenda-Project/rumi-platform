@@ -31,7 +31,7 @@ const PortalPasswordReset = () => {
       await auth.requestReset(phoneNumber);
       toast({
         title: "Code Sent",
-        description: "A 6-digit code has been sent to your WhatsApp"
+        description: "A 6-digit code has been sent to your chat with Rumi"
       });
       navigate('/portal/reset-password/verify', { state: { phoneNumber } });
     } catch (error: any) {
@@ -59,7 +59,7 @@ const PortalPasswordReset = () => {
               Reset Password
             </h1>
             <p className="text-sm text-muted-foreground">
-              Enter your phone number to receive a reset code via WhatsApp
+              Enter your phone number to receive a reset code in your chat with Rumi
             </p>
           </div>
 
@@ -69,7 +69,7 @@ const PortalPasswordReset = () => {
               <Input
                 id="phoneNumber"
                 type="tel"
-                placeholder="923001234567"
+                placeholder="15551234567"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={loading}

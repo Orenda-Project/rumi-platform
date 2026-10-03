@@ -103,7 +103,7 @@ const PortalPasswordResetVerify = () => {
               Verify & Reset
             </h1>
             <p className="text-sm text-muted-foreground">
-              Enter the 6-digit code sent to {phoneNumber} via WhatsApp
+              Enter the 6-digit code sent to your chat with Rumi
             </p>
           </div>
 

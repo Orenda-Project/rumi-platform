@@ -96,10 +96,16 @@ function coachOnlyMaterial(analysis) {
   return pool.filter((s) => words(s).length >= MIN_SHORT_MATCH_WORDS);
 }
 
-/** A copy of the analysis with every coach-only key removed (input untouched). */
+// Section B (did the lesson follow its plan?) is not coach-only — the teacher
+// gets a kind note built from it — but the blob itself carries the measurement
+// (a percentage and a band), so no report renderer may ever see it. The note
+// is built by observe-section-b, through this firewall, on its own.
+const MEASUREMENT_KEYS = ['lp_fidelity', 'section_b'];
+
+/** A copy of the analysis with every coach-only key and measurement removed (input untouched). */
 function teacherSafeAnalysis(analysis) {
   const out = { ...(analysis || {}) };
-  for (const k of COACH_ONLY_KEYS) delete out[k];
+  for (const k of [...COACH_ONLY_KEYS, ...MEASUREMENT_KEYS]) delete out[k];
   return out;
 }
 

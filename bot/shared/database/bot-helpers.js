@@ -117,12 +117,15 @@ async function getOrCreateUser(phoneNumber) {
  */
 async function matrixPhoneNumberFor(channel, channelUserId) {
   if (channel !== 'matrix' || !/^\d{7,15}$/.test(String(channelUserId))) return null;
-  const { data: taken } = await supabase
+  // limit(1), not single(): single() errors when two users already hold the
+  // number, and an error must not read as "nobody has it".
+  const { data: taken, error } = await supabase
     .from('users')
     .select('id')
     .eq('phone_number', String(channelUserId))
-    .single();
-  return taken ? null : String(channelUserId);
+    .limit(1);
+  if (error) return null;
+  return taken && taken.length ? null : String(channelUserId);
 }
 
 async function getOrCreateUserByChannel(channel, channelUserId, { replyIdentifier = null } = {}) {
@@ -664,6 +667,7 @@ async function trackChatStart(user, phoneNumber, messageBody) {
 module.exports = {
   getOrCreateUser,
   getOrCreateUserByChannel,
+  matrixPhoneNumberFor,
   getSendTargetsForUser,
   getOrCreateSession,
   updateSessionType,
