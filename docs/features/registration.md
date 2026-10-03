@@ -12,7 +12,7 @@ The front door. Rumi keeps onboarding light: a new teacher can start using a fea
 
 1. **A new number messages Rumi** and is welcomed.
 2. **The teacher uses a feature** (asks a question, requests a lesson plan, …) right away.
-3. **Rumi asks for their name** after that first interaction and stores the profile (and a portal token).
+3. **Rumi asks for their name** after that first interaction and stores the profile, plus a [portal](teacher-portal.md) setup link when they have a phone number to sign in with.
 4. **Optional richer intake:** if a `REGISTRATION_FLOW_ID` is configured, Rumi sends a native WhatsApp form collecting school, grade, and language up front instead.
 
 ## What the teacher experiences

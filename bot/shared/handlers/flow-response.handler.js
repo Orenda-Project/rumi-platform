@@ -626,8 +626,7 @@ async function handleRegistrationFlow(message, phoneNumber, userId) {
     const firstName = fullName.split(/\s+/)[0] || fullName;
 
     // Generate portal token
-    const { v4: uuidv4 } = require('uuid');
-    const portalToken = uuidv4();
+    const portalToken = require('crypto').randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 

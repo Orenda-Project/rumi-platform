@@ -112,6 +112,20 @@ with, not a verified number, and it decides which teacher (and which portal sign
 the homeserver the way rumi-messenger does: accounts created by an admin only (registration closed) and
 federation off. Never allow a server where people pick their own usernames.
 
+## Portal sign-in on the messenger
+
+The [teacher portal](../features/teacher-portal.md) signs people in by phone number and a password. A teacher
+whose username is their number (`@+15550100001`) types `/portal` in their DM with Rumi and gets the setup link
+there; the message says to sign in with `+15550100001`. "Forgot password" on the portal sends the 6-digit code
+to the same DM. This works with `CHANNEL_DRIVER=none`: the setup link and the code go to the teacher's Matrix
+account, never to a bare phone number. A coach on the observe roster can be sent the invite before they have
+written to Rumi: `node bot/scripts/observe-roster.js portal-invite mtx:15550100011`.
+
+A username that is a name (`@robin:example.org`) carries no phone number, so there is nothing to sign in with.
+`/portal` says so and sends no link. An operator can record a number for that person
+(`update users set phone_number = '<digits>' where id = '<their users.id>'`); the link and reset codes then go to
+their Matrix DM as usual.
+
 ## Encryption
 
 Encryption is on by default and **fails closed**. It uses the native `@matrix-org/matrix-sdk-crypto-nodejs`

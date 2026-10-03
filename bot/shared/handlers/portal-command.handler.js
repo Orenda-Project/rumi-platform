@@ -3,7 +3,7 @@
  * Handles /portal command for teacher portal access
  *
  * Flow:
- * 1. User sends /portal command in WhatsApp
+ * 1. User sends /portal command (on any channel)
  * 2. Check if portal already activated
  * 3. If yes: Send login link
  * 4. If no: Generate unique token and send setup link
@@ -19,7 +19,8 @@ const { portalUrl: getPortalUrl } = require('../config/branding');
  * Handle /portal command
  *
  * @param {object} user - User object from database (must include id, portal_activated, preferred_language)
- * @param {string} phoneNumber - User's WhatsApp phone number (format: 923001234567)
+ * @param {string} phoneNumber - The identity the user wrote from: a WhatsApp number
+ *   (format: 15550100001) or a prefixed channel identity ("mtx:…", "slack:…")
  * @returns {Promise<string>} - Message to send to user in their language
  */
 async function handlePortalCommand(user, phoneNumber) {
@@ -64,6 +65,17 @@ async function handlePortalCommand(user, phoneNumber) {
         es: 'El portal del docente aún no está configurado en esta instalación, así que no hay enlace que enviarte. Todo lo demás funciona aquí en el chat: escribe /menu.',
       },
 
+      // The portal signs in by phone number, and this account has none: a
+      // Matrix username that is a name (not @+<digits>), or a Slack/Discord
+      // account. A link would set a password nobody can sign in with, so none
+      // is sent; an administrator can record the number (docs/channels/matrix.md).
+      noSignInNumber: {
+        en: "The portal signs you in with your phone number, and this chat account doesn't have one on file, so a portal link wouldn't let you in. Ask your administrator to add your phone number to your Rumi account, then send /portal again.",
+        ur: 'پورٹل میں آپ اپنے فون نمبر سے لاگ ان کرتے ہیں، اور اس چیٹ اکاؤنٹ کے ساتھ کوئی فون نمبر درج نہیں، اس لیے پورٹل لنک سے آپ لاگ ان نہیں کر سکیں گے۔ اپنے ایڈمنسٹریٹر سے کہیں کہ آپ کے Rumi اکاؤنٹ میں آپ کا فون نمبر شامل کریں، پھر دوبارہ /portal بھیجیں۔',
+        ar: 'تسجّل الدخول إلى البوابة برقم هاتفك، ولا يوجد رقم هاتف مسجّل لحساب المحادثة هذا، لذا لن يتيح لك رابط البوابة الدخول. اطلب من المسؤول إضافة رقم هاتفك إلى حسابك في Rumi، ثم أرسل /portal مرة أخرى.',
+        es: 'El portal te da acceso con tu número de teléfono, y esta cuenta de chat no tiene ninguno registrado, así que un enlace al portal no te serviría. Pide a tu administrador que añada tu número de teléfono a tu cuenta de Rumi y vuelve a enviar /portal.',
+      },
+
       // Error sending invitation
       error: {
         en: `Sorry, I couldn't create your portal invitation right now. Please try again in a few minutes or contact support.\n\nمعذرت، میں ابھی آپ کا پورٹل دعوت نامہ نہیں بنا سکا۔ براہ کرم کچھ منٹوں میں دوبارہ کوشش کریں۔`,
@@ -96,6 +108,10 @@ async function handlePortalCommand(user, phoneNumber) {
       phoneNumber,
       language
     );
+
+    if (result.reason === 'no_sign_in_number') {
+      return messages.noSignInNumber[language] || messages.noSignInNumber.en;
+    }
 
     if (result.success) {
       logToFile('✅ Portal invitation sent via /portal command', {

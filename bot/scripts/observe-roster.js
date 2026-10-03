@@ -10,6 +10,7 @@
  *          columns: coach_phone,school_ext_id,school_name,teacher_phone,teacher_name
  *   node bot/scripts/observe-roster.js list        <coach-phone>
  *   node bot/scripts/observe-roster.js set-email   <coach-phone> <email> [full name…]   (calendar invites)
+ *   node bot/scripts/observe-roster.js portal-invite <coach-phone>   (the portal setup link, on their channel)
  *
  * A "phone" is the person's channel identity: digits for WhatsApp (spaces,
  * dashes and "+" are stripped), or a prefixed identity kept as-is (mtx:…,
@@ -37,6 +38,7 @@ const USAGE = [
   '  import      <file.csv>                            coach_phone,school_ext_id,school_name,teacher_phone,teacher_name',
   '  list        <coach-phone>                         show a coach\'s schools and teachers',
   '  set-email   <coach-phone> <email> [full name]     the coach\'s address for calendar invites',
+  '  portal-invite <coach-phone>                       send the portal setup link on the channel they use',
 ].join('\n');
 
 /** users.phone_number form of a phone or channel identity. Throws on junk. */
@@ -75,7 +77,8 @@ async function findUser(identity) {
   const { userIdForIdentity } = require('../shared/services/observe/observe-identity');
   const id = await userIdForIdentity(identity);
   if (!id) return null;
-  return _one(db().from('users').select('id, phone_number, name, role, school_id').eq('id', id).limit(1));
+  return _one(db().from('users')
+    .select('id, phone_number, name, role, school_id, preferred_language, portal_activated').eq('id', id).limit(1));
 }
 
 /**
@@ -215,6 +218,27 @@ async function setEmail(coachPhone, email, fullName) {
   return CoachDirectory.setWorkEmail(coach.id, { email, fullName: fullName || coach.name });
 }
 
+/**
+ * The portal setup link, sent on the channel the person last used (their
+ * Matrix DM for a coach who uses only the messenger: there is no inbound
+ * message to answer). Run from a one-off process, the Matrix send goes
+ * through the bot's outbound relay (messaging/matrix-outbound-relay.js).
+ */
+async function portalInvite(phone) {
+  const user = await findUser(normalizeIdentity(phone));
+  if (!user) throw new Error(`no user with ${phone}`);
+  if (user.portal_activated) throw new Error(`${phone} has already set up the portal — they can sign in, or reset their password there`);
+  const PortalInviteService = require('../shared/services/portal-invite.service');
+  const { identityForUser } = require('../shared/services/messaging/user-identity');
+  const recipient = await identityForUser(user.id);
+  const result = await PortalInviteService.sendPortalInvite(user.id, recipient, user.preferred_language || 'en');
+  if (result.reason === 'no_sign_in_number') {
+    throw new Error(`${phone} has no phone number to sign in to the portal with (see docs/channels/matrix.md)`);
+  }
+  if (!result.success) throw new Error(`the invite was not sent: ${result.error}`);
+  return { recipient };
+}
+
 /** @returns {Promise<number>} exit code */
 async function main(argv = process.argv.slice(2), out = console) {
   const [cmd, ...args] = argv;
@@ -263,6 +287,12 @@ async function main(argv = process.argv.slice(2), out = console) {
         out.log(`✓ calendar invites for ${args[0]} go to ${args[1]}`);
         return 0;
       }
+      case 'portal-invite': {
+        if (!args[0]) break;
+        const { recipient } = await portalInvite(args[0]);
+        out.log(`✓ portal invite sent to ${recipient}`);
+        return 0;
+      }
       default:
         break;
     }
@@ -281,4 +311,5 @@ if (require.main === module) {
 
 module.exports = {
   main, normalizeIdentity, schoolExtId, parseCsv, importCsv, grantCoach, addSchool, addTeacher, listRoster, setEmail,
+  portalInvite,
 };

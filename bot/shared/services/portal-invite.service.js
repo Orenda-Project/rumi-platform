@@ -1,37 +1,116 @@
 /**
  * Portal Invite Service
- * Handles teacher portal invitation token generation and WhatsApp notification
+ * Handles teacher portal invitation token generation and the invite message
  *
  * Responsibilities:
  * - Generate unique portal setup tokens (UUID v4)
  * - Store tokens in database with 7-day expiry
- * - Send multilingual invitation messages via WhatsApp
+ * - Send multilingual invitation messages on the user's own channel
  * - Validate tokens for portal setup flow
+ *
+ * The portal signs people in by phone number. Someone who uses only Rumi
+ * Messenger signs in with the number their Matrix username carries
+ * (@+<digits>); a username that is a name carries none, so no invite is
+ * minted for them (see signInNumberFor and docs/channels/matrix.md).
  *
  * Related: TEACHER_PORTAL_IMPLEMENTATION_PLAN.md
  */
 
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const supabase = require('../config/supabase');
 const { logToFile } = require('../utils/logger');
 const WhatsAppService = require('./whatsapp.service');
+const { identityForUser, parseIdentity } = require('./messaging/user-identity');
+const { matrixPhoneNumberFor } = require('../database/bot-helpers');
+const { isObserveEnabled, isSchoolLeader } = require('./observe/observe-gate');
+
+/**
+ * The phone number this user signs in to the portal with, or null. A Matrix
+ * user named by their number has it recorded on their next message
+ * (bot-helpers.js), but a coach put on the observe roster may not have
+ * written yet, so it is recorded here too, under the same rule: only when no
+ * other user holds that number.
+ */
+async function signInNumberFor(user) {
+  if (user.phone_number) return user.phone_number;
+  const { data: links } = await supabase
+    .from('user_channels')
+    .select('channel, channel_user_id')
+    .eq('user_id', user.id);
+  for (const link of links || []) {
+    const phoneNumber = await matrixPhoneNumberFor(link.channel, link.channel_user_id);
+    if (phoneNumber) {
+      const { error } = await supabase.from('users').update({ phone_number: phoneNumber }).eq('id', user.id);
+      if (error) throw error;
+      return phoneNumber;
+    }
+  }
+  return null;
+}
+
+// Off WhatsApp the number someone signs in with is not the address they chat
+// on, so the invite says which number it is. WhatsApp copy is unchanged.
+const SIGN_IN_LINE = {
+  en: (n) => `You'll sign in with your phone number, ${n}.`,
+  ur: (n) => `آپ اپنے فون نمبر ${n} سے لاگ ان کریں گے۔`,
+  ar: (n) => `ستسجل الدخول برقم هاتفك ${n}.`,
+  es: (n) => `Iniciarás sesión con tu número de teléfono, ${n}.`,
+};
+
+// A coach's portal also has the observe view (dashboard/routes/portal-coach.routes.js).
+const COACH_LINE = {
+  en: 'As a coach, you will also find your classroom observations under *Observations* in the portal menu.',
+  ur: 'بطور کوچ، آپ کو پورٹل کے مینو میں *Observations* کے تحت اپنے کلاس روم مشاہدات بھی ملیں گے۔',
+  ar: 'بصفتك مدرباً، ستجد أيضاً ملاحظاتك الصفية تحت *Observations* في قائمة البوابة.',
+  es: 'Como coach, también encontrarás tus observaciones de aula en *Observations*, en el menú del portal.',
+};
 
 class PortalInviteService {
+  /** The phone number a user signs in to the portal with, or null (see signInNumberFor above). */
+  static async signInNumberFor(user) {
+    return signInNumberFor(user);
+  }
+
   /**
-   * Send portal invitation to user via WhatsApp
+   * Send portal invitation to the user on their own channel
    * Creates unique token, stores in database, sends localized message
    *
    * @param {string} userId - User's UUID from database
-   * @param {string} phoneNumber - User's WhatsApp phone number (format: 923001234567)
+   * @param {string|null} phoneNumber - Where to send it: the identity the user is
+   *   writing from (a WhatsApp number like 15550100001, or "mtx:…" / "slack:…"),
+   *   or null to send it to the channel they last used (e.g. from the roster CLI)
    * @param {string} language - User's preferred language ('en', 'ur', 'ar', 'es')
-   * @returns {Promise<{success: boolean, token: string, expiresAt: Date, error?: string}>}
+   * @returns {Promise<{success: boolean, token: string, expiresAt: Date, error?: string,
+   *   reason?: 'no_sign_in_number'}>}
    */
   static async sendPortalInvite(userId, phoneNumber, language = 'en') {
     try {
       logToFile('📨 Sending portal invitation', { userId, phoneNumber, language });
 
+      const recipient = phoneNumber || await identityForUser(userId);
+      if (!recipient) {
+        return { success: false, error: 'No channel to reach this user on' };
+      }
+
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id, phone_number, role')
+        .eq('id', userId)
+        .single();
+      if (userError || !user) {
+        throw userError || new Error('User not found');
+      }
+
+      // No number to sign in with → a password set from this link could never
+      // be used, so no link is minted (the caller says why).
+      const signInNumber = await signInNumberFor(user);
+      if (!signInNumber) {
+        logToFile('⚠️ Portal invite skipped: no phone number to sign in with', { userId, recipient });
+        return { success: false, reason: 'no_sign_in_number', error: 'No phone number to sign in with' };
+      }
+
       // Generate unique token
-      const token = uuidv4();
+      const token = crypto.randomUUID();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
@@ -93,18 +172,29 @@ Este enlace expira en 7 días. Haz clic en él para crear tu contraseña e inici
       };
 
       // Get localized message (fallback to English if language not supported)
-      const message = messages[language] || messages.en;
+      const lang = messages[language] ? language : 'en';
+      let message = messages[lang];
 
       if (!messages[language]) {
         logToFile('⚠️ Unsupported language for portal invite, using English', { language, userId });
       }
 
-      // Send WhatsApp message
-      await WhatsAppService.sendMessage(phoneNumber, message);
+      if (parseIdentity(recipient).channel !== 'whatsapp') {
+        message += `\n\n${SIGN_IN_LINE[lang](`+${String(signInNumber).replace(/^\+/, '')}`)}`;
+      }
+      if (isObserveEnabled() && isSchoolLeader(user)) {
+        message += `\n\n${COACH_LINE[lang]}`;
+      }
+
+      // Through the messaging facade, which routes the identity to its channel
+      const sent = await WhatsAppService.sendMessage(recipient, message);
+      if (sent === false) {
+        throw new Error('The invitation message could not be sent');
+      }
 
       logToFile('✅ Portal invitation sent successfully', {
         userId,
-        phoneNumber,
+        recipient,
         language,
         token,
         expiresAt: expiresAt.toISOString()
@@ -143,7 +233,7 @@ Este enlace expira en 7 días. Haz clic en él para crear tu contraseña e inici
       logToFile('🔑 Generating portal token (no message)', { userId });
 
       // Generate unique token
-      const token = uuidv4();
+      const token = crypto.randomUUID();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
