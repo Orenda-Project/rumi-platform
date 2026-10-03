@@ -32,6 +32,11 @@ const {
   resolveChannelDriver, resolveActiveChannels, isChannelSwitchedOff, ADDITIVE_CHANNEL_REQUIRED_VARS,
 } = require('../../config/feature-availability');
 const { logToFile } = require('../../utils/logger');
+const ModelBudget = require('../limits/model-budget');
+
+async function mutedSend() {
+  return false;
+}
 
 const rawDriver = (process.env.CHANNEL_DRIVER || '').trim().toLowerCase();
 const whatsappDriverName = resolveChannelDriver(process.env);
@@ -78,6 +83,13 @@ const pausedChannelNames = Object.keys(ADDITIVE_CHANNEL_REQUIRED_VARS)
 module.exports = new Proxy(whatsappDriver, {
   get(target, prop, receiver) {
     const original = Reflect.get(target, prop, receiver);
+    // The model budget ran out while handling this message: its remaining
+    // sends (the handler's own apology) are dropped, and the inbound path
+    // says "busy" once instead (limits/model-budget.js). Only inside such a
+    // message; everywhere else this is one cheap check.
+    if (typeof original === 'function' && typeof prop === 'string' && prop.startsWith('send') && ModelBudget.isMuted()) {
+      return mutedSend;
+    }
     if (typeof original !== 'function' || (Object.keys(additiveDrivers).length === 0 && pausedChannelNames.length === 0)) {
       return original;
     }

@@ -42,6 +42,20 @@ const LessonPlanText = require('../coaching/fidelity/lesson-plan-text');
 const { summaryTruthEnabled } = require('./transcript-quiz-contract');
 const Funnel = require('./quiz-funnel');
 const DailyCap = require('./quiz-daily-cap');
+const DailyCaps = require('../limits/daily-caps');
+
+/**
+ * The quiz cap for an account that has not finished registration, or null
+ * (registered, unset, or unreadable — the deployment-wide QUIZ_DAILY_CAP still
+ * applies). Read only when the operator set one.
+ */
+async function unregisteredQuizCap(teacherId) {
+  const tierCap = DailyCaps.capFor('quiz', 'unregistered');
+  if (tierCap === null || !teacherId) return null;
+  const { data, error } = await supabase.from('users').select('id, registration_completed').eq('id', teacherId).maybeSingle();
+  if (error || !data) return null;
+  return DailyCaps.tierOf(data) === 'unregistered' ? tierCap : null;
+}
 
 /** The teacher of a plan or topic quiz — the same fields SESSION_SELECT joins for a transcript quiz. */
 const LP_USER_SELECT = 'name, id, phone_number, preferred_language, grades_taught, subjects_taught';
@@ -1686,8 +1700,9 @@ async function processQuiz(quizId, payload, run = {}) {
   // THE RUNAWAY GUARD (quiz-daily-cap): at most QUIZ_DAILY_CAP quizzes made per
   // teacher per day, both streams, counted here where every path meets and before
   // any model call. A quiz resuming at the hand-off was already counted.
+  // An unregistered account may have a lower allowance (DAILY_QUIZ_CAP_UNREGISTERED).
   if (!(quiz.status === 'ready' && meta.step === 'ready')) {
-    const capped = await DailyCap.claim(quiz.teacher_id, quizId);
+    const capped = await DailyCap.claim(quiz.teacher_id, quizId, { tierCap: await unregisteredQuizCap(quiz.teacher_id) });
     if (!capped.allowed) {
       const failedMeta = { ...meta, step: 'failed', error: 'daily_cap' };
       await updateQuiz(quizId, { status: 'failed', meta: failedMeta });

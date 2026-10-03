@@ -1,4 +1,5 @@
 const WhatsAppService = require('../services/whatsapp.service');
+const DailyCaps = require('../services/limits/daily-caps');
 const OpenAIService = require('../services/openai.service');
 const ContentService = require('../services/content.service');
 const LanguageDetectorService = require('../services/language-detector.service');
@@ -40,21 +41,14 @@ const {
   storeConversation,
   storeLessonPlan
 } = require('../database/bot-helpers');
-const { driverForIdentifier } = require('../services/messaging/channel-registry');
+// resolveChannelIdentity: the one split of a prefixed sender, shared with
+// whatsapp-bot.js. A copy here once sliced by the driver name's length, which
+// cut "mtx:1555…" short and made a second account for the same teacher.
+const { driverForIdentifier, resolveChannelIdentity } = require('../services/messaging/channel-registry');
 const { normalizeCommand } = require('../services/messaging/command-words');
 const { nativeFlowIdFor } = require('../services/messaging/channel-capabilities');
 const supabase = require('../config/supabase');
 const fs = require('fs');
-
-const CHANNEL_FAMILY = { slack: 'slack', discord: 'discord' };
-
-/** Mirrors whatsapp-bot.js's resolveChannelIdentity — see that file for the full rationale. */
-function resolveChannelIdentity(from) {
-  const driverName = driverForIdentifier(from);
-  if (!driverName) return null;
-  const prefix = `${driverName}:`;
-  return { channel: CHANNEL_FAMILY[driverName] || driverName, channelUserId: String(from).slice(prefix.length) };
-}
 
 /**
  * Curriculum pre-gen intercept. If the teacher's region enables curriculum LPs
@@ -2214,6 +2208,13 @@ async function handleTextMessage(message, from, messageBody, user = null) {
  */
 async function handleLessonPlanRequest(from, messageBody, user, sessionId, responseLanguage, typingController) {
   try {
+    // Today's lesson-plan allowance for an unregistered account
+    // (limits/daily-caps.js) — checked before the topic is read or a plan queued.
+    if (!(await DailyCaps.allowOrExplain(user, 'lesson_plan', from))) {
+      typingController.stop();
+      return;
+    }
+
     // Multi-language message maps
     const lessonPlanMessages = {
       en: {
@@ -2332,6 +2333,13 @@ async function handleLessonPlanRequest(from, messageBody, user, sessionId, respo
  */
 async function handlePresentationRequest(from, messageBody, user, sessionId, responseLanguage, typingController) {
   try {
+    // Today's lesson-plan allowance for an unregistered account
+    // (limits/daily-caps.js) — checked before the topic is read or a plan queued.
+    if (!(await DailyCaps.allowOrExplain(user, 'lesson_plan', from))) {
+      typingController.stop();
+      return;
+    }
+
     // Multi-language message maps
     const presentationMessages = {
       en: {

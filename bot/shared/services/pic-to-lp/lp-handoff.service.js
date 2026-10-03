@@ -25,6 +25,7 @@ const { logToFile } = require('../../utils/logger');
 const { logEvent } = require('../../utils/structured-logger');
 const { TEMP_DIR } = require('../../utils/constants');
 const supabase = require('../../config/supabase');
+const DailyCaps = require('../limits/daily-caps');
 const crypto = require('crypto');
 
 const PIC_LP_DEFAULT_DAYS = 1; // single-page → single-lesson plan by default
@@ -104,6 +105,9 @@ async function pickBackend(userId, formData) {
  */
 async function generateAndDeliver({ session, formData, from }) {
   const startTime = Date.now();
+
+  // Today's lesson-plan allowance for an unregistered account (limits/daily-caps.js).
+  if (!(await DailyCaps.allowOrExplainForUserId(session.user_id, 'lesson_plan', from))) return null;
 
   // A/B router branch — when app_settings.pic_lp_backend_ab routes to 'kieai',
   // delegate to the SQS-routed Kie.ai pipeline. The Kie.ai path sends its own
