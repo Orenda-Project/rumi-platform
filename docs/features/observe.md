@@ -13,8 +13,9 @@ Most school systems already employ people whose job is to coach teachers: mentor
 2. **Debrief.** A six-step debrief guide covers praise with evidence, one question, one improvement and the teacher's own commitment. Rumi then listens to the recorded debrief and coaches the coach.
 3. **Report.** The teacher receives a warm report with no score, so support stays separate from evaluation.
 4. **Follow up.** Waiting work, planned visits and overdue follow-ups are all tracked.
+5. **Did the lesson follow its plan? (Section B).** When the lesson was taught from a plan, Rumi checks the recording against it move by move, the coach confirms or corrects each verdict, and the teacher hears what went as planned. See [Section B](#section-b--did-the-lesson-follow-its-plan).
 
-**Where it sits in a structured-pedagogy programme:** teacher guide → delivery → **coaching** → assessment → **M&E** (visit records, coach-reviewed ratings).
+**Where it sits in a structured-pedagogy programme:** teacher guide → **delivery** (Section B) → **coaching** → assessment → **M&E** (visit records, coach-reviewed ratings, coach-reviewed plan fidelity).
 
 
 
@@ -23,7 +24,7 @@ Most school systems already employ people whose job is to coach teachers: mentor
 - **What has been checked.** Only the safety rules are tested: no score reaches the teacher, and harmful debriefs are caught. The quality of the AI's suggestions is not validated. In one run, an "area for growth" misread praise as blame.
 - **Observer reliability.** Coaches still need training and reliability checks. The AI draft does not replace them.
 - **Language.** English only.
-- **Integration with fidelity.** The fidelity section is not yet in the observe report.
+- **Section B (plan fidelity).** Only plans Rumi made for the teacher can be linked to an observation (no upload or paste in the coach's flow yet). The measurement's own limits apply: see [lesson-plan fidelity, Honest limits](lesson-plan-fidelity.md#honest-limits).
 - **Portal sign-in.** Coaches who use only the owned messenger cannot sign in to the portal yet.
 - **Open should-fix.** A re-sent invite keeps its old reminder counters.
 
@@ -31,6 +32,9 @@ Most school systems already employ people whose job is to coach teachers: mentor
 
 - [WB-1to1] Wilichowski, T., & Popova, A., 2021, *Structuring Effective 1-1 Support: Technical Guidance Note* (Coach series), World Bank. https://openknowledge.worldbank.org/entities/publication/e8872cc5-2712-5aa9-ac2e-5f40f8984e4c/full ; blog summary: https://blogs.worldbank.org/en/education/8-tips-structure-effective-one-one-support-systems-teachers
 - [WB-7steps] Wilichowski, T., & Arenge, G., 2021, "7 steps to facilitate effective one-to-one support for teachers", World Bank blog. https://blogs.worldbank.org/education/7-steps-facilitate-effective-one-one-support-teachers
+- [Hawe04] Hawe, P., Shiell, A., & Riley, T., 2004, "Complex interventions: how 'out of control' can a randomised controlled trial be?", *BMJ* 328:1561–1563. https://doi.org/10.1136/bmj.328.7455.1561
+- [FRAME19] Wiltsey Stirman, S., Baumann, A. A., & Miller, C. J., 2019, "The FRAME: an expanded framework for reporting adaptations and modifications to evidence-based interventions", *Implementation Science* 14:58. https://doi.org/10.1186/s13012-019-0898-y
+- [Piper-Dubeck24] Piper, B., & Dubeck, M., 2024, "Responding to the learning crisis: Structured pedagogy in sub-Saharan Africa", *International Journal of Educational Development* 109:103095. https://doi.org/10.1016/j.ijedudev.2024.103095
 
 ## What it is
 
@@ -66,6 +70,7 @@ is a conversation everywhere, and an editable WhatsApp Flow on Meta when you pub
 
 | Variable | What |
 |---|---|
+| `LP_FIDELITY_ENABLED` | `true` (with Observe on) adds **Section B — did the lesson follow its plan?** to observations. Off, observations have no Section B and nothing asks about plans |
 | `OBSERVE_ENABLED` | `true` turns `/observe` on (the console switch `RUMI_FEATURE_OBSERVE=off` pauses it). Off, everything behaves exactly as before. Set it on the **dashboard** service too: the portal's coach view reads its own environment and is off without it. |
 | `OBSERVE_FRAMEWORK` | `teach` (default — the public TEACH classroom observation tool), `hots`, or `mewaka` |
 | `OBSERVE_LEADER_ROLES` | who may use `/observe` (users.role, comma list). Default `head_teacher,principal,school_leader,coach,supervisor` (`principal` and `school_leader` are read as aliases of `head_teacher`, which is what the roster script writes) |
@@ -433,6 +438,107 @@ Tuning: `OBSERVE_UNTAPPED_EXPIRE_DAYS`, `OBSERVE_UNTAPPED_MAX_PER_TICK`, `OBSERV
 - **Pick list:** `observe_pickt_<n>`, `observe_pickt_more_<offset>`, `observe_pickt_new`
 - **Template quick reply (Meta):** `observe_report_<sessionId>`
 - **Observe states:** `awaiting_teacher_pick`, `awaiting_teacher_details`, `awaiting_send_confirm`
+
+## Section B — did the lesson follow its plan?
+
+### In programme terms
+
+**Fidelity of implementation, inside the coaching visit.** Structured pedagogy only works if the lessons in the teacher
+guide reach the classroom, and programmes have long asked their coaches to check delivery by following the guide during
+the visit. Section B does that check from the coach's own recording: the lesson plan becomes its planned moves, and each
+move gets a verdict with the quoted, timestamped moment as proof. A different activity that keeps the move's purpose
+(same objective, the core intact, student practice kept, evidence of it) earns full credit, and the teacher is told it
+was a good choice: the principle is to standardise the function of a step, not its form [Hawe04][FRAME19]. A move that
+was only started earns half credit and becomes a coaching focus. A move the recording cannot show is "not assessed",
+never zero. The coach was in the room, so the coach confirms or corrects every verdict, and the coach's version is the
+one used. The teacher's report keeps observe's promise: it names what went as planned, the substitutions that worked,
+and one thing to try, with no score. Coaches are encouraged to treat the result as mentorship, not inspection
+[Piper-Dubeck24].
+
+Section B is the [lesson-plan fidelity](lesson-plan-fidelity.md) engine (v2.3.0) run on the observation's recording; the
+measurement, its calibration and its limits are documented there. It is on when both `OBSERVE_ENABLED=true` and
+`LP_FIDELITY_ENABLED=true`.
+
+### Linking the plan
+
+Once Rumi knows whose lesson it is (the teacher picked in the visit picker, or named afterwards in "who did you
+observe?"), the coach is asked **"Which lesson plan was this lesson taught from?"** with that teacher's recent plans made
+with Rumi (newest first, `LP_FIDELITY_LIST_LIMIT`) and **No plan**. A list on Meta, numbered text elsewhere; row ids are
+`observe_lp_<sessionId>_<n|none>`.
+
+- The question never blocks the recording: transcription goes on, and the analysis waits for an open question at most
+  `LP_FIDELITY_PLAN_WAIT_SECONDS` (default 90).
+- A pick goes through the same linker as a teacher's own session, owned by the **teacher**: a coach can only link the
+  observed teacher's own plan.
+- A teacher with no plans is not asked about; Section B then says so.
+- A pick that arrives after the analysis, while the coach's form is still open, grades Section B then and says so
+  ("Section B is ready in the form"). Once the form is saved it is too late, and the coach is told.
+
+### Grading
+
+The analysis job runs the fidelity engine (`computeFidelityForSession`) on the observation's transcript, with the same
+input contract as everywhere else: a transcript without `[MM:SS]` timings is refused in code before any model call. The
+results are stored on the observation like any session's:
+
+- `analysis_data.lp_fidelity`: the engine's blob (moves, verdicts, quotes, the measurement);
+- `analysis_data.section_b`: `{ status: 'assessed' | 'not_assessed', reason, detail }`.
+
+| `section_b.reason` | What the coach is told |
+|---|---|
+| `no_plan` (detail `teacher_has_no_plans`, `coach_said_no_plan`, `no_answer`, `teacher_unknown`) | the actual cause: the teacher has no plan made with Rumi yet, the coach said there was none, no plan was picked, or Rumi did not know whose lesson it was |
+| `no_timings` | the plan was linked, but the transcript has no timings |
+| `recording_unusable` | the plan was linked, but the recording did not show which moves happened |
+| `plan_unreadable` | the plan was linked, but its text could not be read |
+| `grader_failed` | the plan was linked, but the check could not run this time |
+
+`not_assessed` is never a zero: Section B is left out of the form's review, the teacher's report and the portal's
+verdicts, and the coach gets one message saying which state it is. A lesson that does not match its plan is assessed
+and flagged; the coach is told, and the teacher's report leaves Section B out.
+
+### The coach reviews it
+
+After the last Section A domain the chat form goes on to Section B, six moves a message:
+
+```
+📋 Section B — did the lesson follow its plan? (1 of 2)
+…
+4. Guided practice — Pairs compare fractions with paper strips
+   ⭐ Better swap
+   [14:05] "Use the number line on the board…"
+…
+Reply ok to keep these, or a move number (1 to 11) and a verdict number — e.g. 5 1.
+1 ✓ As planned · 2 ↔ Equal swap · 3 ⭐ Better swap · 4 ◐ Partly · 5 ✗ Not done · 6 – Can't tell
+```
+
+- Moves are numbered across the whole plan, so any page can change any move; changed moves show `(changed)`.
+- The ratings and the verdicts are saved in **one** write when the last page is confirmed. The coach's verdicts go back
+  through the same scorer (`observer_edited: true`, `coach_verdict` on each changed move). The AI's first pass stays in
+  `autofill_analysis_data`. A move the plan marked as not audible stays out of the score unless the coach rules on it.
+- **Meta Flow:** the published form Flow has no Section B screen, so after a Flow submission the chat walks the coach
+  through Section B, then offers the debrief.
+- The debrief guide sees the reviewed moves (a planned move not done is a natural "one thing to improve"), never the
+  percentage or band.
+
+### The teacher's report: the kind version
+
+When Section B was assessed, the teacher's package gets one more message, after the report and before the companion
+note, built from the **coach's** verdicts:
+
+```
+📋 Your lesson and its plan
+
+✅ What went as planned
+• Recall halves with the class
+⭐ Done your own way — and it kept the purpose
+• Pairs compare fractions with paper strips — a stronger way to do it
+🌱 One thing to try next time
+• Exit question on the board
+```
+
+No percentage, band or count. Every line goes through the trust firewall; a line that reads like a score or quotes the
+coach's private material is dropped, and the whole note is checked again before it is sent. Not assessed, or a lesson
+that did not match its plan: no note. The hero report itself never sees the measurement (`teacherSafeAnalysis` removes
+`lp_fidelity` and `section_b`).
 
 ## The coach's view in the portal
 
