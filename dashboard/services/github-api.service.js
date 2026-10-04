@@ -169,8 +169,9 @@ async function listDirectory(repoKey, dirPath, branch = null) {
  * @returns {Promise<Object>} Repository tree object
  */
 async function getRepoTree(repoKey, branch = null) {
+  // Outside the try: the catch below names config.branch in its message.
+  const config = getRepoConfig(repoKey);
   try {
-    const config = getRepoConfig(repoKey);
     const branchToUse = branch || config.branch;
 
     // First, get the branch to get the commit SHA
