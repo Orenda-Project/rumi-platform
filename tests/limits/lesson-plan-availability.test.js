@@ -88,6 +88,33 @@ describe('a lesson plan from a textbook photo on the Gamma backend (lp-handoff g
   });
 });
 
+// On the rig, "Please make me a lesson plan on fractions" with no key first got
+// "I can create detailed lesson plans for any topic! Want to see how?", then
+// "I'll create a detailed 5-step lesson plan", and only then "not available".
+describe('the lesson-plan intro offer (FeatureKeywordDetectorService.detectAndOfferVideo)', () => {
+  function loadDetector() {
+    const { WA } = load();
+    const Intro = { hasSeenIntroVideo: jest.fn().mockResolvedValue(false) };
+    jest.doMock('../../bot/shared/services/feature-intro.service', () => Intro);
+    const Detector = require('../../bot/shared/services/feature-keyword-detector.service');
+    redis.setex = jest.fn(async () => 'OK');
+    return { WA, Detector };
+  }
+
+  it('with no GAMMA_API_KEY: no offer, so the request gets the plain "not available" answer', async () => {
+    const { WA, Detector } = loadDetector();
+    expect(await Detector.detectAndOfferVideo('Please make me a lesson plan on fractions for grade 4', USER_ID, FROM, 'en')).toBe(false);
+    expect(WA.sendInteractiveButtons).not.toHaveBeenCalled();
+  });
+
+  it('with GAMMA_API_KEY: offered as before', async () => {
+    process.env.GAMMA_API_KEY = 'test-gamma-key';
+    const { WA, Detector } = loadDetector();
+    expect(await Detector.detectAndOfferVideo('Please make me a lesson plan on fractions for grade 4', USER_ID, FROM, 'en')).toBe(true);
+    expect(WA.sendInteractiveButtons).toHaveBeenCalledWith(FROM, expect.objectContaining({ body: expect.stringMatching(/lesson plans/) }));
+  });
+});
+
 describe('lessonPlansAvailable', () => {
   it('follows GAMMA_API_KEY', () => {
     const { lessonPlansAvailable } = require('../../bot/shared/services/lesson-plan-availability');

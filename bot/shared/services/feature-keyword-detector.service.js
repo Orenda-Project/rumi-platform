@@ -14,6 +14,7 @@ const WhatsAppService = require('./whatsapp.service');
 const FeatureIntroService = require('./feature-intro.service');
 const { FEATURE_VIDEO_URLS, CONSENT_BUTTON_LABELS } = require('../constants/feature-videos');
 const redisService = require('./cache/railway-redis.service');
+const LessonPlanAvailability = require('./lesson-plan-availability');
 
 /**
  * Feature keywords matrix
@@ -181,6 +182,11 @@ class FeatureKeywordDetectorService {
         score: detected.score,
         userId
       });
+
+      // No intro for lesson plans this deployment cannot make (no GAMMA_API_KEY):
+      // the request goes on and gets the plain "not available" answer
+      // (lesson-plan-availability.js), not an offer that promises a plan.
+      if (detected.feature === 'lesson_plan' && !LessonPlanAvailability.lessonPlansAvailable()) return false;
 
       // Check if user has already seen this feature's video
       const hasSeenVideo = await FeatureIntroService.hasSeenIntroVideo(userId, detected.feature);
