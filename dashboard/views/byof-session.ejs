@@ -194,6 +194,7 @@ Feel free to share any mockups or examples!` %></div>
     </div>
   </div>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
     const sessionId = '<%= session.id %>';
     const sessionStatus = '<%= session.status %>';
@@ -435,12 +436,6 @@ Feel free to share any mockups or examples!` %></div>
       `;
       messagesContainer.appendChild(div);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
     }
   </script>
 </body>
