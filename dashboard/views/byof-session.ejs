@@ -194,10 +194,11 @@ Feel free to share any mockups or examples!` %></div>
     </div>
   </div>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
-    const sessionId = '<%= session.id %>';
-    const sessionStatus = '<%= session.status %>';
-    const byofRole = '<%= byofRole %>';
+    const sessionId = <%- safeJson(session.id) %>;
+    const sessionStatus = <%- safeJson(session.status) %>;
+    const byofRole = <%- safeJson(byofRole) %>;
     const messagesContainer = document.getElementById('messages-container');
 
     // Scroll to bottom on load
@@ -436,12 +437,16 @@ Feel free to share any mockups or examples!` %></div>
       messagesContainer.appendChild(div);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+  </script>
+  <script nonce="<%= cspNonce %>">
+    // The handlers the data-on-* attributes in this page name (see /js/csp-actions.js).
+    window.cspActions.register({
+      approvePlan: approvePlan,
+      showRejectModal: showRejectModal,
+      linkPr: linkPr,
+      hideRejectModal: hideRejectModal,
+      rejectPlan: rejectPlan,
+    });
   </script>
 </body>
 </html>

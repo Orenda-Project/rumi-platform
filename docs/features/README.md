@@ -36,4 +36,6 @@ Run **`npm run doctor`** at any time to see which features are live for your cur
 
 **Utility flows** (presence-gated on their Flow id, with a text fallback when unset): a **settings** flow (`SETTINGS_FLOW_ID` — language + coaching framework), a **status** flow (`STATUS_FLOW_ID` — your active sessions), an **edit-class** roster editor (`EDIT_CLASS_FLOW_ID`), and a **student-video** library picker (`STUDENT_VIDEOS_FLOW_ID`).
 
+**Editing the admin pages** (`/observability/*`)? Follow [Writing admin views safely](admin-views-security.md): how public text stays text, how to bind event handlers under the CSP, and what the guard tests check.
+
 For deep customization of any feature (swapping frameworks, changing benchmarks, adding languages or regions), see the [Agent Customization Guide](../agent-customization.md).

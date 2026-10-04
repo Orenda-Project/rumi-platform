@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.3] - 2026-10-04
+
+**Security patch: the admin pages show what the public types as text.** Every deployment of v2.11.2 or earlier that
+lets people sign up (the public messenger) is affected; upgrade.
+
+> **Upgrade notes.** No migration, no new setting. If you changed or added admin views (`dashboard/views/`), they must
+> follow `docs/features/admin-views-security.md` or the guard tests fail: `<%=` for data, `<%- safeJson(x) %>` for data in
+> a `<script>` (only there, and never `<%=` inside a script), `escapeHtml`/`safeUrl` (`/js/escape-html.js`) for HTML built in a script, and every `data-on-*` handler
+> registered with `window.cspActions.register({...})`. A `data-on-*` name that no view registered no longer runs.
+
+### Security
+
+- **Stored HTML injection into the admin pages is closed.** Anyone who signs up can choose a display name and send chat
+  text, and both reach the admin pages. The users list and chat view put names, phone numbers and chat cards into
+  `innerHTML` unescaped. The coaching transcript wrote line text raw into a `data-raw-text` attribute (a `"` broke out)
+  and later into `innerHTML`. v2.11.2's CSP stopped scripts, but injected HTML (a fake sign-in form, links, spoofed
+  layout) still rendered. Now every value that can come from a teacher, a public sign-up or a model is escaped by one
+  helper (`dashboard/public/js/escape-html.js`: `escapeHtml`, plus `safeUrl` for links, which allows only http(s)).
+  This covers the users page, transcript (escaped before the `{{en:…}}` markers become spans), AMA, broadcast,
+  invitations, admin users and API health.
+- **Data in admin page scripts can't end the script.** 14 views wrote `<%- JSON.stringify(x) %>` inside `<script>`, so
+  a value with `</script>` closed the script and the rest became markup. They now use `safeJson`
+  (`dashboard/lib/safe-json.js`: escapes `< > &` and U+2028/2029). Every remaining `<%-` in the EJS views is a trusted
+  include, `safeJson(...)`, or a listed server-owned constant.
+- **`data-on-*` runs only registered handlers.** `public/js/csp-actions.js` called any `window[name]` that an attribute
+  named, so injected markup could call any page global. Views now register their handlers with
+  `window.cspActions.register(...)`. An unknown name is ignored and logged once.
+
+### Fixed
+
+- `/observability/ama` no longer returns 500 (`AMAService.getConversations is not a function`). Conversations are stored
+  in the existing `ama_conversations`/`ama_messages` tables. Chat answers with the "feature disabled" message, because
+  natural-language SQL stays off in the open-source build. An admin sees only their own conversations. The routes moved
+  to `dashboard/routes/ama.routes.js`.
+- The AMA routes answer a malformed conversation id with 404 "Conversation not found", and any other failure with a
+  generic 500 message. Before, they returned the database's error text (for example `invalid input syntax for type
+  uuid`) with a 500.
+
+### Added
+
+- Guard tests: `tests/dashboard/ejs-raw-output-allowlist.test.js` (fails on any `<%-` that is not on the allow-list),
+  `tests/dashboard/admin-view-escaping/html-sinks.test.js` (fails on any interpolation into script-built HTML that is
+  neither escaped nor reviewed) and `tests/dashboard/csp-actions-views.test.js` (every `data-on-*` name is registered).
+  View tests render the real EJS views with hostile values in jsdom (a new dashboard devDependency).
+- `docs/features/admin-views-security.md`: writing admin views safely.
+
+### Known
+
+- The admin `style-src` still allows `'unsafe-inline'`: 94 inline `style=` attributes, 19 `<style>` blocks, and Mermaid
+  on the schema page inject styles that have no nonce. Styles cannot run script. This is tracked as a follow-up.
+
 ## [2.11.2] - 2026-10-04
 
 **Security patch: the teacher portal's sign-in limits are back on, reset codes can't be guessed, logs no longer

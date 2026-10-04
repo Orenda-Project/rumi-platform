@@ -3,16 +3,25 @@
  *
  * The admin CSP (dashboard/lib/admin-csp.js) blocks inline event handler
  * attributes (on-click and the like).
- * A view marks the element instead and names a global function from its own
- * nonce'd script:
+ * A view marks the element instead and names a handler that its own nonce'd
+ * script registered:
  *
  *   <button data-on-click="deleteUser" data-args='["42","sample-user"]'>
  *
- * On a click the function runs with `this` = the element and the arguments from
+ *   window.cspActions.register({ deleteUser: deleteUser });
+ *   window.cspActions.register('deleteUser', deleteUser);   // same thing
+ *
+ * Only registered handlers run. A name nobody registered is ignored (with one
+ * console warning per name), even when a global function has that name:
+ * looking names up on window would let injected markup call any page global.
+ * A script that may run before this file can queue registrations with
+ *   (window.cspActions = window.cspActions || []).push({ name: fn });
+ *
+ * On a click the handler runs with `this` = the element and the arguments from
  * data-args (a JSON array). Three argument placeholders: "$event" (the event),
  * "$el" (the element), "$value" (the element's value). Built-in actions that
- * need no function: "$reload", "$print", "$stop" (stop the event here), "$hide"
- * (hide the element). Supported events: see EVENTS.
+ * need no registration: "$reload", "$print", "$stop" (stop the event here),
+ * "$hide" (hide the element). Supported events: see EVENTS.
  *
  * HTML built in a script uses cspArgs(...) for the data-args value.
  *
@@ -33,6 +42,23 @@
     $hide: function () { this.style.display = 'none'; },
   };
 
+  var has = Object.prototype.hasOwnProperty;
+  // Handlers registered by the view, and names already warned about.
+  var registry = Object.create(null);
+  var warned = Object.create(null);
+
+  function register(name, fn) {
+    if (name && typeof name === 'object') {
+      Object.keys(name).forEach(function (key) { register(key, name[key]); });
+      return;
+    }
+    if (typeof name !== 'string' || typeof fn !== 'function') {
+      throw new TypeError('csp-actions: register(name, function) or register({ name: function })');
+    }
+    if (has.call(BUILT_IN, name)) throw new Error('csp-actions: "' + name + '" is a built-in action');
+    registry[name] = fn;
+  }
+
   function argsFor(el, event) {
     var raw = el.getAttribute('data-args');
     var args = raw ? JSON.parse(raw) : [];
@@ -48,13 +74,16 @@
   function run(el, type, event) {
     var name = el.getAttribute('data-on-' + type);
     if (!name) return;
-    if (Object.prototype.hasOwnProperty.call(BUILT_IN, name)) {
+    if (has.call(BUILT_IN, name)) {
       BUILT_IN[name].call(el, event);
       return;
     }
-    var fn = window[name];
-    if (typeof fn !== 'function') {
-      console.error('csp-actions: no global function "' + name + '" for data-on-' + type);
+    var fn = has.call(registry, name) ? registry[name] : null;
+    if (!fn) {
+      if (!has.call(warned, name)) {
+        warned[name] = true;
+        console.warn('csp-actions: no registered handler "' + name + '" for data-on-' + type);
+      }
       return;
     }
     var result = fn.apply(el, argsFor(el, event));
@@ -85,6 +114,16 @@
       .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
       .replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;');
   };
+
+  // Registrations queued before this file loaded. Only a real array counts:
+  // markup with id="cspActions" also shows up as window.cspActions.
+  var queued = Array.isArray(window.cspActions) ? window.cspActions : [];
+  window.cspActions = {
+    register: register,
+    // So the queueing form keeps working after this file has loaded.
+    push: function () { Array.prototype.forEach.call(arguments, function (entry) { register(entry); }); },
+  };
+  queued.forEach(function (entry) { register(entry); });
 
   EVENTS.forEach(function (type) { document.addEventListener(type, dispatch); });
   CAPTURED.forEach(function (type) {

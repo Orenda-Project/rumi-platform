@@ -305,7 +305,7 @@
   </div>
 
   <script nonce="<%= cspNonce %>">
-    const sessionId = '<%= sessionId %>';
+    const sessionId = <%- safeJson(sessionId) %>;
     const startTime = Date.now();
     const POLL_INTERVAL = 2000; // Poll every 2 seconds
     const MAX_POLL_TIME = 300000; // Max 5 minutes (GPT can take 2+ minutes for long transcripts)

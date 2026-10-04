@@ -441,7 +441,7 @@
   <script nonce="<%= cspNonce %>">
     // Chart.js Retention Curve
     const ctx = document.getElementById('retentionChart').getContext('2d');
-    const curveData = <%- curveData %>;
+    const curveData = <%- safeJson(curveData) %>;
 
     const retentionChart = new Chart(ctx, {
       type: 'line',

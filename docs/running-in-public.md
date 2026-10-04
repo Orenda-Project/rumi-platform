@@ -109,6 +109,11 @@ itself or from inline blocks carrying a per-response nonce, with no `'unsafe-inl
 proxy does not need to allow `cdn.tailwindcss.com` or `cdn.jsdelivr.net`. If the proxy adds its own CSP to these
 pages, remove it or make it no looser: browsers enforce both. Details: `dashboard/README.md`.
 
+Since v2.11.3 the admin pages show text from the public (display names, chat, transcripts, model replies) as text:
+a name with HTML in it appears as typed, and no markup reaches the page. If you edit or add admin views, follow
+[Writing admin views safely](features/admin-views-security.md); the dashboard tests fail on a view that does not.
+`style-src` still allows inline styles (`'unsafe-inline'`); removing that is a planned follow-up.
+
 ## On the messenger (Matrix / Synapse)
 
 The [Rumi Messenger](channels/matrix.md) server is set up for a closed school, where every account is created by
@@ -142,6 +147,8 @@ Bot-side, Rumi still answers only users on its own homeserver (plus any in `MATR
       second address (a phone on mobile data) still answers "wrong password", not "Too many attempts"; and from
       the first address, a made-up `X-Forwarded-For` header still gets "Too many attempts".
 - [ ] Log alerts watch for `model_budget_exhausted`.
+- [ ] Register a test account with a display name like `<b>Test</b>`, then open it on the admin users page. The
+      name shows as literal text, tags included, not in bold.
 - [ ] (Matrix) Registration is closed on Synapse, federation is off, the directory is scoped, the admin API is
       not public, and accounts come from your sign-up service.
 - [ ] Try it yourself. Send 40 messages in a minute and expect 30 answers plus one "slow down". From a new

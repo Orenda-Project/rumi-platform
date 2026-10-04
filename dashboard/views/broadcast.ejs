@@ -524,9 +524,10 @@
     </div>
   </div>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
     // User counts from server
-    const userCounts = <%- JSON.stringify(userCounts) %>;
+    const userCounts = <%- safeJson(userCounts) %>;
 
     // DOM elements
     const form = document.getElementById('broadcast-form');
@@ -619,7 +620,7 @@
       const container = document.getElementById('search-results');
 
       if (errorMessage) {
-        container.innerHTML = `<div class="p-4 text-sm text-red-600">${errorMessage}</div>`;
+        container.innerHTML = `<div class="p-4 text-sm text-red-600">${escapeHtml(errorMessage)}</div>`;
         container.classList.remove('hidden');
         return;
       }
@@ -646,12 +647,12 @@
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
               <span class="text-sm font-medium text-indigo-600">
-                ${escapeText(user.displayName.charAt(0).toUpperCase())}
+                ${escapeHtml(user.displayName.charAt(0).toUpperCase())}
               </span>
             </div>
             <div>
-              <div class="text-sm font-medium text-gray-900">${escapeText(user.displayName)}</div>
-              <div class="text-xs text-gray-500">${escapeText(user.phoneMasked)} · ${escapeText(user.country)}</div>
+              <div class="text-sm font-medium text-gray-900">${escapeHtml(user.displayName)}</div>
+              <div class="text-xs text-gray-500">${escapeHtml(user.phoneMasked)} · ${escapeHtml(user.country)}</div>
             </div>
           </div>
           <button type="button" class="p-1 text-indigo-600 hover:bg-indigo-50 rounded">
@@ -663,13 +664,6 @@
       `).join('');
 
       container.classList.remove('hidden');
-    }
-
-    // Text from the database, for HTML built here.
-    function escapeText(value) {
-      return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     // Select a user
@@ -718,8 +712,8 @@
       tagsContainer.innerHTML = selectedUsers.map(user => `
         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">
           <div>
-            <div class="text-sm font-medium text-indigo-900">${escapeText(user.displayName)}</div>
-            <div class="text-xs text-indigo-600">${escapeText(user.phoneMasked)}</div>
+            <div class="text-sm font-medium text-indigo-900">${escapeHtml(user.displayName)}</div>
+            <div class="text-xs text-indigo-600">${escapeHtml(user.phoneMasked)}</div>
           </div>
           <button type="button" data-on-click="removeUser" data-args="${cspArgs(user.id)}"
                   class="p-0.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-100 rounded">
@@ -865,23 +859,23 @@
             <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
               <p class="font-medium text-green-800">Dry run successful!</p>
               <div class="mt-2 text-sm text-green-700 space-y-1">
-                <p>Recipients: ${data.recipientCount} users</p>
+                <p>Recipients: ${escapeHtml(data.recipientCount)} users</p>
                 <p>Breakdown: ${data.breakdown.pakistan} Pakistan, ${data.breakdown.sriLanka} Sri Lanka</p>
-                <p>Estimated time: ${data.estimatedTime}</p>
-                <p>Estimated cost: $${data.estimatedCost.min} - $${data.estimatedCost.max}</p>
-                ${data.contentAnalysis?.approvalLikelihood ? `<p>Approval likelihood: ${data.contentAnalysis.approvalLikelihood.likelihood}</p>` : ''}
+                <p>Estimated time: ${escapeHtml(data.estimatedTime)}</p>
+                <p>Estimated cost: $${escapeHtml(data.estimatedCost.min)} - $${escapeHtml(data.estimatedCost.max)}</p>
+                ${data.contentAnalysis?.approvalLikelihood ? `<p>Approval likelihood: ${escapeHtml(data.contentAnalysis.approvalLikelihood.likelihood)}</p>` : ''}
               </div>
               ${data.sampleRecipients?.length ? `
                 <p class="mt-3 font-medium text-green-800">Sample recipients:</p>
                 <ul class="mt-1 text-sm text-green-700">
-                  ${data.sampleRecipients.slice(0, 5).map(r => `<li>${r.name} (${r.phone}) - ${r.country}</li>`).join('')}
+                  ${data.sampleRecipients.slice(0, 5).map(r => `<li>${escapeHtml(r.name)} (${escapeHtml(r.phone)}) - ${escapeHtml(r.country)}</li>`).join('')}
                 </ul>
               ` : ''}
               ${data.warnings?.length ? `
                 <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
                   <p class="font-medium text-yellow-800">Warnings:</p>
                   <ul class="text-sm text-yellow-700">
-                    ${data.warnings.map(w => `<li>- ${w}</li>`).join('')}
+                    ${data.warnings.map(w => `<li>- ${escapeHtml(w)}</li>`).join('')}
                   </ul>
                 </div>
               ` : ''}
@@ -891,7 +885,7 @@
           dryRunResults.innerHTML = `
             <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p class="font-medium text-red-800">Dry run failed</p>
-              <p class="text-sm text-red-700 mt-1">${data.error}</p>
+              <p class="text-sm text-red-700 mt-1">${escapeHtml(data.error)}</p>
             </div>
           `;
         }
@@ -902,7 +896,7 @@
         dryRunResults.innerHTML = `
           <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
             <p class="font-medium text-red-800">Error</p>
-            <p class="text-sm text-red-700 mt-1">${error.message}</p>
+            <p class="text-sm text-red-700 mt-1">${escapeHtml(error.message)}</p>
           </div>
         `;
         dryRunResults.classList.remove('hidden');
@@ -1080,7 +1074,7 @@
       if (data.errors && data.errors.length > 0) {
         document.getElementById('error-count').textContent = data.errors.length;
         document.getElementById('errors-list').innerHTML = data.errors.slice(0, 10).map(e =>
-          `<li class="text-red-600">${e.phoneNumber}: ${e.error}</li>`
+          `<li class="text-red-600">${escapeHtml(e.phoneNumber)}: ${escapeHtml(e.error)}</li>`
         ).join('');
         document.getElementById('errors-section').classList.remove('hidden');
       }
@@ -1141,7 +1135,7 @@
 
         if (data.success) {
           if (eventSource) eventSource.close();
-          showResults({ status: 'cancelled', cancelled_by: '<%= username %>' });
+          showResults({ status: 'cancelled', cancelled_by: <%- safeJson(username) %> });
         } else {
           alert('Error: ' + data.error);
         }
@@ -1157,6 +1151,16 @@
     }
     updatePreviewTime();
     setInterval(updatePreviewTime, 60000);
+  </script>
+  <script nonce="<%= cspNonce %>">
+    // The handlers the data-on-* attributes in this page name (see /js/csp-actions.js).
+    window.cspActions.register({
+      toggleRecipientMode: toggleRecipientMode,
+      debounceSearch: debounceSearch,
+      clearAllSelectedUsers: clearAllSelectedUsers,
+      selectUser: selectUser,
+      removeUser: removeUser,
+    });
   </script>
 </body>
 </html>

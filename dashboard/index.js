@@ -27,6 +27,7 @@ const {
 } = require('./middleware/rbac');
 const AuthService = require('./services/auth.service');
 const { adminCsp } = require('./lib/admin-csp');
+const { safeJson } = require('./lib/safe-json');
 const {
   getDashboardStatsOptimized,
   getDashboardStatsForPeriod,
@@ -70,8 +71,8 @@ const {
   getRetentionColorClass
 } = require('./services/retention.service');
 
-// AMA (Ask Me Anything) Service
-const AMAService = require('./services/ama.service');
+// AMA (Ask Me Anything) routes
+const { createAmaRouter } = require('./routes/ama.routes');
 
 // Access Scope Service (for partner admin RBAC)
 const accessScopeService = require('./services/access-scope.service');
@@ -336,6 +337,8 @@ const portalCorsOptions = {
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+// Data for an inline <script> in a view: <%- safeJson(x) %>, never JSON.stringify (lib/safe-json.js).
+app.locals.safeJson = safeJson;
 
 // Make user session available in all templates
 app.use(addUserToLocals);
@@ -1477,7 +1480,7 @@ app.get('/observability/retention',
       userRole: req.session.userRole,
       cohorts,
       summary,
-      curveData: JSON.stringify(curveData), // Pass as JSON for Chart.js
+      curveData, // Chart.js data; the view writes it with safeJson
       featureType,
       weeksBack,
       startDate,
@@ -2510,246 +2513,9 @@ app.use('/observability/brief', createBriefRouter({ requireAuth }));
 // AMA (ASK ME ANYTHING) ROUTES
 // ============================================================================
 
-// AMA Main Page
-app.get('/observability/ama', requireAuth, async (req, res) => {
-  res.render('ama', {
-    title: 'AMA - Ask Me Anything',
-    username: req.session.username,
-    userRole: req.session.userRole
-  });
-});
-
-// Get user's conversations
-app.get('/observability/ama/conversations', requireAuth, async (req, res) => {
-  try {
-    const conversations = await AMAService.getConversations(req.session.userId);
-    res.json({ success: true, conversations });
-  } catch (error) {
-    console.error('Error fetching conversations:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Create new conversation
-app.post('/observability/ama/conversations', requireAuth, async (req, res) => {
-  try {
-    const conversation = await AMAService.createConversation(req.session.userId);
-    res.json({ success: true, conversation });
-  } catch (error) {
-    console.error('Error creating conversation:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Get messages for a conversation
-app.get('/observability/ama/conversations/:conversationId/messages', requireAuth, async (req, res) => {
-  try {
-    const messages = await AMAService.getMessages(req.params.conversationId);
-    res.json({ success: true, messages });
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Delete a conversation
-app.delete('/observability/ama/conversations/:conversationId', requireAuth, async (req, res) => {
-  console.log('[AMA] 🗑️ Delete conversation request', {
-    conversationId: req.params.conversationId,
-    userId: req.session?.userId
-  });
-
-  try {
-    await AMAService.deleteConversation(req.params.conversationId, req.session.userId);
-    console.log('[AMA] ✅ Conversation deleted successfully');
-    res.json({ success: true });
-  } catch (error) {
-    console.error('[AMA] ❌ Error deleting conversation:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Chat endpoint with SSE streaming
-app.post('/observability/ama/chat', requireAuth, async (req, res) => {
-  console.log('[AMA] 🚀 Chat endpoint hit', {
-    userId: req.session?.userId,
-    hasMessage: !!req.body?.message,
-    messageLength: req.body?.message?.length,
-    conversationId: req.body?.conversationId
-  });
-
-  const { message, conversationId } = req.body;
-
-  if (!message) {
-    console.log('[AMA] ❌ No message provided');
-    return res.status(400).json({ success: false, error: 'Message is required' });
-  }
-
-  // Set up SSE
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-  console.log('[AMA] 📡 SSE headers set');
-
-  try {
-    // Save user message
-    if (conversationId) {
-      console.log('[AMA] 💾 Saving user message to conversation');
-      await AMAService.saveMessage({
-        conversationId,
-        role: 'user',
-        content: message
-      });
-    }
-
-    // Get conversation history for context
-    let conversationHistory = [];
-    if (conversationId) {
-      conversationHistory = await AMAService.getMessages(conversationId, 20);
-      console.log('[AMA] 📜 Loaded conversation history', { messageCount: conversationHistory?.length });
-    }
-
-    // Process message with streaming
-    console.log('[AMA] 🔄 Starting processMessage');
-    let assistantContent = '';
-    let thinkingContent = '';
-    let sqlQuery = null;
-    let chartType = null;
-    let chartImageUrl = null;
-    let queryResult = null;
-    let responseTimeMs = null;
-    let chunkCount = 0;
-
-    for await (const chunk of AMAService.processMessage(message, conversationHistory, req.session.userId)) {
-      chunkCount++;
-      if (chunkCount === 1 || chunk.type === 'result' || chunk.type === 'error' || chunk.type === 'done') {
-        console.log('[AMA] 📦 Chunk received', { type: chunk.type, chunkNumber: chunkCount });
-      }
-      // Send each chunk as SSE
-      res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-
-      // Collect data for saving
-      if (chunk.type === 'thinking' && chunk.final) {
-        thinkingContent = chunk.content;
-      }
-      if (chunk.type === 'result') {
-        assistantContent = chunk.content;
-        sqlQuery = chunk.sql;
-        chartType = chunk.chartType;
-        chartImageUrl = chunk.chartImageUrl;
-        queryResult = chunk.data;
-      }
-      if (chunk.type === 'text') {
-        assistantContent = chunk.content;
-      }
-      if (chunk.type === 'error') {
-        assistantContent = chunk.content;
-      }
-      if (chunk.type === 'done') {
-        responseTimeMs = chunk.responseTime;
-      }
-    }
-
-    // Save assistant message
-    if (conversationId && assistantContent) {
-      await AMAService.saveMessage({
-        conversationId,
-        role: 'assistant',
-        content: assistantContent,
-        thinkingContent,
-        sqlQuery,
-        queryResult,
-        chartType,
-        chartImageUrl,
-        responseTimeMs,
-        modelUsed: 'gpt-4o-mini'
-      });
-    }
-
-    console.log('[AMA] ✅ Stream complete', { chunkCount, responseTimeMs });
-    res.end();
-  } catch (error) {
-    console.error('[AMA] 💥 Chat error:', {
-      error: error.message,
-      stack: error.stack?.substring(0, 500)
-    });
-    res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`);
-    res.end();
-  }
-});
-
-// Generate tracer report for a user
-app.get('/observability/ama/tracer/:userId', requireAuth, async (req, res) => {
-  try {
-    const result = await AMAService.generateTracerReport(req.params.userId);
-    if (result.error) {
-      return res.status(404).json({ success: false, error: result.error });
-    }
-    res.json({ success: true, report: result.report });
-  } catch (error) {
-    console.error('Error generating tracer report:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ============================================================
-// AMA CHATS - SUPER ADMIN ONLY: View all AMA conversations
-// ============================================================
-app.get('/observability/ama-chats', requireAuth, async (req, res) => {
-  // Super admin only check
-  if (req.session.userRole !== 'super_admin') {
-    return res.status(403).render('error', {
-      title: 'Access Denied',
-      message: 'You do not have permission to view this page.',
-      error: 'Super admin access required',
-      username: req.session.username,
-      userRole: req.session.userRole,
-      isAuthenticated: true
-    });
-  }
-
-  // Render the same AMA view but with admin mode enabled
-  res.render('ama', {
-    title: 'AMA Chats (Admin View)',
-    username: req.session.username,
-    userRole: req.session.userRole,
-    currentPage: 'ama-chats',
-    isAdminView: true  // Flag to enable admin-only features
-  });
-});
-
-// API endpoint to get ALL conversations for super admin (used by sidebar)
-app.get('/observability/ama-chats/conversations', requireAuth, async (req, res) => {
-  // Super admin only check
-  if (req.session.userRole !== 'super_admin') {
-    return res.status(403).json({ success: false, error: 'Super admin access required' });
-  }
-
-  try {
-    const { conversations } = await AMAService.getAllConversationsAdmin(100, 0);
-    res.json({ success: true, conversations });
-  } catch (error) {
-    console.error('Error fetching admin conversations:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// API endpoint to get messages for a specific conversation (super admin)
-app.get('/observability/ama-chats/:conversationId/messages', requireAuth, async (req, res) => {
-  // Super admin only check
-  if (req.session.userRole !== 'super_admin') {
-    return res.status(403).json({ success: false, error: 'Super admin access required' });
-  }
-
-  try {
-    const messages = await AMAService.getMessagesAdmin(req.params.conversationId);
-    res.json({ success: true, messages });
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+// The AMA page, its conversation data and the SSE chat, plus the super admin
+// view over every chat (/observability/ama-chats) — see routes/ama.routes.js.
+app.use('/observability', createAmaRouter({ requireAuth }));
 
 // Funnel Tracking routes (PUBLIC - no auth required, with CORS and rate limiting)
 app.use('/api/track', cors(trackingCorsOptions), trackingLimiter, funnelTrackingRoutes);

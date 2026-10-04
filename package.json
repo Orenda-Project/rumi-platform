@@ -1,6 +1,6 @@
 {
   "name": "rumi-platform",
-  "version": "2.11.2",
+  "version": "2.11.3",
   "description": "Rumi - AI Teaching Assistant for WhatsApp. Open-source platform for deploying AI-powered educational chatbots.",
   "private": true,
   "bin": {
@@ -49,6 +49,8 @@
     "node": ">=22.0.0"
   },
   "devDependencies": {
+    "@babel/parser": "7.28.6",
+    "@babel/traverse": "7.28.6",
     "@types/jest": "^29.5.12",
     "jest": "^29.7.0",
     "jest-environment-node": "^29.7.0"

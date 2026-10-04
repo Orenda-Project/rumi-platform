@@ -742,11 +742,12 @@
     </main>
   </div>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
     // AMA Chat Application
     (function() {
       // Admin view flag (passed from server)
-      const isAdminView = <%= locals.isAdminView ? 'true' : 'false' %>;
+      const isAdminView = <%- safeJson(!!locals.isAdminView) %>;
 
       // State
       let currentConversationId = null;
@@ -1034,7 +1035,7 @@
             html += `
               <div class="ama-chart-container">
                 <div class="ama-chart-wrapper" style="padding: 16px;">
-                  <img src="${chartImageUrl}" alt="Chart visualization" style="max-width: 100%; height: auto; border-radius: 8px;" />
+                  <img src="${safeUrl(chartImageUrl)}" alt="Chart visualization" style="max-width: 100%; height: auto; border-radius: 8px;" />
                 </div>
               </div>
             `;
@@ -1341,7 +1342,7 @@
 
                 return `
                 <div class="ama-history-item ${c.id === currentConversationId ? 'active' : ''}"
-                     data-id="${c.id}">
+                     data-id="${escapeHtml(c.id)}">
                   <span class="ama-history-item-title" data-on-click="loadConversation" data-args="${cspArgs(c.id)}">
                     ${displayTitle}
                   </span>
@@ -1457,12 +1458,7 @@
         }
       };
 
-      // Helper functions
-      function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      }
+      // Helper functions (escapeHtml and safeUrl: public/js/escape-html.js)
 
       // Simple markdown renderer for assistant messages
       function renderMarkdown(text) {
@@ -1514,6 +1510,14 @@
         });
       };
     })();
+  </script>
+  <script nonce="<%= cspNonce %>">
+    // The handlers the data-on-* attributes in this page name (see /js/csp-actions.js).
+    window.cspActions.register({
+      copyToClipboard: window.copyToClipboard,
+      deleteConversation: window.deleteConversation,
+      loadConversation: window.loadConversation,
+    });
   </script>
 </body>
 </html>

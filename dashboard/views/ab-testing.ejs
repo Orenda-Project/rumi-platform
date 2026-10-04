@@ -180,15 +180,16 @@
   <script nonce="<%= cspNonce %>">
     <% tests.forEach((test, testIndex) => { %>
       <% if (test.variants && test.variants.length > 0) { %>
+      {
         // Conversion Rate Bar Chart
-        const convCtx<%= testIndex %> = document.getElementById('conversionChart<%= testIndex %>').getContext('2d');
-        new Chart(convCtx<%= testIndex %>, {
+        const convCtx = document.getElementById(<%- safeJson('conversionChart' + testIndex) %>).getContext('2d');
+        new Chart(convCtx, {
           type: 'bar',
           data: {
-            labels: <%- JSON.stringify(test.variants.map(v => v.variant_name)) %>,
+            labels: <%- safeJson(test.variants.map(v => v.variant_name)) %>,
             datasets: [{
               label: 'Conversion Rate (%)',
-              data: <%- JSON.stringify(test.variants.map(v => v.impressions > 0 ? (v.conversions / v.impressions * 100).toFixed(1) : 0)) %>,
+              data: <%- safeJson(test.variants.map(v => v.impressions > 0 ? (v.conversions / v.impressions * 100).toFixed(1) : 0)) %>,
               backgroundColor: [
                 'rgba(99, 102, 241, 0.8)',
                 'rgba(16, 185, 129, 0.8)',
@@ -217,13 +218,13 @@
         });
 
         // Thompson Probability Doughnut Chart
-        const thompCtx<%= testIndex %> = document.getElementById('thompsonChart<%= testIndex %>').getContext('2d');
-        new Chart(thompCtx<%= testIndex %>, {
+        const thompCtx = document.getElementById(<%- safeJson('thompsonChart' + testIndex) %>).getContext('2d');
+        new Chart(thompCtx, {
           type: 'doughnut',
           data: {
-            labels: <%- JSON.stringify(test.variants.map(v => v.variant_name)) %>,
+            labels: <%- safeJson(test.variants.map(v => v.variant_name)) %>,
             datasets: [{
-              data: <%- JSON.stringify(test.variants.map(v => (v.thompsonProb * 100).toFixed(1))) %>,
+              data: <%- safeJson(test.variants.map(v => (v.thompsonProb * 100).toFixed(1))) %>,
               backgroundColor: [
                 'rgb(99, 102, 241)',
                 'rgb(16, 185, 129)',
@@ -249,6 +250,7 @@
             }
           }
         });
+      }
       <% } %>
     <% }); %>
   </script>

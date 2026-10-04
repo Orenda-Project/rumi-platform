@@ -437,6 +437,7 @@
     </div>
   </div>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
     // Filter functionality
     const roleFilter = document.getElementById('roleFilter');
@@ -604,7 +605,7 @@
                   <svg class="h-5 w-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
-                  <p class="text-sm text-red-700">${errorMessage}</p>
+                  <p class="text-sm text-red-700">${escapeHtml(errorMessage)}</p>
                 </div>
               </div>`;
             return;
@@ -654,7 +655,7 @@
                 </svg>
                 <div>
                   <p class="text-sm font-medium text-red-700">Failed to load scope data</p>
-                  <p class="text-xs text-red-600 mt-1">${error.message || 'Please try again or contact support.'}</p>
+                  <p class="text-xs text-red-600 mt-1">${escapeHtml(error.message || 'Please try again or contact support.')}</p>
                 </div>
               </div>
             </div>`;

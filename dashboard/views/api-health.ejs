@@ -101,6 +101,7 @@
     Rumi v<%= typeof version !== 'undefined' ? version : '2.1.0' %> | Last Updated: Nov 6, 2025
   </footer>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
     let lastUpdated = null;
 
@@ -136,11 +137,11 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <p class="text-sm text-muted-foreground">Total Monthly Cost</p>
-            <p class="text-2xl font-bold text-foreground">$${data.totalCost}</p>
+            <p class="text-2xl font-bold text-foreground">$${escapeHtml(data.totalCost)}</p>
           </div>
           <div>
             <p class="text-sm text-muted-foreground">Projected Cost</p>
-            <p class="text-2xl font-bold text-foreground">$${data.projectedCost}</p>
+            <p class="text-2xl font-bold text-foreground">$${escapeHtml(data.projectedCost)}</p>
           </div>
           <div>
             <p class="text-sm text-muted-foreground">Services Status</p>
@@ -163,10 +164,10 @@
     // Update services grid
     function updateServicesGrid(services) {
       const gridHTML = services.map(service => {
-        const statusClass = `status-${service.status}`;
+        const statusClass = `status-${escapeHtml(service.status)}`;
 
         // Null-safe percentage handling
-        const percentage = service.usage?.percentage ?? 0;
+        const percentage = Number(service.usage?.percentage ?? 0);
         const progressClass = percentage >= 90 ? 'progress-critical' :
                               percentage >= 75 ? 'progress-warning' : 'progress-healthy';
 
@@ -182,7 +183,7 @@
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center">
                 <span class="status-indicator ${statusClass}"></span>
-                <h3 class="text-lg font-semibold text-foreground">${service.service}</h3>
+                <h3 class="text-lg font-semibold text-foreground">${escapeHtml(service.service)}</h3>
               </div>
               ${service.isEstimated ? '<span class="text-xs text-muted-foreground italic">Estimated</span>' : ''}
             </div>
@@ -190,7 +191,7 @@
             <div class="mb-4">
               <div class="flex justify-between text-sm text-muted-foreground mb-1">
                 <span>Usage</span>
-                <span>${current} / ${limit === 'unlimited' ? '∞' : limit} ${unit}</span>
+                <span>${escapeHtml(current)} / ${limit === 'unlimited' ? '∞' : escapeHtml(limit)} ${escapeHtml(unit)}</span>
               </div>
               <div class="progress-bar">
                 <div class="progress-fill ${progressClass}" style="width: ${percentage}%"></div>
@@ -201,20 +202,20 @@
             ${costCurrent > 0 ? `
               <div class="mb-4">
                 <p class="text-sm text-muted-foreground">Cost This Month</p>
-                <p class="text-xl font-bold text-foreground">$${costCurrent}</p>
-                <p class="text-xs text-muted-foreground">Projected: $${costProjected}</p>
+                <p class="text-xl font-bold text-foreground">$${escapeHtml(costCurrent)}</p>
+                <p class="text-xs text-muted-foreground">Projected: $${escapeHtml(costProjected)}</p>
               </div>
             ` : ''}
 
             <div class="text-xs text-muted-foreground space-y-1">
               ${Object.entries(service.details).slice(0, 3).map(([key, value]) => {
                 if (typeof value === 'object') return '';
-                return `<p><span class="font-medium">${formatKey(key)}:</span> ${value}</p>`;
+                return `<p><span class="font-medium">${escapeHtml(formatKey(key))}:</span> ${escapeHtml(value)}</p>`;
               }).join('')}
             </div>
 
             ${service.externalLink ? `
-              <a href="${service.externalLink}" target="_blank" class="text-xs text-indigo-600 hover:text-indigo-800 mt-2 inline-block">
+              <a href="${safeUrl(service.externalLink)}" target="_blank" class="text-xs text-indigo-600 hover:text-indigo-800 mt-2 inline-block">
                 View Dashboard →
               </a>
             ` : ''}
@@ -233,7 +234,7 @@
       }
 
       document.getElementById('warningsSection').classList.remove('hidden');
-      const warningsHTML = warnings.map(warning => `<p class="mt-1">${warning}</p>`).join('');
+      const warningsHTML = warnings.map(warning => `<p class="mt-1">${escapeHtml(warning)}</p>`).join('');
       document.getElementById('warningsList').innerHTML = warningsHTML;
     }
 
