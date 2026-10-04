@@ -1,6 +1,6 @@
 {
   "name": "rumi-dashboard",
-  "version": "2.11.1",
+  "version": "2.11.2",
   "description": "Admin Dashboard for Rumi WhatsApp Bot",
   "main": "index.js",
   "scripts": {
