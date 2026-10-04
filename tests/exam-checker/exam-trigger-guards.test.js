@@ -70,6 +70,7 @@ const {
   handleExamText,
   handleExamImage,
   EXAM_CHECK_KEYWORDS,
+  PHRASE_TRIGGER_MAX_WORDS,
 } = require('../../bot/shared/handlers/exam-checker.handler');
 const { SESSION_STATES } = require('../../bot/shared/services/exam-checker/exam-checker.orchestrator');
 
@@ -123,12 +124,22 @@ describe('shouldTriggerExamChecker — whole command or whole phrase only', () =
     expect(shouldTriggerExamChecker(`  ${command.toUpperCase()}  `)).toBe(true);
   });
 
-  it.each(PHRASES)('the phrase "%s" triggers inside a natural sentence', (phrase) => {
-    expect(shouldTriggerExamChecker(`please ${phrase} for class 5`)).toBe(true);
+  it.each(PHRASES)('the phrase "%s" triggers inside a short request', (phrase) => {
+    expect(shouldTriggerExamChecker(`${phrase} for class 5`)).toBe(true);
   });
 
   it('a phrase triggers whatever its case', () => {
     expect(shouldTriggerExamChecker('Please Check Exams for class 5')).toBe(true);
+  });
+
+  it.each(COMMANDS)('"%s" followed by punctuation still triggers', (command) => {
+    for (const mark of ['.', '!', '?', ',', '؟', '،', '!!']) {
+      expect(shouldTriggerExamChecker(`${command}${mark}`)).toBe(true);
+    }
+  });
+
+  it('the Arabic alef with hamza or madda matches the plain alef', () => {
+    expect(shouldTriggerExamChecker('تصحيح الإمتحان')).toBe(true);
   });
 
   it.each([
@@ -143,6 +154,30 @@ describe('shouldTriggerExamChecker — whole command or whole phrase only', () =
     'Hi Rumi <a href="https://example.org">sign in</a>',
   ])('"%s" does NOT trigger', (message) => {
     expect(shouldTriggerExamChecker(message)).toBe(false);
+  });
+
+  // A question, or a message longer than PHRASE_TRIGGER_MAX_WORDS, is a
+  // teacher talking about exams, not asking Rumi to check them.
+  const TALKING_ABOUT_EXAMS = [
+    'How do I grade papers fairly?',
+    'I need to check papers tonight, how to stay focused?',
+    'My exam check is next week, tips?',
+    'کل امتحان چیک ہوگا؟ تیاری کیسے کروں',
+    'check exams?',
+    'Can you help me mark exams for my class of forty children',
+  ];
+
+  it.each(TALKING_ABOUT_EXAMS)('"%s" (a question or a long message) does NOT trigger', (message) => {
+    expect(shouldTriggerExamChecker(message)).toBe(false);
+  });
+
+  it.each(TALKING_ABOUT_EXAMS)('"%s" as a photo caption still triggers', (message) => {
+    expect(shouldTriggerExamChecker(message, { caption: true })).toBe(true);
+  });
+
+  it(`a phrase in a message of exactly ${PHRASE_TRIGGER_MAX_WORDS} words triggers, one more does not`, () => {
+    expect(shouldTriggerExamChecker('please check exams for class 5')).toBe(true);
+    expect(shouldTriggerExamChecker('please check exams for class 5 today')).toBe(false);
   });
 });
 
@@ -172,6 +207,13 @@ describe('handleExamImage — captions use the same matcher', () => {
     expect(session().original_images).toHaveLength(1);
   });
 
+  it('a long caption that asks a question still opens a session', async () => {
+    const result = await handleExamImage(image('Can you grade papers like this one for my class?'), FROM, USER);
+
+    expect(result).toEqual({ handled: true });
+    expect(session().original_images).toHaveLength(1);
+  });
+
   it('a caption with a URL is not an exam image', async () => {
     const result = await handleExamImage(image('see https://example.org/exam/results'), FROM, USER);
 
@@ -183,11 +225,14 @@ describe('handleExamImage — captions use the same matcher', () => {
 describe('handleExamText — cancel leaves a session from every state', () => {
   const NON_TERMINAL = Object.values(SESSION_STATES)
     .filter((s) => !['completed', 'error', 'cancelled'].includes(s));
+  // While the answer key is collected a bare word may be the answer, so only
+  // "/cancel" ends the session there (exam-question-is-chat.test.js).
+  const cancelFor = (state) => (state === SESSION_STATES.COLLECTING_ANSWERS ? '/cancel' : 'cancel');
 
-  it.each(NON_TERMINAL)('"cancel" in %s cancels the session and says so', async (state) => {
+  it.each(NON_TERMINAL)('the cancel word in %s cancels the session and says so', async (state) => {
     openSession(state, state === SESSION_STATES.COLLECTING_IMAGES ? [] : ['https://files.example.test/p1.jpg']);
 
-    const result = await handleExamText(text('cancel'), FROM, USER);
+    const result = await handleExamText(text(cancelFor(state)), FROM, USER);
 
     expect(result).toEqual({ handled: true });
     expect(session().status).toBe(SESSION_STATES.CANCELLED);
@@ -202,9 +247,10 @@ describe('handleExamText — cancel leaves a session from every state', () => {
     expect(session().status).toBe(SESSION_STATES.CANCELLED);
   });
 
-  it.each(['cancel', 'Cancel', 'CANCEL!', ' cancel. ', 'stop', 'Stop', '/cancel', 'منسوخ', 'روکیں', 'إلغاء', 'الغاء'])(
+  it.each(['cancel', 'Cancel', 'CANCEL!', ' cancel. ', 'stop', 'Stop', '/cancel', 'منسوخ', 'منسوخ کریں', 'منسوخ  کریں!',
+    'روکیں', 'إلغاء', 'الغاء', 'ألغاء'])(
     '"%s" is a cancel word', async (word) => {
-      openSession(SESSION_STATES.COLLECTING_ANSWERS, ['https://files.example.test/p1.jpg']);
+      openSession(SESSION_STATES.CONFIRMING_SCHEME, ['https://files.example.test/p1.jpg']);
 
       const result = await handleExamText(text(word), FROM, USER);
 

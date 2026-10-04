@@ -23,10 +23,13 @@ Snap photos of the papers → a short "grading" wait → results come back with 
 
 A teacher starts a session with a command or a phrase:
 
-- **Commands** (`/exam`, `/exams`, `/grade`, `/checkexam`) count only as the whole message or its first word: `/exam` or `/exam class 5`. A command inside a sentence or a link (`https://example.org/exam/results`) does not start anything.
-- **Phrases** ("check exams", "grade papers", "امتحان چیک", "تصحيح امتحان" and the rest of `EXAM_CHECK_KEYWORDS` in `bot/shared/handlers/exam-checker.handler.js`) count only as whole words, anywhere in the message: "please check exams for class 5" starts a session, "recheck exams" does not. A photo's caption is matched the same way.
+- **Commands** (`/exam`, `/exams`, `/grade`, `/checkexam`) count only as the whole message or its first word: `/exam`, `/exam.` or `/exam class 5`. A command inside a sentence or a link (`https://example.org/exam/results`) does not start anything.
+- **Phrases** ("check exams", "grade papers", "امتحان چیک", "تصحيح امتحان" and the rest of `EXAM_CHECK_KEYWORDS` in `bot/shared/handlers/exam-checker.handler.js`) count only as whole words, and only in a short request: a message of 6 words or fewer (`PHRASE_TRIGGER_MAX_WORDS`) with no `?` or `؟`. "check exams", "please check exams for class 5" and "امتحان چیک کرو" start a session. "recheck exams" does not, and neither does a question or a longer message about exams ("How do I grade papers fairly?", "کل امتحان چیک ہوگا؟ تیاری کیسے کروں"): that is ordinary chat, answered and stored as usual. A teacher who wants the exam checker in a longer message can start it with `/exam`.
+- **Photo captions** are matched on whole words without the length and question rule, since the photo already says what the teacher wants: a photo captioned "Can you grade papers like this one?" starts a session.
 
-The words `cancel`, `/cancel`, `stop`, `منسوخ`, `روکیں`, `إلغاء` or `الغاء`, sent as the whole message, end the session from any step. A session that has no photos yet also ends, quietly, when the teacher sends ordinary chat instead; that message is answered as ordinary chat.
+The words `cancel`, `/cancel`, `stop`, `منسوخ`, `منسوخ کریں`, `روکیں`, `إلغاء` or `الغاء`, sent as the whole message, end the session. Case and punctuation are ignored, and `أ`, `إ` and `آ` count as `ا` (so `ألغاء` works too). One step is different: while Rumi is collecting the answer key, a one-word answer such as "Stop" is a real answer, so there only `/cancel` ends the session, and each answer prompt says so. A session that has no photos yet also ends, quietly, when the teacher sends ordinary chat instead; that message is answered as ordinary chat.
+
+The trigger and cancel words cover English, Urdu and Arabic. There are no Kiswahili words yet: on a Kiswahili deployment, teachers start with `/exam` (or a captioned photo in one of those languages) and stop with `/cancel`. Add Kiswahili phrases to `EXAM_CHECK_KEYWORDS` and `EXAM_CANCEL_WORDS` if you need them.
 
 ## Enable it
 
