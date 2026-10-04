@@ -14,12 +14,13 @@ The Content-Security-Policy blocks most injected scripts, but not injected marku
 hidden image. So the views must not inject anything in the first place. Since v2.11.3 they don't, and the tests
 below keep it that way.
 
-## On the server: three rules
+## On the server: four rules
 
 | You are writing | Use | Example |
 |---|---|---|
 | A value into the HTML (text or an attribute) | `<%= %>` | `<td><%= user.name %></td>` |
-| Data into an inline `<script>` | `<%- safeJson(x) %>` | `const users = <%- safeJson(users) %>;` |
+| Data into an inline `<script>` (strings, numbers, booleans, objects) | `<%- safeJson(x) %>`, no quotes around it | `const users = <%- safeJson(users) %>;` |
+| JSON into an attribute | `<%= JSON.stringify(x) %>` | `<div data-users="<%= JSON.stringify(users) %>">` |
 | A partial | `<%- include(...) %>` | `<%- include('partials/nav') %>` |
 
 - `<%= %>` escapes the value. Use it for everything that is not one of the other two.
@@ -27,8 +28,14 @@ below keep it that way.
   that cannot end the script. `JSON.stringify` alone is not enough: a string containing `</script>` closes the
   script block, and the rest of the string becomes markup. `safeJson` writes `<`, `>`, `&` and U+2028/U+2029 as
   `\uXXXX` escapes, and `undefined` as `null`.
-- `<%- %>` (raw output) is only for an include, a layout's `body`, or `safeJson(...)`. A partial is scanned by
-  the same test, so it has to follow the same rules.
+- `safeJson` is for a script body only, between `<script ...>` and `</script>`. It does not escape `"`, so in
+  an attribute a value like `x" onfocus=...` would end the attribute. In an attribute, `<%= JSON.stringify(x) %>`
+  escapes the quotes, and `JSON.parse(el.dataset.users)` reads it back.
+- Inside a script, never write `<%= %>`, not even in quotes (`const id = '<%= id %>';`). It escapes for HTML,
+  not for JavaScript: a value ending in `\` continues the string. Write `const id = <%- safeJson(id) %>;`;
+  numbers and booleans too.
+- `<%- %>` (raw output) is only for an include, a layout's `body`, or `safeJson(...)` inside a script. A partial
+  is scanned by the same test, so it has to follow the same rules.
 
 ## In the browser: escapeHtml and safeUrl
 
@@ -76,8 +83,8 @@ supported events, the placeholders (`"$event"`, `"$el"`, `"$value"`) and the bui
 
 | Test | What it checks |
 |---|---|
-| `tests/dashboard/ejs-raw-output-allowlist.test.js` | Every `<%- %>` in the admin and console views is an include, `body`, `safeJson(...)`, or a listed server-owned constant. |
-| `tests/dashboard/admin-view-escaping/html-sinks.test.js` | In the views' inline scripts, every value interpolated into built HTML is a literal, a number or date, a call to `escapeHtml` / `safeUrl` / `cspArgs`, or a reviewed exception. |
+| `tests/dashboard/ejs-raw-output-allowlist.test.js` | Every `<%- %>` in the admin and console views is an include, `body`, `safeJson(...)` inside a script body, or a listed server-owned constant; no `<%= %>` inside a script body. |
+| `tests/dashboard/admin-view-escaping/html-sinks.test.js` | In the views' inline scripts, every value interpolated into built HTML is a literal, a number or date, a call to `escapeHtml` / `safeUrl` / `cspArgs`, or a reviewed exception. A variable declared once is checked by what it is set to, so `const title = c.title` fails like `c.title`. |
 | `tests/dashboard/csp-actions-views.test.js` | Each view registers exactly the `data-on-*` handler names it uses, after `csp-actions.js` loads. |
 | `tests/dashboard/admin-csp.test.js` | No script without the nonce, no inline handlers, no `javascript:` URLs, no Tailwind CDN. |
 
@@ -99,7 +106,9 @@ a chat or a model, and write down why:
   expression and the reason. Only a value the server owns outright qualifies (no user, database or request
   text).
 - **HTML built in a script:** add `'view.ejs: expression': 'reason'` to `REVIEWED` in `html-sinks.test.js`, or a
-  pattern to `REVIEWED_PATTERNS`. Good reasons: "count computed by the route", "one of three constant labels".
+  pattern to `REVIEWED_PATTERNS`. A bare variable name can be listed only when the scan cannot follow it to one
+  value (it is reassigned, built up with `+=`, a parameter or a loop variable); otherwise escape its value where
+  it is set. Good reasons: "count computed by the route", "one of three constant labels".
   "Comes from our database" is not a reason: the database holds what the public typed.
 
 Exceptions are reviewed in the pull request like code.

@@ -68,7 +68,8 @@ are not affected.
 - **Escaping.** The CSP does not stop injected markup, so values from the public
   (names, chat, transcripts, model replies) are always text. In a view, write them
   with `<%= %>`; data for an inline script with `<%- safeJson(x) %>`
-  (`lib/safe-json.js`); and keep `<%- %>` for includes. HTML built in a script passes
+  (`lib/safe-json.js`), never `<%= %>` inside a script; JSON in an attribute with
+  `<%= JSON.stringify(x) %>`; and keep `<%- %>` for includes. HTML built in a script passes
   every value through `escapeHtml()` or, for `href`/`src`, `safeUrl()`
   (`public/js/escape-html.js`). `tests/dashboard/ejs-raw-output-allowlist.test.js` and
   `tests/dashboard/admin-view-escaping/html-sinks.test.js` check this.
