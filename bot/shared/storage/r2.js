@@ -417,7 +417,7 @@ function extractKeyFromUrl(url) {
   // We need to extract everything after the bucket name
   const bucketIndex = url.indexOf(`/${BUCKET_NAME}/`);
   if (bucketIndex === -1) {
-    throw new Error(`Could not extract R2 key from URL: ${url}`);
+    throw new Error(`Could not extract R2 key from URL: ${redactUrl(url)}`);
   }
   return url.substring(bucketIndex + `/${BUCKET_NAME}/`.length);
 }

@@ -96,7 +96,7 @@ function extractKeyFromUrl(url) {
   // We need to extract everything after the bucket name
   const bucketIndex = url.indexOf(`/${BUCKET_NAME}/`);
   if (bucketIndex === -1) {
-    throw new Error(`Could not extract R2 key from URL: ${url}`);
+    throw new Error(`Could not extract R2 key from URL: ${redactUrl(url)}`);
   }
   return url.substring(bucketIndex + `/${BUCKET_NAME}/`.length);
 }
@@ -163,7 +163,7 @@ async function generatePresignedUrl(r2Url, expiresIn = 3600) {
     console.log(`✅ Generated presigned URL for: ${key} (expires in ${expiresIn}s)`);
     return presignedUrl;
   } catch (error) {
-    console.error('❌ Error generating presigned URL:', error.message);
+    console.error('❌ Error generating presigned URL:', redactUrl(error.message));
     return null;
   }
 }
