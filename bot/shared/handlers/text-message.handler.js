@@ -345,8 +345,16 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     try {
       // A command (/menu, /reading test) still runs while a name is pending;
       // it is not the name. The name question comes back after a feature.
+      // Nor is a cancel word ("منسوخ") while an exam session is open: it ends it.
       let isPendingName = !String(messageBody || '').trim().startsWith('/')
         && await FeatureRegistrationService.isPendingName(user.id);
+      if (isPendingName) {
+        const ExamCheckerHandler = require('./exam-checker.handler');
+        if (ExamCheckerHandler.isExamCancelCommand(messageBody)
+          && await ExamCheckerHandler.hasActiveExamSession(user.id)) {
+          isPendingName = false;
+        }
+      }
 
       // On Matrix the name question may have been offered unasked (see
       // handleGeneralConversation), so it must not block use: "no thanks"
