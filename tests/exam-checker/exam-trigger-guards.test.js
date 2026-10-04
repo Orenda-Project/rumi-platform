@@ -12,6 +12,9 @@
  * messaging service, R2 and the logger.
  */
 
+// The exam-checker index loads the annotation service, which needs pdfkit
+// from bot/node_modules; CI runs this suite before bot deps install.
+jest.mock('pdfkit', () => ({}), { virtual: true });
 jest.mock('../../bot/shared/config/supabase', () => ({ from: jest.fn() }));
 jest.mock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
 jest.mock('../../bot/shared/storage/r2', () => ({
