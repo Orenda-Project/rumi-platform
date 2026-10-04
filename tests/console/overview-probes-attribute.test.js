@@ -11,13 +11,15 @@ const { createRequire } = require('module');
 
 const BOT = path.join(__dirname, '../../bot');
 const DASHBOARD = path.join(__dirname, '../../dashboard');
-const HAVE_DEPS = fs.existsSync(path.join(BOT, 'node_modules', 'ejs'))
-  && fs.existsSync(path.join(DASHBOARD, 'node_modules', 'jsdom'));
+// The console renders with bot/'s ejs; CI runs jest before it installs bot/,
+// so fall back to the dashboard's copy of the same library.
+const EJS_FROM = [BOT, DASHBOARD].find((dir) => fs.existsSync(path.join(dir, 'node_modules', 'ejs')));
+const HAVE_DEPS = Boolean(EJS_FROM) && fs.existsSync(path.join(DASHBOARD, 'node_modules', 'jsdom'));
 const describeIf = HAVE_DEPS || process.env.CI ? describe : describe.skip;
 
 describeIf('console overview: data-probes', () => {
   test('reads back as the probe list through getAttribute', async () => {
-    const ejs = createRequire(path.join(BOT, 'package.json'))('ejs');
+    const ejs = createRequire(path.join(EJS_FROM, 'package.json'))('ejs');
     const { JSDOM } = createRequire(path.join(DASHBOARD, 'package.json'))('jsdom');
     // The locals bot/console/routes/pages.js passes to 'overview'.
     const html = await ejs.renderFile(path.join(BOT, 'console/views/overview.ejs'), {
