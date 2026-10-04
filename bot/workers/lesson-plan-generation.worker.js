@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { logToFile } = require('../shared/utils/logger');
+const { redactUrl } = require('../shared/utils/redact-url');
 const supabase = require('../shared/config/supabase');
 const ContentService = require('../shared/services/content.service');
 const WhatsAppService = require('../shared/services/whatsapp.service');
@@ -74,7 +75,7 @@ class LessonPlanGenerationWorker {
         logToFile('⏭️ Request already completed, skipping duplicate processing', {
           requestId,
           completedAt: existingRequest.completed_at,
-          gammaUrl: existingRequest.gamma_url
+          gammaUrl: redactUrl(existingRequest.gamma_url)
         });
         return; // Exit without processing
       }
@@ -129,7 +130,7 @@ class LessonPlanGenerationWorker {
 
       logToFile('Gamma generation complete', {
         requestId,
-        gammaUrl: result.gammaUrl,
+        gammaUrl: redactUrl(result.gammaUrl),
         hasPdf: !!result.pdfUrl
       });
 

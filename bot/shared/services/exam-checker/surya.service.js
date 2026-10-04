@@ -14,6 +14,7 @@
 
 const axios = require('axios');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 
 // Datalab Surya API configuration
 const SURYA_API_URL = process.env.SURYA_API_URL || 'https://api.datalab.to/v1/detection';
@@ -35,7 +36,7 @@ class SuryaService {
     }
 
     try {
-      logToFile('🔍 Surya: Detecting text boxes', { imageUrl: imageUrl.substring(0, 50) + '...' });
+      logToFile('🔍 Surya: Detecting text boxes', { imageUrl: redactUrl(imageUrl) });
 
       const response = await axios.post(
         SURYA_API_URL,

@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.2] - 2026-10-04
+
+**Security patch: the teacher portal's sign-in limits are back on, reset codes can't be guessed, logs no longer
+open teachers' files, and the admin pages send a strict Content-Security-Policy.** Every deployment of v2.11.1 or earlier is affected; upgrade.
+
+> **Upgrade notes.** Apply `infrastructure/supabase/migrations/V2.11.2__portal_reset_attempts.sql` (adds
+> `users.password_reset_attempts`; additive) **before** deploying the new dashboard: without the column every
+> reset-code check fails. Give the dashboard `REDIS_URL` and `SESSION_SECRET` so the new limits are shared by every
+> worker and replica. Tell the dashboard how many proxies sit in front of it (`TRUST_PROXY`, default `1`) or which
+> header carries the caller's address (`PORTAL_CLIENT_IP_HEADER`, e.g. `x-real-ip` on Railway); see
+> `docs/running-in-public.md`. If your proxy adds a CSP to the admin pages, remove it or make it no looser.
+
+### Security
+
+- **The portal's sign-in rate limits were switched off; they are on again.** Since they were added, the limiters on
+  `/api/portal/login`, `/setup`, `/validate-token`, `/request-reset` and `/verify-reset-code` allowed 10,000
+  requests a minute ("TEMPORARY: DISABLED FOR TESTING"), and `/reset-password` had none, so passwords and reset codes
+  could be brute-forced. Each route now has a per-IP limit and, where the request names an account, a per-phone-number
+  limit: 10 failed sign-ins per IP and 5 per number per 15 minutes; 5 reset requests or code checks per IP and per
+  number. Counts live in Redis when the dashboard has `REDIS_URL` (shared by cluster workers and replicas), in memory
+  otherwise; a Redis outage never fails a request. Every 429 says "Too many attempts. Please try again later.",
+  whether or not the account exists. `/login`, `/login/` and `/LOGIN` share one count. The admin sign-in limiter now
+  shares its count across cluster workers too (`dashboard/lib/portal-auth-limits.js`).
+- **Password-reset codes come from `crypto.randomInt` and die after 5 wrong tries.** They came from `Math.random()`,
+  any number of guesses was allowed during their 10 minutes, and the code was written to the log on every check.
+  Now each code allows `PORTAL_RESET_CODE_MAX_ATTEMPTS` (5) wrong tries, each try is claimed in the database before
+  the comparison (parallel guesses cannot exceed it), and then the code is cleared; a new one can be requested once
+  the old one's 10 minutes are up. Comparison is constant-time, a correct code is single use, and no log line carries
+  the code or a full phone number.
+- **No openable file URL in the logs.** Quiz and coaching reports, lesson-plan exports from Gamma (public to anyone
+  holding the URL), videos, reading audio and channel media were logged with full, often presigned, URLs. Logs now
+  carry `host#sha256:<12 hex>.ext` (`redactUrl` in `bot/shared/utils/redact-url.js`), and the full Gamma status
+  response and Kie.ai job bodies are no longer dumped. Error messages that carried a URL (`Could not extract R2 key
+  from URL: …`, channel send-from-URL failures) are redacted too. What is stored and sent to teachers is unchanged.
+- **The per-IP limits count the real caller.** `trust proxy` was hard-coded to one hop: a dashboard reached directly let
+  any client choose its address with `X-Forwarded-For`, and behind two hops every caller counted as the edge. Now
+  `TRUST_PROXY` (hop count, `false`, or an IP/CIDR list; `true` is refused) and `PORTAL_CLIENT_IP_HEADER` set it, and
+  every limiter uses the same client address (`dashboard/lib/client-ip.js`).
+- **Strict Content-Security-Policy on the admin pages.** The dashboard sent none, so a deployment's proxy had to allow
+  `'unsafe-inline'` and whole CDNs for the admin pages to work. Every admin view now gets a per-response nonce, with no
+  `'unsafe-inline'`, wildcard or CDN origin in `script-src`; the 64 inline event handlers became `data-on-*`
+  attributes bound by `public/js/csp-actions.js`; the Tailwind play runtime is gone (CSS built with
+  `npm run build:css`); Chart.js 4.4.0, ApexCharts 4.7.0 and wordcloud2 1.2.2 are served from `public/vendor/`, and
+  Mermaid is pinned to one file with Subresource Integrity (`dashboard/lib/admin-csp.js`). Five admin views no route
+  rendered were removed. Admin chip lists and broadcast search no longer put user input into `innerHTML`.
+
+### Added
+
+- Settings (dashboard, all optional): `PORTAL_AUTH_LIMIT_WINDOW_MINUTES` (15), `PORTAL_LOGIN_LIMIT_PER_IP` (10),
+  `PORTAL_LOGIN_LIMIT_PER_ACCOUNT` (5), `PORTAL_RESET_LIMIT_PER_IP` (5), `PORTAL_RESET_LIMIT_PER_ACCOUNT` (5),
+  `PORTAL_SETUP_LIMIT_PER_IP` (10), `PORTAL_DATA_LIMIT_PER_MINUTE` (300), `PORTAL_RESET_CODE_MAX_ATTEMPTS` (5),
+  `TRUST_PROXY` (1), `PORTAL_CLIENT_IP_HEADER` (unset).
+  Documented in `docs/running-in-public.md` and `docs/features/teacher-portal.md`.
+- `tests/setup/no-file-urls-in-logs.test.js`: fails when any log call or `new Error(…)` in `bot/` or `dashboard/`
+  carries a raw file URL. `tests/dashboard/admin-csp.test.js`: fails on `'unsafe-inline'`, a CDN origin, an unpinned
+  script or an inline handler in the admin views.
+
 ## [2.11.1] - 2026-10-04
 
 **Rumi Messenger, for a public link, finished off.** "Rumi is typing…" now shows in Element for the whole of a slow job,

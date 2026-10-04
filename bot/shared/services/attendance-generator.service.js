@@ -7,6 +7,7 @@
 
 const ExcelJS = require('exceljs');
 const { logToFile } = require('../utils/logger');
+const { redactUrl } = require('../utils/redact-url');
 const AttendanceRegister = require('./attendance-register.service');
 
 /**
@@ -356,7 +357,7 @@ class AttendanceGeneratorService {
 
     logToFile('Attendance Excel uploaded to R2', {
       key,
-      url,
+      url: redactUrl(url),
       fileName
     });
 

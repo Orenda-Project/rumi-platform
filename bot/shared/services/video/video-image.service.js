@@ -9,6 +9,7 @@
  */
 
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { uploadVideoAsset, isPermanentR2Url, toPublicUrl } = require('../../storage/r2');
 const fs = require('fs');
 const path = require('path');
@@ -217,7 +218,7 @@ class VideoImageService {
         videoRequestId,
         filename,
         taskId: existingTask.task_id,
-        r2Url: existingTask.result_url,
+        r2Url: redactUrl(existingTask.result_url),
         ephemeralUrl: existingTask.ephemeral_url ? 'available' : 'not stored'
       });
       // Return both URLs - ephemeral might be expired but r2Url is permanent
@@ -233,7 +234,7 @@ class VideoImageService {
       logToFile('Re-uploading ephemeral URL to R2', {
         videoRequestId,
         filename,
-        ephemeralUrl
+        ephemeralUrl: redactUrl(ephemeralUrl)
       });
       // Download from ephemeral URL and upload to R2
       try {
@@ -255,7 +256,7 @@ class VideoImageService {
           .eq('video_request_id', videoRequestId)
           .eq('filename', filename);
 
-        logToFile('Ephemeral URL migrated to R2', { videoRequestId, filename, r2Url });
+        logToFile('Ephemeral URL migrated to R2', { videoRequestId, filename, r2Url: redactUrl(r2Url) });
         return { r2Url, ephemeralUrl };
       } catch (err) {
         logToFile('Failed to migrate ephemeral URL, will regenerate', {
@@ -286,7 +287,7 @@ class VideoImageService {
       videoRequestId,
       filename,
       mode: isImageToImage ? 'image-to-image' : 'text-to-image',
-      referenceImage: isImageToImage ? referenceImageUrl : null
+      referenceImage: isImageToImage ? redactUrl(referenceImageUrl) : null
     });
 
     // Issue #36: Clean prompt to remove meta-instructions that get rendered literally
@@ -320,9 +321,9 @@ class VideoImageService {
       logToFile('Using reference image for i2i', {
         videoRequestId,
         filename,
-        originalRef: referenceImageUrl.substring(0, 80) + '...',
+        originalRef: redactUrl(referenceImageUrl),
         isKieUrl,
-        usingUrl: publicRefUrl.substring(0, 80) + '...'
+        usingUrl: redactUrl(publicRefUrl)
       });
 
       apiInput.image_input = [publicRefUrl];
@@ -344,7 +345,7 @@ class VideoImageService {
     const taskId = createData.data?.taskId;
 
     if (!taskId) {
-      throw new Error(`Failed to create image task: ${JSON.stringify(createData)}`);
+      throw new Error(`Failed to create image task: ${redactUrl(JSON.stringify(createData))}`);
     }
 
     // PHASE 3: Store task ID before polling
@@ -386,7 +387,7 @@ class VideoImageService {
     let r2Url;
     try {
       r2Url = await uploadVideoAsset(localPath, videoRequestId, `${filename}.png`);
-      logToFile('Image uploaded to R2', { videoRequestId, filename, r2Url });
+      logToFile('Image uploaded to R2', { videoRequestId, filename, r2Url: redactUrl(r2Url) });
     } catch (err) {
       logToFile('R2 upload failed, using ephemeral URL as fallback', {
         videoRequestId,
@@ -413,8 +414,8 @@ class VideoImageService {
       videoRequestId,
       filename,
       localPath,
-      r2Url,
-      ephemeralUrl: ephemeralUrl.substring(0, 80) + '...'
+      r2Url: redactUrl(r2Url),
+      ephemeralUrl: redactUrl(ephemeralUrl)
     });
 
     // Return BOTH URLs - r2Url for storage, ephemeralUrl for Kie.ai
@@ -461,7 +462,7 @@ class VideoImageService {
             attempt: i + 1,
             maxAttempts,
             state,
-            fullResponse: JSON.stringify(pollData).substring(0, 500) // Truncate for log limits
+            fullResponse: redactUrl(JSON.stringify(pollData)).substring(0, 500) // Truncate for log limits
           });
         }
 
@@ -477,7 +478,7 @@ class VideoImageService {
           logToFile('Kie.ai task FAILED - Full details', {
             taskId,
             failMsg: pollData.data.failMsg,
-            fullData: JSON.stringify(pollData.data),
+            fullData: redactUrl(JSON.stringify(pollData.data)),
             attempt: i + 1
           });
           throw new Error(`Task failed: ${pollData.data.failMsg}`);

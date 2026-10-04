@@ -62,6 +62,7 @@
 const fs = require('fs');
 const path = require('path');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const { prefixFor } = require('./channel-registry');
 
@@ -183,14 +184,14 @@ async function resolveMediaBuffer(url) {
     } catch (error) {
       if (!isAbsoluteHttpUrl(url)) throw error;
       logToFile('⚠️ Discord: R2 download failed — fetching the URL directly instead', {
-        url, error: error.message,
+        url: redactUrl(url), error: redactUrl(error.message),
       });
     }
   }
 
   if (!isAbsoluteHttpUrl(url)) {
     throw new Error(
-      `Cannot send media from "${url}": it is not an absolute URL, and R2 is not configured `
+      `Cannot send media from "${redactUrl(url)}": it is not an absolute URL, and R2 is not configured `
       + '(set R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY to read private objects).'
     );
   }
@@ -208,8 +209,8 @@ function removeEmotionTags(text) {
 
 /** Surfaces discord.js's DiscordAPIError detail so a permission/intent problem is diagnosable from the log line alone. */
 function discordErrorDetail(error) {
-  if (error?.code) return { code: error.code, message: error.message };
-  return { message: error?.message };
+  if (error?.code) return { code: error.code, message: redactUrl(error.message) };
+  return { message: redactUrl(error?.message) };
 }
 
 async function sendMessage(to, message) {
@@ -346,7 +347,7 @@ async function sendDocumentFromUrl(to, documentUrl, filename, caption) {
     const buffer = await resolveMediaBuffer(documentUrl);
     return await sendFile(to, buffer, filename, caption);
   } catch (error) {
-    logToFile('❌ Discord: error sending document from URL', { ...discordErrorDetail(error), documentUrl });
+    logToFile('❌ Discord: error sending document from URL', { ...discordErrorDetail(error), documentUrl: redactUrl(documentUrl) });
     return false;
   }
 }
@@ -356,7 +357,7 @@ async function sendAudioFromUrl(to, audioUrl) {
     const buffer = await resolveMediaBuffer(audioUrl);
     return await sendFile(to, buffer, 'audio.mp3');
   } catch (error) {
-    logToFile('❌ Discord: error sending audio from URL', { ...discordErrorDetail(error), audioUrl });
+    logToFile('❌ Discord: error sending audio from URL', { ...discordErrorDetail(error), audioUrl: redactUrl(audioUrl) });
     return false;
   }
 }
@@ -368,7 +369,7 @@ async function sendAudioFromUrlReturningId(to, audioUrl) {
     const sent = await target.send({ files: [{ attachment: buffer, name: 'audio.mp3' }] });
     return sent?.id || null;
   } catch (error) {
-    logToFile('❌ Discord: error sending audio from URL (returning id)', { ...discordErrorDetail(error), audioUrl });
+    logToFile('❌ Discord: error sending audio from URL (returning id)', { ...discordErrorDetail(error), audioUrl: redactUrl(audioUrl) });
     return null;
   }
 }
@@ -378,7 +379,7 @@ async function sendImageFromUrl(to, imageUrl, caption = '') {
     const buffer = await resolveMediaBuffer(imageUrl);
     return await sendFile(to, buffer, 'image.png', caption);
   } catch (error) {
-    logToFile('❌ Discord: error sending image from URL', { ...discordErrorDetail(error), imageUrl });
+    logToFile('❌ Discord: error sending image from URL', { ...discordErrorDetail(error), imageUrl: redactUrl(imageUrl) });
     return false;
   }
 }
@@ -427,7 +428,7 @@ async function sendVideoFromUrl(to, videoUrl, caption = '') {
     await target.send({ content: videoUrl, embeds: [embed] });
     return true;
   } catch (error) {
-    logToFile('❌ Discord: error sending video from URL', { ...discordErrorDetail(error), videoUrl });
+    logToFile('❌ Discord: error sending video from URL', { ...discordErrorDetail(error), videoUrl: redactUrl(videoUrl) });
     return false;
   }
 }
@@ -516,7 +517,7 @@ async function sendImageWithButtons(to, imageUrl, bodyText, buttons) {
     await target.send({ content: bodyText, files: [{ attachment: buffer, name: 'image.png' }], components: [row] });
     return true;
   } catch (error) {
-    logToFile('❌ Discord: error sending image with buttons', { ...discordErrorDetail(error), imageUrl });
+    logToFile('❌ Discord: error sending image with buttons', { ...discordErrorDetail(error), imageUrl: redactUrl(imageUrl) });
     return false;
   }
 }

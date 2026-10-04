@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const supabase = require('../../config/supabase');
 const WhatsAppService = require('../whatsapp.service');
 const { htmlToPdf } = require('../../utils/html-to-pdf');
@@ -153,7 +154,7 @@ class QuizReportService {
         try { fs.unlinkSync(tempPath); } catch (_) {}
       }
 
-      logToFile('✅ Quiz report PDF sent', { quizId, pdfUrl, band: insight.band });
+      logToFile('✅ Quiz report PDF sent', { quizId, pdfUrl: redactUrl(pdfUrl), band: insight.band });
     } catch (pdfErr) {
       // Fail-safe: if the PDF pipeline breaks, still deliver the text summary
       logToFile('❌ PDF generation failed — falling back to text summary', { quizId, error: pdfErr.message });
@@ -182,7 +183,7 @@ class QuizReportService {
       })
       .eq('id', quizId);
 
-    logToFile('✅ Quiz report flow complete', { quizId, totalCompleted, pdfUrl, band: insight.band });
+    logToFile('✅ Quiz report flow complete', { quizId, totalCompleted, pdfUrl: redactUrl(pdfUrl), band: insight.band });
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────

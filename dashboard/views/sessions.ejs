@@ -6,7 +6,7 @@
   <title><%= title %> - Rumi Observability Portal</title>
   <link rel="stylesheet" href="/css/main.css">
   <link rel="icon" type="image/png" href="/images/rumi-logo.png">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/vendor/chart-4.4.0.umd.min.js"></script>
   <style>
     /* Word Cloud Styles */
     .refresh-btn {
@@ -209,7 +209,7 @@
   </div>
 
   <!-- Charts JavaScript -->
-  <script>
+  <script nonce="<%= cspNonce %>">
     // Get CSS variables
     const styles = getComputedStyle(document.documentElement);
     const primaryColor = `hsl(${styles.getPropertyValue('--primary')})`;
@@ -398,6 +398,6 @@
   </script>
 
   <!-- WordCloud2.js Library -->
-  <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
+  <script src="/vendor/wordcloud2-1.2.2.js"></script>
 </body>
 </html>

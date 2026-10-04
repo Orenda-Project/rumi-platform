@@ -44,6 +44,71 @@ Also:
    [monitoring](monitoring.md)). Lines with `Inbound rate limit: message dropped` and `Daily message cap reached`
    show the limits working.
 
+## On the teacher portal (dashboard)
+
+The portal's sign-in, setup and password-reset routes are public, so the dashboard limits them per client IP and
+per account (the phone number typed in). Either limit answers `429` with the same message, "Too many attempts.
+Please try again later.", whether or not the account exists. The counts live in Redis when the dashboard has
+`REDIS_URL` (shared by every worker and replica), otherwise in each process's memory. All values are optional
+([details](features/teacher-portal.md#sign-in-limits)).
+
+| Limit | Variable | Default |
+|---|---|---|
+| Window for every limit below, in minutes | `PORTAL_AUTH_LIMIT_WINDOW_MINUTES` | `15` |
+| Failed sign-ins per IP | `PORTAL_LOGIN_LIMIT_PER_IP` | `10` |
+| Failed sign-ins per phone number | `PORTAL_LOGIN_LIMIT_PER_ACCOUNT` | `5` |
+| Reset requests, code checks and new passwords per IP (each step counted apart) | `PORTAL_RESET_LIMIT_PER_IP` | `5` |
+| Reset requests and code checks per phone number | `PORTAL_RESET_LIMIT_PER_ACCOUNT` | `5` |
+| Setup-link checks and setups per IP | `PORTAL_SETUP_LIMIT_PER_IP` | `10` |
+| Every portal request per IP per minute | `PORTAL_DATA_LIMIT_PER_MINUTE` | `300` |
+| Wrong tries one reset code allows before it is cleared | `PORTAL_RESET_CODE_MAX_ATTEMPTS` | `5` |
+
+Many teachers in one school can share one IP. Successful sign-ins are not counted, but if a school still hits the
+per-IP limits, raise them rather than turning them off. Set `SESSION_SECRET`: it also keys the hash that keeps
+phone numbers out of the Redis keys.
+
+Run Redis for the dashboard too. Without it, or while it is down, each cluster worker and each replica counts on its
+own, so the real limit is the configured one times the number of processes: up to 4× on one dashboard with the
+default cluster (`dashboard/cluster.js` starts one worker per CPU, at most 4, unless `CLUSTER_WORKERS` says
+otherwise), and that again for every replica. A Redis outage also starts every count afresh.
+
+### Which address counts as the client
+
+The per-IP limits are only as good as the address they count. Tell the dashboard what sits in front of it:
+
+| In front of the dashboard | Set on the dashboard |
+|---|---|
+| Nothing: clients connect to the dashboard's port directly | `TRUST_PROXY=false` |
+| One proxy you run (one Caddy or nginx) | nothing (`TRUST_PROXY=1` is the default) |
+| Railway | `PORTAL_CLIENT_IP_HEADER=x-real-ip` |
+| Railway with your own edge proxy in front of the dashboard | `PORTAL_CLIENT_IP_HEADER=x-real-ip` if your edge passes Railway's `X-Real-IP` on unchanged; otherwise `TRUST_PROXY=2` |
+| Cloudflare, with the dashboard reachable only through it | `PORTAL_CLIENT_IP_HEADER=cf-connecting-ip` |
+
+- `TRUST_PROXY` is how many proxies to believe in `X-Forwarded-For` (`1`, `2`, ... up to `10`), `false` (or `0`)
+  for none, or a comma-separated list of the proxies' addresses (`loopback, 10.0.0.0/8`). `true` is refused: it
+  would believe any address a client writes in the header. An invalid value means the default `1`, with one
+  warning in the log.
+- Too low a count and every caller looks like your proxy, so one person's tries lock out everyone. Too high (or
+  `TRUST_PROXY=1` with nothing in front) and a client picks its own address with a made-up `X-Forwarded-For`, and
+  only the per-number limits hold.
+- Railway's edge sends `X-Forwarded-For: <caller>, <edge node>`, and the edge node changes between requests, so the
+  default count of one would see the edge node, not the caller. It also sets `X-Real-IP` to the caller and drops a
+  value the client sent, which is why the header is the right choice there.
+- `PORTAL_CLIENT_IP_HEADER` names a header holding the caller's address (`x-real-ip`, `cf-connecting-ip`,
+  `fly-client-ip`). The limits use its first value when it is a valid IP, and the usual address otherwise. Set it
+  **only** when the proxy in front always overwrites that header: if a client's own value can reach the
+  dashboard, that client chooses its own address. It applies to every per-IP limit, including the admin sign-in.
+
+Logs never carry a full file URL: the bot and the dashboard log a report, PDF or export link as its host and a
+short hash of its path (`pub-abc.r2.dev#sha256:1a2b3c4d5e6f.pdf`), so reading the logs does not open anyone's files.
+
+The admin pages (`/observability/*`) send their own strict Content-Security-Policy: scripts only from the dashboard
+itself or from inline blocks carrying a per-response nonce, with no `'unsafe-inline'`, no wildcard and no CDN origin
+(Mermaid, on the schema page, is one exact file pinned with Subresource Integrity). Tailwind is compiled at build time
+(`npm run build:css` in `dashboard/`) and the chart libraries are served from `dashboard/public/vendor/`, so your
+proxy does not need to allow `cdn.tailwindcss.com` or `cdn.jsdelivr.net`. If the proxy adds its own CSP to these
+pages, remove it or make it no looser: browsers enforce both. Details: `dashboard/README.md`.
+
 ## On the messenger (Matrix / Synapse)
 
 The [Rumi Messenger](channels/matrix.md) server is set up for a closed school, where every account is created by
@@ -70,6 +135,12 @@ Bot-side, Rumi still answers only users on its own homeserver (plus any in `MATR
 - [ ] The `.env` values above are set, and `rumi doctor` is green.
 - [ ] The OpenRouter key is the public deployment's own key and has a credit limit.
 - [ ] Redis is running and `REDIS_URL` points at it.
+- [ ] The dashboard has `REDIS_URL` and `SESSION_SECRET` too. Try 11 wrong portal sign-ins from one address and
+      expect the 11th to answer "Too many attempts".
+- [ ] The dashboard's client address is set for what is in front of it (`TRUST_PROXY` or
+      `PORTAL_CLIENT_IP_HEADER`, see the table above). Check it: after those 11 tries, a wrong sign-in from a
+      second address (a phone on mobile data) still answers "wrong password", not "Too many attempts"; and from
+      the first address, a made-up `X-Forwarded-For` header still gets "Too many attempts".
 - [ ] Log alerts watch for `model_budget_exhausted`.
 - [ ] (Matrix) Registration is closed on Synapse, federation is off, the directory is scoped, the admin API is
       not public, and accounts come from your sign-up service.

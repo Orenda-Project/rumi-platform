@@ -29,13 +29,14 @@
 
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { generatePresignedUrl, generatePresignedUrls, isValidR2Url } = require('../services/r2.service');
 const { widenPortalAppSession } = require('../lib/portal-app-origins');
+const { createPortalAuthLimiters } = require('../lib/portal-auth-limits');
 const { portalChannels } = require('../lib/portal-channels');
+const { redactUrl } = require('../lib/redact-url');
 const { createCoachRouter } = require('./portal-coach.routes');
 const { canUseCoachView } = require('../services/coach-observations.service');
 
@@ -62,41 +63,11 @@ function getR2Client() {
 // ============================================================================
 
 /**
- * SECURITY: Extra aggressive rate limiting for public authentication endpoints
- * Prevents brute force attacks and enumeration attempts
- *
- * TEMPORARY: DISABLED FOR TESTING - MUST RE-ENABLE BEFORE PRODUCTION
- * PRODUCTION VALUES: windowMs: 60 * 60 * 1000 (1 hour), max: 10
- * TESTING VALUES: DISABLED (max: 10000)
+ * The public sign-in routes are limited per IP and per account (phone number),
+ * counted in Redis when the dashboard has one so every worker shares the count.
+ * Limits, env settings and the 429 body: lib/portal-auth-limits.js.
  */
-const publicAuthLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // TEMP: 1 minute window
-  max: 10000, // TEMP: Effectively disabled
-  message: 'Too many requests. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: false, // Count all requests (prevents timing attacks)
-  keyGenerator: (req) => {
-    // Use IP + endpoint to prevent cross-endpoint abuse
-    return `${req.ip}-${req.path}`;
-  }
-});
-
-/**
- * SECURITY: Very strict rate limiting for token validation (prevent enumeration)
- *
- * TEMPORARY: DISABLED FOR TESTING - MUST RE-ENABLE BEFORE PRODUCTION
- * PRODUCTION VALUES: windowMs: 60 * 60 * 1000 (1 hour), max: 5
- * TESTING VALUES: DISABLED (max: 10000)
- */
-const tokenValidationLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // TEMP: 1 minute window
-  max: 10000, // TEMP: Effectively disabled
-  message: 'Too many validation attempts. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: false
-});
+const authLimits = createPortalAuthLimiters();
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -265,7 +236,7 @@ router.get('/auth/verify', (req, res) => {
  * Validate invitation token for portal setup
  * SECURITY: Generic errors to prevent token enumeration + strict rate limiting
  */
-router.post('/validate-token', tokenValidationLimiter, async (req, res) => {
+router.post('/validate-token', authLimits.validateToken, async (req, res) => {
   try {
     const { token } = req.body;
 
@@ -334,7 +305,7 @@ router.post('/validate-token', tokenValidationLimiter, async (req, res) => {
  * Complete portal setup - set password and activate account
  * SECURITY: Input validation, session regeneration, and rate limiting
  */
-router.post('/setup', publicAuthLimiter, async (req, res) => {
+router.post('/setup', authLimits.setup, async (req, res) => {
   try {
     const { token, password } = req.body;
 
@@ -443,7 +414,7 @@ router.post('/setup', publicAuthLimiter, async (req, res) => {
  * Log in to teacher portal
  * SECURITY: Input validation, generic errors, session regeneration, and rate limiting
  */
-router.post('/login', publicAuthLimiter, async (req, res) => {
+router.post('/login', authLimits.login, async (req, res) => {
   try {
     let { phoneNumber, password } = req.body;
 
@@ -561,7 +532,7 @@ router.post('/logout', requirePortalAuth, (req, res) => {
  * Request password reset code via WhatsApp
  * SECURITY: Generic responses to prevent phone number enumeration + rate limiting
  */
-router.post('/request-reset', publicAuthLimiter, async (req, res) => {
+router.post('/request-reset', authLimits.requestReset, async (req, res) => {
   try {
     let { phoneNumber } = req.body;
 
@@ -620,7 +591,7 @@ router.post('/request-reset', publicAuthLimiter, async (req, res) => {
  * Verify password reset code
  * SECURITY: Input validation, generic error messages, and rate limiting
  */
-router.post('/verify-reset-code', publicAuthLimiter, async (req, res) => {
+router.post('/verify-reset-code', authLimits.verifyResetCode, async (req, res) => {
   try {
     let { phoneNumber, code } = req.body;
 
@@ -682,7 +653,7 @@ router.post('/verify-reset-code', publicAuthLimiter, async (req, res) => {
  * Reset password with verified code
  * SECURITY: Input validation and session cleanup
  */
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', authLimits.resetPassword, async (req, res) => {
   try {
     const { password } = req.body;
     const userId = req.session.resetUserId;
@@ -711,7 +682,8 @@ router.post('/reset-password', async (req, res) => {
       .update({
         portal_password_hash: passwordHash,
         password_reset_code: null,
-        password_reset_expires_at: null
+        password_reset_expires_at: null,
+        password_reset_attempts: 0
       })
       .eq('id', userId);
 
@@ -1973,7 +1945,7 @@ router.get('/video/:id', requirePortalAuth, async (req, res) => {
       presignedVideoUrl = await generatePresignedUrl(video.video_url, 3600);
     } else if (video.video_url) {
       // Issue #21: Log warning for invalid URLs (local paths)
-      console.warn(`⚠️ Video ${videoId} has invalid video_url: ${video.video_url}`);
+      console.warn(`⚠️ Video ${videoId} has invalid video_url: ${redactUrl(video.video_url)}`);
     }
 
     // Issue #18: Generate presigned URL for PDF

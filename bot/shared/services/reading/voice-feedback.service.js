@@ -26,6 +26,7 @@ const { getClient } = require('../llm-client');
 const AudioService = require('../audio.service');
 const FluencyService = require('./fluency.service');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { OPENAI_API_KEY, TEMP_DIR } = require('../../utils/constants');
 
 const openai = getClient();
@@ -803,7 +804,7 @@ ${hasComprehension ? '- ¡Equilibra errores de pronunciación y orientación de 
 
       const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
 
-      logToFile('✅ Voice feedback uploaded to R2', { key, url: publicUrl });
+      logToFile('✅ Voice feedback uploaded to R2', { key, url: redactUrl(publicUrl) });
 
       return publicUrl;
 

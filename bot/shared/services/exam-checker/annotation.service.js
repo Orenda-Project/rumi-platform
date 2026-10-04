@@ -24,6 +24,7 @@ const path = require('path');
 const PDFDocument = require('pdfkit');
 const r2Service = require('../../storage/r2');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 
 // Register handwriting fonts
 const FONTS_DIR = path.join(__dirname, '../../../');
@@ -229,7 +230,7 @@ class AnnotationService {
     const filename = `exams/${sessionId}/annotated_${safeName}_p${annotations.pageNumber}.png`;
     const url = await r2Service.uploadBuffer(annotatedBuffer, filename, 'image/png');
 
-    logToFile('📷 Annotated image uploaded (Canvas)', { filename, url });
+    logToFile('📷 Annotated image uploaded (Canvas)', { filename, url: redactUrl(url) });
 
     return url;
   }
@@ -468,7 +469,7 @@ class AnnotationService {
       const filename = `exams/${session.id}/summary_report.pdf`;
       const url = await r2Service.uploadBuffer(pdfBuffer, filename, 'application/pdf');
 
-      logToFile('📄 PDF summary generated', { filename, url });
+      logToFile('📄 PDF summary generated', { filename, url: redactUrl(url) });
       return url;
 
     } catch (error) {

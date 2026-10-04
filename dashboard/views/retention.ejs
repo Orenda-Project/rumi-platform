@@ -6,7 +6,7 @@
   <title><%= title %> | Rumi Dashboard</title>
   <link rel="icon" type="image/png" href="/images/rumi-logo.png">
   <link rel="stylesheet" href="/css/main.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/vendor/chart-4.4.0.umd.min.js"></script>
   <style>
     /* Retention heatmap cell colors */
     .retention-cell-excellent {
@@ -438,7 +438,7 @@
     </div>
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     // Chart.js Retention Curve
     const ctx = document.getElementById('retentionChart').getContext('2d');
     const curveData = <%- curveData %>;

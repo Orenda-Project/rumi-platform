@@ -234,12 +234,13 @@
       margin-top: 8px;
     }
   </style>
+  <script src="/js/csp-actions.js"></script>
 </head>
 <body>
   <div class="loading-container">
     <!-- Logo -->
     <div class="logo-container">
-      <img src="/images/rumi-logo.png" alt="Rumi" class="rumi-logo" onerror="this.style.display='none'">
+      <img src="/images/rumi-logo.png" alt="Rumi" class="rumi-logo" data-on-error="$hide">
     </div>
 
     <!-- Status Title -->
@@ -296,14 +297,14 @@
       <div class="error-message" id="errorMessage">
         An error occurred while processing the transcript.
       </div>
-      <button class="retry-button" onclick="location.reload()">Try Again</button>
+      <button class="retry-button" data-on-click="$reload">Try Again</button>
     </div>
 
     <!-- Cancel Link -->
     <a href="/observability/coaching" class="cancel-link">← Back to Sessions</a>
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     const sessionId = '<%= sessionId %>';
     const startTime = Date.now();
     const POLL_INTERVAL = 2000; // Poll every 2 seconds

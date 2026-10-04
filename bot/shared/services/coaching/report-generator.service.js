@@ -19,6 +19,7 @@ const path = require('path');
 const axios = require('axios');
 const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { displayName } = require('../../utils/display-name');
 const GPT5MiniService = require('../gpt5-mini.service');
 const ContentService = require('../content.service');
@@ -167,7 +168,7 @@ class ReportGeneratorService {
       let reportPdfUrl = null;
       try {
         reportPdfUrl = await uploadReportPDF(pdfBuffer, session.user_id, coachingSessionId);
-        logToFile('✅ Report PDF uploaded to R2', { reportPdfUrl });
+        logToFile('✅ Report PDF uploaded to R2', { reportPdfUrl: redactUrl(reportPdfUrl) });
 
         // Store PDF URL in database
         await supabase
@@ -1404,7 +1405,7 @@ class ReportGeneratorService {
         outputLanguage
       );
 
-      logToFile('Voice debrief uploaded', { coachingSessionId, voiceUrl });
+      logToFile('Voice debrief uploaded', { coachingSessionId, voiceUrl: redactUrl(voiceUrl) });
 
       // Update database
       await supabase

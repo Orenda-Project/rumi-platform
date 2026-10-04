@@ -76,6 +76,10 @@ the migration, also run `GRANT portal_app_user TO <that role>;`. The role sees r
 with an unscoped role (`super_admin`, `admin`, `viewer`); partner roles get no teacher data until scoped
 policies exist (see `dashboard/docs/PARTNER_RBAC_STATUS.md`).
 
+The migration `V2.11.2__portal_reset_attempts.sql` adds `users.password_reset_attempts`, the count of wrong
+tries at a teacher's current portal reset code. Without it the dashboard cannot verify reset codes, so apply
+it before deploying the dashboard.
+
 ### 3. Install New Dependencies
 
 ```bash

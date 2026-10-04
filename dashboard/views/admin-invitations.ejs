@@ -357,7 +357,7 @@
     }
   </style>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     // Scope state
     let currentScopeType = 'school';
     let countryCodes = [];
@@ -509,13 +509,7 @@
 
       if (code && !combinedCountries.includes(code)) {
         combinedCountries.push(code);
-        updateChipList('combinedCountryList', combinedCountries, (c) => {
-          combinedCountries = combinedCountries.filter(x => x !== c);
-          updateChipList('combinedCountryList', combinedCountries, (c) => {
-            combinedCountries = combinedCountries.filter(x => x !== c);
-            updateChipList('combinedCountryList', combinedCountries, arguments.callee);
-          });
-        });
+        updateChipList('combinedCountryList', combinedCountries, removeCombinedCountry);
         input.value = '';
       }
     });
@@ -526,23 +520,35 @@
 
       if (school && !combinedSchools.includes(school)) {
         combinedSchools.push(school);
-        updateChipList('combinedSchoolList', combinedSchools, (s) => {
-          combinedSchools = combinedSchools.filter(x => x !== s);
-          updateChipList('combinedSchoolList', combinedSchools, arguments.callee);
-        });
+        updateChipList('combinedSchoolList', combinedSchools, removeCombinedSchool);
         input.value = '';
       }
     });
 
-    // Utility: Update chip list
+    function removeCombinedCountry(code) {
+      combinedCountries = combinedCountries.filter(x => x !== code);
+      updateChipList('combinedCountryList', combinedCountries, removeCombinedCountry);
+    }
+
+    function removeCombinedSchool(school) {
+      combinedSchools = combinedSchools.filter(x => x !== school);
+      updateChipList('combinedSchoolList', combinedSchools, removeCombinedSchool);
+    }
+
+    // Utility: Update chip list (built as DOM nodes: the values are user input)
     function updateChipList(listId, items, removeCallback) {
       const list = document.getElementById(listId);
-      list.innerHTML = items.map(item =>
-        `<span class="chip">
-          ${item}
-          <button type="button" onclick="this.parentElement.remove(); (${removeCallback.toString()})('${item}')">×</button>
-        </span>`
-      ).join('');
+      list.replaceChildren(...items.map(item => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.append(document.createTextNode(item + ' '));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = '×';
+        remove.addEventListener('click', () => removeCallback(item));
+        chip.append(remove);
+        return chip;
+      }));
     }
 
     // Preview functionality

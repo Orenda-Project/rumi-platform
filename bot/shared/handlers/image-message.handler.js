@@ -24,6 +24,7 @@ const redisService = require('../services/cache/railway-redis.service');
 const supabase = require('../config/supabase');
 const { uploadImageWithRetry } = require('../storage/r2');
 const { logToFile } = require('../utils/logger');
+const { redactUrl } = require('../utils/redact-url');
 const { logEvent, runWithCorrelation, generateCorrelationId } = require('../utils/structured-logger');
 const { getUserLanguage } = require('../utils/language-cache');
 const { storeConversation, getOrCreateSession } = require('../database/bot-helpers');
@@ -402,7 +403,7 @@ async function runImageAnalysis({
   let imageUrl;
   try {
     imageUrl = await uploadImageWithRetry(imageBuffer, user.id, imageId, mimeType);
-    logToFile('✅ Image uploaded to R2', { imageUrl });
+    logToFile('✅ Image uploaded to R2', { imageUrl: redactUrl(imageUrl) });
 
     // Update database record with R2 URL
     if (requestId) {

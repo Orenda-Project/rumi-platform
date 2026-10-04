@@ -1,6 +1,6 @@
 {
   "name": "rumi-bot",
-  "version": "2.11.1",
+  "version": "2.11.2",
   "description": "Rumi - AI Teaching Assistant for WhatsApp",
   "main": "whatsapp-bot.js",
   "scripts": {

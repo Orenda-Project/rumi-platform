@@ -43,6 +43,7 @@
       transform: translateY(-2px);
     }
   </style>
+  <script src="/js/csp-actions.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <%- include("partials/navigation", { currentPage: "broadcast", username: username, userRole: userRole }) %>
@@ -154,7 +155,7 @@
               <label class="flex items-center cursor-pointer px-4 py-2 rounded-lg border-2 transition-all recipient-mode-option border-indigo-500 bg-indigo-50" data-mode="filter">
                 <input type="radio" name="recipientMode" value="filter" checked
                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                       onchange="toggleRecipientMode('filter')">
+                       data-on-change="toggleRecipientMode" data-args='["filter"]'>
                 <div class="ml-3">
                   <span class="text-sm font-medium text-gray-900">Filter by Activity/Country</span>
                   <p class="text-xs text-gray-500">Bulk messaging to user segments</p>
@@ -163,7 +164,7 @@
               <label class="flex items-center cursor-pointer px-4 py-2 rounded-lg border-2 transition-all recipient-mode-option border-gray-200 hover:border-indigo-300" data-mode="search">
                 <input type="radio" name="recipientMode" value="search"
                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                       onchange="toggleRecipientMode('search')">
+                       data-on-change="toggleRecipientMode" data-args='["search"]'>
                 <div class="ml-3">
                   <span class="text-sm font-medium text-gray-900">Search & Select Users</span>
                   <p class="text-xs text-gray-500">Target specific individuals</p>
@@ -245,7 +246,7 @@
                        placeholder="Type name or phone number (min 3 chars)..."
                        class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg
                               focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                       oninput="debounceSearch(this.value)"
+                       data-on-input="debounceSearch" data-args='["$value"]'
                        autocomplete="off">
                 <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -271,7 +272,7 @@
                 <label class="block text-sm font-medium text-gray-700">
                   Selected Users (<span id="search-selected-count">0</span>)
                 </label>
-                <button type="button" onclick="clearAllSelectedUsers()"
+                <button type="button" data-on-click="clearAllSelectedUsers"
                         class="text-sm text-red-600 hover:text-red-800">
                   Clear All
                 </button>
@@ -523,7 +524,7 @@
     </div>
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     // User counts from server
     const userCounts = <%- JSON.stringify(userCounts) %>;
 
@@ -641,16 +642,16 @@
 
       container.innerHTML = availableUsers.map(user => `
         <div class="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
-             onclick='selectUser(${JSON.stringify(user).replace(/'/g, "&#39;")})'>
+             data-on-click="selectUser" data-args="${cspArgs(user)}">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
               <span class="text-sm font-medium text-indigo-600">
-                ${user.displayName.charAt(0).toUpperCase()}
+                ${escapeText(user.displayName.charAt(0).toUpperCase())}
               </span>
             </div>
             <div>
-              <div class="text-sm font-medium text-gray-900">${user.displayName}</div>
-              <div class="text-xs text-gray-500">${user.phoneMasked} · ${user.country}</div>
+              <div class="text-sm font-medium text-gray-900">${escapeText(user.displayName)}</div>
+              <div class="text-xs text-gray-500">${escapeText(user.phoneMasked)} · ${escapeText(user.country)}</div>
             </div>
           </div>
           <button type="button" class="p-1 text-indigo-600 hover:bg-indigo-50 rounded">
@@ -662,6 +663,13 @@
       `).join('');
 
       container.classList.remove('hidden');
+    }
+
+    // Text from the database, for HTML built here.
+    function escapeText(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     // Select a user
@@ -710,10 +718,10 @@
       tagsContainer.innerHTML = selectedUsers.map(user => `
         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">
           <div>
-            <div class="text-sm font-medium text-indigo-900">${user.displayName}</div>
-            <div class="text-xs text-indigo-600">${user.phoneMasked}</div>
+            <div class="text-sm font-medium text-indigo-900">${escapeText(user.displayName)}</div>
+            <div class="text-xs text-indigo-600">${escapeText(user.phoneMasked)}</div>
           </div>
-          <button type="button" onclick="removeUser('${user.id}')"
+          <button type="button" data-on-click="removeUser" data-args="${cspArgs(user.id)}"
                   class="p-0.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-100 rounded">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>

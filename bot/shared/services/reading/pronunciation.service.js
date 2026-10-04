@@ -25,6 +25,7 @@ const fs = require('fs');
 const path = require('path');
 const { getClient } = require('../llm-client');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { OPENAI_API_KEY, TEMP_DIR } = require('../../utils/constants');
 
 const openai = getClient();
@@ -127,7 +128,7 @@ class PronunciationService {
       const audioKey = extractKeyFromUrl(audioUrl);
 
       logToFile('📥 Downloading audio from R2 for Azure pronunciation', {
-        audioUrl,
+        audioUrl: redactUrl(audioUrl),
         key: audioKey
       });
 
@@ -353,7 +354,7 @@ class PronunciationService {
       const audioKey = extractKeyFromUrl(audioUrl);
 
       logToFile('📥 Downloading audio from R2 for GPT-4o pronunciation', {
-        audioUrl,
+        audioUrl: redactUrl(audioUrl),
         key: audioKey
       });
 

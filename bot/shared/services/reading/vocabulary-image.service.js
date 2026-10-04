@@ -16,6 +16,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { uploadImageBuffer, buildR2PublicUrl } = require('../../storage/r2');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { lazyClient } = require('../../utils/lazy-client');
 
 // Lazy-initialised: vocabulary image generation only runs when a reading
@@ -99,7 +100,7 @@ STRICT REQUIREMENTS:
             targetWord,
             distractors: distractorWords,
             correctPosition,
-            imageUrl: publicUrl,
+            imageUrl: redactUrl(publicUrl),
             imageSize: imageBuffer.length
           });
 

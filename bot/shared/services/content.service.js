@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { GAMMA_API_KEY, GAMMA_MAX_ATTEMPTS, GAMMA_POLL_INTERVAL } = require('../utils/constants');
 const { logToFile } = require('../utils/logger');
+const { redactUrl } = require('../utils/redact-url');
 const { getLanguageConfig } = require('../config/gamma-languages.config');
 const { buildLessonPlanPrompt } = require('./lesson-plan-template.service');
 
@@ -105,15 +106,17 @@ ${lpTemplate.inputText}`;
         logToFile(`Gamma ${contentType} status: ${status}`, { attempt: attempts + 1 });
 
         if (status === 'completed') {
-          // Log full response to see all available fields
-          logToFile('Gamma generation completed - full response:', statusResponse.data);
-
           const gammaUrl = statusResponse.data.gammaUrl;
           const pdfUrl = statusResponse.data.pdfUrl || statusResponse.data.exportUrl || statusResponse.data.fileUrl;
 
+          // The body carries the document link and the export URL, both of
+          // which open the file for anyone holding them — log the field names
+          // and redacted URLs, never the body itself.
           logToFile(`${contentType} generated successfully`, {
-            gammaUrl,
-            pdfUrl,
+            generationId,
+            status,
+            gammaUrl: redactUrl(gammaUrl),
+            pdfUrl: redactUrl(pdfUrl),
             allFields: Object.keys(statusResponse.data)
           });
 

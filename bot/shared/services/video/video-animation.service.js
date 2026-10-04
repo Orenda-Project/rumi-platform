@@ -10,6 +10,7 @@
  */
 
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { uploadVideoAsset, isPermanentR2Url, toPublicUrl } = require('../../storage/r2');
 const fs = require('fs');
 const path = require('path');
@@ -172,7 +173,7 @@ class VideoAnimationService {
         videoRequestId,
         slideId,
         taskId: existingTask.task_id,
-        r2Url: existingTask.result_url
+        r2Url: redactUrl(existingTask.result_url)
       });
       // Download for local FFmpeg assembly, return LOCAL PATH (not R2 URL!)
       const localPath = await this.downloadVideoForAssembly(existingTask.result_url, videoRequestId, slideId);
@@ -184,7 +185,7 @@ class VideoAnimationService {
       logToFile('Re-uploading ephemeral video URL to R2', {
         videoRequestId,
         slideId,
-        ephemeralUrl: existingTask.result_url
+        ephemeralUrl: redactUrl(existingTask.result_url)
       });
       try {
         const localPath = await this.downloadVideoForAssembly(existingTask.result_url, videoRequestId, slideId);
@@ -197,7 +198,7 @@ class VideoAnimationService {
           .eq('video_request_id', videoRequestId)
           .eq('filename', filename);
 
-        logToFile('Ephemeral video migrated to R2', { videoRequestId, slideId, r2Url });
+        logToFile('Ephemeral video migrated to R2', { videoRequestId, slideId, r2Url: redactUrl(r2Url) });
         return localPath;  // FFmpeg needs local path, not R2 URL!
       } catch (err) {
         logToFile('Failed to migrate ephemeral video, will regenerate', {
@@ -238,8 +239,8 @@ class VideoAnimationService {
       slideId,
       isKieStartUrl,
       isKieEndUrl,
-      startUrl: publicStartUrl.substring(0, 80) + '...',
-      endUrl: publicEndUrl.substring(0, 80) + '...'
+      startUrl: redactUrl(publicStartUrl),
+      endUrl: redactUrl(publicEndUrl)
     });
 
     const createResponse = await fetch(`${KIE_API_URL}/createTask`, {
@@ -266,7 +267,7 @@ class VideoAnimationService {
     const taskId = createData.data?.taskId;
 
     if (!taskId) {
-      throw new Error(`Failed to create video task: ${JSON.stringify(createData)}`);
+      throw new Error(`Failed to create video task: ${redactUrl(JSON.stringify(createData))}`);
     }
 
     // PHASE 3: Store task ID before polling
@@ -299,7 +300,7 @@ class VideoAnimationService {
     let r2Url;
     try {
       r2Url = await uploadVideoAsset(localPath, videoRequestId, `slide_${slideId}.mp4`);
-      logToFile('Video segment uploaded to R2', { videoRequestId, slideId, r2Url });
+      logToFile('Video segment uploaded to R2', { videoRequestId, slideId, r2Url: redactUrl(r2Url) });
     } catch (err) {
       logToFile('R2 upload failed, using ephemeral URL as fallback', {
         videoRequestId,
@@ -320,7 +321,7 @@ class VideoAnimationService {
       .eq('video_request_id', videoRequestId)
       .eq('filename', filename);
 
-    logToFile('Video task completed', { videoRequestId, slideId, localPath, r2Url });
+    logToFile('Video task completed', { videoRequestId, slideId, localPath, r2Url: redactUrl(r2Url) });
 
     // CRITICAL: Return LOCAL path for FFmpeg assembly (not R2 URL!)
     return localPath;
@@ -391,7 +392,7 @@ class VideoAnimationService {
             attempt: i + 1,
             maxAttempts,
             state,
-            fullResponse: JSON.stringify(pollData).substring(0, 500) // Truncate for log limits
+            fullResponse: redactUrl(JSON.stringify(pollData)).substring(0, 500) // Truncate for log limits
           });
         }
 
@@ -407,7 +408,7 @@ class VideoAnimationService {
           logToFile('Kie.ai VIDEO task FAILED - Full details', {
             taskId,
             failMsg: pollData.data.failMsg,
-            fullData: JSON.stringify(pollData.data),
+            fullData: redactUrl(JSON.stringify(pollData.data)),
             attempt: i + 1
           });
           throw new Error(`Task failed: ${pollData.data.failMsg}`);

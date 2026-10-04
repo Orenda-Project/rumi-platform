@@ -33,13 +33,14 @@ function load({ env, users, userChannels }) {
   Object.assign(process.env, env);
   const db = createFakeSupabase({ users, user_channels: userChannels || [] });
   jest.doMock('../../bot/shared/config/supabase', () => db.client);
-  jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
+  const logToFile = jest.fn();
+  jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile }));
   const matrixSend = jest.fn(async () => true);
   const metaSend = jest.fn(async () => true);
   jest.doMock('../../bot/shared/services/messaging/matrix-channel.service', () => ({ sendMessage: matrixSend }));
   jest.doMock('../../bot/shared/services/messaging/meta-channel.service', () => ({ sendMessage: metaSend }));
   const { sendPasswordReset } = require('../../bot/shared/routes/portal-internal-endpoint');
-  return { sendPasswordReset, matrixSend, metaSend };
+  return { sendPasswordReset, matrixSend, metaSend, logToFile };
 }
 
 const MATRIX_ONLY = {
@@ -123,6 +124,20 @@ describe('POST /api/internal/send-password-reset', () => {
     expect(res.body).toMatchObject({ success: true });
     expect(matrixSend.mock.calls[0][1]).toMatch(/^Hi! 👋[\s\S]*777888/);
     expect(matrixSend.mock.calls[0][1]).not.toMatch(/null|undefined/);
+  });
+
+  test('the bot logs that a code was sent, never the code itself', async () => {
+    const { sendPasswordReset, logToFile } = load({
+      env: MATRIX_ONLY,
+      users: [{ id: 'u-mx', phone_number: '15551000001', first_name: 'Sam' }],
+      userChannels: [{ user_id: 'u-mx', channel: 'matrix', channel_user_id: '15551000001', last_message_at: '2026-10-03T09:00:00Z' }],
+    });
+    const res = fakeRes();
+    await sendPasswordReset(request({ phoneNumber: '15551000001', userId: 'u-mx', code: '918273', firstName: 'Sam' }), res);
+    expect(res.body).toMatchObject({ success: true });
+    const logged = JSON.stringify(logToFile.mock.calls);
+    expect(logged).toMatch(/Password reset code sent/);
+    expect(logged).not.toContain('918273');
   });
 
   test('a failed send is reported, not claimed', async () => {
