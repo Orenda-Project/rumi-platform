@@ -711,7 +711,8 @@ router.post('/reset-password', async (req, res) => {
       .update({
         portal_password_hash: passwordHash,
         password_reset_code: null,
-        password_reset_expires_at: null
+        password_reset_expires_at: null,
+        password_reset_attempts: 0
       })
       .eq('id', userId);
 

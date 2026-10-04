@@ -12,7 +12,8 @@ reading results and videos, and shows a coach their observations. Sign-in is a p
   password. The link comes when they type `/portal`, at the end of registration, or (for coaches) when the partner
   sends it from the roster.
 - **Forgot password.** The teacher types their number on the portal's reset page and gets a 6-digit code (valid
-  10 minutes), then chooses a new password.
+  10 minutes, single use), then chooses a new password. After 5 wrong tries the code stops working, even the
+  right digits, and they ask for a new one once the 10 minutes are up.
 
 Both messages go to the person's **own channel**: where they last talked to Rumi, as recorded in
 `user_channels`. A teacher on WhatsApp gets them on WhatsApp, exactly as before. A teacher who uses only
@@ -78,6 +79,7 @@ The portal is optional. With `PORTAL_URL` unset, no message carries a portal lin
 | `MAIN_BOT_URL` | dashboard | Where the dashboard reaches the bot, to send reset codes |
 | `INTERNAL_API_KEY` | bot **and** dashboard | The same random secret on both. **Required for reset codes:** the bot refuses every internal send while it is unset |
 | `SESSION_SECRET` | dashboard | Signs the portal session |
+| `PORTAL_RESET_CODE_MAX_ATTEMPTS` | dashboard | Optional. Wrong tries one reset code allows before it is cleared (default 5) |
 | `OBSERVE_ENABLED=true` | bot **and** dashboard | The bot's decides whether a coach's invite mentions Observations; the dashboard's shows them the view (see [Observe](observe.md)). Set it on both |
 
 4. **Coaches** on the observe roster can be sent their invite from the roster, on whichever channel they use:
