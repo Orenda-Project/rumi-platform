@@ -860,7 +860,7 @@
               <p class="font-medium text-green-800">Dry run successful!</p>
               <div class="mt-2 text-sm text-green-700 space-y-1">
                 <p>Recipients: ${escapeHtml(data.recipientCount)} users</p>
-                <p>Breakdown: ${escapeHtml(data.breakdown.pakistan)} Pakistan, ${escapeHtml(data.breakdown.sriLanka)} Sri Lanka</p>
+                <p>Breakdown: ${data.breakdown.pakistan} Pakistan, ${data.breakdown.sriLanka} Sri Lanka</p>
                 <p>Estimated time: ${escapeHtml(data.estimatedTime)}</p>
                 <p>Estimated cost: $${escapeHtml(data.estimatedCost.min)} - $${escapeHtml(data.estimatedCost.max)}</p>
                 ${data.contentAnalysis?.approvalLikelihood ? `<p>Approval likelihood: ${escapeHtml(data.contentAnalysis.approvalLikelihood.likelihood)}</p>` : ''}

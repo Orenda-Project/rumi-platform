@@ -66,6 +66,17 @@ const REVIEWED = {
   'users.ejs: html': 'HTML built in renderChat from checked templates',
 };
 
+/** Reviewed by pattern: [view, expression pattern, why]. */
+const REVIEWED_PATTERNS = [
+  // The dry-run route (index.js) computes each breakdown entry with Array.filter().length.
+  ['broadcast.ejs', /^data\.breakdown\.\w+$/, 'integer counts computed by the dry-run route, never text'],
+];
+
+function isReviewed(f) {
+  if (REVIEWED[f.key]) return true;
+  return REVIEWED_PATTERNS.some(([view, re]) => f.key.startsWith(`${view}: `) && re.test(f.key.slice(view.length + 2)));
+}
+
 const SAFE_CALLS = new Set(['escapeHtml', 'safeUrl', 'cspArgs']);
 const DATE_TEXT = new Set(['toLocaleDateString', 'toLocaleTimeString', 'toDateString']);
 const HAS_TAG = /<[a-z!/]/i;
@@ -179,13 +190,17 @@ describe('admin views: HTML built in scripts escapes what it interpolates', () =
   });
 
   test('every interpolated value is escaped or reviewed', () => {
-    const unreviewed = findings.filter((f) => !REVIEWED[f.key]).map((f) => `${f.at}  ${f.key}`);
+    const unreviewed = findings.filter((f) => !isReviewed(f)).map((f) => `${f.at}  ${f.key}`);
     expect(unreviewed).toEqual([]);
   });
 
   test('every reviewed entry is still in use', () => {
     const used = new Set(findings.map((f) => f.key));
     expect(Object.keys(REVIEWED).filter((k) => !used.has(k))).toEqual([]);
+    const unusedPatterns = REVIEWED_PATTERNS.filter(([view, re]) => ![...used].some(
+      (k) => k.startsWith(`${view}: `) && re.test(k.slice(view.length + 2)),
+    ));
+    expect(unusedPatterns).toEqual([]);
   });
 
   test('the scan flags an unescaped value', () => {
