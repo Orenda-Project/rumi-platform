@@ -463,6 +463,7 @@ the schema, the docs, the agent skills, and the link web all stay honest.
 | [docs/agent-customization.md](docs/agent-customization.md) | Agent-first deep customization (frameworks, languages, branding) |
 | [docs/cost-guide.md](docs/cost-guide.md) | Monthly cost estimates — core baseline + per-feature add-ons |
 | [docs/monitoring.md](docs/monitoring.md) | Observability & debugging |
+| [docs/features/admin-views-security.md](docs/features/admin-views-security.md) | Editing the admin pages: escaping, event handlers, the CSP and the guard tests |
 | [docs/railway-operations.md](docs/railway-operations.md) | Running on Railway (scaling, logs, workers) |
 | [docs/pulling-updates.md](docs/pulling-updates.md) | Keeping your fork in sync with upstream |
 | [docs/samples/](docs/samples/) | Sample artifacts (e.g. a rendered coaching report) |
