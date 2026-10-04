@@ -22,7 +22,7 @@ form's questions one message at a time.
 
 ## See it running
 
-Try our hosted Rumi Messenger at https://rumi-chat.up.railway.app: create an account, tap **Chat with Rumi**,
+Try our hosted Rumi Messenger at https://chat.hellorumi.ai: create an account, tap **Chat with Rumi**,
 and say hi. To open your own deployment to the public, read [Running Rumi in public](../running-in-public.md) first.
 
 ## In programme terms
