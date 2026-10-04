@@ -16,7 +16,10 @@ const FROM = '15550100041';
 const UNREGISTERED = { id: '00000000-0000-4000-8000-0000000000d1', preferred_language: 'en', phone_number: FROM, registration_completed: false };
 const REGISTERED = { ...UNREGISTERED, id: '00000000-0000-4000-8000-0000000000d2', registration_completed: true };
 
-const ENV_KEYS = ['DAILY_LESSON_PLAN_CAP_UNREGISTERED', 'DAILY_COACHING_CAP_UNREGISTERED', 'OPENROUTER_API_KEY'];
+const OTHER = { ...REGISTERED, id: '00000000-0000-4000-8000-0000000000d3' };
+
+const ENV_KEYS = ['DAILY_LESSON_PLAN_CAP_UNREGISTERED', 'DAILY_LESSON_PLAN_CAP_REGISTERED', 'DAILY_LESSON_PLAN_CAP_TOTAL',
+  'DAILY_COACHING_CAP_UNREGISTERED', 'OPENROUTER_API_KEY', 'GAMMA_API_KEY'];
 const saved = {};
 beforeEach(() => { for (const k of ENV_KEYS) { saved[k] = process.env[k]; delete process.env[k]; } });
 afterEach(() => {
@@ -42,9 +45,11 @@ describe('lesson plans (handleTextMessage → handleLessonPlanRequest)', () => {
   let handleTextMessage;
   let db;
 
-  function load(account) {
+  // Lesson plans are made by Gamma: a deployment with GAMMA_API_KEY, unless a test says otherwise.
+  function load(account, { gamma = true } = {}) {
     jest.resetModules();
     process.env.OPENROUTER_API_KEY = 'test-key';
+    if (gamma) process.env.GAMMA_API_KEY = 'test-gamma-key';
     db = createFakeDb({ users: [{ id: account.id }], lesson_plan_requests: [] });
     jest.doMock('../../bot/shared/config/supabase', () => db);
     jest.doMock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn(), LOGS_DIR: '/tmp' }));
@@ -124,6 +129,48 @@ describe('lesson plans (handleTextMessage → handleLessonPlanRequest)', () => {
     load(UNREGISTERED);
     for (let i = 0; i < 4; i += 1) await ask(UNREGISTERED, i);
     expect(queued()).toBe(4);
+  });
+
+  // Found on a public instance with no GAMMA_API_KEY: the request was queued,
+  // Gamma answered 401, and the teacher was told to "try again" -- a retry
+  // that can never work.
+  it('with no GAMMA_API_KEY: the teacher is told lesson plans are not available here; nothing is queued or asked of a model', async () => {
+    load(REGISTERED, { gamma: false });
+    await ask(REGISTERED, 1);
+    expect(queued()).toBe(0);
+    expect(OpenAI.extractTopic).not.toHaveBeenCalled();
+    expect(WA.sendSticker).not.toHaveBeenCalled();
+    expect(texts()).toEqual([expect.stringMatching(/Lesson plans aren.t available on this service yet/)]);
+  });
+
+  it('with no GAMMA_API_KEY: a presentation request gets the same answer, and no job', async () => {
+    load(REGISTERED, { gamma: false });
+    OpenAI.detectIntent.mockResolvedValue({ type: 'presentation' });
+    await ask(REGISTERED, 1);
+    expect(queued()).toBe(0);
+    expect(OpenAI.extractTopic).not.toHaveBeenCalled();
+    expect(texts()).toEqual([expect.stringMatching(/aren.t available on this service yet/)]);
+  });
+
+  it('DAILY_LESSON_PLAN_CAP_REGISTERED caps a registered account; the next one is refused with a clear message', async () => {
+    process.env.DAILY_LESSON_PLAN_CAP_REGISTERED = '2';
+    load(REGISTERED);
+    for (let i = 0; i < 3; i += 1) await ask(REGISTERED, i);
+    expect(queued()).toBe(2);
+    expect(OpenAI.extractTopic).toHaveBeenCalledTimes(2);
+    expect(texts()[texts().length - 1]).toMatch(/made 2 lesson plans today, the daily limit\. Please ask again tomorrow/);
+  });
+
+  it('DAILY_LESSON_PLAN_CAP_TOTAL caps the whole instance across accounts', async () => {
+    process.env.DAILY_LESSON_PLAN_CAP_TOTAL = '2';
+    load(REGISTERED);
+    await ask(REGISTERED, 1);
+    await ask(UNREGISTERED, 2);
+    expect(queued()).toBe(2);
+    await ask(OTHER, 3);
+    expect(queued()).toBe(2);
+    expect(OpenAI.extractTopic).toHaveBeenCalledTimes(2);
+    expect(texts()[texts().length - 1]).toMatch(/all the lesson plans it can today.*tomorrow/);
   });
 });
 

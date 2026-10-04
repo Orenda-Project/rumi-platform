@@ -29,7 +29,7 @@ const WHEN_OFF = {
   stt_soniox: 'Voice notes are not transcribed. Teachers who send audio get no reply, and reading assessments cannot run.',
   tts_elevenlabs: 'Rumi answers in text only. Nothing breaks; spoken replies just stop.',
   tts_uplift: 'Urdu, Sindhi and Balochi replies fall back to a general-purpose voice, which reads them less naturally.',
-  lesson_plans_gamma: 'Lesson plans are still written, but not turned into slides.',
+  lesson_plans_gamma: 'Teachers who ask for a lesson plan or presentation are told it is not available here. Photo lesson plans still work with a Kie.ai key.',
   pronunciation_azure: 'Reading assessments still score speed and accuracy, but not pronunciation.',
   video_kie: 'The video option disappears from the menu. Everything else is unaffected.',
   exam_ocr: 'Photographed exam papers cannot be marked. Typed and printed worksheets still work.',

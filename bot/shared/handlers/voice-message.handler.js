@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const WhatsAppService = require('../services/whatsapp.service');
 const DailyCaps = require('../services/limits/daily-caps');
+const LessonPlanAvailability = require('../services/lesson-plan-availability');
 const OpenAIService = require('../services/openai.service');
 const AudioService = require('../services/audio.service');
 const ContentService = require('../services/content.service');
@@ -1070,6 +1071,15 @@ async function handleVoiceMessage(message, from, user = null) {
       } catch (error) {
         logToFile('⚠️ Failed to update session type', { error: error.message });
       }
+    }
+
+    // A lesson plan or presentation this deployment cannot make (no
+    // GAMMA_API_KEY): say so, instead of a spoken "I'm preparing it…", a
+    // loading sticker and a job that can only fail (lesson-plan-availability.js).
+    if ((intent.type === 'lesson_plan' || intent.type === 'presentation')
+      && await LessonPlanAvailability.explainIfUnavailable(from, { user, language: detectedLanguage })) {
+      typingController.stop();
+      return;
     }
 
     // Step 6: Get AI response with format-aware prompting (voice format, detected language)

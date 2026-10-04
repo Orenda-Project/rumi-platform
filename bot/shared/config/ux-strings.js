@@ -68,6 +68,10 @@ const UX_STRINGS = {
     en: 'I couldn’t start that quiz just now — sorry. The problem was on my side, not your lesson plan. Send /quiz and pick this lesson to try again.',
     ur: 'معذرت، وہ quiz ابھی شروع نہیں ہو سکا۔ مسئلہ میری طرف سے تھا، lesson plan میں نہیں۔ دوبارہ کوشش کے لیے ⁦/quiz⁩ بھیجیں اور یہی سبق چنیں۔',
   },
+  lessonPlansUnavailable: {
+    en: 'Lesson plans aren’t available on this service yet.',
+    ur: 'اس سروس پر ابھی lesson plans دستیاب نہیں ہیں۔',
+  },
   lpQuizMaking: {
     en: 'Making it now — about a minute. The quiz will arrive here with the message to forward to your class.',
     ur: '‏quiz ابھی تیار ہو رہا ہے — تقریباً ایک منٹ۔ پھر یہیں quiz اور کلاس کو آگے بھیجنے والا پیغام آئے گا۔',

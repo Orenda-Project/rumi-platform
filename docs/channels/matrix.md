@@ -20,6 +20,11 @@ form's questions one message at a time.
 | **Redis** (`REDIS_URL`) | Already required. On Matrix it also carries the worker's sends to the bot (see [The relay](#the-relay)) |
 | Object storage (`R2_*`) | For coaching recordings, reading recordings and generated images, as on any non-Meta channel |
 
+## See it running
+
+Try our hosted Rumi Messenger at https://chat.hellorumi.ai: create an account, tap **Chat with Rumi**,
+and say hi. To open your own deployment to the public, read [Running Rumi in public](../running-in-public.md) first.
+
 ## In programme terms
 
 **Own the channel: run your teacher-support programme on a messenger your school system controls.**
@@ -261,7 +266,7 @@ on). "Degrades" means it works with a plainer experience; "breaks" means a teach
 | Classroom coaching | works | Send the recording as an audio file (15 minutes or longer). Report PDF, voice debrief and commitment card arrive from the worker. The "share a classroom photo?" Yes/No has no handler yet on any channel: send the photos (up to 3) to continue |
 | Attendance | works | Including the monthly register spreadsheet |
 | Quiz preview in chat | works | Numbered questions |
-| Lesson plans | works with `GAMMA_API_KEY` | Without the key the teacher gets an apology within seconds |
+| Lesson plans | works with `GAMMA_API_KEY` | Without the key Rumi says lesson plans aren't available on this service, and queues nothing |
 | Exam checker | breaks after OCR | Photos and OCR work and students are confirmed automatically; the question-confirmation step has no handler yet on any channel |
 | Morning Brief to a Matrix room | works | `BRIEF_RECIPIENTS=mtx:1555…`, sent through the relay |
 | `/status`, homework, edit class | degrades | Text summary, or an honest "not available", when their Flow ids are set for WhatsApp |

@@ -1,5 +1,6 @@
 const WhatsAppService = require('../services/whatsapp.service');
 const DailyCaps = require('../services/limits/daily-caps');
+const LessonPlanAvailability = require('../services/lesson-plan-availability');
 const OpenAIService = require('../services/openai.service');
 const ContentService = require('../services/content.service');
 const LanguageDetectorService = require('../services/language-detector.service');
@@ -2229,6 +2230,12 @@ async function handleTextMessage(message, from, messageBody, user = null) {
  */
 async function handleLessonPlanRequest(from, messageBody, user, sessionId, responseLanguage, typingController) {
   try {
+    // Not configured here (no GAMMA_API_KEY): say so, queue nothing (lesson-plan-availability.js).
+    if (await LessonPlanAvailability.explainIfUnavailable(from, { user, language: responseLanguage })) {
+      typingController.stop();
+      return;
+    }
+
     // Today's lesson-plan allowance for an unregistered account
     // (limits/daily-caps.js) — checked before the topic is read or a plan queued.
     if (!(await DailyCaps.allowOrExplain(user, 'lesson_plan', from))) {
@@ -2354,6 +2361,12 @@ async function handleLessonPlanRequest(from, messageBody, user, sessionId, respo
  */
 async function handlePresentationRequest(from, messageBody, user, sessionId, responseLanguage, typingController) {
   try {
+    // Not configured here (no GAMMA_API_KEY): say so, queue nothing (lesson-plan-availability.js).
+    if (await LessonPlanAvailability.explainIfUnavailable(from, { user, language: responseLanguage })) {
+      typingController.stop();
+      return;
+    }
+
     // Today's lesson-plan allowance for an unregistered account
     // (limits/daily-caps.js) — checked before the topic is read or a plan queued.
     if (!(await DailyCaps.allowOrExplain(user, 'lesson_plan', from))) {

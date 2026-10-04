@@ -16,6 +16,8 @@ Each limit is an `.env` value, read per message ([how they work](features/public
 | Messages a day, unregistered account | `DAILY_MESSAGE_CAP_UNREGISTERED` | `40` | no cap |
 | Messages a day, registered account | `DAILY_MESSAGE_CAP_REGISTERED` | `300` (a generous ceiling: Rumi's own registration is just a name, so "registered" alone is no barrier) | no cap |
 | Lesson plans a day, unregistered | `DAILY_LESSON_PLAN_CAP_UNREGISTERED` | `3` | no cap |
+| Lesson plans a day, registered | `DAILY_LESSON_PLAN_CAP_REGISTERED` | `5` | no cap |
+| Lesson plans a day, the whole deployment (every account together) | `DAILY_LESSON_PLAN_CAP_TOTAL` | what your Gamma plan covers in a day, e.g. `100` | no cap |
 | Coaching recordings a day, unregistered | `DAILY_COACHING_CAP_UNREGISTERED` | `0` (after registration only) | no cap |
 | Quizzes a day, unregistered | `DAILY_QUIZ_CAP_UNREGISTERED` | `2` | no cap |
 | Quizzes a day, everyone | `QUIZ_DAILY_CAP` | `10` | `10` |
@@ -32,6 +34,10 @@ Also:
    dashboard and set its limit there. When the key reaches the limit, Rumi replies "Rumi is very busy right now"
    (once per sender), and you get one `model_budget_exhausted` alert in the log instead of an error per
    message. Raise the limit or top up, and Rumi answers again within `MODEL_BUDGET_COOLDOWN_SECONDS`.
+1. **Lesson plans cost Gamma credits.** Leave `GAMMA_API_KEY` unset to keep them off: a teacher who asks is
+   told "Lesson plans aren't available on this service yet." and nothing is queued. With the key set, cap them
+   per account and for the whole deployment (`DAILY_LESSON_PLAN_CAP_REGISTERED`, `DAILY_LESSON_PLAN_CAP_TOTAL`),
+   so the daily total cannot outrun your Gamma plan.
 2. **Run Redis.** Every limit is shared across replicas through Redis. Without it each process keeps its own
    count, which still limits, but less precisely.
 3. **Watch for the alert.** Search the logs for `model_budget_exhausted`, or point your log alerts at it (see

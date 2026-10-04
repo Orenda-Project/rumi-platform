@@ -490,15 +490,18 @@ async function sendReaction(to, messageId, emoji = '❤️') {
 //     an answer (on the rig a handler that never stopped its controller left
 //     it on ~15 s after the reply). A job still running keeps it on: a test
 //     paper is queued before the bot's "I'm making it…", so the worker can
-//     hold before that ack, and a reminder sent mid-job is not the job's reply;
+//     hold before that ack, and a reminder sent mid-job is not the job's reply.
+//     Element hides the typing under Rumi's message, so it is re-announced
+//     (reannounceTyping) for the job still running;
 //   - a hard maximum (MATRIX_TYPING_MAX_SECONDS) ends it whatever else happens:
 //     a handler that forgets stop(), a worker that dies mid-job.
 // Every typing call is fail-open: logged, never thrown into a reply.
 const TYPING_TIMEOUT_MS = 10000;
 const TYPING_REFRESH_MS = 8000; // just under the timeout, like Discord's ~8s-under-~10s
+const TYPING_REANNOUNCE_MS = 1000; // off, then on: see reannounceTyping()
 const DEFAULT_TYPING_MAX_SECONDS = 300;
 
-const typingSessions = new Map(); // roomId -> { holders: Map(holderId -> origin), refresh, maxTimer }
+const typingSessions = new Map(); // roomId -> { holders: Map(holderId -> origin), refresh, reannounce, maxTimer }
 let typingHolderSeq = 0;
 
 function typingMaxMs() {
@@ -523,6 +526,7 @@ function endTypingSession(roomId, reason) {
   typingSessions.delete(roomId);
   clearInterval(session.refresh);
   clearTimeout(session.maxTimer);
+  clearTimeout(session.reannounce);
   if (reason === 'max') logToFile('Matrix: typing hit its hard maximum -- stopped', { channel: 'matrix', roomId });
   setRoomTyping(roomId, false);
   return true;
@@ -549,7 +553,24 @@ function typingAnsweredBy(roomId, origin) {
     if (holderOrigin === 'bot' || holderOrigin === origin) session.holders.delete(holderId);
   }
   if (session.holders.size === 0) endTypingSession(roomId, 'replied');
-  else setRoomTyping(roomId, true); // shown again under the message just sent
+  else reannounceTyping(roomId, session);
+}
+
+// Element stops showing Rumi as typing once Rumi sends a message, and shows it
+// again only on a new m.typing naming the bot. Synapse emits one only when the
+// typing state changes: a "typing on" while already on reaches no client
+// (measured on Synapse 1.143). So a job still running after Rumi's "Making it
+// now" turns the typing off, then on again a moment later, as a person pauses
+// after sending. The gap keeps the two changes in separate syncs; sent back to
+// back, a client on a slow link could get them in one and never see a change.
+function reannounceTyping(roomId, session) {
+  clearTimeout(session.reannounce);
+  setRoomTyping(roomId, false);
+  session.reannounce = setTimeout(() => {
+    session.reannounce = null;
+    if (typingSessions.get(roomId) === session) setRoomTyping(roomId, true);
+  }, TYPING_REANNOUNCE_MS);
+  if (session.reannounce.unref) session.reannounce.unref();
 }
 
 function holdRoomTyping(roomId, holderId, origin = 'bot') {
@@ -557,7 +578,8 @@ function holdRoomTyping(roomId, holderId, origin = 'bot') {
   if (!session) {
     session = {
       holders: new Map(),
-      refresh: setInterval(() => { setRoomTyping(roomId, true); }, TYPING_REFRESH_MS),
+      refresh: setInterval(() => { if (!session.reannounce) setRoomTyping(roomId, true); }, TYPING_REFRESH_MS),
+      reannounce: null,
       maxTimer: setTimeout(() => endTypingSession(roomId, 'max'), typingMaxMs()),
     };
     if (session.refresh.unref) session.refresh.unref();
