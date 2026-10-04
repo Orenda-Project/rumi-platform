@@ -80,8 +80,7 @@ The dashboard will be available at `http://localhost:3000`
 ## File Structure
 
 ### New/Modified Files:
-- `views/conversations.ejs` - Enhanced conversation view with media features
-- `views/conversations-backup.ejs` - Backup of original view
+- Conversation view with media features (now part of `views/users.ejs`; the old `views/conversations*.ejs` were removed as unused)
 - `database/queries.js` - Added functions for coaching sessions and lesson plans
 - `database/migrations/001_add_media_urls_to_conversations.sql` - Migration file
 - `scripts/apply-media-migration.js` - Migration application script
