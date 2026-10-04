@@ -184,14 +184,14 @@ async function resolveMediaBuffer(url) {
     } catch (error) {
       if (!isAbsoluteHttpUrl(url)) throw error;
       logToFile('⚠️ Discord: R2 download failed — fetching the URL directly instead', {
-        url: redactUrl(url), error: error.message,
+        url: redactUrl(url), error: redactUrl(error.message),
       });
     }
   }
 
   if (!isAbsoluteHttpUrl(url)) {
     throw new Error(
-      `Cannot send media from "${url}": it is not an absolute URL, and R2 is not configured `
+      `Cannot send media from "${redactUrl(url)}": it is not an absolute URL, and R2 is not configured `
       + '(set R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY to read private objects).'
     );
   }
@@ -209,8 +209,8 @@ function removeEmotionTags(text) {
 
 /** Surfaces discord.js's DiscordAPIError detail so a permission/intent problem is diagnosable from the log line alone. */
 function discordErrorDetail(error) {
-  if (error?.code) return { code: error.code, message: error.message };
-  return { message: error?.message };
+  if (error?.code) return { code: error.code, message: redactUrl(error.message) };
+  return { message: redactUrl(error?.message) };
 }
 
 async function sendMessage(to, message) {

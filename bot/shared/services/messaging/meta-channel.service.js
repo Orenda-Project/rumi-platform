@@ -511,7 +511,7 @@ class WhatsAppService {
       return result;
     } catch (error) {
       logToFile('❌ Error sending document from URL', {
-        error: error.message,
+        error: redactUrl(error.message),
         documentUrl: redactUrl(documentUrl),
         stack: error.stack
       });
@@ -541,7 +541,7 @@ class WhatsAppService {
       return await this.sendAudio(to, audioBuffer, tempDir);
     } catch (error) {
       logToFile('❌ Error sending audio from URL', {
-        error: error.message,
+        error: redactUrl(error.message),
         audioUrl: redactUrl(audioUrl),
         stack: error.stack
       });
@@ -590,7 +590,7 @@ class WhatsAppService {
       return result;
     } catch (error) {
       logToFile('❌ Error sending image from URL', {
-        error: error.message,
+        error: redactUrl(error.message),
         imageUrl: redactUrl(imageUrl),
         stack: error.stack
       });
@@ -756,7 +756,7 @@ class WhatsAppService {
       return await this.sendVideo(to, videoBuffer, tempDir, caption);
     } catch (error) {
       logToFile('❌ Error sending video from URL', {
-        error: error.message,
+        error: redactUrl(error.message),
         videoUrl: redactUrl(videoUrl),
         stack: error.stack
       });
@@ -1120,7 +1120,7 @@ class WhatsAppService {
       return true;
     } catch (error) {
       logToFile('❌ Error sending image with buttons', {
-        error: error.message,
+        error: redactUrl(error.message),
         errorDetails: error.response?.data,
         imageUrl: redactUrl(imageUrl)
       });
