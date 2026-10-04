@@ -27,6 +27,7 @@ const {
 } = require('./middleware/rbac');
 const AuthService = require('./services/auth.service');
 const { adminCsp } = require('./lib/admin-csp');
+const { safeJson } = require('./lib/safe-json');
 const {
   getDashboardStatsOptimized,
   getDashboardStatsForPeriod,
@@ -336,6 +337,8 @@ const portalCorsOptions = {
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+// Data for an inline <script> in a view: <%- safeJson(x) %>, never JSON.stringify (lib/safe-json.js).
+app.locals.safeJson = safeJson;
 
 // Make user session available in all templates
 app.use(addUserToLocals);
