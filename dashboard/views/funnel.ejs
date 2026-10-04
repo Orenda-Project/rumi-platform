@@ -192,10 +192,10 @@
         {
           name: 'Users',
           data: [
-            <%= funnelMetrics.counts.websiteVisits %>,
-            <%= funnelMetrics.counts.ctaClicks %>,
-            <%= funnelMetrics.counts.chatStarts %>,
-            <%= funnelMetrics.counts.registrations %>
+            <%- safeJson(funnelMetrics.counts.websiteVisits) %>,
+            <%- safeJson(funnelMetrics.counts.ctaClicks) %>,
+            <%- safeJson(funnelMetrics.counts.chatStarts) %>,
+            <%- safeJson(funnelMetrics.counts.registrations) %>
           ]
         }
       ],
@@ -225,9 +225,9 @@
         formatter: function(val, opt) {
           const rates = [
             '100%',
-            '<%= funnelMetrics.conversionRates.visitToCta %>%',
-            '<%= funnelMetrics.conversionRates.ctaToChat %>%',
-            '<%= funnelMetrics.conversionRates.chatToRegistration %>%'
+            <%- safeJson(funnelMetrics.conversionRates.visitToCta + '%') %>,
+            <%- safeJson(funnelMetrics.conversionRates.ctaToChat + '%') %>,
+            <%- safeJson(funnelMetrics.conversionRates.chatToRegistration + '%') %>
           ];
           return val + ' users (' + rates[opt.dataPointIndex] + ')';
         },
@@ -269,9 +269,9 @@
           formatter: function(value, { seriesIndex, dataPointIndex, w }) {
             const rates = [
               '100%',
-              '<%= funnelMetrics.conversionRates.visitToCta %>%',
-              '<%= funnelMetrics.conversionRates.ctaToChat %>%',
-              '<%= funnelMetrics.conversionRates.chatToRegistration %>%'
+              <%- safeJson(funnelMetrics.conversionRates.visitToCta + '%') %>,
+              <%- safeJson(funnelMetrics.conversionRates.ctaToChat + '%') %>,
+              <%- safeJson(funnelMetrics.conversionRates.chatToRegistration + '%') %>
             ];
             return value + ' users (Conversion Rate: ' + rates[dataPointIndex] + ')';
           }

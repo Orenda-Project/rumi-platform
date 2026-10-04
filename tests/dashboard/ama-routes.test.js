@@ -117,6 +117,7 @@ function boot({ role = 'admin', userId = OWNER, tables = sampleTables() } = {}) 
   app.use(express.json());
   app.set('view engine', 'ejs');
   app.set('views', path.join(DASHBOARD, 'views'));
+  app.locals.safeJson = require('../../dashboard/lib/safe-json').safeJson;
   app.use((req, res, next) => {
     req.session = { isAuthenticated: true, userId, username: 'sample.admin@example.com', userRole: role };
     // What middleware/auth.js addUserToLocals gives every view.

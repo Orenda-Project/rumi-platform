@@ -747,7 +747,7 @@
     // AMA Chat Application
     (function() {
       // Admin view flag (passed from server)
-      const isAdminView = <%= locals.isAdminView ? 'true' : 'false' %>;
+      const isAdminView = <%- safeJson(!!locals.isAdminView) %>;
 
       // State
       let currentConversationId = null;

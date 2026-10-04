@@ -2288,7 +2288,7 @@
        =========================================== */
     let audioElement = null;
     let isPlaying = false;
-    const durationSeconds = <%= typeof durationSeconds !== 'undefined' ? durationSeconds : 0 %>;
+    const durationSeconds = <%- safeJson(typeof durationSeconds !== 'undefined' ? durationSeconds : 0) %>;
 
     function initAudioPlayer() {
       audioElement = document.getElementById('audioElement');

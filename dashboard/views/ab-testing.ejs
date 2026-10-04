@@ -180,9 +180,10 @@
   <script nonce="<%= cspNonce %>">
     <% tests.forEach((test, testIndex) => { %>
       <% if (test.variants && test.variants.length > 0) { %>
+      {
         // Conversion Rate Bar Chart
-        const convCtx<%= testIndex %> = document.getElementById('conversionChart<%= testIndex %>').getContext('2d');
-        new Chart(convCtx<%= testIndex %>, {
+        const convCtx = document.getElementById(<%- safeJson('conversionChart' + testIndex) %>).getContext('2d');
+        new Chart(convCtx, {
           type: 'bar',
           data: {
             labels: <%- safeJson(test.variants.map(v => v.variant_name)) %>,
@@ -217,8 +218,8 @@
         });
 
         // Thompson Probability Doughnut Chart
-        const thompCtx<%= testIndex %> = document.getElementById('thompsonChart<%= testIndex %>').getContext('2d');
-        new Chart(thompCtx<%= testIndex %>, {
+        const thompCtx = document.getElementById(<%- safeJson('thompsonChart' + testIndex) %>).getContext('2d');
+        new Chart(thompCtx, {
           type: 'doughnut',
           data: {
             labels: <%- safeJson(test.variants.map(v => v.variant_name)) %>,
@@ -249,6 +250,7 @@
             }
           }
         });
+      }
       <% } %>
     <% }); %>
   </script>

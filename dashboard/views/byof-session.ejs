@@ -196,9 +196,9 @@ Feel free to share any mockups or examples!` %></div>
 
   <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
-    const sessionId = '<%= session.id %>';
-    const sessionStatus = '<%= session.status %>';
-    const byofRole = '<%= byofRole %>';
+    const sessionId = <%- safeJson(session.id) %>;
+    const sessionStatus = <%- safeJson(session.status) %>;
+    const byofRole = <%- safeJson(byofRole) %>;
     const messagesContainer = document.getElementById('messages-container');
 
     // Scroll to bottom on load

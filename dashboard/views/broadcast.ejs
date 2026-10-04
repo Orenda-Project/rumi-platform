@@ -1135,7 +1135,7 @@
 
         if (data.success) {
           if (eventSource) eventSource.close();
-          showResults({ status: 'cancelled', cancelled_by: '<%= username %>' });
+          showResults({ status: 'cancelled', cancelled_by: <%- safeJson(username) %> });
         } else {
           alert('Error: ' + data.error);
         }
