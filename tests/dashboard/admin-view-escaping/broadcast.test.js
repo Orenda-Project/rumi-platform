@@ -14,10 +14,11 @@ describe('broadcast.ejs (broadcast composer)', () => {
     title: 'Broadcast Message',
     currentPage: 'broadcast',
     userCounts: {
-      all: { all: 3, pakistan: 2, sriLanka: 1 },
-      '24h': { all: 1, pakistan: 1, sriLanka: 0 },
-      '7d': { all: 2, pakistan: 1, sriLanka: 1 },
-      '30d': { all: 3, pakistan: 2, sriLanka: 1 },
+      // Per-country counts are optional (the view shows 0).
+      all: { all: 3 },
+      '24h': { all: 1 },
+      '7d': { all: 2 },
+      '30d': { all: 3 },
     },
   };
 
@@ -70,7 +71,7 @@ describe('broadcast.ejs (broadcast composer)', () => {
         '/observability/api/broadcast/dry-run': {
           success: true,
           recipientCount: 2,
-          breakdown: { pakistan: 1, sriLanka: 1 },
+          breakdown: {},
           estimatedTime: '1 second',
           estimatedCost: { min: '0.01', max: '0.02' },
           contentAnalysis: { approvalLikelihood: { likelihood: HOSTILE.attr } },
