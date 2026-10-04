@@ -26,6 +26,7 @@ const {
   requireFeatureAccess
 } = require('./middleware/rbac');
 const AuthService = require('./services/auth.service');
+const { adminCsp } = require('./lib/admin-csp');
 const {
   getDashboardStatsOptimized,
   getDashboardStatsForPeriod,
@@ -158,6 +159,10 @@ app.locals.supabase = supabase;
 applyTrustProxy(app);
 // The client address every per-IP limiter counts (PORTAL_CLIENT_IP_HEADER, else req.ip).
 const clientIp = createClientIpGetter();
+
+// A nonce per request (res.locals.cspNonce) and a strict CSP on every rendered
+// admin view (dashboard/lib/admin-csp.js). JSON, files and the portal SPA are untouched.
+app.use(adminCsp);
 
 // Android App Links verification file for the portal app (dashboard/lib/asset-links.js).
 // Before any static/SPA handler, so the catch-all can never answer it with HTML.

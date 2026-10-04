@@ -6,7 +6,7 @@
   <title><%= title %> - Rumi Observability Portal</title>
   <link rel="icon" type="image/png" href="/images/rumi-logo.png">
   <link rel="stylesheet" href="/css/main.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/vendor/chart-4.4.0.umd.min.js"></script>
 </head>
 <body class="bg-background">
   <!-- Navigation -->
@@ -177,7 +177,7 @@
   </div>
 
   <!-- Charts JavaScript -->
-  <script>
+  <script nonce="<%= cspNonce %>">
     <% tests.forEach((test, testIndex) => { %>
       <% if (test.variants && test.variants.length > 0) { %>
         // Conversion Rate Bar Chart

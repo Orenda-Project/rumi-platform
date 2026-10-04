@@ -1759,6 +1759,7 @@
       }
     }
   </style>
+  <script src="/js/csp-actions.js"></script>
 </head>
 <body>
   <div class="container">
@@ -1766,7 +1767,7 @@
     <div class="header">
       <div class="header-top">
         <div class="header-brand">
-          <img src="/images/rumi-logo.png" alt="Rumi" class="rumi-logo" onerror="this.style.display='none'">
+          <img src="/images/rumi-logo.png" alt="Rumi" class="rumi-logo" data-on-error="$hide">
           <div class="header-titles">
             <h1>Coaching Session Transcript</h1>
             <p class="header-subtitle">Classroom observation transcript powered by Rumi</p>
@@ -1829,7 +1830,7 @@
           <h3>Classroom Recording</h3>
         </div>
         <div class="audio-controls">
-          <button class="play-btn" id="playBtn" onclick="togglePlay()">
+          <button class="play-btn" id="playBtn" data-on-click="togglePlay">
             <svg id="playIcon" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
@@ -1839,7 +1840,7 @@
             </svg>
           </button>
           <div class="audio-progress-container">
-            <div class="audio-progress-bar" id="progressBar" onclick="seekAudio(event)">
+            <div class="audio-progress-bar" id="progressBar" data-on-click="seekAudio" data-args='["$event"]'>
               <div class="audio-progress-fill" id="progressFill"></div>
             </div>
             <div class="audio-time">
@@ -1882,7 +1883,7 @@
             <% } %>
           </div>
         </div>
-        <div class="timeline-track" id="timelineTrack" onclick="seekFromTimeline(event)">
+        <div class="timeline-track" id="timelineTrack" data-on-click="seekFromTimeline" data-args='["$event"]'>
           <div class="timeline-playhead" id="playhead" style="left: 0%;"></div>
           <!-- Segments will be rendered by JavaScript -->
         </div>
@@ -1897,7 +1898,7 @@
         </svg>
         Back to Sessions
       </a>
-      <button onclick="window.print()" class="btn btn-primary">
+      <button data-on-click="$print" class="btn btn-primary">
         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
         </svg>
@@ -2035,7 +2036,7 @@
                 </div>
               </div>
 
-              <button class="insight-toggle-btn" onclick="toggleInsightDetails('slo')" id="slo-toggle">
+              <button class="insight-toggle-btn" data-on-click="toggleInsightDetails" data-args='["slo"]' id="slo-toggle">
                 <span class="toggle-arrow">▶</span> View Details
               </button>
 
@@ -2051,7 +2052,7 @@
                       ? uxHelpers.formatStudentEvidence(objective.student_evidence)
                       : [];
                   %>
-                  <div class="insight-objective <%= evidenceCount > 0 ? 'has-evidence' : '' %>" onclick="<%= evidenceCount > 0 ? 'toggleObjectiveEvidence(this)' : '' %>">
+                  <div class="insight-objective <%= evidenceCount > 0 ? 'has-evidence' : '' %>" <% if (evidenceCount > 0) { %>data-on-click="toggleObjectiveEvidence" data-args='["$el"]'<% } %>>
                     <div class="objective-row">
                       <span class="objective-icon"><%= masteryStatus.icon %></span>
                       <span class="objective-text"><%= objective.objective_text %></span>
@@ -2113,7 +2114,7 @@
                 </div>
               </div>
 
-              <button class="insight-toggle-btn" onclick="toggleInsightDetails('climate')" id="climate-toggle">
+              <button class="insight-toggle-btn" data-on-click="toggleInsightDetails" data-args='["climate"]' id="climate-toggle">
                 <span class="toggle-arrow">▶</span> View Details
               </button>
 
@@ -2247,7 +2248,7 @@
     </div>
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     /**
      * Process English word markers in transcript text
      * Converts {{en:word}} to <span class="en">word</span>

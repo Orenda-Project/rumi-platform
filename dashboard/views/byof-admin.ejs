@@ -6,6 +6,7 @@
   <title><%= title %> - Rumi Observability Portal</title>
   <link rel="icon" type="image/png" href="/images/rumi-logo.png">
   <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/csp-actions.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <%- include("partials/navigation", { currentPage: "byof", username: user?.username || 'Guest', userRole: user?.role || 'viewer' }) %>
@@ -220,7 +221,7 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                  <select onchange="updateByofRole('<%= u.id %>', this.value, this)"
+                  <select data-on-change="updateByofRole" data-args='<%= JSON.stringify([u.id, '$value', '$el']) %>'
                     class="text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="" <%= !u.byof_role ? 'selected' : '' %>>No Access</option>
                     <option value="reporter" <%= u.byof_role === 'reporter' ? 'selected' : '' %>>Reporter</option>
@@ -271,7 +272,7 @@
     </div>
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     async function updateByofRole(userId, newRole, selectElement) {
       try {
         const response = await fetch(`/observability/byof/api/users/${userId}/byof-role`, {

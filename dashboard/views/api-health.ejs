@@ -101,7 +101,7 @@
     Rumi v<%= typeof version !== 'undefined' ? version : '2.1.0' %> | Last Updated: Nov 6, 2025
   </footer>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     let lastUpdated = null;
 
     // Load API health data

@@ -40,6 +40,7 @@
       color: #dc2626;
     }
   </style>
+  <script src="/js/csp-actions.js"></script>
 </head>
 <body class="bg-background">
   <!-- Navigation -->
@@ -165,14 +166,14 @@
                             <div class="flex items-center justify-end space-x-2">
                               <% if (user.is_active) { %>
                                 <select
-                                  onchange="updateUserRole('<%= user.id %>', this.value)"
+                                  data-on-change="updateUserRole" data-args='<%= JSON.stringify([user.id, '$value']) %>'
                                   class="text-sm border-border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                 >
                                   <option value="viewer" <%= user.role === 'viewer' ? 'selected' : '' %>>Viewer</option>
                                   <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
                                 </select>
                                 <button
-                                  onclick="deactivateUser('<%= user.id %>', '<%= user.username %>')"
+                                  data-on-click="deactivateUser" data-args='<%= JSON.stringify([user.id, user.username]) %>'
                                   class="text-orange-600 hover:text-orange-900"
                                   title="Deactivate User"
                                 >
@@ -182,7 +183,7 @@
                                 </button>
                               <% } else { %>
                                 <button
-                                  onclick="reactivateUser('<%= user.id %>', '<%= user.username %>')"
+                                  data-on-click="reactivateUser" data-args='<%= JSON.stringify([user.id, user.username]) %>'
                                   class="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md"
                                   title="Reactivate User"
                                 >
@@ -190,7 +191,7 @@
                                 </button>
                               <% } %>
                               <button
-                                onclick="deleteUser('<%= user.id %>', '<%= user.username %>')"
+                                data-on-click="deleteUser" data-args='<%= JSON.stringify([user.id, user.username]) %>'
                                 class="text-red-600 hover:text-red-900"
                                 title="Delete User Permanently"
                               >
@@ -220,7 +221,7 @@
   </div>
 
   <% if (userRole === 'admin' || userRole === 'super_admin') { %>
-    <script>
+    <script nonce="<%= cspNonce %>">
       async function updateUserRole(userId, newRole) {
         if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
           location.reload();

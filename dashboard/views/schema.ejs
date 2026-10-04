@@ -6,7 +6,7 @@
   <title>Database Schema - Rumi Observability Portal</title>
   <link rel="icon" type="image/png" href="/images/rumi-logo.png">
   <link rel="stylesheet" href="/css/main.css">
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.8/dist/mermaid.min.js" integrity="sha384-N3QqR/7q+xm3BGX+CBbNI8AUmRRqcsDzToy+0z1NLDI0QmTKW8zvwLvqulJgk3dP" crossorigin="anonymous"></script>
   <style>
     .table-card {
       transition: all 0.3s ease;
@@ -28,6 +28,7 @@
       display: block;
     }
   </style>
+  <script src="/js/csp-actions.js"></script>
 </head>
 <body class="bg-background">
 
@@ -192,7 +193,7 @@ erDiagram
             <div class="px-4 py-3 text-sm">
               <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
               <p class="text-muted-foreground"><span class="font-medium text-foreground">UK:</span> phone_number</p>
-              <button onclick="toggleFields('users')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <button data-on-click="toggleFields" data-args='["users"]' class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
               <div id="users-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
                 id, phone_number, name, first_name, last_name, school_name, city, province, grades_taught, subjects_taught, teaching_experience_years, classroom_challenges, language_preference, registration_completed, registration_step, registration_pending_name, onboarding_completed, feature_discovery_shown, last_conversation_summary, last_conversation_timestamp, context_version, created_at, updated_at, portal_registered, welcome_video_sent, consent_timestamp, consent_type, consent_metadata, intro_video_coaching_sent, intro_video_lesson_plan_sent, intro_video_reading_sent, intro_video_video_gen_sent
               </div>
@@ -211,7 +212,7 @@ erDiagram
             <div class="px-4 py-3 text-sm">
               <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
               <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id, session_id</p>
-              <button onclick="toggleFields('conversations')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <button data-on-click="toggleFields" data-args='["conversations"]' class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
               <div id="conversations-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
                 id, user_id, session_id, content, role, message_type, language, is_summarized, summarized_at, summary_group_id, created_at, updated_at
               </div>
@@ -230,7 +231,7 @@ erDiagram
             <div class="px-4 py-3 text-sm">
               <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
               <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
-              <button onclick="toggleFields('chat_sessions')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <button data-on-click="toggleFields" data-args='["chat_sessions"]' class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
               <div id="chat_sessions-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
                 id, user_id, started_at, ended_at, message_count, is_active, session_type, device_info, entry_point, created_at, updated_at
               </div>
@@ -249,7 +250,7 @@ erDiagram
             <div class="px-4 py-3 text-sm">
               <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
               <p class="text-muted-foreground"><span class="font-medium text-foreground">Roles:</span> admin, viewer</p>
-              <button onclick="toggleFields('dashboard_users')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <button data-on-click="toggleFields" data-args='["dashboard_users"]' class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
               <div id="dashboard_users-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
                 id, username, email, password_hash, role, is_active, last_login, password_reset_token, password_reset_expires, created_at, updated_at, created_by
               </div>
@@ -268,7 +269,7 @@ erDiagram
             <div class="px-4 py-3 text-sm">
               <p class="text-muted-foreground"><span class="font-medium text-foreground">PK:</span> id (uuid)</p>
               <p class="text-muted-foreground"><span class="font-medium text-foreground">FK:</span> user_id</p>
-              <button onclick="toggleFields('teacher_facts')" class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
+              <button data-on-click="toggleFields" data-args='["teacher_facts"]' class="text-primary text-xs mt-2 hover:underline">+ Show fields</button>
               <div id="teacher_facts-fields" class="field-list mt-2 text-xs text-muted-foreground border-t pt-2">
                 id, user_id, fact_type, fact_value, confidence, created_at, updated_at
               </div>
@@ -861,7 +862,7 @@ erDiagram
     Rumi v<%= typeof version !== 'undefined' ? version : '2.9.22' %> | Last Updated: Dec 25, 2025
   </footer>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     // Initialize Mermaid
     mermaid.initialize({
       startOnLoad: true,

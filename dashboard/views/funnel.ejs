@@ -6,8 +6,8 @@
   <title><%= title %> - Rumi Observability Portal</title>
   <link rel="icon" type="image/png" href="/images/rumi-logo.png">
   <link rel="stylesheet" href="/css/main.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="/vendor/chart-4.4.0.umd.min.js"></script>
+  <script src="/vendor/apexcharts-4.7.0.min.js"></script>
   </style>
 </head>
 <body class="bg-background">
@@ -185,7 +185,7 @@
   </div>
 
   <!-- Charts JavaScript -->
-  <script>
+  <script nonce="<%= cspNonce %>">
     // Funnel Chart (Inverted Pyramid using ApexCharts)
     const funnelOptions = {
       series: [

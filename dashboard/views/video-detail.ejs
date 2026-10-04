@@ -99,6 +99,7 @@
     .lang-es { background: #fce7f3; color: #9d174d; }
     .lang-other { background: #f3e8ff; color: #6b21a8; }
   </style>
+  <script src="/js/csp-actions.js"></script>
 </head>
 <body class="bg-video-gradient min-h-screen">
   <%- include("partials/navigation", { currentPage: "videos", username: username, userRole: userRole }) %>
@@ -282,7 +283,7 @@
         <div class="slide-grid">
           <% video.presignedSlideUrls.forEach((url, index) => { %>
             <% if (typeof url === 'string') { %>
-              <div class="slide-thumb" onclick="openLightbox('<%= url %>')">
+              <div class="slide-thumb" data-on-click="openLightbox" data-args='<%= JSON.stringify([url]) %>'>
                 <img src="<%= url %>" alt="Slide <%= index + 1 %>" loading="lazy">
               </div>
             <% } %>
@@ -293,12 +294,12 @@
   </div>
 
   <!-- Lightbox -->
-  <div id="lightbox" class="lightbox" style="display: none;" onclick="closeLightbox()">
-    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-    <img id="lightbox-image" src="" alt="Full size slide" onclick="event.stopPropagation()">
+  <div id="lightbox" class="lightbox" style="display: none;" data-on-click="closeLightbox">
+    <button class="lightbox-close" data-on-click="closeLightbox">&times;</button>
+    <img id="lightbox-image" src="" alt="Full size slide" data-on-click="$stop">
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     function openLightbox(url) {
       document.getElementById('lightbox-image').src = url;
       document.getElementById('lightbox').style.display = 'flex';

@@ -21,6 +21,7 @@
       margin-right: auto;
     }
   </style>
+  <script src="/js/csp-actions.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <%- include("partials/navigation", { currentPage: "byof", username: user?.username || 'Guest', userRole: user?.role || 'viewer' }) %>
@@ -61,10 +62,10 @@
           <p id="plan-summary" class="text-sm text-gray-600 mt-1">Loading plan...</p>
         </div>
         <div id="plan-actions" class="flex gap-2 <%= byofRole === 'approver' && session.status === 'plan_ready' ? '' : 'hidden' %>">
-          <button onclick="approvePlan()" class="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+          <button data-on-click="approvePlan" class="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
             Approve
           </button>
-          <button onclick="showRejectModal()" class="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+          <button data-on-click="showRejectModal" class="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
             Reject
           </button>
         </div>
@@ -100,7 +101,7 @@
           <div class="flex gap-2">
             <input type="text" id="pr-url-input" placeholder="https://github.com/owner/repo/pull/123"
               class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-            <button onclick="linkPr()" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+            <button data-on-click="linkPr" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
               Link PR
             </button>
           </div>
@@ -117,8 +118,8 @@
         <textarea id="reject-reason" rows="3" placeholder="Reason for rejection..."
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
         <div class="flex gap-2 mt-4 justify-end">
-          <button onclick="hideRejectModal()" class="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50">Cancel</button>
-          <button onclick="rejectPlan()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Reject</button>
+          <button data-on-click="hideRejectModal" class="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50">Cancel</button>
+          <button data-on-click="rejectPlan" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Reject</button>
         </div>
       </div>
     </div>
@@ -175,8 +176,7 @@ Feel free to share any mockups or examples!` %></div>
         <form id="message-form" class="flex gap-3">
           <div class="flex-1">
             <textarea id="message-input" rows="2" placeholder="Type your message..."
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-              onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); document.getElementById('message-form').requestSubmit(); }"></textarea>
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"></textarea>
           </div>
           <div class="flex flex-col gap-2">
             <button type="submit" id="send-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -194,7 +194,7 @@ Feel free to share any mockups or examples!` %></div>
     </div>
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     const sessionId = '<%= session.id %>';
     const sessionStatus = '<%= session.status %>';
     const byofRole = '<%= byofRole %>';
@@ -361,6 +361,14 @@ Feel free to share any mockups or examples!` %></div>
     }
 
     // Handle form submit
+    // Enter sends, Shift+Enter is a new line.
+    document.getElementById('message-input').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        document.getElementById('message-form').requestSubmit();
+      }
+    });
+
     document.getElementById('message-form').addEventListener('submit', async (e) => {
       e.preventDefault();
 
