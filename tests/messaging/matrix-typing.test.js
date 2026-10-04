@@ -57,6 +57,7 @@ const ROOM_MEMBERS = {
 
 const savedRedisUrl = process.env.REDIS_URL;
 let relay;
+let service;
 
 async function boot({ reply = 'Here is a warm-up idea.' } = {}) {
   jest.resetModules();
@@ -105,7 +106,7 @@ async function boot({ reply = 'Here is a warm-up idea.' } = {}) {
 
   relay = require('../../bot/shared/services/messaging/matrix-outbound-relay');
   relay.ownConnectionInThisProcess();
-  const service = require('../../bot/shared/services/messaging/matrix-channel.service');
+  service = require('../../bot/shared/services/messaging/matrix-channel.service');
   const adapter = require('../../bot/shared/services/messaging/inbound/matrix-events.adapter');
 
   // What handleWebhookPost does for an accepted message, reduced to the
@@ -130,7 +131,12 @@ async function boot({ reply = 'Here is a warm-up idea.' } = {}) {
   return { service, client, dispatch, say, hooks, wire, logToFile };
 }
 
-afterEach(() => {
+afterEach(async () => {
+  // A test that leaves a job's hold open would leave its refresh timer
+  // running, and the driver's lazy getClient() would hand the next test's
+  // client to it: end this test's typing first.
+  if (service) await service._stopTypingIndicator(T_ID);
+  service = null;
   if (relay) relay._resetForTests();
   if (savedRedisUrl === undefined) delete process.env.REDIS_URL; else process.env.REDIS_URL = savedRedisUrl;
   delete process.env.MATRIX_ACCESS_TOKEN;
@@ -139,6 +145,9 @@ afterEach(() => {
 });
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+// A send while a job still holds the typing turns it off, then on again 1 s
+// later (matrix-channel.service.js#reannounceTyping).
+const reannounced = () => new Promise((resolve) => setTimeout(resolve, 1200));
 const typingIn = (wire, roomId) => wire.filter(([kind, room]) => kind.startsWith('typing') && room === roomId).map(([kind]) => kind);
 
 it('a DM question: marked read, typing on, and typing off right after the reply is sent', async () => {
@@ -205,7 +214,7 @@ it('a job the worker picked up before the ack keeps "typing" while it runs', asy
     await settle();
   };
   await say(DM, 'make the test paper');
-  await settle();
+  await reannounced();
   const typing = typingIn(wire, DM);
   // The job has not finished and has not released its hold: the teacher should still see "Rumi is typing…".
   expect(typing[typing.length - 1]).toBe('typing:on');
@@ -219,13 +228,13 @@ it('a job\'s typing ends with the job\'s own delivery, not with a send that has 
     await settle();
   };
   await say(DM, 'make the test paper');
-  await settle();
+  await reannounced();
   const last = () => typingIn(wire, DM).slice(-1)[0];
   expect(last()).toBe('typing:on');
   // A reminder the bot sends meanwhile, and a nudge from another process over the relay.
   await service.sendMessage(T_ID, 'Reminder: staff meeting at 2.');
   await relay.call('sendMessage', [T_ID, 'How did the fractions lesson go?']);
-  await settle();
+  await reannounced();
   expect(last()).toBe('typing:on');
   // The job delivers its paper: the typing ends there, and the job's release afterwards changes nothing.
   await job(() => relay.call('sendMessage', [T_ID, 'Your test paper is ready.']));
@@ -235,6 +244,74 @@ it('a job\'s typing ends with the job\'s own delivery, not with a send that has 
   await job(() => relay.call('_releaseTyping', [T_ID, 'hold:worker:1']));
   await settle();
   expect(typingIn(wire, DM)).toHaveLength(n);
+});
+
+// What a client (Element) is told, from the bot's typing calls on the wire.
+// Synapse 1.143, measured on the rig: it sends an m.typing event to a syncing
+// client only when the user's typing state changes, so a "typing on" while
+// already typing reaches no one, and "off" then "on" reaches it as two events.
+function typingEventsSeenByClient(wire, roomId) {
+  const events = [];
+  let typing = false;
+  wire.forEach(([kind, room], at) => {
+    if (room !== roomId) return;
+    if (kind === 'message') events.push({ at, kind: 'message' });
+    if (!kind.startsWith('typing')) return;
+    const on = kind === 'typing:on';
+    if (on !== typing) events.push({ at, kind: 'm.typing', userIds: on ? [OWN] : [] });
+    typing = on;
+  });
+  return events;
+}
+const waitFor = async (predicate, timeoutMs = 3000) => {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate() && Date.now() < deadline) await settle(); // eslint-disable-line no-await-in-loop
+};
+
+// Element stops showing a user as typing when that user sends a message, and
+// shows it again only on a new m.typing event naming them. On the public
+// instance a worker job held the typing for its whole run but, after Rumi's
+// "Making it now", Element showed nothing: the bot only refreshed a typing
+// that was already on, and Synapse emits nothing for that.
+it('after the ack, while a job still holds the typing, the client receives a new m.typing naming Rumi', async () => {
+  const { say, hooks, wire } = await boot({ reply: 'Making it now. It takes a minute or two.' });
+  hooks.during = async () => {
+    await relay.forJob('lesson_plan:lp-9', () => relay.call('_holdTyping', [T_ID, 'hold:worker:9']));
+    await settle();
+  };
+  await say(DM, 'make me a lesson plan on fractions');
+  const ackAt = () => wire.findIndex(([kind, room]) => kind === 'message' && room === DM);
+  const afterAck = () => typingEventsSeenByClient(wire, DM).filter((e) => e.at > ackAt()).map(({ kind, userIds }) => ({ kind, userIds }));
+  await waitFor(() => ackAt() >= 0 && afterAck().some((e) => e.userIds && e.userIds.length));
+  expect(ackAt()).toBeGreaterThanOrEqual(0);
+  // Off (Element has already hidden it under the ack), then Rumi typing again.
+  expect(afterAck()).toEqual([{ kind: 'm.typing', userIds: [] }, { kind: 'm.typing', userIds: [OWN] }]);
+});
+
+it('a job that delivers within a second of the ack: the typing stays off, the re-announce never fires', async () => {
+  const { say, hooks, wire } = await boot({ reply: 'Making it now.' });
+  const job = (fn) => relay.forJob('lesson_plan:lp-10', fn);
+  hooks.during = async () => {
+    await job(() => relay.call('_holdTyping', [T_ID, 'hold:worker:10']));
+    await settle();
+  };
+  await say(DM, 'make me a lesson plan on fractions');
+  await settle();
+  await job(() => relay.call('sendMessage', [T_ID, 'Your lesson plan is ready.']));
+  await reannounced();
+  expect(typingIn(wire, DM).slice(-1)[0]).toBe('typing:off');
+  const events = typingEventsSeenByClient(wire, DM);
+  const lastMessageAt = events.map((e) => e.kind).lastIndexOf('message');
+  expect(events.slice(lastMessageAt + 1).some((e) => e.userIds && e.userIds.length)).toBe(false);
+});
+
+it('a quick answer: the typing ends with the reply and does not come back', async () => {
+  const { say, wire } = await boot();
+  await say(DM, 'How do I teach fractions?');
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  const events = typingEventsSeenByClient(wire, DM);
+  const replyAt = events.findIndex((e) => e.kind === 'message');
+  expect(events.slice(replyAt + 1)).toEqual([expect.objectContaining({ kind: 'm.typing', userIds: [] })]);
 });
 
 it('typing failures never break a reply (fail open, logged)', async () => {
