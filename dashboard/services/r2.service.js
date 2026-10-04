@@ -6,6 +6,7 @@
 
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { redactUrl } = require('../lib/redact-url');
 require('dotenv').config();
 
 // Lazy R2 client — resolved on first use, not at module load, so requiring
@@ -147,7 +148,7 @@ async function generatePresignedUrl(r2Url, expiresIn = 3600) {
   try {
     // Skip if URL is invalid (local path, null, etc.)
     if (!isValidR2Url(r2Url)) {
-      console.warn(`⚠️ Cannot generate presigned URL for invalid R2 URL: ${r2Url}`);
+      console.warn(`⚠️ Cannot generate presigned URL for invalid R2 URL: ${redactUrl(r2Url)}`);
       return null;
     }
 

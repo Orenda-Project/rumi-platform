@@ -36,6 +36,7 @@ const { generatePresignedUrl, generatePresignedUrls, isValidR2Url } = require('.
 const { widenPortalAppSession } = require('../lib/portal-app-origins');
 const { createPortalAuthLimiters } = require('../lib/portal-auth-limits');
 const { portalChannels } = require('../lib/portal-channels');
+const { redactUrl } = require('../lib/redact-url');
 const { createCoachRouter } = require('./portal-coach.routes');
 const { canUseCoachView } = require('../services/coach-observations.service');
 
@@ -1944,7 +1945,7 @@ router.get('/video/:id', requirePortalAuth, async (req, res) => {
       presignedVideoUrl = await generatePresignedUrl(video.video_url, 3600);
     } else if (video.video_url) {
       // Issue #21: Log warning for invalid URLs (local paths)
-      console.warn(`⚠️ Video ${videoId} has invalid video_url: ${video.video_url}`);
+      console.warn(`⚠️ Video ${videoId} has invalid video_url: ${redactUrl(video.video_url)}`);
     }
 
     // Issue #18: Generate presigned URL for PDF
