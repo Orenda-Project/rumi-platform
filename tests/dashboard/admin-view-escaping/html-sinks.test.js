@@ -23,6 +23,7 @@
 const fs = require('fs');
 const path = require('path');
 const parser = require('@babel/parser');
+const traverse = require('@babel/traverse').default;
 
 const VIEWS = path.join(__dirname, '../../../dashboard/views');
 
@@ -133,86 +134,51 @@ function hasTagLiteral(n) {
 const isHtmlConcat = (n) => n.type === 'BinaryExpression' && n.operator === '+' && hasTagLiteral(n);
 const SINK_PROPS = new Set(['innerHTML', 'outerHTML']);
 
-const FUNCTION = /Function/;
-const SKIP_KEYS = new Set(['loc', 'start', 'end', 'extra']);
-
-function forEachChild(node, fn) {
-  for (const key of Object.keys(node)) {
-    if (SKIP_KEYS.has(key)) continue;
-    const v = node[key];
-    if (Array.isArray(v)) v.forEach((c) => c && typeof c.type === 'string' && fn(c));
-    else if (v && typeof v.type === 'string') fn(v);
-  }
-}
-
-/** Statements that declare names for a scope node: a block, the program, a switch case. */
-const scopeBody = (n) => (n.type === 'BlockStatement' || n.type === 'Program' ? n.body
-  : n.type === 'SwitchCase' ? n.consequent : null);
-
 /**
- * The declarator of `name` that `ancestors` (outermost first) see, with the
- * scope that holds it; null for a parameter, a loop variable, a destructured
- * name or a global.
+ * The initialiser to check for an Identifier, or null when the name has none:
+ * Babel's scope analysis finds the binding this reference sees, and it is
+ * followed only when it is a `const`/`let`/`var x = init` that is never
+ * assigned again. Parameters, loop variables, catch params, destructured
+ * names, function declarations, reassigned names and globals give null.
  */
-function findDeclarator(name, ancestors) {
-  for (let i = ancestors.length - 1; i >= 0; i--) {
-    const scope = ancestors[i];
-    for (const stmt of scopeBody(scope) || []) {
-      if (stmt.type !== 'VariableDeclaration') continue;
-      const decl = stmt.declarations.find((d) => d.id.type === 'Identifier' && d.id.name === name);
-      if (decl) return { decl, scope, depth: i };
-    }
-    if (FUNCTION.test(scope.type)) {
-      const params = JSON.stringify(scope.params.map((p) => p.type === 'Identifier' ? p.name : null));
-      if (params.includes(`"${name}"`)) return null;
-    }
-  }
-  return null;
-}
-
-/** True if `name` is assigned (=, +=, ++ ...) anywhere in `scope` after its declaration. */
-function isReassigned(name, scope) {
-  let found = false;
-  (function walk(n) {
-    if (found) return;
-    if ((n.type === 'AssignmentExpression' && n.left.type === 'Identifier' && n.left.name === name)
-      || (n.type === 'UpdateExpression' && n.argument.type === 'Identifier' && n.argument.name === name)) {
-      found = true;
-      return;
-    }
-    forEachChild(n, walk);
-  }(scope));
-  return found;
+function initialiserOf(idPath) {
+  const binding = idPath.scope.getBinding(idPath.node.name);
+  if (!binding || !['const', 'let', 'var'].includes(binding.kind)) return null;
+  const decl = binding.path;
+  if (!decl.isVariableDeclarator() || decl.node.id.type !== 'Identifier' || !decl.node.init) return null;
+  if (binding.constantViolations.length > 0) return null;
+  return decl.node.init;
 }
 
 /** HTML sinks and HTML-building expressions in one script: the values they take unchecked. */
 function findUnchecked(code) {
   const ast = parser.parse(code, { sourceType: 'script', allowReturnOutsideFunction: true });
   const found = [];
-  // A variable declared once is checked by its initialiser, in the scope that declares it.
-  const resolve = (nodes, ancestors, seen) => nodes.flatMap((n) => {
-    if (n.type !== 'Identifier' || seen.has(n.name)) return [n];
-    const hit = findDeclarator(n.name, ancestors);
-    if (!hit || !hit.decl.init || isReassigned(n.name, hit.scope)) return [n];
-    return resolve(unchecked(hit.decl.init), ancestors.slice(0, hit.depth + 1), new Set([...seen, n.name]));
+  const sinks = [];
+  const identifiers = new Map();
+  traverse(ast, {
+    Identifier(p) { identifiers.set(p.node, p); },
+    enter(p) {
+      const { node, parent } = p;
+      if (isHtmlTemplate(node)) sinks.push(...node.expressions);
+      else if (isHtmlConcat(node) && !(parent && isHtmlConcat(parent))) sinks.push(node);
+      else if (node.type === 'AssignmentExpression' && node.left.type === 'MemberExpression'
+        && SINK_PROPS.has(propName(node.left.property)) && !isHtmlTemplate(node.right) && !isHtmlConcat(node.right)) {
+        sinks.push(node.right);
+      } else if (node.type === 'CallExpression' && node.callee.type === 'MemberExpression') {
+        const method = propName(node.callee.property);
+        if (method === 'insertAdjacentHTML' && node.arguments[1]) sinks.push(node.arguments[1]);
+        if ((method === 'write' || method === 'writeln') && node.callee.object.name === 'document') sinks.push(...node.arguments);
+      }
+    },
   });
-  const ancestors = [];
-  const check = (expr) => { found.push(...resolve(unchecked(expr), ancestors, new Set())); };
-  (function walk(node, parent) {
-    if (isHtmlTemplate(node)) node.expressions.forEach(check);
-    else if (isHtmlConcat(node) && !(parent && isHtmlConcat(parent))) check(node);
-    else if (node.type === 'AssignmentExpression' && node.left.type === 'MemberExpression'
-      && SINK_PROPS.has(propName(node.left.property)) && !isHtmlTemplate(node.right) && !isHtmlConcat(node.right)) {
-      check(node.right);
-    } else if (node.type === 'CallExpression' && node.callee.type === 'MemberExpression') {
-      const method = propName(node.callee.property);
-      if (method === 'insertAdjacentHTML' && node.arguments[1]) check(node.arguments[1]);
-      if ((method === 'write' || method === 'writeln') && node.callee.object.name === 'document') node.arguments.forEach(check);
-    }
-    ancestors.push(node);
-    forEachChild(node, (c) => walk(c, node));
-    ancestors.pop();
-  }(ast.program, null));
+  // A variable with a single initialiser is checked by that initialiser.
+  const resolve = (nodes, seen) => nodes.flatMap((n) => {
+    const idPath = n.type === 'Identifier' && identifiers.get(n);
+    const init = idPath && !seen.has(n.name) && initialiserOf(idPath);
+    return init ? resolve(unchecked(init), new Set([...seen, n.name])) : [n];
+  });
+  for (const expr of sinks) found.push(...resolve(unchecked(expr), new Set()));
   // A value can be reached twice (a template inside a sink): report it once.
   const unique = [...new Map(found.map((n) => [n.start, n])).values()];
   return unique.map((n) => ({ text: code.slice(n.start, n.end).replace(/\s+/g, ' '), line: n.loc.start.line }));
@@ -268,5 +234,38 @@ describe('admin views: HTML built in scripts escapes what it interpolates', () =
     expect(texts('let h = ""; h += x; el.innerHTML = h;')).toEqual(['h']);
     expect(texts('function f(p) { return `<b>${p}</b>`; }')).toEqual(['p']);
     expect(texts('for (const [g] of list) out += `<b>${g}</b>`;')).toEqual(['g']);
+  });
+
+  test('the scan does not follow a shadowed or reassigned name to another declaration', () => {
+    const texts = (code) => findUnchecked(code).map((f) => f.text);
+    const escaped = (name) => `const ${name} = escapeHtml(u.${name}); `;
+    // A new binding of the same name hides the escaped one: report the inner name.
+    expect(texts(`${escaped('name')}function row({ name }) { return \`<td>\${name}</td>\`; }`)).toEqual(['name']);
+    expect(texts(`${escaped('name')}function row(name = "") { return \`<td>\${name}</td>\`; }`)).toEqual(['name']);
+    expect(texts(`${escaped('name')}for (const name of rawNames) out.push(\`<td>\${name}</td>\`);`)).toEqual(['name']);
+    expect(texts(`${escaped('msg')}try { f(); } catch (msg) { el.innerHTML = \`<p>\${msg}</p>\`; }`)).toEqual(['msg']);
+    expect(texts(`${escaped('title')}function f(c) { const { title } = c; return \`<b>\${title}</b>\`; }`)).toEqual(['title']);
+    expect(texts(`${escaped('name')}function f(u) { if (u) { var name = u.name; } return \`<b>\${name}</b>\`; }`)).toEqual(['u.name']);
+    expect(texts(`${escaped('name')}el.innerHTML = rawNames.map(name => name).join('<br>');`)).toEqual(['name']);
+    expect(texts(`${escaped('t')}function g() { function t() {} return \`<b>\${t}</b>\`; }`)).toEqual(['t']);
+    // Assigned again by destructuring, a for-of target or a second var: report the name.
+    expect(texts('let t = escapeHtml(c.title); [t] = [c.title]; el.innerHTML = `<b>${t}</b>`;')).toEqual(['t']);
+    expect(texts('let t = escapeHtml(a); for (t of rawList) {} el.innerHTML = `<b>${t}</b>`;')).toEqual(['t']);
+    expect(texts('var t = escapeHtml(c.title); var t = c.title; el.innerHTML = `<b>${t}</b>`;')).toEqual(['t']);
+  });
+
+  test('the scan reports a shadowed name in the real users.ejs chat view', () => {
+    // renderChat already has `const displayName = escapeHtml(...)`; an alias list
+    // that destructures its own displayName must not pass as that one.
+    const script = inlineScripts(fs.readFileSync(path.join(VIEWS, 'users.ejs'), 'utf8'))
+      .map((s) => s.code).find((code) => code.includes('function renderChat('));
+    const marker = '      // Create timeline with all user activities\n';
+    expect(script).toContain(marker);
+    const patched = script.replace(marker, 'document.getElementById("chatHeader").insertAdjacentHTML("beforeend", '
+      + '(data.aliases || []).map(({ displayName }) => `<span class="alias">${displayName}</span>`).join(""));\n' + marker);
+    const before = findUnchecked(script).map((f) => f.text);
+    const after = findUnchecked(patched).map((f) => f.text);
+    expect(before).not.toContain('displayName');
+    expect(after.filter((t) => !before.includes(t))).toEqual(['displayName']);
   });
 });
