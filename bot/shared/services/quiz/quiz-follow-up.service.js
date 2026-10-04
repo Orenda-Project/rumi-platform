@@ -17,6 +17,7 @@ const redisService = require('../cache/railway-redis.service');
 const WhatsAppService = require('../whatsapp.service');
 const LessonPlanQueueService = require('../lesson-plan-queue.service');
 const DailyCaps = require('../limits/daily-caps');
+const LessonPlanAvailability = require('../lesson-plan-availability');
 const QuizInsightService = require('./quiz-insight.service');
 const { logToFile } = require('../../utils/logger');
 
@@ -181,6 +182,14 @@ async function handleNextTopicReply(userId, from, language, replyText) {
     return true;
   }
 
+  // Not configured here (no GAMMA_API_KEY): say so, queue nothing, and stop
+  // waiting for a topic, or every later message would be refused the same way
+  // (lesson-plan-availability.js).
+  if (await LessonPlanAvailability.explainIfUnavailable(from, { language })) {
+    await redisService.redis.del(AWAITING_KEY(userId));
+    await redisService.redis.del(`${AWAITING_KEY(userId)}:options`);
+    return true;
+  }
   // Today's lesson-plan allowance for an unregistered account (limits/daily-caps.js).
   if (!(await DailyCaps.allowOrExplainForUserId(userId, 'lesson_plan', from))) return true;
 

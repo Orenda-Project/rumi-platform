@@ -21,7 +21,9 @@ Type a topic → a short "generating your plan" note (with an honest time estima
 
 ## Enable it
 
-Set **`GAMMA_API_KEY`**.
+Set **`GAMMA_API_KEY`**. Without it, a teacher who asks for a lesson plan or presentation is told "Lesson plans
+aren't available on this service yet." and nothing is queued. On a public deployment, cap them per day with
+`DAILY_LESSON_PLAN_CAP_*` ([Running Rumi in public](../running-in-public.md)).
 
 ## Customize
 

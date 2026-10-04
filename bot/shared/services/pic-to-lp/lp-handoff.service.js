@@ -26,6 +26,7 @@ const { logEvent } = require('../../utils/structured-logger');
 const { TEMP_DIR } = require('../../utils/constants');
 const supabase = require('../../config/supabase');
 const DailyCaps = require('../limits/daily-caps');
+const LessonPlanAvailability = require('../lesson-plan-availability');
 const crypto = require('crypto');
 
 const PIC_LP_DEFAULT_DAYS = 1; // single-page → single-lesson plan by default
@@ -123,6 +124,19 @@ async function generateAndDeliver({ session, formData, from }) {
   } catch (e) {
     logToFile('Pic-LP A/B router soft-failed (falling through to Gamma)', { error: e.message });
     // Fall through to existing Gamma path — safe default
+  }
+
+  // The Gamma branch with no GAMMA_API_KEY can only fail (Gamma answers 401):
+  // hand the plan to Kie.ai when it is configured, else say lesson plans are
+  // not available here (lesson-plan-availability.js).
+  if (!LessonPlanAvailability.lessonPlansAvailable()) {
+    if (process.env.KIE_API_KEY_PIC_LP || process.env.KIE_API_KEY) {
+      logToFile('Pic-LP: Gamma not configured — handing off to Kie.ai', { sessionId: session.id });
+      const KieaiHandoff = require('./kieai-handoff.service');
+      return await KieaiHandoff.enqueueAndAck({ session, formData, from });
+    }
+    await LessonPlanAvailability.explainIfUnavailable(from, { language: formData && formData.language, available: false });
+    return null;
   }
 
   // Gamma "Detailed" path deps are required lazily — the prompt builder is not
