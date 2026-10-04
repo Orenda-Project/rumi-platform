@@ -54,6 +54,7 @@ const transcriptUxHelpers = require('./services/transcript-ux-helpers.service');
 
 // GPT Response Cache 
 const { setRedisClient: setGptCacheRedisClient } = require('./services/gpt-cache.service');
+const { PortalLimitStore, createPortalDataLimiter, setPortalAuthLimitsRedisClient } = require('./lib/portal-auth-limits');
 
 // Video Observability Service
 const { getVideos, getVideoById, getVideoStats, getVideosByDate, getUsersWithVideos } = require('./services/video-observability.service');
@@ -198,6 +199,8 @@ if (process.env.REDIS_URL) {
       redisConnected = true;
  // Initialize GPT cache with Redis client 
       setGptCacheRedisClient(redisClient);
+      // Rate-limit counts shared by every cluster worker (lib/portal-auth-limits.js)
+      setPortalAuthLimitsRedisClient(redisClient);
     });
 
     redisClient.on('reconnecting', () => {
@@ -209,6 +212,7 @@ if (process.env.REDIS_URL) {
       redisConnected = false;
  // Disable GPT cache when Redis disconnects 
       setGptCacheRedisClient(null);
+      setPortalAuthLimitsRedisClient(null);
     });
 
     // Attempt connection with timeout
@@ -265,7 +269,9 @@ app.use(keepSessionsLaxOutsidePortalApi);
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // 10 attempts (increased from 5 for better UX)
-  message: 'Too many login attempts, please try again later.'
+  message: 'Too many login attempts, please try again later.',
+  // Counted in Redis when there is one, so cluster workers share the count.
+  store: new PortalLimitStore({ prefix: 'rl:admin-login:' }),
 });
 
 // Rate limiting for tracking endpoints (prevent abuse)
@@ -277,44 +283,11 @@ const trackingLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// SECURITY: Aggressive rate limiting for portal authentication endpoints
-// TEMPORARY: DISABLED FOR TESTING - MUST RE-ENABLE BEFORE PRODUCTION
-// PRODUCTION VALUES: windowMs: 60 * 60 * 1000 (1 hour), max: 10
-const portalAuthLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // TEMP: 1 minute
-  max: 10000, // TEMP: Effectively disabled
-  message: 'Too many requests. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: false, // Count all requests, not just failed ones
-  // Generate key using IP + endpoint to prevent cross-endpoint abuse
-  keyGenerator: (req) => {
-    return `${req.ip}-${req.path}`;
-  }
-});
-
-// SECURITY: Extra strict rate limiting for public validation endpoints (prevent enumeration)
-// TEMPORARY: DISABLED FOR TESTING - MUST RE-ENABLE BEFORE PRODUCTION
-// PRODUCTION VALUES: windowMs: 60 * 60 * 1000 (1 hour), max: 5
-const publicValidationLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // TEMP: 1 minute
-  max: 10000, // TEMP: Effectively disabled
-  message: 'Too many requests. Please try again in an hour.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: false
-});
-
-// Rate limiting for portal data endpoints (more generous)
-// TEMPORARY: DISABLED FOR TESTING - MUST RE-ENABLE BEFORE PRODUCTION
-// PRODUCTION VALUES: windowMs: 1 * 60 * 1000 (1 minute), max: 30
-const portalDataLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10000, // TEMP: Effectively disabled (was 30)
-  message: 'Too many requests, please slow down.',
-  standardHeaders: true,
-  legacyHeaders: false
-});
+// General per-IP limit on every /api/portal request. A portal page makes a
+// handful of calls, so this only stops floods. The public sign-in routes have
+// their own per-IP and per-account limits inside routes/portal.routes.js; both
+// live in lib/portal-auth-limits.js and count in Redis when there is one.
+const portalDataLimiter = createPortalDataLimiter();
 
 // CORS configuration for tracking endpoints. Each env var contributes its
 // own origin to the allow-list; if unset, we just skip that origin rather
@@ -2771,7 +2744,7 @@ app.get('/observability/ama-chats/:conversationId/messages', requireAuth, async 
 app.use('/api/track', cors(trackingCorsOptions), trackingLimiter, funnelTrackingRoutes);
 
 // Teacher Portal API routes (with CORS, rate limiting, NO auth middleware - routes handle auth internally)
-app.use('/api/portal', cors(portalCorsOptions), portalAuthLimiter, portalDataLimiter, portalRoutes);
+app.use('/api/portal', cors(portalCorsOptions), portalDataLimiter, portalRoutes);
 
 // Redirect /dashboard to Teacher Portal frontend (for cases where backend URL is accessed directly)
 app.get('/dashboard', (req, res) => {
