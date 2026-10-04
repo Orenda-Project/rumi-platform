@@ -20,6 +20,11 @@ form's questions one message at a time.
 | **Redis** (`REDIS_URL`) | Already required. On Matrix it also carries the worker's sends to the bot (see [The relay](#the-relay)) |
 | Object storage (`R2_*`) | For coaching recordings, reading recordings and generated images, as on any non-Meta channel |
 
+## See it running
+
+Try our hosted Rumi Messenger at https://rumi-chat.up.railway.app: create an account, tap **Chat with Rumi**,
+and say hi. To open your own deployment to the public, read [Running Rumi in public](../running-in-public.md) first.
+
 ## In programme terms
 
 **Own the channel: run your teacher-support programme on a messenger your school system controls.**
