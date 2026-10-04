@@ -492,7 +492,13 @@ class ExamCheckerOrchestrator {
   static async getSessionState(userId) {
     const ExamSessionService = require('./exam-session.service');
     const session = await ExamSessionService.getActive(userId);
-    return session ? { active: true, state: session.status, sessionId: session.id } : { active: false };
+    if (!session) return { active: false };
+    return {
+      active: true,
+      state: session.status,
+      sessionId: session.id,
+      imageCount: session.original_images?.length || 0,
+    };
   }
 }
 

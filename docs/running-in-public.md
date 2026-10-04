@@ -38,6 +38,10 @@ Also:
    told "Lesson plans aren't available on this service yet." and nothing is queued. With the key set, cap them
    per account and for the whole deployment (`DAILY_LESSON_PLAN_CAP_REGISTERED`, `DAILY_LESSON_PLAN_CAP_TOTAL`),
    so the daily total cannot outrun your Gamma plan.
+1. **Exam checking costs vision-OCR calls.** Any account can start a session with "check exams" or `/exam`
+   and send photos, and each page is read by the OCR model. Unless you want teachers to use exam checking, set
+   `EXAM_CHECKER_ENABLED=false`: the bot then treats those messages as ordinary chat. On a deployment that serves
+   only your own teachers, keep it on (the default). [How it works](features/exam-checker.md#starting-and-stopping).
 2. **Run Redis.** Every limit is shared across replicas through Redis. Without it each process keeps its own
    count, which still limits, but less precisely.
 3. **Watch for the alert.** Search the logs for `model_budget_exhausted`, or point your log alerts at it (see

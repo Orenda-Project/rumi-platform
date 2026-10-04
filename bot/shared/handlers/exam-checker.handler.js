@@ -7,7 +7,7 @@
  * Created: 2026-01-24
  */
 
-const { ExamCheckerOrchestrator, ExamSessionService } = require('../services/exam-checker');
+const { ExamCheckerOrchestrator, SESSION_STATES } = require('../services/exam-checker');
 const WhatsAppService = require('../services/whatsapp.service');
 const { uploadImageWithRetry } = require('../storage/r2');
 const { logToFile } = require('../utils/logger');
@@ -62,8 +62,41 @@ const EXAM_CHECK_KEYWORDS = [
 // Button prefixes for exam checker
 const EXAM_BUTTON_PREFIX = 'ech_';
 
+// Words that end an exam session from any state, compared against the whole
+// message. The same words the bot already uses to leave attendance entry
+// ('cancel', 'منسوخ') and a quiz ('stop', 'روکیں'), plus Arabic.
+const EXAM_CANCEL_WORDS = ['cancel', '/cancel', 'stop', 'منسوخ', 'روکیں', 'إلغاء', 'الغاء'];
+
+// A letter, mark, digit or underscore on either side means the keyword is part
+// of a longer word. JS's \b only knows ASCII, so it cannot do this for Urdu or
+// Arabic script.
+const WORD_CHAR = '[\\p{L}\\p{M}\\p{N}_]';
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const EXAM_COMMANDS = EXAM_CHECK_KEYWORDS.filter((keyword) => keyword.startsWith('/'));
+const PHRASE_PATTERNS = EXAM_CHECK_KEYWORDS
+  .filter((keyword) => !EXAM_COMMANDS.includes(keyword))
+  .map((keyword) => new RegExp(
+    `(?<!${WORD_CHAR})${escapeRegExp(keyword.toLowerCase()).replace(/ /g, '\\s+')}(?!${WORD_CHAR})`,
+    'u'
+  ));
+
 /**
- * Check if a text message should trigger exam checker
+ * Is the exam checker switched on? On unless EXAM_CHECKER_ENABLED says
+ * false / 0 / off, so a deployment that never sets it keeps exam checking.
+ * @returns {boolean}
+ */
+function isExamCheckerEnabled() {
+  const value = String(process.env.EXAM_CHECKER_ENABLED || '').trim().toLowerCase();
+  return !['false', '0', 'off'].includes(value);
+}
+
+/**
+ * Check if a text message should trigger exam checker.
+ *
+ * A command ("/exam") counts only as the whole message or its first word, and
+ * a phrase ("check exams") only as whole words, so a link like
+ * https://example.org/exam/results or a word like "recheck" never opens a
+ * session.
  * @param {string} text - Message text
  * @returns {boolean}
  */
@@ -71,13 +104,24 @@ function shouldTriggerExamChecker(text) {
   if (!text) return false;
   const normalizedText = text.toLowerCase().trim();
 
-  for (const keyword of EXAM_CHECK_KEYWORDS) {
-    if (normalizedText.includes(keyword.toLowerCase())) {
-      return true;
-    }
+  const firstWord = normalizedText.split(/\s+/)[0];
+  if (EXAM_COMMANDS.includes(firstWord)) {
+    return true;
   }
 
-  return false;
+  return PHRASE_PATTERNS.some((pattern) => pattern.test(normalizedText));
+}
+
+/**
+ * Is this message one of the cancel words on its own? Case and surrounding
+ * punctuation are ignored ("Cancel!" counts); "do not cancel" does not.
+ * @param {string} text - Message text
+ * @returns {boolean}
+ */
+function isExamCancelCommand(text) {
+  if (!text) return false;
+  const normalizedText = text.toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s/]/gu, '').trim();
+  return EXAM_CANCEL_WORDS.includes(normalizedText);
 }
 
 /**
@@ -113,12 +157,31 @@ async function handleExamText(message, from, user) {
   const correlationId = generateCorrelationId();
 
   return runWithCorrelation(correlationId, async () => {
+    const session = await ExamCheckerOrchestrator.getSessionState(user.id);
+    const hasSession = session.active;
+
+    // A cancel word leaves the session from any state, even with the switch off
+    if (hasSession && isExamCancelCommand(text)) {
+      return handleExamCancel(from, user);
+    }
+
+    if (!isExamCheckerEnabled()) {
+      return null; // Switched off: no new sessions, and an open one is left alone
+    }
+
     // Check for trigger keywords or active session
     const triggered = shouldTriggerExamChecker(text);
-    const hasSession = await hasActiveExamSession(user.id);
 
     if (!triggered && !hasSession) {
       return null; // Not for exam checker
+    }
+
+    // A session with no images yet holds nothing to lose. Ordinary chat ends it
+    // quietly and goes on as ordinary chat instead of a "0 images" prompt.
+    if (!triggered && session.state === SESSION_STATES.COLLECTING_IMAGES && !session.imageCount) {
+      await ExamCheckerOrchestrator.cancelSession(session.sessionId);
+      logToFile('📝 Empty exam session closed by ordinary chat', { userId: user.id, sessionId: session.sessionId });
+      return null;
     }
 
     logToFile('📝 Exam checker text received', {
@@ -192,6 +255,10 @@ async function handleExamImage(message, from, user) {
   const correlationId = generateCorrelationId();
 
   return runWithCorrelation(correlationId, async () => {
+    if (!isExamCheckerEnabled()) {
+      return null; // Switched off: let image handler process it
+    }
+
     // Check if user has active exam session
     const hasSession = await hasActiveExamSession(user.id);
     const caption = message.image?.caption?.toLowerCase() || '';
@@ -428,6 +495,8 @@ async function handleExamCancel(from, user) {
 module.exports = {
   // Detection functions
   shouldTriggerExamChecker,
+  isExamCancelCommand,
+  isExamCheckerEnabled,
   isExamCheckerButton,
   hasActiveExamSession,
 
@@ -440,5 +509,6 @@ module.exports = {
 
   // Constants
   EXAM_CHECK_KEYWORDS,
+  EXAM_CANCEL_WORDS,
   EXAM_BUTTON_PREFIX
 };
