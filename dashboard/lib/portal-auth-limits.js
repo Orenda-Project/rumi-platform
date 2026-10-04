@@ -32,10 +32,14 @@
  *   PORTAL_SETUP_LIMIT_PER_IP         invite checks / setups per IP     (10)
  *   PORTAL_DATA_LIMIT_PER_MINUTE      all /api/portal requests per IP
  *                                     per minute                        (300)
+ *
+ * "Per IP" is the client address from lib/client-ip.js: req.ip as TRUST_PROXY
+ * makes it, or PORTAL_CLIENT_IP_HEADER when that is set.
  */
 
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
+const { createClientIpGetter } = require('./client-ip');
 
 const TOO_MANY = Object.freeze({ success: false, error: 'Too many attempts. Please try again later.' });
 const KEY_PREFIX = 'rl:portal:';
@@ -243,11 +247,11 @@ function buildLimiter({ name, kind, limit, windowMs, getClient, keyGenerator, sk
   });
 }
 
-/** Per client IP (req.ip — index.js sets `trust proxy`). */
-function createIpLimiter({ name, limit, windowMs, getClient, skipSuccessfulRequests }) {
+/** Per client address (lib/client-ip.js: TRUST_PROXY, PORTAL_CLIENT_IP_HEADER). */
+function createIpLimiter({ name, limit, windowMs, getClient, skipSuccessfulRequests, clientIp = createClientIpGetter() }) {
   return buildLimiter({
     name, kind: 'ip', limit, windowMs, getClient, skipSuccessfulRequests,
-    keyGenerator: (req) => String(req.ip || req.socket?.remoteAddress || 'unknown'),
+    keyGenerator: clientIp,
   });
 }
 
@@ -279,27 +283,28 @@ function createAccountLimiter({ name, limit, windowMs, getClient, skipSuccessful
 function createPortalAuthLimiters({ env = process.env, getClient = getSharedRedisClient } = {}) {
   const l = readPortalAuthLimits(env);
   const w = l.windowMs;
+  const clientIp = createClientIpGetter(env);
   return {
     login: [
-      createIpLimiter({ name: 'login', limit: l.loginPerIp, windowMs: w, getClient, skipSuccessfulRequests: true }),
+      createIpLimiter({ name: 'login', limit: l.loginPerIp, windowMs: w, getClient, clientIp, skipSuccessfulRequests: true }),
       createAccountLimiter({ name: 'login', limit: l.loginPerAccount, windowMs: w, getClient, skipSuccessfulRequests: true }),
     ],
     requestReset: [
-      createIpLimiter({ name: 'reset-request', limit: l.resetPerIp, windowMs: w, getClient }),
+      createIpLimiter({ name: 'reset-request', limit: l.resetPerIp, windowMs: w, getClient, clientIp }),
       createAccountLimiter({ name: 'reset-request', limit: l.resetPerAccount, windowMs: w, getClient }),
     ],
     verifyResetCode: [
-      createIpLimiter({ name: 'reset-verify', limit: l.resetPerIp, windowMs: w, getClient }),
+      createIpLimiter({ name: 'reset-verify', limit: l.resetPerIp, windowMs: w, getClient, clientIp }),
       createAccountLimiter({ name: 'reset-verify', limit: l.resetPerAccount, windowMs: w, getClient }),
     ],
     resetPassword: [
-      createIpLimiter({ name: 'reset-password', limit: l.resetPerIp, windowMs: w, getClient }),
+      createIpLimiter({ name: 'reset-password', limit: l.resetPerIp, windowMs: w, getClient, clientIp }),
     ],
     setup: [
-      createIpLimiter({ name: 'setup', limit: l.setupPerIp, windowMs: w, getClient }),
+      createIpLimiter({ name: 'setup', limit: l.setupPerIp, windowMs: w, getClient, clientIp }),
     ],
     validateToken: [
-      createIpLimiter({ name: 'validate-token', limit: l.setupPerIp, windowMs: w, getClient }),
+      createIpLimiter({ name: 'validate-token', limit: l.setupPerIp, windowMs: w, getClient, clientIp }),
     ],
   };
 }
@@ -312,7 +317,7 @@ function createPortalDataLimiter({ env = process.env, getClient = getSharedRedis
     limit: dataPerMinute,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => String(req.ip || req.socket?.remoteAddress || 'unknown'),
+    keyGenerator: createClientIpGetter(env),
     handler: (req, res) => res.status(429).json({ success: false, error: 'Too many requests. Please slow down.' }),
     store: new PortalLimitStore({ prefix: `${KEY_PREFIX}data:ip:`, getClient }),
   });

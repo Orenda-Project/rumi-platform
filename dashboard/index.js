@@ -55,6 +55,7 @@ const transcriptUxHelpers = require('./services/transcript-ux-helpers.service');
 // GPT Response Cache 
 const { setRedisClient: setGptCacheRedisClient } = require('./services/gpt-cache.service');
 const { PortalLimitStore, createPortalDataLimiter, setPortalAuthLimitsRedisClient } = require('./lib/portal-auth-limits');
+const { applyTrustProxy, createClientIpGetter } = require('./lib/client-ip');
 
 // Video Observability Service
 const { getVideos, getVideoById, getVideoStats, getVideosByDate, getUsersWithVideos } = require('./services/video-observability.service');
@@ -151,8 +152,12 @@ const PORT = process.env.PORT || process.env.DASHBOARD_PORT || 4000;
 // Make Supabase available to all routes
 app.locals.supabase = supabase;
 
-// Trust Railway proxy (required for rate limiting and sessions)
-app.set('trust proxy', 1);
+// How many proxies sit in front (TRUST_PROXY, default 1 — right for Railway's
+// edge or one Caddy/nginx). Decides req.ip for the per-IP limits and secure
+// cookies; `false` when the dashboard is reached directly. lib/client-ip.js.
+applyTrustProxy(app);
+// The client address every per-IP limiter counts (PORTAL_CLIENT_IP_HEADER, else req.ip).
+const clientIp = createClientIpGetter();
 
 // Android App Links verification file for the portal app (dashboard/lib/asset-links.js).
 // Before any static/SPA handler, so the catch-all can never answer it with HTML.
@@ -270,6 +275,7 @@ const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // 10 attempts (increased from 5 for better UX)
   message: 'Too many login attempts, please try again later.',
+  keyGenerator: clientIp,
   // Counted in Redis when there is one, so cluster workers share the count.
   store: new PortalLimitStore({ prefix: 'rl:admin-login:' }),
 });
