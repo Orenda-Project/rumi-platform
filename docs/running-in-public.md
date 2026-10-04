@@ -44,6 +44,32 @@ Also:
    [monitoring](monitoring.md)). Lines with `Inbound rate limit: message dropped` and `Daily message cap reached`
    show the limits working.
 
+## On the teacher portal (dashboard)
+
+The portal's sign-in, setup and password-reset routes are public, so the dashboard limits them per client IP and
+per account (the phone number typed in). Either limit answers `429` with the same message, "Too many attempts.
+Please try again later.", whether or not the account exists. The counts live in Redis when the dashboard has
+`REDIS_URL` (shared by every worker and replica), otherwise in each process's memory. All values are optional
+([details](features/teacher-portal.md#sign-in-limits)).
+
+| Limit | Variable | Default |
+|---|---|---|
+| Window for every limit below, in minutes | `PORTAL_AUTH_LIMIT_WINDOW_MINUTES` | `15` |
+| Failed sign-ins per IP | `PORTAL_LOGIN_LIMIT_PER_IP` | `10` |
+| Failed sign-ins per phone number | `PORTAL_LOGIN_LIMIT_PER_ACCOUNT` | `5` |
+| Reset requests, code checks and new passwords per IP (each step counted apart) | `PORTAL_RESET_LIMIT_PER_IP` | `5` |
+| Reset requests and code checks per phone number | `PORTAL_RESET_LIMIT_PER_ACCOUNT` | `5` |
+| Setup-link checks and setups per IP | `PORTAL_SETUP_LIMIT_PER_IP` | `10` |
+| Every portal request per IP per minute | `PORTAL_DATA_LIMIT_PER_MINUTE` | `300` |
+| Wrong tries one reset code allows before it is cleared | `PORTAL_RESET_CODE_MAX_ATTEMPTS` | `5` |
+
+Many teachers in one school can share one IP. Successful sign-ins are not counted, but if a school still hits the
+per-IP limits, raise them rather than turning them off. Set `SESSION_SECRET`: it also keys the hash that keeps
+phone numbers out of the Redis keys.
+
+Logs never carry a full file URL: the bot and the dashboard log a report, PDF or export link as its host and a
+short hash of its path (`pub-abc.r2.dev#sha256:1a2b3c4d5e6f.pdf`), so reading the logs does not open anyone's files.
+
 ## On the messenger (Matrix / Synapse)
 
 The [Rumi Messenger](channels/matrix.md) server is set up for a closed school, where every account is created by
@@ -70,6 +96,8 @@ Bot-side, Rumi still answers only users on its own homeserver (plus any in `MATR
 - [ ] The `.env` values above are set, and `rumi doctor` is green.
 - [ ] The OpenRouter key is the public deployment's own key and has a credit limit.
 - [ ] Redis is running and `REDIS_URL` points at it.
+- [ ] The dashboard has `REDIS_URL` and `SESSION_SECRET` too. Try 11 wrong portal sign-ins from one address and
+      expect the 11th to answer "Too many attempts".
 - [ ] Log alerts watch for `model_budget_exhausted`.
 - [ ] (Matrix) Registration is closed on Synapse, federation is off, the directory is scoped, the admin API is
       not public, and accounts come from your sign-up service.

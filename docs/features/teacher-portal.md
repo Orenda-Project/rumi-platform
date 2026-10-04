@@ -80,6 +80,8 @@ The portal is optional. With `PORTAL_URL` unset, no message carries a portal lin
 | `INTERNAL_API_KEY` | bot **and** dashboard | The same random secret on both. **Required for reset codes:** the bot refuses every internal send while it is unset |
 | `SESSION_SECRET` | dashboard | Signs the portal session |
 | `PORTAL_RESET_CODE_MAX_ATTEMPTS` | dashboard | Optional. Wrong tries one reset code allows before it is cleared (default 5) |
+| `PORTAL_*_LIMIT_*`, `PORTAL_AUTH_LIMIT_WINDOW_MINUTES` | dashboard | Optional. Sign-in limits per IP and per phone number ([sign-in limits](#sign-in-limits)) |
+| `REDIS_URL` | dashboard | Optional. Shares the sign-in limit counts across workers and replicas |
 | `OBSERVE_ENABLED=true` | bot **and** dashboard | The bot's decides whether a coach's invite mentions Observations; the dashboard's shows them the view (see [Observe](observe.md)). Set it on both |
 
 4. **Coaches** on the observe roster can be sent their invite from the roster, on whichever channel they use:
@@ -92,6 +94,30 @@ node bot/scripts/observe-roster.js portal-invite mtx:15550100011
    It runs as a one-off process; on Rumi Messenger the message goes through the bot's
    [relay](../channels/matrix.md#the-relay), so the bot must be running. It refuses a number or identity Rumi has
    no account for, someone who has already set up the portal, and someone with no phone number.
+
+## Sign-in limits
+
+Sign-in, setup and the reset steps are public, so each is limited per client IP and, where the request names an
+account, per phone number. Either limit answers `429` with one message, "Too many attempts. Please try again
+later.", whatever the reason and whether or not the account exists; the portal shows it under the form.
+
+| Route | Per IP | Per phone number |
+|---|---|---|
+| `POST /api/portal/login` (failed sign-ins only) | `PORTAL_LOGIN_LIMIT_PER_IP` (10) | `PORTAL_LOGIN_LIMIT_PER_ACCOUNT` (5) |
+| `POST /api/portal/request-reset` | `PORTAL_RESET_LIMIT_PER_IP` (5) | `PORTAL_RESET_LIMIT_PER_ACCOUNT` (5) |
+| `POST /api/portal/verify-reset-code` | `PORTAL_RESET_LIMIT_PER_IP` (5) | `PORTAL_RESET_LIMIT_PER_ACCOUNT` (5) |
+| `POST /api/portal/reset-password` | `PORTAL_RESET_LIMIT_PER_IP` (5) | (needs a verified code in the session) |
+| `POST /api/portal/setup`, `/validate-token` | `PORTAL_SETUP_LIMIT_PER_IP` (10) | (the invite token is the secret) |
+
+- Every window is `PORTAL_AUTH_LIMIT_WINDOW_MINUTES` (15). On top of these, every `/api/portal` request counts
+  toward `PORTAL_DATA_LIMIT_PER_MINUTE` (300 per IP per minute).
+- With `REDIS_URL` set, the counts live in Redis (keys `rl:portal:*`), so every cluster worker and replica shares
+  them; a phone number appears there only as an HMAC keyed with `SESSION_SECRET`. Without Redis, or while it is
+  down, each process counts in memory and no request fails because of it.
+- Each step is counted on its own and by route, so `/login`, `/login/` and `/LOGIN` share one count.
+- Reset codes come from `crypto.randomInt`. Each code allows `PORTAL_RESET_CODE_MAX_ATTEMPTS` (5) wrong tries; then
+  it is cleared, and a new one can be requested once the old one's 10 minutes are up. Codes are never logged.
+  This needs the column added by `V2.11.2__portal_reset_attempts.sql` (see [pulling updates](../pulling-updates.md)).
 
 ## Limits
 
