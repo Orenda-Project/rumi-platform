@@ -65,9 +65,25 @@ function listEjs(dir) {
   });
 }
 
-/** [start, end) of each inline script body in `src`: after `<script ...>`, before `</script>`. */
+/** `src` with HTML (`<!-- -->`) and EJS (`<%# %>`) comments blanked out, lines and offsets kept. */
+const blankComments = (src) => src.replace(/<!--[\s\S]*?-->|<%#[\s\S]*?%>/g, (c) => c.replace(/[^\n]/g, ' '));
+
+/** Script types the browser runs as JavaScript, plus JSON data blocks. No `type` is JavaScript too. */
+const SCRIPT_TYPES = new Set(['text/javascript', 'module', 'application/json']);
+
+function isScriptType(openTag) {
+  const type = openTag.match(/\stype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+  return !type || SCRIPT_TYPES.has((type[1] ?? type[2] ?? type[3]).trim().toLowerCase());
+}
+
+/**
+ * [start, end) of each inline script body in `src`: after `<script ...>`,
+ * before `</script>` (or `</script >`). A `<script>` inside a comment opens
+ * nothing, and a non-JS type (`text/template`) is markup, not script.
+ */
 function scriptBodies(src) {
-  return [...src.matchAll(/(<script\b(?:<%[\s\S]*?%>|[^>])*>)([\s\S]*?)<\/script>/gi)]
+  return [...blankComments(src).matchAll(/(<script\b(?:<%[\s\S]*?%>|[^>])*>)([\s\S]*?)<\/script\s*>/gi)]
+    .filter((m) => isScriptType(m[1]))
     .map((m) => [m.index + m[1].length, m.index + m[1].length + m[2].length]);
 }
 
@@ -188,5 +204,31 @@ describe('raw EJS output (<%- %>) in admin views', () => {
       [4, '=', 'id', true, null],
       [6, '-', 'safeJson(users)', false, null],
     ]);
+  });
+
+  test('the checker itself: a commented or non-JS <script> is not a script body', () => {
+    const inScript = (src, file = 'dashboard/views/users.ejs') => tagsIn(src, file)
+      .filter((tag) => tag.raw).map((tag) => [tag.line, tag.inScript, category(tag)]);
+    // An HTML or EJS comment that mentions <script> opens nothing.
+    expect(inScript('<!-- old: <script> -->\n<div data-u="<%- safeJson(u) %>"></div>\n'
+      + '<script nonce="<%= cspNonce %>">const a = <%- safeJson(a) %>;</script>')).toEqual([
+      [2, false, null],
+      [3, true, 'safe-serialised'],
+    ]);
+    expect(inScript('<%# a <script> tag used to load this %>\n<p title="<%- safeJson(u) %>"></p>\n<script src="/x.js"></script>'))
+      .toEqual([[2, false, null]]);
+    // A template or other non-JS type is markup, not script.
+    expect(inScript('<script type="text/template"><li data-missing="<%- safeJson(missing) %>"></li></script>'))
+      .toEqual([[1, false, null]]);
+    // The bot/ views have no other guard that trips on these.
+    expect(inScript('<script type="text/template"><li data-missing="<%- safeJson(missing) %>"></li></script>',
+      'bot/console/views/overview.ejs')).toEqual([[1, false, null]]);
+    expect(inScript('<!-- tailwind via <script> CDN, see below -->\n<meta name="x" content="<%- safeJson(locals.user) %>">\n'
+      + '<script src="https://cdn.tailwindcss.com"></script>', 'bot/dashboard/views/layout.ejs')).toEqual([[2, false, null]]);
+    // JS and JSON types are script; `</script >` closes the body.
+    for (const type of ['text/javascript', 'module', 'application/json', "'module'", 'TEXT/JAVASCRIPT']) {
+      expect(inScript(`<script type=${type.startsWith("'") ? type : `"${type}"`}>const a = <%- safeJson(a) %>;</script >\n`
+        + '<p data-a="<%- safeJson(a) %>"></p>')).toEqual([[1, true, 'safe-serialised'], [2, false, null]]);
+    }
   });
 });

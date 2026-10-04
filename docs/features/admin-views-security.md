@@ -83,8 +83,8 @@ supported events, the placeholders (`"$event"`, `"$el"`, `"$value"`) and the bui
 
 | Test | What it checks |
 |---|---|
-| `tests/dashboard/ejs-raw-output-allowlist.test.js` | Every `<%- %>` in the admin and console views is an include, `body`, `safeJson(...)` inside a script body, or a listed server-owned constant; no `<%= %>` inside a script body. |
-| `tests/dashboard/admin-view-escaping/html-sinks.test.js` | In the views' inline scripts, every value interpolated into built HTML is a literal, a number or date, a call to `escapeHtml` / `safeUrl` / `cspArgs`, or a reviewed exception. A variable declared once is checked by what it is set to, so `const title = c.title` fails like `c.title`. |
+| `tests/dashboard/ejs-raw-output-allowlist.test.js` | Every `<%- %>` in the admin and console views is an include, `body`, `safeJson(...)` inside a script body, or a listed server-owned constant; no `<%= %>` inside a script body. A script body is the inside of a `<script>` with no `type` or a JavaScript/JSON type; a `<script>` in an HTML or EJS comment or a `type="text/template"` block is not one. |
+| `tests/dashboard/admin-view-escaping/html-sinks.test.js` | In the views' inline scripts, every value interpolated into built HTML is a literal, a number or date, a call to `escapeHtml` / `safeUrl` / `cspArgs`, or a reviewed exception. A variable declared once and never assigned again is checked by what it is set to, so `const title = c.title` fails like `c.title`. Names are resolved with Babel's scope analysis, so a parameter, loop variable or destructured name that shadows an escaped one is reported, not followed to it. |
 | `tests/dashboard/csp-actions-views.test.js` | Each view registers exactly the `data-on-*` handler names it uses, after `csp-actions.js` loads. |
 | `tests/dashboard/admin-csp.test.js` | No script without the nonce, no inline handlers, no `javascript:` URLs, no Tailwind CDN. |
 
@@ -107,7 +107,7 @@ a chat or a model, and write down why:
   text).
 - **HTML built in a script:** add `'view.ejs: expression': 'reason'` to `REVIEWED` in `html-sinks.test.js`, or a
   pattern to `REVIEWED_PATTERNS`. A bare variable name can be listed only when the scan cannot follow it to one
-  value (it is reassigned, built up with `+=`, a parameter or a loop variable); otherwise escape its value where
+  value (it is reassigned, built up with `+=`, a parameter, a loop or catch variable, or destructured); otherwise escape its value where
   it is set. Good reasons: "count computed by the route", "one of three constant labels".
   "Comes from our database" is not a reason: the database holds what the public typed.
 
