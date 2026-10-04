@@ -65,7 +65,8 @@ Please try again later.", whether or not the account exists. The counts live in 
 
 Many teachers in one school can share one IP. Successful sign-ins are not counted, but if a school still hits the
 per-IP limits, raise them rather than turning them off. Set `SESSION_SECRET`: it also keys the hash that keeps
-phone numbers out of the Redis keys.
+phone numbers out of the Redis keys. Run the dashboard behind exactly one proxy (Railway's edge, or one Caddy or nginx):
+the per-IP limits trust one `X-Forwarded-For` hop, so a dashboard reached directly lets a client choose its own address.
 
 Logs never carry a full file URL: the bot and the dashboard log a report, PDF or export link as its host and a
 short hash of its path (`pub-abc.r2.dev#sha256:1a2b3c4d5e6f.pdf`), so reading the logs does not open anyone's files.

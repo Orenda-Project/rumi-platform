@@ -115,6 +115,11 @@ later.", whatever the reason and whether or not the account exists; the portal s
   them; a phone number appears there only as an HMAC keyed with `SESSION_SECRET`. Without Redis, or while it is
   down, each process counts in memory and no request fails because of it.
 - Each step is counted on its own and by route, so `/login`, `/login/` and `/LOGIN` share one count.
+- The per-IP count uses the address the dashboard sees after **one** trusted proxy (`trust proxy` is 1, right for
+  Railway or one Caddy/nginx in front). Reached directly, with no proxy, a client can name its own address in
+  `X-Forwarded-For` and only the per-number limits hold, so keep the dashboard behind exactly one proxy.
+- Anyone who knows a teacher's number can use up its 5 failed sign-ins and lock that number's sign-in for one
+  window (15 minutes). That is the price of a per-account limit; the teacher can still reset their password.
 - Reset codes come from `crypto.randomInt`. Each code allows `PORTAL_RESET_CODE_MAX_ATTEMPTS` (5) wrong tries; then
   it is cleared, and a new one can be requested once the old one's 10 minutes are up. Codes are never logged.
   This needs the column added by `V2.11.2__portal_reset_attempts.sql` (see [pulling updates](../pulling-updates.md)).
