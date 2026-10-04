@@ -264,7 +264,16 @@ function post(server, urlPath, body, cookie) {
     const app = express();
     app.use(express.json());
     app.use(session({ secret: 'test-secret', resave: false, saveUninitialized: false }));
-    app.use('/api/portal', require('../../dashboard/routes/portal.routes'));
+    // The route's own per-IP/per-number limits (5 by default) would answer the
+    // 6th request with a 429 first; raise them here so these tests see the
+    // per-code count alone. The route limits: portal-auth-limits.test.js.
+    process.env.PORTAL_RESET_LIMIT_PER_IP = '100';
+    process.env.PORTAL_RESET_LIMIT_PER_ACCOUNT = '100';
+    jest.isolateModules(() => {
+      app.use('/api/portal', require('../../dashboard/routes/portal.routes'));
+    });
+    delete process.env.PORTAL_RESET_LIMIT_PER_IP;
+    delete process.env.PORTAL_RESET_LIMIT_PER_ACCOUNT;
     server = await new Promise((resolve) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
   });
   afterAll(() => new Promise((resolve) => server.close(resolve)));
