@@ -357,6 +357,7 @@
     }
   </style>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
     // Scope state
     let currentScopeType = 'school';
@@ -442,7 +443,7 @@
       }
 
       schoolSuggestions.innerHTML = suggestions.map(s =>
-        `<div class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-school="${s}">${s}</div>`
+        `<div class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-school="${escapeHtml(s)}">${escapeHtml(s)}</div>`
       ).join('');
 
       schoolSuggestions.querySelectorAll('[data-school]').forEach(el => {
@@ -586,9 +587,9 @@
           document.getElementById('previewContent').innerHTML = result.users.map(u =>
             `<div class="p-2 border-b border-gray-100 flex justify-between items-center">
               <div>
-                <span class="font-medium">${u.phone_number}</span>
-                ${u.first_name ? ` - ${u.first_name}` : ''}
-                ${u.school_name ? ` <span class="text-gray-500">(${u.school_name})</span>` : ''}
+                <span class="font-medium">${escapeHtml(u.phone_number)}</span>
+                ${u.first_name ? ` - ${escapeHtml(u.first_name)}` : ''}
+                ${u.school_name ? ` <span class="text-gray-500">(${escapeHtml(u.school_name)})</span>` : ''}
               </div>
               <span class="text-xs px-2 py-0.5 rounded ${u.registration_completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
                 ${u.registration_completed ? 'Registered' : 'Unregistered'}
