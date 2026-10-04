@@ -510,6 +510,7 @@
     </div>
   </div>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
     let currentUserId = null;
     let allUsers = <%- safeJson(users || []) %>;
@@ -554,7 +555,8 @@
       }
 
       container.innerHTML = filteredUsers.map(user => {
-        const displayName = user.first_name ? `${user.first_name} ${user.last_name || ''}` : (user.name || user.phone_number || 'Unknown User');
+        // Names, phone numbers and states come from sign-ups: escaped (escape-html.js).
+        const displayName = escapeHtml(user.first_name ? `${user.first_name} ${user.last_name || ''}` : (user.name || user.phone_number || 'Unknown User'));
         const registrationBadge = user.registration_state ?
           `<span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; background: ${
             user.registration_state === 'completed' ? '#10b981' :
@@ -563,7 +565,7 @@
           }; color: white; font-weight: 500;">
             ${user.registration_state === 'completed' ? '✓ Registered' :
               user.registration_state === 'flow_sent' ? '📋 Form Sent' :
-              user.registration_state === 'invited' ? '📨 Invited' : user.registration_state}
+              user.registration_state === 'invited' ? '📨 Invited' : escapeHtml(user.registration_state)}
           </span>` : '';
 
         const registrationInfo = user.registration_started_at && !user.registration_completed ?
@@ -572,16 +574,16 @@
           ` • Reg completed ${new Date(user.registration_completed_at).toLocaleDateString()}` : '';
 
         return `
-          <div class="chat-item ${currentUserId === user.id ? 'active' : ''}" data-user-id="${user.id}">
+          <div class="chat-item ${currentUserId === user.id ? 'active' : ''}" data-user-id="${escapeHtml(user.id)}">
             <div class="chat-item-avatar">
-              ${(user.first_name || user.name || user.phone_number || 'U').charAt(0).toUpperCase()}
+              ${escapeHtml((user.first_name || user.name || user.phone_number || 'U').charAt(0).toUpperCase())}
             </div>
             <div class="chat-item-content">
               <div class="chat-item-name">
                 ${displayName}${registrationBadge}
               </div>
               <div class="chat-item-last-message">
-                ${user.phone_number || 'No phone number'}${registrationInfo}
+                ${escapeHtml(user.phone_number || 'No phone number')}${registrationInfo}
               </div>
             </div>
             <div class="chat-item-time">
@@ -631,7 +633,7 @@
         document.getElementById('chatMessagesContent').innerHTML = `
           <div style="text-align: center; padding: 40px; color: #ef4444;">
             <p>Failed to load messages</p>
-            <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">${error.message}</p>
+            <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">${escapeHtml(error.message)}</p>
             <button data-on-click="loadChat" data-args="${cspArgs(userId)}" style="margin-top: 12px; padding: 8px 16px; background: #4f46e5; color: white; border-radius: 6px; border: none; cursor: pointer;">
               Try Again
             </button>
@@ -644,7 +646,7 @@
       const { user, conversations, coachingSessions, lessonPlans, videoRequests, readingSessions } = data;
 
       // Render header
-      const displayName = user.first_name ? `${user.first_name} ${user.last_name || ''}` : (user.name || user.phone_number || 'Unknown User');
+      const displayName = escapeHtml(user.first_name ? `${user.first_name} ${user.last_name || ''}` : (user.name || user.phone_number || 'Unknown User'));
       const registrationBadge = user.registration_state ?
         `<span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; background: ${
           user.registration_state === 'completed' ? '#10b981' :
@@ -653,7 +655,7 @@
         }; color: white; font-weight: 500;">
           ${user.registration_state === 'completed' ? '✓ Registered' :
             user.registration_state === 'flow_sent' ? '📋 Form Sent' :
-            user.registration_state === 'invited' ? '📨 Invited' : user.registration_state}
+            user.registration_state === 'invited' ? '📨 Invited' : escapeHtml(user.registration_state)}
         </span>` : '';
 
       const registrationInfo = user.registration_started_at && !user.registration_completed ?
@@ -663,11 +665,11 @@
 
       document.getElementById('chatHeader').innerHTML = `
         <div class="chat-messages-header-avatar">
-          ${(user.first_name || user.name || user.phone_number || 'U').charAt(0).toUpperCase()}
+          ${escapeHtml((user.first_name || user.name || user.phone_number || 'U').charAt(0).toUpperCase())}
         </div>
         <div class="chat-messages-header-info">
           <h3>${displayName}${registrationBadge}</h3>
-          <p>${user.phone_number || 'No phone number'} • ${conversations.length} messages${registrationInfo}</p>
+          <p>${escapeHtml(user.phone_number || 'No phone number')} • ${conversations.length} messages${registrationInfo}</p>
         </div>
       `;
 
@@ -823,7 +825,7 @@
               </div>
               <div>
                 <div class="inline-card-title">Lesson Plan Created</div>
-                <div class="inline-card-subtitle">${plan.type || 'Lesson Plan'}</div>
+                <div class="inline-card-subtitle">${escapeHtml(plan.type || 'Lesson Plan')}</div>
               </div>
             </div>
             <div class="inline-card-content">
@@ -832,7 +834,7 @@
               <strong>Subject:</strong> ${escapeHtml(plan.subject || 'N/A')}
             </div>
             <div class="inline-card-actions">
-              ${plan.gamma_url ? `<a href="${plan.gamma_url}" target="_blank" class="inline-card-btn inline-card-btn-primary">View Presentation</a>` : ''}
+              ${plan.gamma_url ? `<a href="${safeUrl(plan.gamma_url)}" target="_blank" class="inline-card-btn inline-card-btn-primary">View Presentation</a>` : ''}
             </div>
           </div>
         </div>
@@ -850,15 +852,15 @@
               </div>
               <div>
                 <div class="inline-card-title">Coaching Session</div>
-                <div class="inline-card-subtitle" style="color: ${statusColor}; font-weight: 600;">${session.status || 'Pending'}</div>
+                <div class="inline-card-subtitle" style="color: ${statusColor}; font-weight: 600;">${escapeHtml(session.status || 'Pending')}</div>
               </div>
             </div>
             <div class="inline-card-content">
               Session completed with detailed analysis and feedback
             </div>
             <div class="inline-card-actions">
-              ${session.report_gamma_url ? `<a href="${session.report_gamma_url}" target="_blank" class="inline-card-btn inline-card-btn-primary">View Report</a>` : ''}
-              ${session.audio_url ? `<a href="${session.audio_url}" target="_blank" class="inline-card-btn inline-card-btn-secondary">Listen Audio</a>` : ''}
+              ${session.report_gamma_url ? `<a href="${safeUrl(session.report_gamma_url)}" target="_blank" class="inline-card-btn inline-card-btn-primary">View Report</a>` : ''}
+              ${session.audio_url ? `<a href="${safeUrl(session.audio_url)}" target="_blank" class="inline-card-btn inline-card-btn-secondary">Listen Audio</a>` : ''}
             </div>
           </div>
         </div>
@@ -882,11 +884,11 @@
             </div>
             <div class="inline-card-content">
               <strong>Topic:</strong> ${escapeHtml(video.topic || 'N/A')}<br>
-              <strong>Language:</strong> ${video.language || 'N/A'}
+              <strong>Language:</strong> ${escapeHtml(video.language || 'N/A')}
             </div>
             <div class="inline-card-actions">
-              ${video.video_url && video.status === 'completed' ? `<a href="${video.video_url}" target="_blank" class="inline-card-btn inline-card-btn-primary">Watch Video</a>` : ''}
-              ${video.pdf_url ? `<a href="${video.pdf_url}" target="_blank" class="inline-card-btn inline-card-btn-secondary">View PDF</a>` : ''}
+              ${video.video_url && video.status === 'completed' ? `<a href="${safeUrl(video.video_url)}" target="_blank" class="inline-card-btn inline-card-btn-primary">Watch Video</a>` : ''}
+              ${video.pdf_url ? `<a href="${safeUrl(video.pdf_url)}" target="_blank" class="inline-card-btn inline-card-btn-secondary">View PDF</a>` : ''}
             </div>
           </div>
         </div>
@@ -906,12 +908,12 @@
               </div>
               <div>
                 <div class="inline-card-title">Reading Assessment</div>
-                <div class="inline-card-subtitle" style="color: ${statusColor}; font-weight: 600;">${session.status || 'Pending'}</div>
+                <div class="inline-card-subtitle" style="color: ${statusColor}; font-weight: 600;">${escapeHtml(session.status || 'Pending')}</div>
               </div>
             </div>
             <div class="inline-card-content">
-              <strong>Language:</strong> ${session.language || 'N/A'}<br>
-              <strong>Grade Level:</strong> ${session.grade_level || 'N/A'}<br>
+              <strong>Language:</strong> ${escapeHtml(session.language || 'N/A')}<br>
+              <strong>Grade Level:</strong> ${escapeHtml(session.grade_level || 'N/A')}<br>
               <strong>Accuracy:</strong> ${accuracyScore} | <strong>Fluency:</strong> ${wcpmScore}
             </div>
           </div>
@@ -932,7 +934,7 @@
 
     function renderRegistrationCompleted(timestamp, data) {
       const time = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const name = data.firstName ? `${data.firstName} ${data.lastName || ''}`.trim() : 'User';
+      const name = escapeHtml(data.firstName ? `${data.firstName} ${data.lastName || ''}`.trim() : 'User');
       return `
         <div class="message-date" style="margin: 16px 0;">
           <span style="background: #D1FAE5; color: #065F46; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
@@ -954,12 +956,6 @@
       } else {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       }
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
     }
 
     function playAudio(url) {
