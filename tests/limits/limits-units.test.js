@@ -169,12 +169,47 @@ describe('daily caps', () => {
     expect([b.allowed, b.first, c.allowed, c.first]).toEqual([false, true, false, false]);
   });
 
-  it('the registered tier reads its own variable; expensive-job caps have no registered variable', async () => {
+  it('the registered tier reads its own variable; coaching and quizzes have no registered variable', async () => {
     process.env.DAILY_MESSAGE_CAP_REGISTERED = '200';
     process.env.DAILY_LESSON_PLAN_CAP_UNREGISTERED = '3';
+    process.env.DAILY_LESSON_PLAN_CAP_REGISTERED = '10';
     expect(DailyCaps.capFor('message', 'registered')).toBe(200);
-    expect(DailyCaps.capFor('lesson_plan', 'registered')).toBeNull();
+    expect(DailyCaps.capFor('lesson_plan', 'registered')).toBe(10);
     expect(DailyCaps.capFor('lesson_plan', 'unregistered')).toBe(3);
+    expect(DailyCaps.capFor('coaching', 'registered')).toBeNull();
+    expect(DailyCaps.capFor('quiz', 'registered')).toBeNull();
+  });
+
+  it('DAILY_LESSON_PLAN_CAP_TOTAL: one instance-wide count per school day on Redis; an account already over its own cap uses none of it', async () => {
+    process.env.SCHOOL_TIMEZONE = 'Asia/Tokyo';
+    process.env.DAILY_LESSON_PLAN_CAP_TOTAL = '50';
+    process.env.DAILY_LESSON_PLAN_CAP_UNREGISTERED = '1';
+    const now = new Date('2026-03-04T16:00:00Z'); // 01:00 on 5 Mar in school time
+    mockRedis.incr.mockImplementation(async (key) => (key.includes(':total:') ? 51 : 1));
+    const r = await DailyCaps.claim(registered, 'lesson_plan', { now });
+    expect(mockRedis.incr).toHaveBeenCalledWith('dailycap:lesson_plan:total:2026-03-05');
+    expect(r).toEqual(expect.objectContaining({ allowed: false, scope: 'total', limit: 50 }));
+    expect(DailyCaps.capMessage('lesson_plan', r)).toMatch(/all the lesson plans it can today/);
+
+    mockRedis.incr.mockReset();
+    mockRedis.incr.mockImplementation(async (key) => (key.includes(':total:') ? 1 : 2));
+    const over = await DailyCaps.claim(unregistered, 'lesson_plan', { now });
+    expect(over).toEqual(expect.objectContaining({ allowed: false, tier: 'unregistered', limit: 1 }));
+    expect(mockRedis.incr).not.toHaveBeenCalledWith('dailycap:lesson_plan:total:2026-03-05');
+  });
+
+  it('DAILY_LESSON_PLAN_CAP_TOTAL with Redis down: the in-process counter, not fail-open', async () => {
+    mockRedis.available = false;
+    process.env.DAILY_LESSON_PLAN_CAP_TOTAL = '1';
+    expect((await DailyCaps.claim(registered, 'lesson_plan')).allowed).toBe(true);
+    expect(await DailyCaps.claim({ id: 'u-3', registration_completed: true }, 'lesson_plan')).toEqual(expect.objectContaining({ allowed: false, scope: 'total', degraded: true }));
+  });
+
+  it('allowOrExplainForUserId reads the account when only the registered or the total cap is set', async () => {
+    mockRedis.available = false;
+    process.env.DAILY_LESSON_PLAN_CAP_TOTAL = '0';
+    expect(await DailyCaps.allowOrExplainForUserId('u-9', 'lesson_plan', 'mtx:1555')).toBe(false);
+    expect(mockSend).toHaveBeenCalledWith('mtx:1555', expect.stringMatching(/all the lesson plans it can today/));
   });
 
   it('Redis down: an in-process counter, not fail-open', async () => {

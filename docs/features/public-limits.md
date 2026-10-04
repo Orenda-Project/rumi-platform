@@ -61,6 +61,8 @@ An account is **unregistered** until it finishes registration (`users.registrati
 | `DAILY_MESSAGE_CAP_UNREGISTERED` | messages from an unregistered account | the inbound entry point, after the account lookup |
 | `DAILY_MESSAGE_CAP_REGISTERED` | messages from a registered account | the same |
 | `DAILY_LESSON_PLAN_CAP_UNREGISTERED` | lesson plans and presentations (text, voice, a quiz follow-up, a textbook photo) | where each request starts, before the topic is read or anything is queued |
+| `DAILY_LESSON_PLAN_CAP_REGISTERED` | the same, from a registered account | the same |
+| `DAILY_LESSON_PLAN_CAP_TOTAL` | the same, from every account together (the whole deployment) | the same, after the account's own cap: a request that cap refuses does not count toward the total |
 | `DAILY_COACHING_CAP_UNREGISTERED` | classroom recordings sent for coaching | `CoachingSessionService.initiateSession`, where every recording starts |
 | `DAILY_QUIZ_CAP_UNREGISTERED` | quizzes | lesson quizzes: it lowers `QUIZ_DAILY_CAP` for the account (the smaller cap wins). Class quizzes (`/quiz` topic quizzes) are counted on their own |
 
@@ -74,8 +76,15 @@ unasked on first contact, an open offer lifts the cap only for a reply that read
 for everything that follows; after "Shall I call you …?" only "yes", the same name or an introduction gets
 through. There the cap message reads "send register".
 
-Counts use one Redis `INCR` per claim (`dailycap:<kind>:<account>:<school date>`, kept 36 hours). If Redis is
-down, each process counts in memory.
+Counts use one Redis `INCR` per claim (`dailycap:<kind>:<account>:<school date>`, and for the total
+`dailycap:lesson_plan:total:<school date>`, kept 36 hours). If Redis is down, each process counts in memory.
+Over the total the teacher is told *"Rumi has made all the lesson plans it can today. Please ask again
+tomorrow."*
+
+Lesson plans and presentations are made by Gamma. With no `GAMMA_API_KEY` (or the `lesson_plans_gamma` switch
+off), a teacher who asks for one is told *"Lesson plans aren't available on this service yet."*: no job is
+queued and no model is asked. A lesson plan from a textbook photo goes to Kie.ai instead when a Kie.ai key is
+set.
 
 ### 3. A model budget that runs out politely
 
@@ -111,6 +120,8 @@ INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE=120
 DAILY_MESSAGE_CAP_UNREGISTERED=40
 DAILY_MESSAGE_CAP_REGISTERED=300
 DAILY_LESSON_PLAN_CAP_UNREGISTERED=3
+DAILY_LESSON_PLAN_CAP_REGISTERED=5
+DAILY_LESSON_PLAN_CAP_TOTAL=100       # what your Gamma plan covers in a day
 DAILY_COACHING_CAP_UNREGISTERED=0
 DAILY_QUIZ_CAP_UNREGISTERED=2
 MODEL_BUDGET_COOLDOWN_SECONDS=300
@@ -125,6 +136,8 @@ SCHOOL_TIMEZONE=Africa/Nairobi        # whichever zone your schools are in
 | `DAILY_MESSAGE_CAP_UNREGISTERED` | empty = no cap | see above |
 | `DAILY_MESSAGE_CAP_REGISTERED` | empty = no cap | see above |
 | `DAILY_LESSON_PLAN_CAP_UNREGISTERED` | empty = no cap | see above |
+| `DAILY_LESSON_PLAN_CAP_REGISTERED` | empty = no cap | see above |
+| `DAILY_LESSON_PLAN_CAP_TOTAL` | empty = no cap | see above |
 | `DAILY_COACHING_CAP_UNREGISTERED` | empty = no cap | see above |
 | `DAILY_QUIZ_CAP_UNREGISTERED` | empty = no cap | see above |
 | `MODEL_BUDGET_COOLDOWN_SECONDS` | `300` | how long Rumi says "busy" before trying the provider again |
