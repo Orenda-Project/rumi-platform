@@ -8,9 +8,13 @@
  * outerHTML or passed to insertAdjacentHTML / document.write. Each
  * interpolated value must be a literal, a call to escapeHtml / safeUrl /
  * cspArgs (public/js/escape-html.js, public/js/csp-actions.js), a number or
- * date (`.length`, Math.*, toFixed, new Date(...).toLocale*String()), or a
- * reviewed entry in REVIEWED below. Conditionals, ||, ??, nested templates and
- * `.map(x => `...`).join()` are followed.
+ * date (`.length`, Math.*, Date.now(), toFixed, new Date(...).toLocale*String()),
+ * or a reviewed entry in REVIEWED below. Conditionals, ||, ??, nested templates
+ * and `.map(x => `...`).join()` are followed. So are variables: a name that is
+ * declared once and never assigned again is checked by its initialiser, so
+ * `const title = c.title` fails like `c.title` would. Only a name with no
+ * initialiser to check (reassigned, built up with `+=`, a parameter or a loop
+ * variable) can be a REVIEWED entry.
  *
  * A new finding means: escape the value, or review it and add it here with the
  * reason it cannot carry text from a user, a teacher, a chat or a model.
@@ -22,14 +26,14 @@ const parser = require('@babel/parser');
 
 const VIEWS = path.join(__dirname, '../../../dashboard/views');
 
-/** `view: expression` -> why it is safe. Keyed by source text, not line. */
+/**
+ * `view: expression` -> why it is safe. Keyed by source text, not line. A bare
+ * name is listed only when it has no single initialiser the scan can check.
+ */
 const REVIEWED = {
   // ama.ejs
   'ama.ejs: renderMarkdown(content)': 'renderMarkdown escapes the text first, then adds its own tags',
-  'ama.ejs: chartId': "'chart-' + Date.now()",
   'ama.ejs: group': 'a key of groupConversationsByDate: Today / Yesterday / Last 7 Days / Older',
-  'ama.ejs: displayTitle': 'built above from escapeHtml(c.username) and escapeHtml(c.title)',
-  'ama.ejs: deleteBtn': "constant markup with cspArgs(c.id), or ''",
   'ama.ejs: html': 'HTML built in this function from checked templates',
   // api-health.ejs
   'api-health.ejs: data.statusCounts.healthy': 'count computed by the API health route',
@@ -37,32 +41,14 @@ const REVIEWED = {
   'api-health.ejs: data.statusCounts.critical': 'count computed by the API health route',
   'api-health.ejs: data.statusCounts.error': 'count computed by the API health route',
   'api-health.ejs: getTimeAgo(lastUpdated)': "'Just now' / 'N min ago' / 'N hours ago'",
-  'api-health.ejs: statusClass': '`status-${escapeHtml(service.status)}`',
-  'api-health.ejs: progressClass': 'one of three class names chosen from a number',
-  'api-health.ejs: percentage': 'number (used with toFixed, which throws on anything else)',
-  'api-health.ejs: summaryHTML': 'checked template above',
-  'api-health.ejs: gridHTML': 'checked template above',
-  'api-health.ejs: warningsHTML': 'checked template above',
   // dashboard.ejs
   'dashboard.ejs: value': 'numeric percentage change from the stats API (compared with > 0 / === 0)',
   // transcript-enhanced.ejs
-  'transcript-enhanced.ejs: activityLabel': 'one of two constant labels',
-  'transcript-enhanced.ejs: durationText': "Math.round(...) + ' seconds'",
   'transcript-enhanced.ejs: processEnglishMarkers(rawText)': 'escapes the text first, then adds <span class="en">',
   'transcript-enhanced.ejs: html': 'HTML built in createBoardBlock from checked concatenations',
   // users.ejs
-  'users.ejs: displayName': 'escapeHtml(...) of the name, assigned above',
-  'users.ejs: registrationBadge': "constant markup, escapeHtml(user.registration_state), or ''",
-  'users.ejs: registrationInfo': 'constant text with new Date(...).toLocaleDateString()',
   'users.ejs: formatDate(item.timestamp)': "'Today' / 'Yesterday' / toLocaleDateString of a Date",
-  'users.ejs: role': "'user' or 'assistant'",
   'users.ejs: content': 'escapeHtml(msg.content) with <br>, or constant audio markup with cspArgs',
-  'users.ejs: time': 'toLocaleTimeString of a Date',
-  'users.ejs: statusColor': 'constant colour chosen from the status',
-  'users.ejs: statusLabel': 'constant label chosen from the status',
-  'users.ejs: accuracyScore': "`${Math.round(...)}%` or 'N/A'",
-  'users.ejs: wcpmScore': "`${Math.round(...)} WCPM` or 'N/A'",
-  'users.ejs: name': 'escapeHtml(...) of the name, assigned above',
   'users.ejs: html': 'HTML built in renderChat from checked templates',
 };
 
@@ -120,9 +106,11 @@ function unchecked(node) {
     case 'CallExpression': {
       const { callee } = node;
       if (callee.type === 'Identifier' && SAFE_CALLS.has(callee.name)) return [];
+      if (callee.type === 'Identifier' && callee.name === 'Number') return [];
       if (callee.type !== 'MemberExpression') return [node];
       const method = propName(callee.property);
       if (callee.object.type === 'Identifier' && callee.object.name === 'Math') return [];
+      if (callee.object.type === 'Identifier' && callee.object.name === 'Date' && method === 'now') return [];
       if (method === 'toFixed') return [];
       if (DATE_TEXT.has(method) && callee.object.type === 'NewExpression' && callee.object.callee.name === 'Date') return [];
       // list.map(x => `...`).join(''): the template is checked where it is.
@@ -145,11 +133,71 @@ function hasTagLiteral(n) {
 const isHtmlConcat = (n) => n.type === 'BinaryExpression' && n.operator === '+' && hasTagLiteral(n);
 const SINK_PROPS = new Set(['innerHTML', 'outerHTML']);
 
+const FUNCTION = /Function/;
+const SKIP_KEYS = new Set(['loc', 'start', 'end', 'extra']);
+
+function forEachChild(node, fn) {
+  for (const key of Object.keys(node)) {
+    if (SKIP_KEYS.has(key)) continue;
+    const v = node[key];
+    if (Array.isArray(v)) v.forEach((c) => c && typeof c.type === 'string' && fn(c));
+    else if (v && typeof v.type === 'string') fn(v);
+  }
+}
+
+/** Statements that declare names for a scope node: a block, the program, a switch case. */
+const scopeBody = (n) => (n.type === 'BlockStatement' || n.type === 'Program' ? n.body
+  : n.type === 'SwitchCase' ? n.consequent : null);
+
+/**
+ * The declarator of `name` that `ancestors` (outermost first) see, with the
+ * scope that holds it; null for a parameter, a loop variable, a destructured
+ * name or a global.
+ */
+function findDeclarator(name, ancestors) {
+  for (let i = ancestors.length - 1; i >= 0; i--) {
+    const scope = ancestors[i];
+    for (const stmt of scopeBody(scope) || []) {
+      if (stmt.type !== 'VariableDeclaration') continue;
+      const decl = stmt.declarations.find((d) => d.id.type === 'Identifier' && d.id.name === name);
+      if (decl) return { decl, scope, depth: i };
+    }
+    if (FUNCTION.test(scope.type)) {
+      const params = JSON.stringify(scope.params.map((p) => p.type === 'Identifier' ? p.name : null));
+      if (params.includes(`"${name}"`)) return null;
+    }
+  }
+  return null;
+}
+
+/** True if `name` is assigned (=, +=, ++ ...) anywhere in `scope` after its declaration. */
+function isReassigned(name, scope) {
+  let found = false;
+  (function walk(n) {
+    if (found) return;
+    if ((n.type === 'AssignmentExpression' && n.left.type === 'Identifier' && n.left.name === name)
+      || (n.type === 'UpdateExpression' && n.argument.type === 'Identifier' && n.argument.name === name)) {
+      found = true;
+      return;
+    }
+    forEachChild(n, walk);
+  }(scope));
+  return found;
+}
+
 /** HTML sinks and HTML-building expressions in one script: the values they take unchecked. */
 function findUnchecked(code) {
   const ast = parser.parse(code, { sourceType: 'script', allowReturnOutsideFunction: true });
   const found = [];
-  const check = (expr) => { found.push(...unchecked(expr)); };
+  // A variable declared once is checked by its initialiser, in the scope that declares it.
+  const resolve = (nodes, ancestors, seen) => nodes.flatMap((n) => {
+    if (n.type !== 'Identifier' || seen.has(n.name)) return [n];
+    const hit = findDeclarator(n.name, ancestors);
+    if (!hit || !hit.decl.init || isReassigned(n.name, hit.scope)) return [n];
+    return resolve(unchecked(hit.decl.init), ancestors.slice(0, hit.depth + 1), new Set([...seen, n.name]));
+  });
+  const ancestors = [];
+  const check = (expr) => { found.push(...resolve(unchecked(expr), ancestors, new Set())); };
   (function walk(node, parent) {
     if (isHtmlTemplate(node)) node.expressions.forEach(check);
     else if (isHtmlConcat(node) && !(parent && isHtmlConcat(parent))) check(node);
@@ -161,12 +209,9 @@ function findUnchecked(code) {
       if (method === 'insertAdjacentHTML' && node.arguments[1]) check(node.arguments[1]);
       if ((method === 'write' || method === 'writeln') && node.callee.object.name === 'document') node.arguments.forEach(check);
     }
-    for (const key of Object.keys(node)) {
-      if (key === 'loc' || key === 'start' || key === 'end' || key === 'extra') continue;
-      const v = node[key];
-      if (Array.isArray(v)) v.forEach((c) => c && typeof c.type === 'string' && walk(c, node));
-      else if (v && typeof v.type === 'string') walk(v, node);
-    }
+    ancestors.push(node);
+    forEachChild(node, (c) => walk(c, node));
+    ancestors.pop();
   }(ast.program, null));
   // A value can be reached twice (a template inside a sink): report it once.
   const unique = [...new Map(found.map((n) => [n.start, n])).values()];
@@ -185,8 +230,8 @@ describe('admin views: HTML built in scripts escapes what it interpolates', () =
 
   test('the scan sees the views and their HTML sinks', () => {
     expect(views.length).toBeGreaterThan(20);
-    // users.ejs builds its chat list and chat view with innerHTML.
-    expect(findings.some((f) => f.key === 'users.ejs: displayName')).toBe(true);
+    // users.ejs builds its chat view with innerHTML.
+    expect(findings.some((f) => f.key === 'users.ejs: html')).toBe(true);
   });
 
   test('every interpolated value is escaped or reviewed', () => {
@@ -208,5 +253,20 @@ describe('admin views: HTML built in scripts escapes what it interpolates', () =
       + "box.innerHTML = '<p>' + msg.text + '</p>'; other.innerHTML = data.error; "
       + "list.innerHTML = items.map(i => `<li>${i.name}</li>`).join('');";
     expect(findUnchecked(code).map((f) => f.text)).toEqual(['user.first_name', 'msg.text', 'data.error', 'i.name']);
+  });
+
+  test('the scan checks what a variable holds, not its name', () => {
+    const texts = (code) => findUnchecked(code).map((f) => f.text);
+    // Declared once: checked by its initialiser, through other variables too.
+    expect(texts('const t = c.title || "New"; const label = t; el.innerHTML = `<b>${label}</b>`;')).toEqual(['c.title']);
+    expect(texts('const t = c.username ? `<i>${escapeHtml(c.username)}</i>` : escapeHtml(c.title); el.innerHTML = `<b>${t}</b>`;')).toEqual([]);
+    // The declaration this function sees, not a same-named one elsewhere.
+    expect(texts('function a(u) { const name = escapeHtml(u.name); return `<b>${name}</b>`; } '
+      + 'function b(u) { const name = u.name; return `<b>${name}</b>`; }')).toEqual(['u.name']);
+    // No single initialiser: reassigned, built up, a parameter or a loop variable. The name is reported.
+    expect(texts('let h = escapeHtml(a); h = b; el.innerHTML = h;')).toEqual(['h']);
+    expect(texts('let h = ""; h += x; el.innerHTML = h;')).toEqual(['h']);
+    expect(texts('function f(p) { return `<b>${p}</b>`; }')).toEqual(['p']);
+    expect(texts('for (const [g] of list) out += `<b>${g}</b>`;')).toEqual(['g']);
   });
 });

@@ -62,3 +62,31 @@ describe('ama.ejs (AMA chats, admin view)', () => {
     }
   });
 });
+
+describe('ama.ejs (AMA, an admin\'s own chats)', () => {
+  const locals = { ...ADMIN, title: 'Ask Me Anything', currentPage: 'ama', isAdminView: false };
+
+  maybe('the chat history shows conversation titles as text', async () => {
+    const id = `conv-2${HOSTILE.attr}`;
+    const page = await renderAdminView('ama', locals, {
+      url: '/observability/ama',
+      api: {
+        '/observability/ama/conversations': {
+          success: true,
+          conversations: [{ id, title: HOSTILE.html, updated_at: new Date().toISOString() }],
+        },
+      },
+    });
+    try {
+      expect(page.errors).toEqual([]);
+      const history = page.document.getElementById('chatHistory');
+      expectInert(page, history, HOSTILE.html);
+      const item = history.querySelector('.ama-history-item');
+      expect(item.getAttribute('data-id')).toBe(id);
+      // The delete button is there (own chats only) and carries the id as data.
+      expect(item.querySelector('.ama-history-delete')).not.toBeNull();
+    } finally {
+      page.close();
+    }
+  });
+});

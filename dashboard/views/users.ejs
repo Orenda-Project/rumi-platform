@@ -922,7 +922,7 @@
     }
 
     function renderRegistrationSent(timestamp) {
-      const time = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       return `
         <div class="message-date" style="margin: 16px 0;">
           <span style="background: #FEF3C7; color: #92400E; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
@@ -933,7 +933,7 @@
     }
 
     function renderRegistrationCompleted(timestamp, data) {
-      const time = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const name = escapeHtml(data.firstName ? `${data.firstName} ${data.lastName || ''}`.trim() : 'User');
       return `
         <div class="message-date" style="margin: 16px 0;">

@@ -167,7 +167,7 @@
         const statusClass = `status-${escapeHtml(service.status)}`;
 
         // Null-safe percentage handling
-        const percentage = service.usage?.percentage ?? 0;
+        const percentage = Number(service.usage?.percentage ?? 0);
         const progressClass = percentage >= 90 ? 'progress-critical' :
                               percentage >= 75 ? 'progress-warning' : 'progress-healthy';
 
