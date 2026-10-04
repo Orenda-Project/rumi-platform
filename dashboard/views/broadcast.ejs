@@ -526,7 +526,7 @@
 
   <script nonce="<%= cspNonce %>">
     // User counts from server
-    const userCounts = <%- JSON.stringify(userCounts) %>;
+    const userCounts = <%- safeJson(userCounts) %>;
 
     // DOM elements
     const form = document.getElementById('broadcast-form');

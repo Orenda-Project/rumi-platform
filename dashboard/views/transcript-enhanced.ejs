@@ -1954,7 +1954,7 @@
                       <%= line.speaker %>
                     </span>
                   </div>
-                  <div class="line-text" data-raw-text="<%- line.text %>"></div>
+                  <div class="line-text" data-raw-text="<%= line.text %>"></div>
                 </div>
               <% }) %>
             <% } else { %>
@@ -2512,8 +2512,8 @@
     /* ===========================================
        PHASE 4: Speaker Timeline
        =========================================== */
-    const diarizationData = <%- typeof diarizationData !== 'undefined' && diarizationData ? JSON.stringify(diarizationData) : 'null' %>;
-    const silenceMarkers = <%- typeof silenceMarkers !== 'undefined' && silenceMarkers ? JSON.stringify(silenceMarkers) : '[]' %>;
+    const diarizationData = <%- safeJson((typeof diarizationData !== 'undefined' && diarizationData) || null) %>;
+    const silenceMarkers = <%- safeJson((typeof silenceMarkers !== 'undefined' && silenceMarkers) || []) %>;
 
     function initTimeline() {
       const timelineTrack = document.getElementById('timelineTrack');

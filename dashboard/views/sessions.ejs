@@ -221,7 +221,7 @@
 
     // Sessions Per Day Chart
     const sessionsPerDayCtx = document.getElementById('sessionsPerDayChart').getContext('2d');
-    const sessionsPerDayData = <%- JSON.stringify(analytics.sessionsPerDay) %>;
+    const sessionsPerDayData = <%- safeJson(analytics.sessionsPerDay) %>;
 
     new Chart(sessionsPerDayCtx, {
       type: 'line',
@@ -258,7 +258,7 @@
 
     // Session Type Breakdown Pie Chart
     const sessionTypeCtx = document.getElementById('sessionTypeChart').getContext('2d');
-    const sessionTypeData = <%- JSON.stringify(analytics.sessionTypeBreakdown) %>;
+    const sessionTypeData = <%- safeJson(analytics.sessionTypeBreakdown) %>;
 
     new Chart(sessionTypeCtx, {
       type: 'doughnut',
@@ -289,7 +289,7 @@
 
     // Active Hours Chart
     const activeHoursCtx = document.getElementById('activeHoursChart').getContext('2d');
-    const activeHoursData = <%- JSON.stringify(analytics.activeHours) %>;
+    const activeHoursData = <%- safeJson(analytics.activeHours) %>;
 
     new Chart(activeHoursCtx, {
       type: 'bar',

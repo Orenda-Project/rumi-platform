@@ -512,7 +512,7 @@
 
   <script nonce="<%= cspNonce %>">
     let currentUserId = null;
-    let allUsers = <%- JSON.stringify(users || []) %>;
+    let allUsers = <%- safeJson(users || []) %>;
     let filteredUsers = [...allUsers];
     let currentPage = 1;
     let isLoadingUsers = false;

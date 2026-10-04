@@ -1480,7 +1480,7 @@ app.get('/observability/retention',
       userRole: req.session.userRole,
       cohorts,
       summary,
-      curveData: JSON.stringify(curveData), // Pass as JSON for Chart.js
+      curveData, // Chart.js data; the view writes it with safeJson
       featureType,
       weeksBack,
       startDate,
