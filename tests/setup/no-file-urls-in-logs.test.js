@@ -22,8 +22,11 @@
  *     property (`{ pdfUrl }`), a property value, or inside a template
  *     literal's `${…}`; a truncation (`pdfUrl.substring(0, 80)`) counts too,
  *     since a prefix of a public URL can be the whole openable path;
- *   - a whole response body (`statusResponse.data`) logged from a file that
- *     talks to Gamma, whose responses carry the export URL.
+ *   - a whole response body (`statusResponse.data`, `pollData`,
+ *     `JSON.stringify(pollData.data)`) logged from a file that talks to Gamma
+ *     or Kie.ai, whose job responses carry the generated file's URL.
+ * The same rule covers every `new Error(…)` / `new XxxError(…)`: an error's
+ * message ends up in a log line (`error: error.message`) wherever it's caught.
  * Reading the URL only for a yes/no (`!!pdfUrl`, `pdfUrl ? … : …`,
  * `pdfUrl.length`, `pdfUrl.includes(…)`) is fine.
  *
@@ -59,14 +62,27 @@ const ALLOWLIST = new Map([
   ['bot/scripts/setup/interactive-setup.js:urls', 'the webhook Request URLs the operator pastes into Slack'],
   ['bot/scripts/onboarding/upload-feature-videos.js:publicUrl', 'product feature-intro video, printed for the operator to configure'],
   ['bot/scripts/onboarding/upload-feature-videos.js:url', 'product feature-intro video, printed for the operator to configure'],
+  ['bot/scripts/setup/import-video-quiz-library.js:url', 'the public product content library (video-quiz JSONL), named in an operator import error'],
+  ['bot/vendor/lp-v9/diagrams/assets/pictograms/build_pictograms.js:url', 'an OpenMoji CDN glyph, named in a dev-time build error'],
 ]);
 
 const LOG_CALL_RE = /(?<![\w$.])(?:logToFile|console\.(?:log|info|warn|error|debug|trace)|logger\.(?:log|info|warn|error|debug|trace|fatal))\s*\(/g;
+// `new Error(…)`, `new TypeError(…)`, …: an error's message is logged by
+// whoever catches it (`error: error.message`), so it gets the same rule.
+const ERROR_CALL_RE = /(?<![\w$.])new\s+(?:[A-Z]\w*)?Error\s*\(/g;
+// A client of a third-party job API whose responses carry the generated
+// file's URL (Gamma's export URL, Kie.ai's `resultJson.resultUrls`).
+const JOB_CLIENT_RE = /gamma|kie\.ai/i;
+// A whole job response body: `statusResponse.data`, `pollData`, `createData.data`.
+const JOB_BODY_RE = /^(?:poll|status|result|create|task|job)(?:Data|Json|Body)$/;
 
 // A URL-ish identifier segment: `url`, `pdfUrl`, `report_url`, `slideUrls`, `href`.
 const URLISH_RE = /(?:^|_|[a-z0-9])(?:url|Url|URL|uri|Uri|URI)s?$|^href$/;
 // Words that make a URL-ish name a file URL.
-const FILE_WORD_RE = /pdf|report|file|export|presign|signed|public|media|video|audio|voice|image|img|photo|asset|download|gamma|slide|doc|r2|s3|storage|ephemeral|segment|background|thumbnail|attachment|final|cached|existing/i;
+// `result` / `output`: what a third-party job (Kie.ai, Gamma) hands back is a
+// generated file (`result_url`, `resultUrls`, `output_url`), and a stored
+// `result_url` column holds that file's R2 URL or the job's public fallback.
+const FILE_WORD_RE = /pdf|report|file|export|presign|signed|public|media|video|audio|voice|image|img|photo|asset|download|gamma|slide|doc|r2|s3|storage|ephemeral|segment|background|thumbnail|attachment|final|cached|existing|result|output/i;
 // After `<url>.`, these only read the URL for a yes/no or a size.
 const SAFE_MEMBERS = new Set(['length', 'includes', 'startsWith', 'endsWith']);
 // Calls whose result can't be the URL (redaction, a boolean, field names).
@@ -186,7 +202,7 @@ function blankSafeWrappers(args) {
 const IDENT_PATH_RE = /(?<![\w$])[A-Za-z_$][\w$]*(?:\s*\??\.\s*[A-Za-z_$][\w$]*)*/g;
 
 /** Offending expressions in one call's (literal-blanked) argument text. */
-function findOffenders(args, { gamma, rel, used }) {
+function findOffenders(args, { jobClient, rel, used }) {
   const code = blankSafeWrappers(args);
   const hits = [];
   IDENT_PATH_RE.lastIndex = 0;
@@ -200,11 +216,14 @@ function findOffenders(args, { gamma, rel, used }) {
     // `{ key: …` — an object key names the field, it isn't the value.
     if (after[0] === ':' && (prev === '{' || prev === ',')) continue;
 
-    // A Gamma success body carries the export URL; an error body (`error.response.data`) doesn't.
-    if (gamma && /response$/i.test(segs[segs.length - 2] || '') && segs[segs.length - 1] === 'data'
-        && !/^(?:e|err|error)$/.test(segs[0])) {
-      hits.push(m[0]);
-      continue;
+    // A Gamma / Kie.ai success body carries the generated file's URL; an
+    // error body (`error.response.data`) doesn't, nor does one field of a body
+    // (`pollData.data.state`).
+    if (jobClient && !/^(?:e|err|error)$/.test(segs[0])) {
+      const last = segs[segs.length - 1];
+      const wholeBody = (last === 'data' && (/response$/i.test(segs[segs.length - 2] || '') || JOB_BODY_RE.test(segs[segs.length - 2] || '')))
+        || (JOB_BODY_RE.test(last) && segs.length === 1);
+      if (wholeBody) { hits.push(m[0]); continue; }
     }
 
     // First URL-ish segment that names a file.
@@ -228,18 +247,18 @@ function findOffenders(args, { gamma, rel, used }) {
   return hits;
 }
 
-function scanSource(src, rel = '', used = new Set()) {
+function scanSource(src, rel = '', used = new Set(), callRe = LOG_CALL_RE) {
   const code = blankLiterals(src);
-  const gamma = /gamma/i.test(src);
+  const jobClient = JOB_CLIENT_RE.test(src);
   const violations = [];
-  LOG_CALL_RE.lastIndex = 0;
+  const re = new RegExp(callRe.source, 'g');
   let m;
-  while ((m = LOG_CALL_RE.exec(code))) {
+  while ((m = re.exec(code))) {
     const open = m.index + m[0].length - 1;
     const close = matchParen(code, open);
     const args = code.slice(open + 1, close);
     const line = code.slice(0, m.index).split('\n').length;
-    for (const expr of findOffenders(args, { gamma, rel, used })) {
+    for (const expr of findOffenders(args, { jobClient, rel, used })) {
       violations.push({ line, expr: expr.replace(/\s+/g, '') });
     }
   }
@@ -249,14 +268,19 @@ function scanSource(src, rel = '', used = new Set()) {
 function scanTree() {
   const files = SOURCE_ROOTS.flatMap((r) => walk(r));
   const violations = [];
+  const errorViolations = [];
   const used = new Set();
   for (const f of files) {
     const rel = path.relative(ROOT, f);
-    for (const v of scanSource(fs.readFileSync(f, 'utf8'), rel, used)) {
+    const src = fs.readFileSync(f, 'utf8');
+    for (const v of scanSource(src, rel, used)) {
       violations.push(`${rel}:${v.line} — ${v.expr}`);
     }
+    for (const v of scanSource(src, rel, used, ERROR_CALL_RE)) {
+      errorViolations.push(`${rel}:${v.line} — ${v.expr}`);
+    }
   }
-  return { files, violations, used };
+  return { files, violations, errorViolations, used };
 }
 
 describe('no openable file URL in logs', () => {
@@ -264,6 +288,11 @@ describe('no openable file URL in logs', () => {
     const { files, violations } = scanTree();
     expect(files.length).toBeGreaterThan(100);
     expect(violations).toEqual([]);
+  });
+
+  it('no `new Error(…)` in bot/ or dashboard/ puts a raw file URL in its message (wrap it in redactUrl)', () => {
+    const { errorViolations } = scanTree();
+    expect(errorViolations).toEqual([]);
   });
 
   it('every allowlist entry still exempts a real log call (no stale entries)', () => {
@@ -303,6 +332,30 @@ describe('no openable file URL in logs', () => {
       expect(flagged("logToFile('s', { status: statusResponse.data.status });")).toEqual([]);
       expect(flagged("// gamma\nlogToFile('s', { fields: Object.keys(statusResponse.data) });")).toEqual([]);
       expect(flagged("// gamma\nlogToFile('e', { errorDetails: error.response?.data });")).toEqual([]);
+    });
+
+    it('flags a job result URL by its name (`result_url`, `resultUrls`, `output_url`)', () => {
+      expect(flagged("logToFile('cached', { r2Url: existingTask.result_url });")).toEqual(['existingTask.result_url']);
+      expect(flagged("logToFile('done', { urls: resultJson.resultUrls });")).toEqual(['resultJson.resultUrls']);
+      expect(flagged('console.log(`out: ${job.output_url}`);')).toEqual(['job.output_url']);
+      expect(flagged("logToFile('cached', { r2Url: redactUrl(existingTask.result_url) });")).toEqual([]);
+    });
+
+    it('flags a whole Kie.ai poll body, not one field of it', () => {
+      const kie = "const KIE = 'https://api.kie.ai/api/v1/jobs';\n";
+      expect(flagged(`${kie}logToFile('poll', { full: JSON.stringify(pollData).substring(0, 500) });`)).toEqual(['pollData']);
+      expect(flagged(`${kie}logToFile('fail', { fullData: JSON.stringify(pollData.data) });`)).toEqual(['pollData.data']);
+      expect(flagged(`${kie}logToFile('fail', { failMsg: pollData.data.failMsg, state: pollData.data?.state });`)).toEqual([]);
+      expect(flagged(`${kie}logToFile('poll', { full: redactUrl(JSON.stringify(pollData)) });`)).toEqual([]);
+      expect(flagged("logToFile('poll', { full: JSON.stringify(pollData) });")).toEqual([]);
+    });
+
+    it('applies the same rule to an Error message', () => {
+      const flaggedError = (src) => scanSource(src, '', new Set(), ERROR_CALL_RE).map((v) => v.expr);
+      expect(flaggedError('throw new Error(`Could not extract R2 key from URL: ${url}`);')).toEqual(['url']);
+      expect(flaggedError('reject(new TypeError(`bad ${fileUrl}`));')).toEqual(['fileUrl']);
+      expect(flaggedError('throw new Error(`Could not extract R2 key from URL: ${redactUrl(url)}`);')).toEqual([]);
+      expect(flaggedError('throw new Error(`HTTP ${res.status} for job ${jobId}`);')).toEqual([]);
     });
 
     it('leaves redacted, yes/no and non-file URLs alone', () => {
