@@ -884,5 +884,11 @@ erDiagram
       }
     }
   </script>
+  <script nonce="<%= cspNonce %>">
+    // The handlers the data-on-* attributes in this page name (see /js/csp-actions.js).
+    window.cspActions.register({
+      toggleFields: toggleFields,
+    });
+  </script>
 </body>
 </html>

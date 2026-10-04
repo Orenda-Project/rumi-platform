@@ -1152,5 +1152,15 @@
     updatePreviewTime();
     setInterval(updatePreviewTime, 60000);
   </script>
+  <script nonce="<%= cspNonce %>">
+    // The handlers the data-on-* attributes in this page name (see /js/csp-actions.js).
+    window.cspActions.register({
+      toggleRecipientMode: toggleRecipientMode,
+      debounceSearch: debounceSearch,
+      clearAllSelectedUsers: clearAllSelectedUsers,
+      selectUser: selectUser,
+      removeUser: removeUser,
+    });
+  </script>
 </body>
 </html>

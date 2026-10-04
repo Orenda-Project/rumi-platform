@@ -438,5 +438,15 @@ Feel free to share any mockups or examples!` %></div>
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
   </script>
+  <script nonce="<%= cspNonce %>">
+    // The handlers the data-on-* attributes in this page name (see /js/csp-actions.js).
+    window.cspActions.register({
+      approvePlan: approvePlan,
+      showRejectModal: showRejectModal,
+      linkPr: linkPr,
+      hideRejectModal: hideRejectModal,
+      rejectPlan: rejectPlan,
+    });
+  </script>
 </body>
 </html>

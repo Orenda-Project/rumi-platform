@@ -332,6 +332,15 @@
         }
       }
     </script>
+    <script nonce="<%= cspNonce %>">
+      // The handlers the data-on-* attributes in this page name (see /js/csp-actions.js).
+      window.cspActions.register({
+        updateUserRole: updateUserRole,
+        deactivateUser: deactivateUser,
+        reactivateUser: reactivateUser,
+        deleteUser: deleteUser,
+      });
+    </script>
   <% } %>
 </body>
 </html>

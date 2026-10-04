@@ -2716,5 +2716,15 @@
       return div;
     }
   </script>
+  <script nonce="<%= cspNonce %>">
+    // The handlers the data-on-* attributes in this page name (see /js/csp-actions.js).
+    window.cspActions.register({
+      togglePlay: togglePlay,
+      seekAudio: seekAudio,
+      seekFromTimeline: seekFromTimeline,
+      toggleInsightDetails: toggleInsightDetails,
+      toggleObjectiveEvidence: toggleObjectiveEvidence,
+    });
+  </script>
 </body>
 </html>

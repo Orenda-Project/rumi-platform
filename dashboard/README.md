@@ -49,9 +49,12 @@ are not affected.
 - **No inline handlers.** `onclick="..."`, `onchange="..."` and `javascript:` links are
   blocked. Either bind the event with `addEventListener` in the page's script, or mark the
   element with `data-on-click="functionName"` (also `data-on-change`, `data-on-input`,
-  `data-on-submit`, `data-on-keydown`, `data-on-error`) plus `data-args='["arg"]'`, and
-  load `/js/csp-actions.js`. That file explains the placeholders (`"$event"`, `"$el"`,
-  `"$value"`) and `cspArgs()` for HTML built in a script.
+  `data-on-submit`, `data-on-keydown`, `data-on-error`) plus `data-args='["arg"]'`, load
+  `/js/csp-actions.js`, and register the handler from the page's nonce'd script with
+  `window.cspActions.register({ functionName: functionName })`. Unregistered names do
+  nothing, even if a global function has that name. That file explains the placeholders
+  (`"$event"`, `"$el"`, `"$value"`) and `cspArgs()` for HTML built in a script;
+  `tests/dashboard/csp-actions-views.test.js` checks each view registers what it uses.
 - **Third-party scripts.** Copy the file into `public/vendor/` and keep its licence
   header (Chart.js, ApexCharts and wordcloud2 live there). A file too big to vendor is
   loaded from one exact, versioned URL with `integrity="sha384-..."` and
