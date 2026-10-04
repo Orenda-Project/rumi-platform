@@ -16,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const AudioService = require('../audio.service');
 const WhatsAppService = require('../whatsapp.service');
 const CoachingSessionService = require('./coaching-session.service');
@@ -94,7 +95,7 @@ class TranscriptionProcessorService {
         }
       );
 
-      logToFile('Audio uploaded to R2', { coachingSessionId, r2Url });
+      logToFile('Audio uploaded to R2', { coachingSessionId, r2Url: redactUrl(r2Url) });
 
       // Transcribe with diarization
       const transcriptionResult = await this.transcribeWithDiarization(tempAudioPath);

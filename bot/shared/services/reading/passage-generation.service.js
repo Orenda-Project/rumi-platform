@@ -23,6 +23,7 @@ const { getClient } = require('../llm-client');
 const supabase = require('../../config/supabase');
 const WhatsAppService = require('../whatsapp.service');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { OPENAI_API_KEY, TEMP_DIR } = require('../../utils/constants');
 const { generateAlphabetGrid } = require('../../utils/alphabet-grid-generator');
 const { generateRandomWords, generateWordGrid } = require('../../utils/word-grid-generator');
@@ -237,7 +238,7 @@ class PassageGenerationService {
       // taking the whole passage down with it — a decorative background must
       // never be able to do that.
       if (!/^https?:\/\//i.test(String(presignedUrl || ''))) {
-        logToFile('⚠️ Skipping passage background — not an absolute URL', { url, presignedUrl });
+        logToFile('⚠️ Skipping passage background — not an absolute URL', { url: redactUrl(url), presignedUrl: redactUrl(presignedUrl) });
         return null;
       }
 
@@ -257,7 +258,7 @@ class PassageGenerationService {
                   const image = await getLoadImage()(buffer);
                   resolve(image);
                 } catch (error) {
-                  logToFile('⚠️ Failed to load background image after redirect', { url, error: error.message });
+                  logToFile('⚠️ Failed to load background image after redirect', { url: redactUrl(url), error: error.message });
                   resolve(null);
                 }
               });
@@ -274,7 +275,7 @@ class PassageGenerationService {
               const image = await getLoadImage()(buffer);
               resolve(image);
             } catch (error) {
-              logToFile('⚠️ Failed to load background image', { url, error: error.message });
+              logToFile('⚠️ Failed to load background image', { url: redactUrl(url), error: error.message });
               resolve(null);
             }
           });
@@ -282,7 +283,7 @@ class PassageGenerationService {
         }).on('error', () => resolve(null));
       });
     } catch (error) {
-      logToFile('⚠️ Failed to get presigned URL for background', { url, error: error.message });
+      logToFile('⚠️ Failed to get presigned URL for background', { url: redactUrl(url), error: error.message });
       return null;
     }
   }
@@ -433,7 +434,7 @@ class PassageGenerationService {
 
       logToFile('✅ Passage saved to database', {
         assessmentId,
-        imageUrl,
+        imageUrl: redactUrl(imageUrl),
         hasTitle: passageTitle !== null,
         title: passageTitle
       });
@@ -965,7 +966,7 @@ IMPORTANT: Return ONLY valid JSON in this exact format (no markdown, no code blo
             ctx.fillRect(0, 0, CANVAS_WIDTH, canvasHeight);
 
             usedBackground = true;
-            logToFile('✅ Applied background image with overlay', { type, url: backgroundUrl });
+            logToFile('✅ Applied background image with overlay', { type, url: redactUrl(backgroundUrl) });
           }
         }
       }
@@ -1192,7 +1193,7 @@ IMPORTANT: Return ONLY valid JSON in this exact format (no markdown, no code blo
 
       const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
 
-      logToFile('✅ Passage image uploaded to R2', { key, url: publicUrl });
+      logToFile('✅ Passage image uploaded to R2', { key, url: redactUrl(publicUrl) });
 
       return publicUrl;
 

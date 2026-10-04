@@ -33,6 +33,7 @@
 const fs = require('fs');
 const path = require('path');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const connection = require('./baileys-connection');
 const pendingOptions = require('./pending-options');
@@ -233,7 +234,7 @@ async function resolveMediaSource(url) {
       // from another bucket, say) — so fall through when we can fetch directly.
       if (!isAbsoluteHttpUrl(url)) throw error;
       logToFile('⚠️ Baileys: R2 download failed — fetching the URL directly instead', {
-        url, error: error.message,
+        url: redactUrl(url), error: error.message,
       });
     }
   }
@@ -428,7 +429,7 @@ async function sendDocumentFromUrl(to, documentUrl, filename, caption) {
     const media = await resolveMediaSource(documentUrl);
     return await sendDocumentBuffer(to, media, filename, caption);
   } catch (error) {
-    logToFile('❌ Baileys: error sending document from URL', { error: error.message, documentUrl });
+    logToFile('❌ Baileys: error sending document from URL', { error: error.message, documentUrl: redactUrl(documentUrl) });
     return false;
   }
 }
@@ -438,7 +439,7 @@ async function sendAudioFromUrl(to, audioUrl) {
     const media = await resolveMediaSource(audioUrl);
     return await sendAudio(to, media);
   } catch (error) {
-    logToFile('❌ Baileys: error sending audio from URL', { error: error.message, audioUrl });
+    logToFile('❌ Baileys: error sending audio from URL', { error: error.message, audioUrl: redactUrl(audioUrl) });
     return false;
   }
 }
@@ -485,7 +486,7 @@ async function sendAudioFromUrlReturningId(to, audioUrl) {
     logToFile('✅ Baileys audio sent (returning id)', { to, id });
     return id;
   } catch (error) {
-    logToFile('❌ Baileys: error sending audio from URL (returning id)', { error: error.message, audioUrl });
+    logToFile('❌ Baileys: error sending audio from URL (returning id)', { error: error.message, audioUrl: redactUrl(audioUrl) });
     return null;
   }
 }
@@ -501,7 +502,7 @@ async function sendImageFromUrl(to, imageUrl, caption = '') {
     const media = await resolveMediaSource(imageUrl);
     return await sendImageBuffer(to, media, caption);
   } catch (error) {
-    logToFile('❌ Baileys: error sending image from URL', { error: error.message, imageUrl });
+    logToFile('❌ Baileys: error sending image from URL', { error: error.message, imageUrl: redactUrl(imageUrl) });
     return false;
   }
 }
@@ -522,7 +523,7 @@ async function sendVideoFromUrl(to, videoUrl, caption = '') {
     const media = await resolveMediaSource(videoUrl);
     return await sendVideo(to, media, null, caption);
   } catch (error) {
-    logToFile('❌ Baileys: error sending video from URL', { error: error.message, videoUrl });
+    logToFile('❌ Baileys: error sending video from URL', { error: error.message, videoUrl: redactUrl(videoUrl) });
     return false;
   }
 }
@@ -586,7 +587,7 @@ async function sendImageWithButtons(to, imageUrl, bodyText, buttons) {
     await rememberMenu(to, 'button_reply', buttons);
     return await sendImageBuffer(to, media, caption);
   } catch (error) {
-    logToFile('❌ Baileys: error sending image with buttons (text fallback)', { error: error.message, imageUrl });
+    logToFile('❌ Baileys: error sending image with buttons (text fallback)', { error: error.message, imageUrl: redactUrl(imageUrl) });
     return false;
   }
 }

@@ -13,6 +13,7 @@ const VideoOrchestrator = require('../services/video/video-orchestrator.service'
 const LessonPlanQueueService = require('../services/lesson-plan-queue.service');
 const AttendanceConversationService = require('../services/attendance-conversation.service');
 const { logToFile } = require('../utils/logger');
+const { redactUrl } = require('../utils/redact-url');
 const { TEMP_DIR, LOADING_STICKER_PATH, LOADING_STICKER_MEDIA_ID } = require('../utils/constants');
 const {
   getOrCreateUser,
@@ -468,7 +469,7 @@ async function handleVoiceMessage(message, from, user = null) {
               assessmentId: activeAssessment.id,
               userId: user.id,
               status: activeAssessment.status,
-              audio_url: activeAssessment.audio_url,
+              audio_url: redactUrl(activeAssessment.audio_url),
               student_identifier: activeAssessment.student_identifier,
               created_at: activeAssessment.created_at,
               assessmentAge: Math.round(assessmentAge / 60000) + ' minutes',
@@ -561,13 +562,13 @@ async function handleVoiceMessage(message, from, user = null) {
             let audioUrl;
             if (isR2Configured()) {
               audioUrl = await uploadAudio(audioPath, user.id, audioId);
-              logToFile('✓ Audio uploaded to R2', { assessmentId: activeAssessment.id, audioUrl });
+              logToFile('✓ Audio uploaded to R2', { assessmentId: activeAssessment.id, audioUrl: redactUrl(audioUrl) });
               fs.unlinkSync(audioPath);
               logToFile('✓ Temp file cleaned up', { assessmentId: activeAssessment.id });
             } else {
               audioUrl = `file://${audioPath}`;
               logToFile('✓ Audio kept on local disk (no object storage configured)', {
-                assessmentId: activeAssessment.id, audioUrl,
+                assessmentId: activeAssessment.id, audioUrl: redactUrl(audioUrl),
               });
               // Deliberately NOT deleted — the analysis step reads it back.
             }
@@ -583,7 +584,7 @@ async function handleVoiceMessage(message, from, user = null) {
               assessmentId: activeAssessment.id,
               userId: user.id,
               sessionId,
-              audioUrl,
+              audioUrl: redactUrl(audioUrl),
               duration: audioDuration
             });
 
@@ -823,7 +824,7 @@ async function handleVoiceMessage(message, from, user = null) {
     fs.writeFileSync(oggPath, audioBuffer);
     try {
       audioUrl = await uploadAudio(oggPath, from, message.id);
-      logToFile('✅ Audio uploaded to R2', { audioUrl });
+      logToFile('✅ Audio uploaded to R2', { audioUrl: redactUrl(audioUrl) });
     } catch (error) {
       logToFile('⚠️ Failed to upload audio to R2', { error: error.message });
     }

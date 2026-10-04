@@ -22,6 +22,7 @@ const WhatsAppService = require('../whatsapp.service');
 const PicLpSession = require('./pic-lp-session.service');
 const GammaClient = require('./gamma-client.service');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { logEvent } = require('../../utils/structured-logger');
 const { TEMP_DIR } = require('../../utils/constants');
 const supabase = require('../../config/supabase');
@@ -262,7 +263,7 @@ async function generateAndDeliver({ session, formData, from }) {
       logToFile('❌ Pic-LP delivery failed', {
         sessionId: session.id,
         error: sendErr.message,
-        pdfUrl: gammaResult.pdfUrl,
+        pdfUrl: redactUrl(gammaResult.pdfUrl),
       });
       await PicLpSession.updateStatus(session.id, 'failed', { last_error: `delivery: ${sendErr.message}` });
       await WhatsAppService.sendMessage(

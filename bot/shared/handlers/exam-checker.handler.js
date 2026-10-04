@@ -11,6 +11,7 @@ const { ExamCheckerOrchestrator, ExamSessionService } = require('../services/exa
 const WhatsAppService = require('../services/whatsapp.service');
 const { uploadImageWithRetry } = require('../storage/r2');
 const { logToFile } = require('../utils/logger');
+const { redactUrl } = require('../utils/redact-url');
 const { runWithCorrelation, generateCorrelationId } = require('../utils/structured-logger');
 const { driverForIdentifier } = require('../services/messaging/channel-registry');
 
@@ -219,7 +220,7 @@ async function handleExamImage(message, from, user) {
       const imageBuffer = await WhatsAppService.downloadMedia(imageId);
       const imageUrl = await uploadImageWithRetry(imageBuffer, user.id, imageId, mimeType);
 
-      logToFile('📷 Exam image uploaded to R2', { imageUrl, userId: user.id });
+      logToFile('📷 Exam image uploaded to R2', { imageUrl: redactUrl(imageUrl), userId: user.id });
 
       // Process through orchestrator
       const response = await ExamCheckerOrchestrator.process(

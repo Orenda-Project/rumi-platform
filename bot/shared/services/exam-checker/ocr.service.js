@@ -10,6 +10,7 @@
 
 const axios = require('axios');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const SuryaService = require('./surya.service');
 
 // Provider configuration
@@ -160,7 +161,7 @@ class OCRService {
       throw new Error('MISTRAL_API_KEY not configured');
     }
 
-    logToFile('🔍 Calling Mistral OCR', { imageUrl: imageUrl.substring(0, 50) + '...' });
+    logToFile('🔍 Calling Mistral OCR', { imageUrl: redactUrl(imageUrl) });
 
     const response = await axios.post(
       MISTRAL_API_URL,
@@ -234,7 +235,7 @@ class OCRService {
       throw new Error('CHANDRA_API_KEY not configured');
     }
 
-    logToFile('🔍 Calling Chandra OCR', { imageUrl: imageUrl.substring(0, 50) + '...' });
+    logToFile('🔍 Calling Chandra OCR', { imageUrl: redactUrl(imageUrl) });
 
     const response = await axios.post(
       CHANDRA_API_URL,

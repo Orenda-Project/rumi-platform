@@ -43,6 +43,7 @@
 const fs = require('fs');
 const path = require('path');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const { prefixFor } = require('./channel-registry');
 const matrixIdentity = require('./matrix-identity');
@@ -256,7 +257,7 @@ async function resolveMediaBuffer(url) {
     } catch (error) {
       if (!isAbsoluteHttpUrl(url)) throw error;
       logToFile('⚠️ Matrix: R2 download failed -- fetching the URL directly instead', {
-        url, error: error.message,
+        url: redactUrl(url), error: error.message,
       });
     }
   }
@@ -860,7 +861,7 @@ async function sendDocumentFromUrl(to, documentUrl, filename, caption) {
     await uploadAndSend(to, buffer, guessMimeType(filename), filename, 'm.file', caption);
     return true;
   } catch (error) {
-    logToFile('❌ Matrix: error sending document from URL', { ...matrixErrorDetail(error), documentUrl });
+    logToFile('❌ Matrix: error sending document from URL', { ...matrixErrorDetail(error), documentUrl: redactUrl(documentUrl) });
     return false;
   }
 }
@@ -871,7 +872,7 @@ async function sendAudioFromUrl(to, audioUrl) {
     await uploadAndSend(to, buffer, 'audio/mpeg', 'audio.mp3', 'm.audio', undefined, { voice: true });
     return true;
   } catch (error) {
-    logToFile('❌ Matrix: error sending audio from URL', { ...matrixErrorDetail(error), audioUrl });
+    logToFile('❌ Matrix: error sending audio from URL', { ...matrixErrorDetail(error), audioUrl: redactUrl(audioUrl) });
     return false;
   }
 }
@@ -882,7 +883,7 @@ async function sendAudioFromUrlReturningId(to, audioUrl) {
     const eventId = await uploadAndSend(to, buffer, 'audio/mpeg', 'audio.mp3', 'm.audio', undefined, { voice: true });
     return eventId || null;
   } catch (error) {
-    logToFile('❌ Matrix: error sending audio from URL (returning id)', { ...matrixErrorDetail(error), audioUrl });
+    logToFile('❌ Matrix: error sending audio from URL (returning id)', { ...matrixErrorDetail(error), audioUrl: redactUrl(audioUrl) });
     return null;
   }
 }
@@ -894,7 +895,7 @@ async function sendImageFromUrl(to, imageUrl, caption = '') {
     await uploadAndSend(to, buffer, mimeType, filename, 'm.image', caption);
     return true;
   } catch (error) {
-    logToFile('❌ Matrix: error sending image from URL', { ...matrixErrorDetail(error), imageUrl });
+    logToFile('❌ Matrix: error sending image from URL', { ...matrixErrorDetail(error), imageUrl: redactUrl(imageUrl) });
     return false;
   }
 }
@@ -915,7 +916,7 @@ async function sendVideoFromUrl(to, videoUrl, caption = '') {
     await uploadAndSend(to, buffer, 'video/mp4', 'video.mp4', 'm.video', caption);
     return true;
   } catch (error) {
-    logToFile('❌ Matrix: error sending video from URL', { ...matrixErrorDetail(error), videoUrl });
+    logToFile('❌ Matrix: error sending video from URL', { ...matrixErrorDetail(error), videoUrl: redactUrl(videoUrl) });
     return false;
   }
 }
@@ -1047,7 +1048,7 @@ async function sendImageWithButtons(to, imageUrl, bodyText, buttons) {
     await uploadAndSend(to, buffer, mimeType, filename, 'm.image', caption);
     return true;
   } catch (error) {
-    logToFile('❌ Matrix: error sending image with buttons (text fallback)', { ...matrixErrorDetail(error), imageUrl });
+    logToFile('❌ Matrix: error sending image with buttons (text fallback)', { ...matrixErrorDetail(error), imageUrl: redactUrl(imageUrl) });
     return false;
   }
 }

@@ -21,6 +21,7 @@ const FormData = require('form-data');
 const fs = require('fs');
 const { WHATSAPP_TOKEN, PHONE_NUMBER_ID } = require('../../utils/constants');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 
 // Prefer ASSET_BASE_URL; fall back to legacy ASSETS_BASE_URL. Empty when
@@ -486,7 +487,7 @@ class WhatsAppService {
 
     try {
       // Extract R2 key from URL and download using R2 client
-      logToFile('Downloading document from R2', { documentUrl });
+      logToFile('Downloading document from R2', { documentUrl: redactUrl(documentUrl) });
       const key = extractKeyFromUrl(documentUrl);
       const documentBuffer = await downloadFromR2(key);
 
@@ -511,7 +512,7 @@ class WhatsAppService {
     } catch (error) {
       logToFile('❌ Error sending document from URL', {
         error: error.message,
-        documentUrl,
+        documentUrl: redactUrl(documentUrl),
         stack: error.stack
       });
       return false;
@@ -530,7 +531,7 @@ class WhatsAppService {
 
     try {
       // Extract R2 key from URL and download using R2 client
-      logToFile('Downloading audio from R2', { audioUrl });
+      logToFile('Downloading audio from R2', { audioUrl: redactUrl(audioUrl) });
       const key = extractKeyFromUrl(audioUrl);
       const audioBuffer = await downloadFromR2(key);
 
@@ -541,7 +542,7 @@ class WhatsAppService {
     } catch (error) {
       logToFile('❌ Error sending audio from URL', {
         error: error.message,
-        audioUrl,
+        audioUrl: redactUrl(audioUrl),
         stack: error.stack
       });
       return false;
@@ -565,7 +566,7 @@ class WhatsAppService {
 
     try {
       // Extract R2 key from URL and download using R2 client
-      logToFile('Downloading image from R2', { imageUrl });
+      logToFile('Downloading image from R2', { imageUrl: redactUrl(imageUrl) });
       const key = extractKeyFromUrl(imageUrl);
       const imageBuffer = await downloadFromR2(key);
 
@@ -590,7 +591,7 @@ class WhatsAppService {
     } catch (error) {
       logToFile('❌ Error sending image from URL', {
         error: error.message,
-        imageUrl,
+        imageUrl: redactUrl(imageUrl),
         stack: error.stack
       });
       return false;
@@ -745,7 +746,7 @@ class WhatsAppService {
 
     try {
       // Extract R2 key from URL and download using R2 client
-      logToFile('📹 Downloading video from R2', { videoUrl });
+      logToFile('📹 Downloading video from R2', { videoUrl: redactUrl(videoUrl) });
       const key = extractKeyFromUrl(videoUrl);
       const videoBuffer = await downloadFromR2(key);
 
@@ -756,7 +757,7 @@ class WhatsAppService {
     } catch (error) {
       logToFile('❌ Error sending video from URL', {
         error: error.message,
-        videoUrl,
+        videoUrl: redactUrl(videoUrl),
         stack: error.stack
       });
       return false;
@@ -1032,7 +1033,7 @@ class WhatsAppService {
       let imageHeader;
 
       if (isR2Url) {
-        logToFile('📥 Downloading image from R2 (private URL)', { imageUrl });
+        logToFile('📥 Downloading image from R2 (private URL)', { imageUrl: redactUrl(imageUrl) });
 
         // Extract R2 key and download using credentials
         const key = extractKeyFromUrl(imageUrl);
@@ -1112,7 +1113,7 @@ class WhatsAppService {
 
       logToFile('✅ Image with buttons sent successfully', {
         response: response.data,
-        imageUrl,
+        imageUrl: redactUrl(imageUrl),
         usedMediaId: isR2Url,
         buttonCount: buttons.length
       });
@@ -1121,7 +1122,7 @@ class WhatsAppService {
       logToFile('❌ Error sending image with buttons', {
         error: error.message,
         errorDetails: error.response?.data,
-        imageUrl
+        imageUrl: redactUrl(imageUrl)
       });
       return false;
     }

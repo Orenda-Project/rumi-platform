@@ -9,6 +9,7 @@
  */
 
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { uploadVideoAsset, isPermanentR2Url, toPublicUrl } = require('../../storage/r2');
 const fs = require('fs');
 const path = require('path');
@@ -233,7 +234,7 @@ class VideoImageService {
       logToFile('Re-uploading ephemeral URL to R2', {
         videoRequestId,
         filename,
-        ephemeralUrl
+        ephemeralUrl: redactUrl(ephemeralUrl)
       });
       // Download from ephemeral URL and upload to R2
       try {
@@ -255,7 +256,7 @@ class VideoImageService {
           .eq('video_request_id', videoRequestId)
           .eq('filename', filename);
 
-        logToFile('Ephemeral URL migrated to R2', { videoRequestId, filename, r2Url });
+        logToFile('Ephemeral URL migrated to R2', { videoRequestId, filename, r2Url: redactUrl(r2Url) });
         return { r2Url, ephemeralUrl };
       } catch (err) {
         logToFile('Failed to migrate ephemeral URL, will regenerate', {
@@ -286,7 +287,7 @@ class VideoImageService {
       videoRequestId,
       filename,
       mode: isImageToImage ? 'image-to-image' : 'text-to-image',
-      referenceImage: isImageToImage ? referenceImageUrl : null
+      referenceImage: isImageToImage ? redactUrl(referenceImageUrl) : null
     });
 
     // Issue #36: Clean prompt to remove meta-instructions that get rendered literally
@@ -320,9 +321,9 @@ class VideoImageService {
       logToFile('Using reference image for i2i', {
         videoRequestId,
         filename,
-        originalRef: referenceImageUrl.substring(0, 80) + '...',
+        originalRef: redactUrl(referenceImageUrl),
         isKieUrl,
-        usingUrl: publicRefUrl.substring(0, 80) + '...'
+        usingUrl: redactUrl(publicRefUrl)
       });
 
       apiInput.image_input = [publicRefUrl];
@@ -386,7 +387,7 @@ class VideoImageService {
     let r2Url;
     try {
       r2Url = await uploadVideoAsset(localPath, videoRequestId, `${filename}.png`);
-      logToFile('Image uploaded to R2', { videoRequestId, filename, r2Url });
+      logToFile('Image uploaded to R2', { videoRequestId, filename, r2Url: redactUrl(r2Url) });
     } catch (err) {
       logToFile('R2 upload failed, using ephemeral URL as fallback', {
         videoRequestId,
@@ -413,8 +414,8 @@ class VideoImageService {
       videoRequestId,
       filename,
       localPath,
-      r2Url,
-      ephemeralUrl: ephemeralUrl.substring(0, 80) + '...'
+      r2Url: redactUrl(r2Url),
+      ephemeralUrl: redactUrl(ephemeralUrl)
     });
 
     // Return BOTH URLs - r2Url for storage, ephemeralUrl for Kie.ai

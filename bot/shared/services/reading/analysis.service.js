@@ -30,6 +30,7 @@ const path = require('path');
 const { isR2Configured } = require('../../storage/r2');
 const { TEMP_DIR } = require('../../utils/constants');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { displayName } = require('../../utils/display-name');
 const { getClient } = require('../llm-client');
 const { OPENAI_API_KEY } = require('../../utils/constants');
@@ -102,7 +103,7 @@ class AnalysisService {
         assessmentId,
         language: assessment.language,
         gradeLevel: assessment.grade_level,
-        audioUrl: assessment.audio_url
+        audioUrl: redactUrl(assessment.audio_url)
       });
 
       // STEP 1: Transcribe audio with speaker diarization
@@ -444,7 +445,7 @@ class AnalysisService {
         })
         .eq('id', assessment.id);
 
-      logToFile('✅ PDF report generated', { assessmentId: assessment.id, reportUrl });
+      logToFile('✅ PDF report generated', { assessmentId: assessment.id, reportUrl: redactUrl(reportUrl) });
 
       // STEP 7: Send results to teacher
       logToFile('Step 7/8: Sending results to teacher...');
@@ -463,7 +464,7 @@ class AnalysisService {
         // Add defensive logging to understand voice feedback delivery failures
         logToFile('🔍 Voice feedback generation result', {
           assessmentId: assessment.id,
-          voiceFeedbackUrl: voiceFeedbackUrl || 'NULL/UNDEFINED',
+          voiceFeedbackUrl: redactUrl(voiceFeedbackUrl) || 'NULL/UNDEFINED',
           urlType: typeof voiceFeedbackUrl,
           hasUrl: !!voiceFeedbackUrl
         });
@@ -481,7 +482,7 @@ class AnalysisService {
           logToFile('📤 Attempting to send voice feedback to teacher', {
             assessmentId: assessment.id,
             phoneNumber,
-            voiceFeedbackUrl
+            voiceFeedbackUrl: redactUrl(voiceFeedbackUrl)
           });
 
           await WhatsAppService.sendAudioFromUrl(phoneNumber, voiceFeedbackUrl);
@@ -490,7 +491,7 @@ class AnalysisService {
           // Log when voiceFeedbackUrl is null/falsy
           logToFile('⚠️ Voice feedback URL is null/falsy - skipping delivery', {
             assessmentId: assessment.id,
-            voiceFeedbackUrl
+            voiceFeedbackUrl: redactUrl(voiceFeedbackUrl)
           });
         }
       } catch (voiceError) {
@@ -1045,7 +1046,7 @@ Output the complete enhanced summary (not just the new parts).`;
 
       const publicUrl = `${process.env.R2_ENDPOINT}/${BUCKET_NAME}/${key}`;
 
-      logToFile('✅ Report PDF uploaded to R2', { key, url: publicUrl });
+      logToFile('✅ Report PDF uploaded to R2', { key, url: redactUrl(publicUrl) });
 
       return publicUrl;
 
@@ -1123,7 +1124,7 @@ Output the complete enhanced summary (not just the new parts).`;
 
       logToFile('✅ Voice feedback generated', {
         assessmentId: assessment.id,
-        url: voiceFeedbackUrl,
+        url: redactUrl(voiceFeedbackUrl),
         size: audioBuffer.length
       });
 
@@ -1184,7 +1185,7 @@ Output the complete enhanced summary (not just the new parts).`;
       // Send report PDF
       logToFile('📄 Sending PDF report to teacher', {
         assessmentId: assessment.id,
-        reportUrl
+        reportUrl: redactUrl(reportUrl)
       });
 
       await WhatsAppService.sendDocumentFromUrl(phoneNumber, reportUrl, 'Reading_Assessment_Report.pdf');
@@ -1337,7 +1338,7 @@ Output the complete enhanced summary (not just the new parts).`;
       if (question.imageUrl && question.buttons) {
         logToFile('🖼️ Sending image question with buttons', {
           questionNumber,
-          imageUrl: question.imageUrl,
+          imageUrl: redactUrl(question.imageUrl),
           buttonCount: question.buttons.length
         });
 
@@ -1597,7 +1598,7 @@ Output the complete enhanced summary (not just the new parts).`;
         // Add defensive logging for comprehension flow voice feedback
         logToFile('🔍 Combined voice feedback generation result', {
           assessmentId,
-          voiceFeedbackUrl: voiceFeedbackUrl || 'NULL/UNDEFINED',
+          voiceFeedbackUrl: redactUrl(voiceFeedbackUrl) || 'NULL/UNDEFINED',
           urlType: typeof voiceFeedbackUrl,
           hasUrl: !!voiceFeedbackUrl
         });
@@ -1613,7 +1614,7 @@ Output the complete enhanced summary (not just the new parts).`;
           logToFile('📤 Attempting to send combined voice feedback', {
             assessmentId,
             phoneNumber,
-            voiceFeedbackUrl
+            voiceFeedbackUrl: redactUrl(voiceFeedbackUrl)
           });
 
           await WhatsAppService.sendAudioFromUrl(phoneNumber, voiceFeedbackUrl);
@@ -1621,7 +1622,7 @@ Output the complete enhanced summary (not just the new parts).`;
         } else {
           logToFile('⚠️ Combined voice feedback URL is null/falsy - skipping delivery', {
             assessmentId,
-            voiceFeedbackUrl
+            voiceFeedbackUrl: redactUrl(voiceFeedbackUrl)
           });
         }
       } catch (voiceError) {

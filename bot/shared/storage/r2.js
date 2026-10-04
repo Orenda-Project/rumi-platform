@@ -8,6 +8,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const fs = require('fs');
 const path = require('path');
 const { lazyClient } = require('../utils/lazy-client');
+const { redactUrl } = require('../utils/redact-url');
 
 // R2 client is lazy-initialised. The bot can boot without R2 credentials set —
 // every R2 helper below calls getR2Client() at the moment the actual S3-API
@@ -570,7 +571,7 @@ async function getPresignedUrl(r2Url, expiresIn = 3600) {
 
   // If it's already a presigned URL or not an R2 URL, return as-is
   if (r2Url.includes('X-Amz-Signature') || !isPermanentR2Url(r2Url)) {
-    console.log(`⏭️ Skipping presign (already signed or not R2): ${r2Url.substring(0, 80)}...`);
+    console.log(`⏭️ Skipping presign (already signed or not R2): ${redactUrl(r2Url)}`);
     return r2Url;
   }
 
@@ -580,7 +581,7 @@ async function getPresignedUrl(r2Url, expiresIn = 3600) {
   const bucketIndex = r2Url.indexOf(`/${bucketName}/`);
 
   console.log(`🔑 Presigned URL generation:`, {
-    r2Url: r2Url.substring(0, 100),
+    r2Url: redactUrl(r2Url),
     bucketName,
     bucketIndex,
     r2Endpoint: process.env.R2_ENDPOINT?.substring(0, 50)
@@ -588,7 +589,7 @@ async function getPresignedUrl(r2Url, expiresIn = 3600) {
 
   if (bucketIndex === -1) {
     console.warn('⚠️ Could not extract key from R2 URL - bucket pattern not found:', {
-      r2Url,
+      r2Url: redactUrl(r2Url),
       bucketName,
       lookingFor: `/${bucketName}/`
     });
@@ -607,8 +608,8 @@ async function getPresignedUrl(r2Url, expiresIn = 3600) {
     const presignedUrl = await getSignedUrl(getR2Client(), command, { expiresIn });
 
     console.log(`✅ Generated presigned URL for ${key}:`);
-    console.log(`   Original: ${r2Url.substring(0, 80)}...`);
-    console.log(`   Presigned: ${presignedUrl.substring(0, 100)}...`);
+    console.log(`   Original: ${redactUrl(r2Url)}`);
+    console.log(`   Presigned: ${redactUrl(presignedUrl)}`);
     console.log(`   Expires in: ${expiresIn}s`);
     console.log(`   Has signature: ${presignedUrl.includes('X-Amz-Signature')}`);
 
@@ -682,7 +683,7 @@ async function uploadImageWithRetry(imageBuffer, userId, imageId, mimeType) {
 
       logToFile('Image uploaded to R2', {
         key,
-        publicUrl,
+        publicUrl: redactUrl(publicUrl),
         attempt: attempt + 1,
         sizeBytes: imageBuffer.length,
       });

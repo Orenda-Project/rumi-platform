@@ -21,6 +21,7 @@ const path = require('path');
 const AudioService = require('../audio.service');
 const WhatsAppService = require('../whatsapp.service');
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { TEMP_DIR } = require('../../utils/constants');
 
 class TranscriptionService {
@@ -37,7 +38,7 @@ class TranscriptionService {
     try {
       logToFile('📝 Starting reading transcription', {
         assessmentId,
-        audioUrl,
+        audioUrl: redactUrl(audioUrl),
         expectedLanguage
       });
 
@@ -127,7 +128,7 @@ class TranscriptionService {
       const key = extractKeyFromUrl(audioUrl);
 
       logToFile('📥 Downloading audio from R2', {
-        url: audioUrl,
+        url: redactUrl(audioUrl),
         key
       });
 
@@ -138,7 +139,7 @@ class TranscriptionService {
       fs.writeFileSync(tempPath, audioBuffer);
 
       logToFile('✅ Audio downloaded from R2', {
-        url: audioUrl,
+        url: redactUrl(audioUrl),
         key,
         size: audioBuffer.length,
         path: tempPath
@@ -148,7 +149,7 @@ class TranscriptionService {
 
     } catch (error) {
       logToFile('❌ Error downloading audio from R2', {
-        url: audioUrl,
+        url: redactUrl(audioUrl),
         error: error.message
       });
       throw error;

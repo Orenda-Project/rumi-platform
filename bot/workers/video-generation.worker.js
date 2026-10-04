@@ -14,6 +14,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const { logToFile } = require('../shared/utils/logger');
+const { redactUrl } = require('../shared/utils/redact-url');
 const VideoSessionService = require('../shared/services/video/video-session.service');
 const VideoScriptService = require('../shared/services/video/video-script.service');
 const VideoImageService = require('../shared/services/video/video-image.service');
@@ -217,7 +218,7 @@ class VideoGenerationWorker {
             .eq('id', videoRequestId);
         }
       } else {
-        logToFile('Step 2.5: PDF already sent', { videoRequestId, existingPdfUrl });
+        logToFile('Step 2.5: PDF already sent', { videoRequestId, existingPdfUrl: redactUrl(existingPdfUrl) });
       }
 
       // ============================================
@@ -331,7 +332,7 @@ class VideoGenerationWorker {
       logToFile('Video generation completed successfully', {
         videoRequestId,
         generationTimeSeconds: generationTime,
-        videoUrl
+        videoUrl: redactUrl(videoUrl)
       });
 
       // Check and trigger registration if needed (non-blocking)

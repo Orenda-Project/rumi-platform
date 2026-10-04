@@ -19,6 +19,7 @@
 
 const supabase = require('../config/supabase');
 const { logToFile } = require('../utils/logger');
+const { redactUrl } = require('../utils/redact-url');
 const { logEvent } = require('../utils/structured-logger');
 const WhatsAppService = require('../services/whatsapp.service');
 const StudentVideoFeedbackService = require('../services/student-video-feedback.service');
@@ -273,7 +274,7 @@ function deliverVideoAsync(flowToken, row) {
       const delivered = await WhatsAppService.sendVideoFromUrl(phone, row.r2_url, caption);
       if (!delivered) {
         logToFile('Student Videos: video upload failed — not offering a quiz for it', {
-          userId, videoId: row.id, url: row.r2_url,
+          userId, videoId: row.id, url: redactUrl(row.r2_url),
         });
         await WhatsAppService.sendMessage(
           phone,

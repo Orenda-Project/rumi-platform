@@ -10,6 +10,7 @@
  */
 
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { uploadVideoAsset, isPermanentR2Url, toPublicUrl } = require('../../storage/r2');
 const fs = require('fs');
 const path = require('path');
@@ -197,7 +198,7 @@ class VideoAnimationService {
           .eq('video_request_id', videoRequestId)
           .eq('filename', filename);
 
-        logToFile('Ephemeral video migrated to R2', { videoRequestId, slideId, r2Url });
+        logToFile('Ephemeral video migrated to R2', { videoRequestId, slideId, r2Url: redactUrl(r2Url) });
         return localPath;  // FFmpeg needs local path, not R2 URL!
       } catch (err) {
         logToFile('Failed to migrate ephemeral video, will regenerate', {
@@ -238,8 +239,8 @@ class VideoAnimationService {
       slideId,
       isKieStartUrl,
       isKieEndUrl,
-      startUrl: publicStartUrl.substring(0, 80) + '...',
-      endUrl: publicEndUrl.substring(0, 80) + '...'
+      startUrl: redactUrl(publicStartUrl),
+      endUrl: redactUrl(publicEndUrl)
     });
 
     const createResponse = await fetch(`${KIE_API_URL}/createTask`, {
@@ -299,7 +300,7 @@ class VideoAnimationService {
     let r2Url;
     try {
       r2Url = await uploadVideoAsset(localPath, videoRequestId, `slide_${slideId}.mp4`);
-      logToFile('Video segment uploaded to R2', { videoRequestId, slideId, r2Url });
+      logToFile('Video segment uploaded to R2', { videoRequestId, slideId, r2Url: redactUrl(r2Url) });
     } catch (err) {
       logToFile('R2 upload failed, using ephemeral URL as fallback', {
         videoRequestId,
@@ -320,7 +321,7 @@ class VideoAnimationService {
       .eq('video_request_id', videoRequestId)
       .eq('filename', filename);
 
-    logToFile('Video task completed', { videoRequestId, slideId, localPath, r2Url });
+    logToFile('Video task completed', { videoRequestId, slideId, localPath, r2Url: redactUrl(r2Url) });
 
     // CRITICAL: Return LOCAL path for FFmpeg assembly (not R2 URL!)
     return localPath;

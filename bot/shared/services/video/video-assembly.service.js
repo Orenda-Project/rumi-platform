@@ -5,6 +5,7 @@
  */
 
 const { logToFile } = require('../../utils/logger');
+const { redactUrl } = require('../../utils/redact-url');
 const { uploadVideoAsset } = require('../../storage/r2');
 const WhatsAppService = require('../whatsapp.service');
 const { getUserLanguage } = require('../../utils/language-cache');
@@ -45,7 +46,7 @@ class VideoAssemblyService {
       let pdfUrl;
       try {
         pdfUrl = await uploadVideoAsset(pdfPath, videoRequestId, 'slides.pdf');
-        logToFile('PDF uploaded to R2', { videoRequestId, pdfUrl });
+        logToFile('PDF uploaded to R2', { videoRequestId, pdfUrl: redactUrl(pdfUrl) });
       } catch (err) {
         logToFile('R2 upload failed for PDF, using local path', {
           videoRequestId,
@@ -59,7 +60,7 @@ class VideoAssemblyService {
       const messages = VideoSessionService.getProgressMessages(language);
 
       await WhatsAppService.sendDocument(from, pdfPath, 'slides.pdf', messages.pdfReady);
-      logToFile('PDF sent to user immediately after images', { videoRequestId, from, pdfUrl });
+      logToFile('PDF sent to user immediately after images', { videoRequestId, from, pdfUrl: redactUrl(pdfUrl) });
 
       return pdfUrl;
     } catch (error) {
@@ -139,7 +140,7 @@ class VideoAssemblyService {
         uploadAttempt++;
         try {
           finalVideoUrl = await uploadVideoAsset(finalVideoPath, videoRequestId, 'final.mp4');
-          logToFile('Final video uploaded to R2', { videoRequestId, finalVideoUrl, attempt: uploadAttempt });
+          logToFile('Final video uploaded to R2', { videoRequestId, finalVideoUrl: redactUrl(finalVideoUrl), attempt: uploadAttempt });
           break; // Success!
         } catch (err) {
           logToFile('R2 upload attempt failed', {
@@ -224,7 +225,7 @@ class VideoAssemblyService {
         logToFile('Video assembly complete with R2 URL', {
           videoRequestId,
           elapsedSeconds,
-          r2Url: finalVideoUrl
+          r2Url: redactUrl(finalVideoUrl)
         });
       } else {
         // Video was sent to user but not stored in R2 for portal
@@ -440,7 +441,7 @@ class VideoAssemblyService {
     }
 
     if (imagePaths.length === 0) {
-      logToFile('No slide images found for PDF', { slideUrls });
+      logToFile('No slide images found for PDF', { slideUrls: redactUrl(slideUrls) });
       return;
     }
 
