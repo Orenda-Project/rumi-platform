@@ -115,9 +115,25 @@ later.", whatever the reason and whether or not the account exists; the portal s
   them; a phone number appears there only as an HMAC keyed with `SESSION_SECRET`. Without Redis, or while it is
   down, each process counts in memory and no request fails because of it.
 - Each step is counted on its own and by route, so `/login`, `/login/` and `/LOGIN` share one count.
-- The per-IP count uses the address the dashboard sees after **one** trusted proxy (`trust proxy` is 1, right for
-  Railway or one Caddy/nginx in front). Reached directly, with no proxy, a client can name its own address in
-  `X-Forwarded-For` and only the per-number limits hold, so keep the dashboard behind exactly one proxy.
+- Without Redis, or while it is down, each cluster worker and replica counts on its own, so the limits above are
+  multiplied by the number of processes: up to 4× on one dashboard with the default cluster (one worker per CPU,
+  at most 4, unless `CLUSTER_WORKERS` is set), more with replicas. The reset-code tries are counted in the
+  database and are not affected.
+- The per-IP count uses the client address, which depends on what sits in front of the dashboard. Set it to match:
+
+  | In front of the dashboard | Set |
+  |---|---|
+  | Nothing (reached directly) | `TRUST_PROXY=false` |
+  | One Caddy or nginx you run | nothing (`TRUST_PROXY=1`, the default) |
+  | Railway | `PORTAL_CLIENT_IP_HEADER=x-real-ip` |
+  | Railway plus your own edge proxy | `PORTAL_CLIENT_IP_HEADER=x-real-ip` if the edge passes it on, else `TRUST_PROXY=2` |
+  | Cloudflare (dashboard reachable only through it) | `PORTAL_CLIENT_IP_HEADER=cf-connecting-ip` |
+
+  `TRUST_PROXY` takes a hop count (`1` to `10`), `false`/`0`, or the proxies' addresses (`loopback, 10.0.0.0/8`);
+  `true` and anything else invalid mean `1`, with a warning. `PORTAL_CLIENT_IP_HEADER` is used only when its first
+  value is a valid IP; set it only when the proxy always overwrites that header, or a client picks its own
+  address. Both also apply to the `/api/portal` limit and the admin sign-in. Details and the reasons:
+  [running in public](../running-in-public.md#which-address-counts-as-the-client).
 - Anyone who knows a teacher's number can use up its 5 failed sign-ins and lock that number's sign-in for one
   window (15 minutes). That is the price of a per-account limit; the teacher can still reset their password.
 - Reset codes come from `crypto.randomInt`. Each code allows `PORTAL_RESET_CODE_MAX_ATTEMPTS` (5) wrong tries; then
