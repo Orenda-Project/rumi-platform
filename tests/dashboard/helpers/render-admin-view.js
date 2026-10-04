@@ -102,7 +102,9 @@ async function renderAdminView(view, locals, opts = {}) {
   const ejs = dashboardRequire('ejs');
   const { JSDOM, ResourceLoader, VirtualConsole } = dashboardRequire('jsdom');
 
-  // res.locals as the CSP and auth middleware set them, then the route's locals.
+  // app.locals as dashboard/index.js sets them, res.locals as the CSP and auth
+  // middleware set them, then the route's locals.
+  const appLocals = { safeJson: require('../../../dashboard/lib/safe-json').safeJson };
   const resLocals = {
     cspNonce: NONCE,
     isAuthenticated: true,
@@ -114,7 +116,7 @@ async function renderAdminView(view, locals, opts = {}) {
     userRole: locals.userRole || 'super_admin',
     isAdmin: true,
   };
-  const html = await ejs.renderFile(path.join(VIEWS, `${view}.ejs`), { ...resLocals, ...locals });
+  const html = await ejs.renderFile(path.join(VIEWS, `${view}.ejs`), { ...appLocals, ...resLocals, ...locals });
 
   class PublicLoader extends ResourceLoader {
     fetch(url, options) {

@@ -46,6 +46,21 @@ describe('transcript-enhanced.ejs (classroom transcript)', () => {
     }
   });
 
+  maybe('a quote in line text does not leave the data-raw-text attribute (server side and client side together)', async () => {
+    const text = `${HOSTILE.attr} ${HOSTILE.attrSingle} </script>${HOSTILE.html}`;
+    const page = await renderAdminView('transcript-enhanced', locals({
+      lines: [{ timestamp: '00:05', speaker: 'Teacher', speakerType: 'teacher', text, start_ms: 5000, end_ms: 9000 }],
+    }), { url: '/observability/coaching/session-1/transcript' });
+    try {
+      expect(page.errors).toEqual([]);
+      const line = page.document.querySelector('.line-text');
+      expect(line.getAttribute('data-raw-text')).toBe(text);
+      expectInert(page, line, text);
+    } finally {
+      page.close();
+    }
+  });
+
   maybe('board-writing blocks show the model\'s confidence label as text', async () => {
     const page = await renderAdminView('transcript-enhanced', locals({
       lines: [{ timestamp: '00:05', speaker: 'Teacher', speakerType: 'teacher', text: 'Look here.', start_ms: 5000, end_ms: 9000 }],
