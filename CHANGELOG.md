@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.1] - 2026-10-04
+
+**Rumi Messenger, for a public link, finished off.** "Rumi is typing…" now shows in Element for the whole of a slow job,
+and a deployment without a lesson-plan key says so instead of failing. New caps bound lesson-plan spending per account and
+for the whole instance. Found on our hosted messenger (https://chat.hellorumi.ai).
+
+> **Upgrade notes.** No migration. To bound lesson-plan spending on a public instance, set
+> `DAILY_LESSON_PLAN_CAP_REGISTERED` and `DAILY_LESSON_PLAN_CAP_TOTAL` (see `docs/running-in-public.md`); empty means no cap.
+
+### Fixed
+
+- **"Rumi is typing…" now shows in Element for the whole of a worker job.** In v2.11.0 the bot held the typing on
+  the server through a quiz or lesson plan, but Element showed nothing after "Making it now". Element hides a
+  user's typing once that user sends a message. Synapse sends a new `m.typing` only when the state changes, so
+  the bot's refresh reached no client. Now, when Rumi sends a message while a job still holds the typing, the bot
+  turns typing off and then on again 1 s later. Element shows "Rumi is typing…" again under the message until the
+  job delivers.
+- **With no `GAMMA_API_KEY`, Rumi says lesson plans are not available, instead of queueing a plan that can only
+  fail.** Before this, Gamma answered 401 and the teacher was told to "try again". Typed and spoken lesson plans
+  and presentations, the next-topic plan after a quiz report, and a textbook photo on the Gamma backend now get
+  "Lesson plans aren’t available on this service yet.", with no job and no model call. The lesson-plan intro
+  offer is skipped. A photo lesson plan goes to Kie.ai instead when a Kie.ai key is set
+  (`bot/shared/services/lesson-plan-availability.js`).
+
+### Added
+
+- **`DAILY_LESSON_PLAN_CAP_REGISTERED`** (lesson plans per registered account per school day) and
+  **`DAILY_LESSON_PLAN_CAP_TOTAL`** (every account together, counted in Redis with the same in-process fallback
+  as the other caps). Empty means no cap, so existing deployments are unchanged. Over a cap the teacher gets a
+  clear message, and no job is queued and Gamma is not called. Recommended public values are in
+  `docs/running-in-public.md`.
+- A "See it running" section in `docs/channels/matrix.md` (the hosted Rumi Messenger at https://chat.hellorumi.ai),
+  linked from the README's Rumi Messenger row.
+
 ## [2.11.0] - 2026-10-04
 
 **Anyone can start chatting on Rumi Messenger, and is offered registration.** On Matrix, a person who is not
