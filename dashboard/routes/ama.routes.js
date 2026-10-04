@@ -20,12 +20,22 @@
 const express = require('express');
 const AMAService = require('../services/ama.service');
 
-/** JSON error for a failed data call: the service's status (404) or 500. */
+const GENERIC_ERROR = 'Something went wrong. Please try again.';
+const NOT_FOUND = 'Conversation not found';
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * JSON error for a failed data call: the service's 404 with its message, or a
+ * 500 with a generic one. The database's own text (table names, why a query
+ * failed) goes to the log, never to the browser.
+ */
 function sendError(res, label, error) {
-  const status = error.status || 500;
-  if (status === 500) console.error(`[AMA] ${label}:`, error);
-  res.status(status).json({ success: false, error: error.message });
+  if (error.status === 404) return res.status(404).json({ success: false, error: error.message });
+  console.error(`[AMA] ${label}:`, error);
+  return res.status(500).json({ success: false, error: GENERIC_ERROR });
 }
+
+const notFound = (res) => res.status(404).json({ success: false, error: NOT_FOUND });
 
 function createAmaRouter({ requireAuth, service = AMAService } = {}) {
   if (typeof requireAuth !== 'function') {
@@ -39,6 +49,10 @@ function createAmaRouter({ requireAuth, service = AMAService } = {}) {
     }
     return next();
   };
+
+  // Conversation ids are UUIDs. Anything else is not a conversation (404), not
+  // a query the database rejects with its own error text.
+  router.param('conversationId', (req, res, next, id) => (UUID.test(id) ? next() : notFound(res)));
 
   // AMA Main Page
   router.get('/ama', requireAuth, (req, res) => {
@@ -100,11 +114,10 @@ function createAmaRouter({ requireAuth, service = AMAService } = {}) {
 
     // Only into the user's own conversation; checked before the stream starts.
     if (conversationId) {
+      if (typeof conversationId !== 'string' || !UUID.test(conversationId)) return notFound(res);
       try {
         const conversation = await service.getConversation(conversationId, req.session.userId);
-        if (!conversation) {
-          return res.status(404).json({ success: false, error: 'Conversation not found' });
-        }
+        if (!conversation) return notFound(res);
       } catch (error) {
         return sendError(res, 'Error loading conversation', error);
       }
@@ -184,7 +197,7 @@ function createAmaRouter({ requireAuth, service = AMAService } = {}) {
       res.end();
     } catch (error) {
       console.error('[AMA] Chat error:', error);
-      res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'error', content: GENERIC_ERROR })}\n\n`);
       res.end();
     }
   });

@@ -23,21 +23,28 @@ const maybe = RUN ? describe : describe.skip;
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
 const OTHER = '22222222-2222-4222-8222-222222222222';
+const CONV_A = 'aaaaaaaa-0000-4000-8000-00000000000a';
+const CONV_B = 'bbbbbbbb-0000-4000-8000-00000000000b';
+const CONV_C = 'cccccccc-0000-4000-8000-00000000000c';
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** uuid columns: like Postgres, comparing one with a non-UUID is an error that names the value. */
+const UUID_COLUMNS = new Set(['id', 'user_id', 'conversation_id']);
 
 /**
  * The subset of the supabase-js query builder the service uses, over
  * in-memory tables: from().select/insert/update/delete, eq/in/order/limit/range,
- * single/maybeSingle, awaited for { data, error }.
+ * single/maybeSingle, awaited for { data, error }. Ids are uuid columns.
  */
 function fakeSupabase(tables) {
   let nextId = 1;
   const calls = [];
   function from(table) {
-    const q = { table, op: 'select', filters: [], orders: [], limit: null, range: null, values: null, single: null, count: null };
+    const q = { table, op: 'select', filters: [], orders: [], limit: null, range: null, values: null, single: null, count: null, error: null };
     calls.push(q);
     const rows = () => (tables[table] = tables[table] || []);
     const matches = (row) => q.filters.every(([col, test]) => test(row[col]));
     function run() {
+      if (q.error) return { data: null, error: q.error };
       let data;
       if (q.op === 'insert') {
         const now = new Date().toISOString();
@@ -72,7 +79,13 @@ function fakeSupabase(tables) {
       insert(values) { q.op = 'insert'; q.values = Array.isArray(values) ? values : [values]; return b; },
       update(values) { q.op = 'update'; q.values = values; return b; },
       delete() { q.op = 'delete'; return b; },
-      eq(col, v) { q.filters.push([col, (x) => x === v]); return b; },
+      eq(col, v) {
+        if (UUID_COLUMNS.has(col) && typeof v === 'string' && !UUID.test(v)) {
+          q.error = { code: '22P02', message: `invalid input syntax for type uuid: "${v}"` };
+        }
+        q.filters.push([col, (x) => x === v]);
+        return b;
+      },
       in(col, vs) { q.filters.push([col, (x) => vs.includes(x)]); return b; },
       order(col, opts) { q.orders.push([col, !opts || opts.ascending !== false]); return b; },
       limit(n) { q.limit = n; return b; },
@@ -93,14 +106,14 @@ function sampleTables() {
       { id: OTHER, username: 'other.admin@example.com' },
     ],
     ama_conversations: [
-      { id: 'conv-a', user_id: OWNER, title: 'Weekly sign-ups', created_at: '2026-01-02T00:00:00Z', updated_at: '2026-01-03T00:00:00Z', message_count: 2, is_archived: false },
-      { id: 'conv-b', user_id: OWNER, title: 'Lesson plan counts', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-04T00:00:00Z', message_count: 0, is_archived: false },
-      { id: 'conv-c', user_id: OTHER, title: 'Someone else', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-05T00:00:00Z', message_count: 1, is_archived: false },
+      { id: CONV_A, user_id: OWNER, title: 'Weekly sign-ups', created_at: '2026-01-02T00:00:00Z', updated_at: '2026-01-03T00:00:00Z', message_count: 2, is_archived: false },
+      { id: CONV_B, user_id: OWNER, title: 'Lesson plan counts', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-04T00:00:00Z', message_count: 0, is_archived: false },
+      { id: CONV_C, user_id: OTHER, title: 'Someone else', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-05T00:00:00Z', message_count: 1, is_archived: false },
     ],
     ama_messages: [
-      { id: 'm1', conversation_id: 'conv-a', role: 'user', content: 'How many sign-ups this week?', created_at: '2026-01-03T00:00:00Z' },
-      { id: 'm2', conversation_id: 'conv-a', role: 'assistant', content: 'Forty-two.', sql_query: null, chart_type: null, query_result: null, chart_image_url: null, created_at: '2026-01-03T00:00:01Z' },
-      { id: 'm3', conversation_id: 'conv-c', role: 'user', content: 'Private question', created_at: '2026-01-05T00:00:00Z' },
+      { id: 'm1', conversation_id: CONV_A, role: 'user', content: 'How many sign-ups this week?', created_at: '2026-01-03T00:00:00Z' },
+      { id: 'm2', conversation_id: CONV_A, role: 'assistant', content: 'Forty-two.', sql_query: null, chart_type: null, query_result: null, chart_image_url: null, created_at: '2026-01-03T00:00:01Z' },
+      { id: 'm3', conversation_id: CONV_C, role: 'user', content: 'Private question', created_at: '2026-01-05T00:00:00Z' },
     ],
   };
 }
@@ -205,8 +218,8 @@ maybe('AMA routes (dashboard/routes/ama.routes.js)', () => {
     expect(r.status).toBe(200);
     expect(r.json.success).toBe(true);
     expect(r.json.conversations.map((c) => [c.id, c.title])).toEqual([
-      ['conv-b', 'Lesson plan counts'],
-      ['conv-a', 'Weekly sign-ups'],
+      [CONV_B, 'Lesson plan counts'],
+      [CONV_A, 'Weekly sign-ups'],
     ]);
     expect(r.json.conversations[0].updated_at).toBe('2026-01-04T00:00:00Z');
   });
@@ -223,40 +236,40 @@ maybe('AMA routes (dashboard/routes/ama.routes.js)', () => {
 
   test('GET .../conversations/:id/messages returns the messages in order; another user\'s is 404', async () => {
     ctx = await boot();
-    const r = await request(ctx.server, 'GET', '/observability/ama/conversations/conv-a/messages');
+    const r = await request(ctx.server, 'GET', `/observability/ama/conversations/${CONV_A}/messages`);
     expect(r.status).toBe(200);
     expect(r.json.messages.map((m) => [m.role, m.content])).toEqual([
       ['user', 'How many sign-ups this week?'],
       ['assistant', 'Forty-two.'],
     ]);
-    const other = await request(ctx.server, 'GET', '/observability/ama/conversations/conv-c/messages');
+    const other = await request(ctx.server, 'GET', `/observability/ama/conversations/${CONV_C}/messages`);
     expect(other.status).toBe(404);
     expect(other.text).not.toContain('Private question');
   });
 
   test('DELETE .../conversations/:id removes it and its messages; another user\'s is 404 and kept', async () => {
     ctx = await boot();
-    const r = await request(ctx.server, 'DELETE', '/observability/ama/conversations/conv-a');
+    const r = await request(ctx.server, 'DELETE', `/observability/ama/conversations/${CONV_A}`);
     expect(r.status).toBe(200);
     expect(r.json.success).toBe(true);
     const { tables } = ctx.supabase;
-    expect(tables.ama_conversations.map((c) => c.id)).not.toContain('conv-a');
-    expect(tables.ama_messages.filter((m) => m.conversation_id === 'conv-a')).toEqual([]);
-    const other = await request(ctx.server, 'DELETE', '/observability/ama/conversations/conv-c');
+    expect(tables.ama_conversations.map((c) => c.id)).not.toContain(CONV_A);
+    expect(tables.ama_messages.filter((m) => m.conversation_id === CONV_A)).toEqual([]);
+    const other = await request(ctx.server, 'DELETE', `/observability/ama/conversations/${CONV_C}`);
     expect(other.status).toBe(404);
-    expect(tables.ama_conversations.map((c) => c.id)).toContain('conv-c');
+    expect(tables.ama_conversations.map((c) => c.id)).toContain(CONV_C);
   });
 
   test('POST /observability/ama/chat streams the feature-disabled message and saves both turns', async () => {
     ctx = await boot();
     const AMAService = require('../../dashboard/services/ama.service');
-    const r = await request(ctx.server, 'POST', '/observability/ama/chat', { message: 'How many sign-ups?', conversationId: 'conv-b' });
+    const r = await request(ctx.server, 'POST', '/observability/ama/chat', { message: 'How many sign-ups?', conversationId: CONV_B });
     expect(r.status).toBe(200);
     expect(r.headers['content-type']).toMatch(/text\/event-stream/);
     const got = events(r.text);
     expect(got.map((e) => e.type)).toEqual(['text', 'done']);
     expect(got[0].content).toBe(AMAService.FEATURE_DISABLED_MESSAGE);
-    const saved = ctx.supabase.tables.ama_messages.filter((m) => m.conversation_id === 'conv-b');
+    const saved = ctx.supabase.tables.ama_messages.filter((m) => m.conversation_id === CONV_B);
     expect(saved.map((m) => [m.role, m.content])).toEqual([
       ['user', 'How many sign-ups?'],
       ['assistant', AMAService.FEATURE_DISABLED_MESSAGE],
@@ -267,7 +280,7 @@ maybe('AMA routes (dashboard/routes/ama.routes.js)', () => {
     ctx = await boot();
     expect((await request(ctx.server, 'POST', '/observability/ama/chat', {})).status).toBe(400);
     const before = ctx.supabase.tables.ama_messages.length;
-    const r = await request(ctx.server, 'POST', '/observability/ama/chat', { message: 'hi', conversationId: 'conv-c' });
+    const r = await request(ctx.server, 'POST', '/observability/ama/chat', { message: 'hi', conversationId: CONV_C });
     expect(r.status).toBe(404);
     expect(ctx.supabase.tables.ama_messages.length).toBe(before);
   });
@@ -280,7 +293,25 @@ maybe('AMA routes (dashboard/routes/ama.routes.js)', () => {
     expect(r.json.error).toMatch(/AMA/);
   });
 
-  test('a storage failure is a 500 with the JSON error shape', async () => {
+  test('a malformed conversation id is a 404 with a generic body, never the database error', async () => {
+    ctx = await boot({ role: 'super_admin' });
+    const before = ctx.supabase.tables.ama_messages.length;
+    const bad = 'not-a-uuid';
+    const tries = [
+      ['GET', `/observability/ama/conversations/${bad}/messages`],
+      ['DELETE', `/observability/ama/conversations/${bad}`],
+      ['POST', '/observability/ama/chat', { message: 'hi', conversationId: bad }],
+      ['GET', `/observability/ama-chats/${bad}/messages`],
+    ];
+    for (const [method, url, body] of tries) {
+      const r = await request(ctx.server, method, url, body);
+      expect([method, url, r.status, r.json]).toEqual([method, url, 404, { success: false, error: 'Conversation not found' }]);
+      expect(r.text).not.toMatch(/uuid|syntax|22P02/i);
+    }
+    expect(ctx.supabase.tables.ama_messages.length).toBe(before);
+  });
+
+  test('a storage failure is a 500 with the JSON error shape and a generic message', async () => {
     const express = dashboardRequire('express');
     const { createAmaRouter } = require('../../dashboard/routes/ama.routes');
     const { createAmaService } = require('../../dashboard/services/ama.service');
@@ -292,7 +323,7 @@ maybe('AMA routes (dashboard/routes/ama.routes.js)', () => {
     try {
       const r = await request(server, 'GET', '/observability/ama/conversations');
       expect(r.status).toBe(500);
-      expect(r.json).toEqual({ success: false, error: 'connection refused' });
+      expect(r.json).toEqual({ success: false, error: 'Something went wrong. Please try again.' });
     } finally {
       server.close();
     }
@@ -303,7 +334,7 @@ maybe('AMA routes (dashboard/routes/ama.routes.js)', () => {
       ctx = await boot({ role: 'admin' });
       expect((await request(ctx.server, 'GET', '/observability/ama-chats')).status).toBe(403);
       expect((await request(ctx.server, 'GET', '/observability/ama-chats/conversations')).status).toBe(403);
-      expect((await request(ctx.server, 'GET', '/observability/ama-chats/conv-c/messages')).status).toBe(403);
+      expect((await request(ctx.server, 'GET', `/observability/ama-chats/${CONV_C}/messages`)).status).toBe(403);
     });
 
     test('a super admin sees every conversation with its owner\'s username, and any conversation\'s messages', async () => {
@@ -312,11 +343,11 @@ maybe('AMA routes (dashboard/routes/ama.routes.js)', () => {
       const list = await request(ctx.server, 'GET', '/observability/ama-chats/conversations');
       expect(list.status).toBe(200);
       expect(list.json.conversations.map((c) => [c.id, c.username])).toEqual([
-        ['conv-c', 'other.admin@example.com'],
-        ['conv-b', 'sample.admin@example.com'],
-        ['conv-a', 'sample.admin@example.com'],
+        [CONV_C, 'other.admin@example.com'],
+        [CONV_B, 'sample.admin@example.com'],
+        [CONV_A, 'sample.admin@example.com'],
       ]);
-      const msgs = await request(ctx.server, 'GET', '/observability/ama-chats/conv-c/messages');
+      const msgs = await request(ctx.server, 'GET', `/observability/ama-chats/${CONV_C}/messages`);
       expect(msgs.status).toBe(200);
       expect(msgs.json.messages.map((m) => m.content)).toEqual(['Private question']);
     });
