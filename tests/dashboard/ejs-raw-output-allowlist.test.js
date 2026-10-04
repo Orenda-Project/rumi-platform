@@ -17,6 +17,8 @@
  * Inside a <script> body, `<%= %>` is not allowed at all: it escapes for HTML,
  * not for JavaScript (a trailing `\` in a quoted value continues the string),
  * so data there goes through `<%- safeJson(x) %>`, numbers and booleans too.
+ * A `<script type>` must be a JavaScript type, application/json or
+ * text/template; any other type fails rather than being skipped.
  */
 
 const fs = require('fs');
@@ -65,26 +67,67 @@ function listEjs(dir) {
   });
 }
 
-/** `src` with HTML (`<!-- -->`) and EJS (`<%# %>`) comments blanked out, lines and offsets kept. */
-const blankComments = (src) => src.replace(/<!--[\s\S]*?-->|<%#[\s\S]*?%>/g, (c) => c.replace(/[^\n]/g, ' '));
+const blank = (text) => text.replace(/[^\n]/g, ' ');
 
-/** Script types the browser runs as JavaScript, plus JSON data blocks. No `type` is JavaScript too. */
-const SCRIPT_TYPES = new Set(['text/javascript', 'module', 'application/json']);
+/**
+ * `type` values the browser runs as JavaScript: the HTML spec's JavaScript MIME
+ * types, `module`, and "" (same as no type). Matched trimmed and lower-cased,
+ * as the browser does.
+ */
+const JS_TYPES = new Set([
+  '', 'module',
+  'application/ecmascript', 'application/javascript', 'application/x-ecmascript', 'application/x-javascript',
+  'text/ecmascript', 'text/javascript', 'text/javascript1.0', 'text/javascript1.1', 'text/javascript1.2',
+  'text/javascript1.3', 'text/javascript1.4', 'text/javascript1.5', 'text/jscript', 'text/livescript',
+  'text/x-ecmascript', 'text/x-javascript',
+]);
+/**
+ * Data blocks the browser does not run, and how this guard reads them: JSON is
+ * read by a script, so it is checked like one (safeJson only); a template is
+ * markup that a script copies into the page.
+ */
+const DATA_TYPES = new Map([['application/json', 'script'], ['text/template', 'markup']]);
 
-function isScriptType(openTag) {
-  const type = openTag.match(/\stype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
-  return !type || SCRIPT_TYPES.has((type[1] ?? type[2] ?? type[3]).trim().toLowerCase());
+/**
+ * 'script', 'markup', or 'unknown' for a `<script ...>` open tag. Anything else
+ * is unknown and fails the guard rather than being skipped: a review found
+ * `application/javascript`, `type=""` and `text&#47;javascript` (an entity in
+ * the attribute) all run, and an inert type such as
+ * `text/javascript;charset=utf-8` needs no exception. An unknown body is still
+ * checked as a script, the stricter of the two.
+ */
+function scriptKind(openTag) {
+  const type = openTag.replace(/<%[\s\S]*?%>/g, blank)
+    .match(/\stype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+  if (!type) return 'script';
+  const value = (type[1] ?? type[2] ?? type[3]).trim().toLowerCase();
+  if (JS_TYPES.has(value)) return 'script';
+  return DATA_TYPES.get(value) || 'unknown';
 }
 
 /**
- * [start, end) of each inline script body in `src`: after `<script ...>`,
- * before `</script>` (or `</script >`). A `<script>` inside a comment opens
- * nothing, and a non-JS type (`text/template`) is markup, not script.
+ * Each inline `<script ...>` of `src`: { line, openTag, kind, start, end }, with
+ * [start, end) its body (up to `</script>` or `</script >`). The page is read
+ * left to right as the browser does: EJS comments (`<%# %>`) are gone before
+ * it arrives, and a `<script>` inside an HTML comment opens nothing. `<!-->`
+ * and `<!--->` are whole comments, so the comment pattern ends there.
  */
+function scriptsIn(src) {
+  const html = src.replace(/<%#[\s\S]*?%>/g, blank);
+  return [...html.matchAll(/<!--(?:-?>|[\s\S]*?--!?>)|(<script\b(?:<%[\s\S]*?%>|[^>])*>)([\s\S]*?)<\/script\s*>/gi)]
+    .filter((m) => m[1])
+    .map((m) => ({
+      line: src.slice(0, m.index).split('\n').length,
+      openTag: m[1],
+      kind: scriptKind(m[1]),
+      start: m.index + m[1].length,
+      end: m.index + m[1].length + m[2].length,
+    }));
+}
+
+/** [start, end) of each script body in `src`; a `text/template` block is markup, not script. */
 function scriptBodies(src) {
-  return [...blankComments(src).matchAll(/(<script\b(?:<%[\s\S]*?%>|[^>])*>)([\s\S]*?)<\/script\s*>/gi)]
-    .filter((m) => isScriptType(m[1]))
-    .map((m) => [m.index + m[1].length, m.index + m[1].length + m[2].length]);
+  return scriptsIn(src).filter((s) => s.kind !== 'markup').map((s) => [s.start, s.end]);
 }
 
 /** Every `<%- … %>` and `<%= … %>` tag in one view: { file, line, expr, raw, inScript }. */
@@ -106,12 +149,15 @@ function tagsIn(src, file) {
   return tags;
 }
 
-function allTags() {
-  return VIEW_DIRS.flatMap((dir) => listEjs(path.join(ROOT, dir)).map((abs) => tagsIn(
+/** `fn(src, file)` for every view, flattened. */
+function eachView(fn) {
+  return VIEW_DIRS.flatMap((dir) => listEjs(path.join(ROOT, dir)).map((abs) => fn(
     fs.readFileSync(abs, 'utf8'),
     path.relative(ROOT, abs).split(path.sep).join('/'),
   ))).flat();
 }
+
+const allTags = () => eachView(tagsIn);
 
 /** True if `expr` is one call to `name(...)` and nothing after it. */
 function isSingleCall(expr, name) {
@@ -171,6 +217,15 @@ describe('raw EJS output (<%- %>) in admin views', () => {
     if (bad.length) throw new Error(`Escaped EJS output inside a script:\n  ${bad.join('\n  ')}\n\n${SCRIPT_FIX}`);
   });
 
+  test('every <script type> is JavaScript, application/json or text/template', () => {
+    const bad = eachView((src, file) => scriptsIn(src).filter((s) => s.kind === 'unknown')
+      .map((s) => `${file}:${s.line}  ${s.openTag.replace(/\s+/g, ' ').slice(0, 100)}`));
+    if (bad.length) {
+      throw new Error(`<script> with a type this guard does not know:\n  ${bad.join('\n  ')}\n\n`
+        + 'Drop the type (JavaScript), or add it to JS_TYPES / DATA_TYPES in this test if it is one.');
+    }
+  });
+
   test('every CONSTANTS entry still matches a tag (no stale allowances)', () => {
     const unused = CONSTANTS.filter((c) => !tags.some((t) => constantFor(t) === c));
     expect(unused.map((c) => `${c.file}: ${c.expr}`)).toEqual([]);
@@ -217,7 +272,7 @@ describe('raw EJS output (<%- %>) in admin views', () => {
     ]);
     expect(inScript('<%# a <script> tag used to load this %>\n<p title="<%- safeJson(u) %>"></p>\n<script src="/x.js"></script>'))
       .toEqual([[2, false, null]]);
-    // A template or other non-JS type is markup, not script.
+    // A text/template block is markup, not script.
     expect(inScript('<script type="text/template"><li data-missing="<%- safeJson(missing) %>"></li></script>'))
       .toEqual([[1, false, null]]);
     // The bot/ views have no other guard that trips on these.
@@ -230,5 +285,39 @@ describe('raw EJS output (<%- %>) in admin views', () => {
       expect(inScript(`<script type=${type.startsWith("'") ? type : `"${type}"`}>const a = <%- safeJson(a) %>;</script >\n`
         + '<p data-a="<%- safeJson(a) %>"></p>')).toEqual([[1, true, 'safe-serialised'], [2, false, null]]);
     }
+  });
+
+  test('the checker itself: every type the browser runs as JavaScript is a script body', () => {
+    // `<%= %>` in a template literal: HTML escaping leaves `${...}`, so a name like
+    // ${document.title=1} runs. Each of these types runs, so the tag must be found.
+    const inScript = (src) => tagsIn(src, 'dashboard/views/loading-transcript.ejs')
+      .filter((tag) => !tag.raw && tag.expr === 'teacherName').map((tag) => tag.inScript);
+    const body = '<script TYPE nonce="<%= cspNonce %>">\nconst who = `<%= teacherName %>`; // -->\n</script>';
+    const types = ['application/javascript', '', ' text/javascript ', 'text/ecmascript', 'application/x-javascript',
+      'text/jscript', 'text/javascript1.5', 'text/livescript', 'application/ecmascript'];
+    const missed = [
+      ...types.map((type) => `type="${type}"`),
+      // `<!-->` and `<!--->` are whole comments: the script after them is still a script.
+      ...['<!-->', '<!--->'].map((comment) => `${comment} before it`),
+    ].filter((label) => {
+      const src = label.startsWith('type=') ? body.replace('TYPE', label) : `${label.split(' ')[0]}\n${body.replace(' TYPE', '')}`;
+      return inScript(src).join() !== 'true';
+    });
+    expect(missed).toEqual([]);
+  });
+
+  test('the checker itself: an unknown <script type> fails, and its body is still checked as script', () => {
+    const kinds = (type) => scriptsIn(`<script type="${type}">const a = \`<%= name %>\`;</script>`).map((s) => s.kind);
+    // Each of these is unknown: an entity runs as JavaScript; the others need no exception.
+    for (const type of ['text&#47;javascript', 'text/javascript;charset=utf-8', 'application/ld+json', 'text/x-handlebars',
+      'constructor']) {
+      expect([type, kinds(type)]).toEqual([type, ['unknown']]);
+    }
+    expect(tagsIn('<script type="text&#47;javascript">const a = `<%= name %>`;</script>', 'dashboard/views/users.ejs')
+      .map((tag) => tag.inScript)).toEqual([true]);
+    expect(['', 'module', 'TEXT/JAVASCRIPT', 'application/json', 'text/template'].map((t) => kinds(t)[0]))
+      .toEqual(['script', 'script', 'script', 'script', 'markup']);
+    // A type inside an EJS tag in the open tag is not the element's type.
+    expect(scriptsIn('<script nonce="<%= n(\' type=x\') %>">a()</script>').map((s) => s.kind)).toEqual(['script']);
   });
 });

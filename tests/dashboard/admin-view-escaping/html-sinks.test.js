@@ -13,8 +13,9 @@
  * and `.map(x => `...`).join()` are followed. So are variables: a name that is
  * declared once and never assigned again is checked by its initialiser, so
  * `const title = c.title` fails like `c.title` would. Only a name with no
- * initialiser to check (reassigned, built up with `+=`, a parameter or a loop
- * variable) can be a REVIEWED entry.
+ * initialiser to check (reassigned, built up with `+=`, a parameter, a loop
+ * variable, or a top-level `let`/`var` that another script can change) can be
+ * a REVIEWED entry. Scripts are parsed as strict code, so `with` fails the scan.
  *
  * A new finding means: escape the value, or review it and add it here with the
  * reason it cannot carry text from a user, a teacher, a chat or a model.
@@ -140,19 +141,29 @@ const SINK_PROPS = new Set(['innerHTML', 'outerHTML']);
  * followed only when it is a `const`/`let`/`var x = init` that is never
  * assigned again. Parameters, loop variables, catch params, destructured
  * names, function declarations, reassigned names and globals give null.
+ *
+ * Babel sees one inline script at a time, so a top-level `let` or `var` gives
+ * null too: a top-level `let` is shared by every classic script on the page,
+ * and a top-level `var` is a window property (`window.x = ...`,
+ * `Object.assign(window, ...)`). Only a top-level `const` is followed.
  */
 function initialiserOf(idPath) {
   const binding = idPath.scope.getBinding(idPath.node.name);
   if (!binding || !['const', 'let', 'var'].includes(binding.kind)) return null;
+  if (binding.scope.path.isProgram() && binding.kind !== 'const') return null;
   const decl = binding.path;
   if (!decl.isVariableDeclarator() || decl.node.id.type !== 'Identifier' || !decl.node.init) return null;
   if (binding.constantViolations.length > 0) return null;
   return decl.node.init;
 }
 
-/** HTML sinks and HTML-building expressions in one script: the values they take unchecked. */
+/**
+ * HTML sinks and HTML-building expressions in one script: the values they take
+ * unchecked. The script is parsed as strict code, so `with`, which Babel's scope
+ * analysis does not model, is a syntax error: it throws, and the scan fails.
+ */
 function findUnchecked(code) {
-  const ast = parser.parse(code, { sourceType: 'script', allowReturnOutsideFunction: true });
+  const ast = parser.parse(code, { sourceType: 'script', strictMode: true, allowReturnOutsideFunction: true });
   const found = [];
   const sinks = [];
   const identifiers = new Map();
@@ -190,7 +201,14 @@ describe('admin views: HTML built in scripts escapes what it interpolates', () =
   for (const file of views) {
     const name = path.relative(VIEWS, file);
     for (const { code, firstLine } of inlineScripts(fs.readFileSync(file, 'utf8'))) {
-      for (const f of findUnchecked(code)) findings.push({ key: `${name}: ${f.text}`, at: `${name}:${firstLine + f.line - 1}` });
+      let found;
+      try {
+        found = findUnchecked(code);
+      } catch (err) {
+        // A script the scan cannot parse (strict mode: `with`, octal literals, ...) is a finding, never skipped.
+        found = [{ text: `cannot parse as strict code: ${err.message}`, line: err.loc ? err.loc.line : 1 }];
+      }
+      for (const f of found) findings.push({ key: `${name}: ${f.text}`, at: `${name}:${firstLine + f.line - 1}` });
     }
   }
 
@@ -267,5 +285,42 @@ describe('admin views: HTML built in scripts escapes what it interpolates', () =
     const after = findUnchecked(patched).map((f) => f.text);
     expect(before).not.toContain('displayName');
     expect(after.filter((t) => !before.includes(t))).toEqual(['displayName']);
+  });
+
+  test('the scan does not trust a name that code outside this script can change', () => {
+    const texts = (code) => findUnchecked(code).map((f) => f.text);
+    // A top-level var is a window property, and a top-level let is shared by every
+    // classic script on the page: neither has an initialiser the scan can rely on.
+    expect(texts('var name = escapeHtml(u.name); function load(c) { window.name = c.title; } '
+      + 'function show() { el.innerHTML = `<b>${name}</b>`; }')).toEqual(['name']);
+    expect(texts('var name = escapeHtml(u.name); this.name = c.title; el.innerHTML = `<b>${name}</b>`;')).toEqual(['name']);
+    expect(texts('var t = escapeHtml(a); Object.assign(window, { t: c.title }); el.innerHTML = `<b>${t}</b>`;')).toEqual(['t']);
+    expect(texts('let t = escapeHtml(a); el.innerHTML = `<b>${t}</b>`;')).toEqual(['t']);
+    // A top-level const, or a let/var inside a function, is still checked by its initialiser.
+    expect(texts('const t = escapeHtml(a); el.innerHTML = `<b>${t}</b>`;')).toEqual([]);
+    expect(texts('function f(u) { let n = escapeHtml(u.n); var m = escapeHtml(u.m); return `<b>${n}${m}</b>`; }')).toEqual([]);
+    // `with (o)` puts o's properties in front of every outer name: scripts are parsed
+    // as strict code, where `with` is a syntax error.
+    expect(() => findUnchecked('const name = escapeHtml(u.name); with (u) { el.innerHTML = `<b>${name}</b>`; }'))
+      .toThrow(/with/i);
+  });
+
+  test('the scan reports a top-level name or a `with` in the real users.ejs scripts', () => {
+    const scripts = inlineScripts(fs.readFileSync(path.join(VIEWS, 'users.ejs'), 'utf8')).map((s) => s.code);
+    const script = scripts.find((code) => code.includes('function renderChat('));
+    const marker = '      // Create timeline with all user activities\n';
+    const top = '    let allUsers = ';
+    expect(script).toContain(marker);
+    expect(script).toContain(top);
+    const before = findUnchecked(script).map((f) => f.text);
+    // A note escaped where it is declared, but the page's next inline script can set
+    // it from the URL (`headerNote = new URLSearchParams(location.search).get("note")`).
+    const note = script.replace(top, `    let headerNote = escapeHtml("");\n${top}`).replace(marker,
+      'document.getElementById("chatHeader").insertAdjacentHTML("beforeend", `<span class="note">${headerNote}</span>`);\n' + marker);
+    expect(findUnchecked(note).map((f) => f.text).filter((t) => !before.includes(t))).toEqual(['headerNote']);
+    // `with` would let data.alias.displayName stand in for the escaped displayName.
+    const alias = script.replace(marker, 'with (data.alias || {}) { document.getElementById("chatHeader").insertAdjacentHTML('
+      + '"beforeend", `<span class="alias">${displayName}</span>`); }\n' + marker);
+    expect(() => findUnchecked(alias)).toThrow(/with/i);
   });
 });
