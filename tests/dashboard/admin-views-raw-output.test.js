@@ -255,4 +255,23 @@ describeIf('admin views: user text in inline scripts and attributes', () => {
       expect(parseLiteral(literalsAfter(doc, 'const curveData = ')[0])).toEqual(curve);
     });
   });
+
+  describe('release-notes.ejs: icons', () => {
+    // getIcon(note.icon) is written raw: it must only ever return one of the
+    // template's own SVG strings, whatever note.icon holds.
+    test.each([...HOSTILE, 'constructor', 'toString', '__proto__'])('icon %j gives one of the template\'s SVGs and nothing else', async (icon) => {
+      const releaseNotes = [{
+        id: 1, version: '1.0.0', environment: 'production', category: 'feature', icon,
+        title: 'Release', description: 'Notes', details: null, is_highlighted: false, created_at: '2026-01-01T00:00:00Z',
+      }];
+      const doc = parse(await render('release-notes', {
+        title: 'Release Notes', currentPage: 'release-notes', releaseNotes, envFilter: 'all', categoryFilter: 'all',
+      }));
+      expectNoInjectedElements(doc);
+      const span = doc.querySelector('h2 > span.text-accent');
+      expect(span.children).toHaveLength(1);
+      expect(span.children[0].tagName.toLowerCase()).toBe('svg');
+      expect(span.textContent.trim()).toBe('');
+    });
+  });
 });
