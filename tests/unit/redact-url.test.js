@@ -69,6 +69,15 @@ describe('redactUrl', () => {
     expect(out).toMatch(/^fetch failed for pub-abc\.r2\.dev#sha256:[0-9a-f]{12}\.mp3 \(404\)$/);
   });
 
+  test('a URL inside doubly-stringified JSON: redacted, and the escaped quote after it survives', () => {
+    const url = 'https://tempfile.example-cdn.com/k/abc123.mp4';
+    const body = JSON.stringify({ data: { resultJson: JSON.stringify({ resultUrls: [url] }) } });
+    const out = redactUrl(body);
+    expectNotOpenable(out, url);
+    expect(JSON.parse(JSON.parse(out).data.resultJson).resultUrls)
+      .toEqual([`tempfile.example-cdn.com#sha256:${sha12('/k/abc123.mp4')}.mp4`]);
+  });
+
   test('non-URL values pass through: local paths, null, undefined, numbers', () => {
     expect(redactUrl('/tmp/quiz-report-q1.pdf')).toBe('/tmp/quiz-report-q1.pdf');
     expect(redactUrl('reports/u1/s1.pdf')).toBe('reports/u1/s1.pdf');

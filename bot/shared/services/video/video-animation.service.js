@@ -173,7 +173,7 @@ class VideoAnimationService {
         videoRequestId,
         slideId,
         taskId: existingTask.task_id,
-        r2Url: existingTask.result_url
+        r2Url: redactUrl(existingTask.result_url)
       });
       // Download for local FFmpeg assembly, return LOCAL PATH (not R2 URL!)
       const localPath = await this.downloadVideoForAssembly(existingTask.result_url, videoRequestId, slideId);
@@ -185,7 +185,7 @@ class VideoAnimationService {
       logToFile('Re-uploading ephemeral video URL to R2', {
         videoRequestId,
         slideId,
-        ephemeralUrl: existingTask.result_url
+        ephemeralUrl: redactUrl(existingTask.result_url)
       });
       try {
         const localPath = await this.downloadVideoForAssembly(existingTask.result_url, videoRequestId, slideId);
@@ -267,7 +267,7 @@ class VideoAnimationService {
     const taskId = createData.data?.taskId;
 
     if (!taskId) {
-      throw new Error(`Failed to create video task: ${JSON.stringify(createData)}`);
+      throw new Error(`Failed to create video task: ${redactUrl(JSON.stringify(createData))}`);
     }
 
     // PHASE 3: Store task ID before polling
@@ -392,7 +392,7 @@ class VideoAnimationService {
             attempt: i + 1,
             maxAttempts,
             state,
-            fullResponse: JSON.stringify(pollData).substring(0, 500) // Truncate for log limits
+            fullResponse: redactUrl(JSON.stringify(pollData)).substring(0, 500) // Truncate for log limits
           });
         }
 
@@ -408,7 +408,7 @@ class VideoAnimationService {
           logToFile('Kie.ai VIDEO task FAILED - Full details', {
             taskId,
             failMsg: pollData.data.failMsg,
-            fullData: JSON.stringify(pollData.data),
+            fullData: redactUrl(JSON.stringify(pollData.data)),
             attempt: i + 1
           });
           throw new Error(`Task failed: ${pollData.data.failMsg}`);

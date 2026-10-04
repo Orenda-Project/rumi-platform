@@ -27,8 +27,10 @@
 
 const crypto = require('crypto');
 
-// scheme://… up to whitespace, a quote or an angle bracket.
-const URL_IN_TEXT_RE = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>]+/gi;
+// scheme://… up to whitespace, a quote, an angle bracket or a backslash (so a
+// URL inside JSON that was stringified twice — `\"https://…\"` — ends before
+// its escaped closing quote, which is kept).
+const URL_IN_TEXT_RE = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>\\]+/gi;
 
 function redactOne(raw) {
   let u;

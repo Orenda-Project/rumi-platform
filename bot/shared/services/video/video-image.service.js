@@ -218,7 +218,7 @@ class VideoImageService {
         videoRequestId,
         filename,
         taskId: existingTask.task_id,
-        r2Url: existingTask.result_url,
+        r2Url: redactUrl(existingTask.result_url),
         ephemeralUrl: existingTask.ephemeral_url ? 'available' : 'not stored'
       });
       // Return both URLs - ephemeral might be expired but r2Url is permanent
@@ -345,7 +345,7 @@ class VideoImageService {
     const taskId = createData.data?.taskId;
 
     if (!taskId) {
-      throw new Error(`Failed to create image task: ${JSON.stringify(createData)}`);
+      throw new Error(`Failed to create image task: ${redactUrl(JSON.stringify(createData))}`);
     }
 
     // PHASE 3: Store task ID before polling
@@ -462,7 +462,7 @@ class VideoImageService {
             attempt: i + 1,
             maxAttempts,
             state,
-            fullResponse: JSON.stringify(pollData).substring(0, 500) // Truncate for log limits
+            fullResponse: redactUrl(JSON.stringify(pollData)).substring(0, 500) // Truncate for log limits
           });
         }
 
@@ -478,7 +478,7 @@ class VideoImageService {
           logToFile('Kie.ai task FAILED - Full details', {
             taskId,
             failMsg: pollData.data.failMsg,
-            fullData: JSON.stringify(pollData.data),
+            fullData: redactUrl(JSON.stringify(pollData.data)),
             attempt: i + 1
           });
           throw new Error(`Task failed: ${pollData.data.failMsg}`);
