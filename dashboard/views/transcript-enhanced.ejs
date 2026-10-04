@@ -2248,15 +2248,17 @@
     </div>
   </div>
 
+  <script src="/js/escape-html.js"></script>
   <script nonce="<%= cspNonce %>">
     /**
      * Process English word markers in transcript text
      * Converts {{en:word}} to <span class="en">word</span>
+     * The text is classroom speech: it is escaped first, so only the markers become HTML.
      */
     function processEnglishMarkers(text) {
       if (!text) return '';
       // Match {{en:word}} or {{en:multiple words}} pattern
-      return text.replace(/\{\{en:([^}]+)\}\}/g, '<span class="en">$1</span>');
+      return escapeHtml(text).replace(/\{\{en:([^}]+)\}\}/g, '<span class="en">$1</span>');
     }
 
     /**
@@ -2676,7 +2678,7 @@
       html += '<span class="board-icon">🎓</span>';
       html += '<span class="board-title">' + activityLabel + '</span>';
       html += '<span class="board-duration">' + durationText + '</span>';
-      html += '<span class="board-confidence ' + marker.confidence + '">' + marker.confidence.toUpperCase() + '</span>';
+      html += '<span class="board-confidence ' + escapeHtml(marker.confidence) + '">' + escapeHtml(marker.confidence.toUpperCase()) + '</span>';
       html += '</div>';
 
       // Add the inferred content area
@@ -2712,13 +2714,6 @@
       };
 
       return div;
-    }
-
-    function escapeHtml(text) {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
     }
   </script>
 </body>
