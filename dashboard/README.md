@@ -65,8 +65,17 @@ are not affected.
   runtime. `style-src` still allows inline styles (`style=` attributes and `<style>`
   blocks are used throughout) and Google Fonts.
 
+- **Escaping.** The CSP does not stop injected markup, so values from the public
+  (names, chat, transcripts, model replies) are always text. In a view, write them
+  with `<%= %>`; data for an inline script with `<%- safeJson(x) %>`
+  (`lib/safe-json.js`); and keep `<%- %>` for includes. HTML built in a script passes
+  every value through `escapeHtml()` or, for `href`/`src`, `safeUrl()`
+  (`public/js/escape-html.js`). `tests/dashboard/ejs-raw-output-allowlist.test.js` and
+  `tests/dashboard/admin-view-escaping/html-sinks.test.js` check this.
+
 `tests/dashboard/admin-csp.test.js` scans every view for scripts without the nonce,
-inline handlers, `javascript:` URLs and the Tailwind CDN.
+inline handlers, `javascript:` URLs and the Tailwind CDN. The full rules, and how to
+add a reviewed exception: [Writing admin views safely](../docs/features/admin-views-security.md).
 
 ## License
 
