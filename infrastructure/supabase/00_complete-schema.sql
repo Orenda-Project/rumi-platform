@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS users (
     portal_last_login TIMESTAMPTZ,
     password_reset_code VARCHAR(6),
     password_reset_expires_at TIMESTAMPTZ,
+    password_reset_attempts INTEGER NOT NULL DEFAULT 0,
     language_locked BOOLEAN DEFAULT false,
     is_test_user BOOLEAN DEFAULT false,
     language_nudge_sent BOOLEAN DEFAULT false,
@@ -3982,6 +3983,10 @@ ALTER TABLE coaching_sessions ADD COLUMN IF NOT EXISTS error_stack TEXT;
 
 -- users: settings flow stores language + observation framework in a preferences JSONB.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
+
+-- users: wrong tries at the current portal password-reset code (V2.11.2). The
+-- code is dead once this reaches PORTAL_RESET_CODE_MAX_ATTEMPTS (default 5).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_attempts INTEGER NOT NULL DEFAULT 0;
 
 -- quiz_sessions: idle-reminder cron flag.
 ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS idle_reminder_sent BOOLEAN DEFAULT FALSE;
