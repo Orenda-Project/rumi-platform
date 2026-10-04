@@ -102,6 +102,13 @@ The per-IP limits are only as good as the address they count. Tell the dashboard
 Logs never carry a full file URL: the bot and the dashboard log a report, PDF or export link as its host and a
 short hash of its path (`pub-abc.r2.dev#sha256:1a2b3c4d5e6f.pdf`), so reading the logs does not open anyone's files.
 
+The admin pages (`/observability/*`) send their own strict Content-Security-Policy: scripts only from the dashboard
+itself or from inline blocks carrying a per-response nonce, with no `'unsafe-inline'`, no wildcard and no CDN origin
+(Mermaid, on the schema page, is one exact file pinned with Subresource Integrity). Tailwind is compiled at build time
+(`npm run build:css` in `dashboard/`) and the chart libraries are served from `dashboard/public/vendor/`, so your
+proxy does not need to allow `cdn.tailwindcss.com` or `cdn.jsdelivr.net`. If the proxy adds its own CSP to these
+pages, remove it or make it no looser: browsers enforce both. Details: `dashboard/README.md`.
+
 ## On the messenger (Matrix / Synapse)
 
 The [Rumi Messenger](channels/matrix.md) server is set up for a closed school, where every account is created by
