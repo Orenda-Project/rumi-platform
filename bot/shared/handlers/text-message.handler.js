@@ -45,6 +45,7 @@ const {
 // whatsapp-bot.js. A copy here once sliced by the driver name's length, which
 // cut "mtx:1555…" short and made a second account for the same teacher.
 const { driverForIdentifier, resolveChannelIdentity } = require('../services/messaging/channel-registry');
+const { normalizeCommand } = require('../services/messaging/command-words');
 const { nativeFlowIdFor } = require('../services/messaging/channel-capabilities');
 const supabase = require('../config/supabase');
 const fs = require('fs');
@@ -190,6 +191,19 @@ async function handleTextMessage(message, from, messageBody, user = null) {
   // Start continuous typing indicator immediately
   const typingController = WhatsAppService.startContinuousTypingIndicator(from, message.id);
 
+  // A bare command word ("menu", "quiz", "reading test") is the slash command,
+  // on every channel: Element (Matrix) eats anything starting with "/" as its
+  // own client command, so there the bare word is the only way to send one.
+  // Done first, so every check below — the `=== '/menu'` matches and each
+  // "a slash command is never an answer" guard — sees the slash form. The exam
+  // checker reads the message object, so it gets the same text.
+  const normalizedBody = normalizeCommand(messageBody, from);
+  if (normalizedBody !== messageBody) {
+    logToFile('⌨️ Bare command word taken as the slash command', { command: normalizedBody.split(' ')[0] });
+    messageBody = normalizedBody;
+    if (message && message.text) message = { ...message, text: { ...message.text, body: normalizedBody } };
+  }
+
   try {
     // The share-code JOIN itself runs before anything else, including the
     // quiz-state intercept below, so a second teacher's link is never
@@ -330,25 +344,64 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     try {
       // A command (/menu, /reading test) still runs while a name is pending;
       // it is not the name. The name question comes back after a feature.
-      const isPendingName = !String(messageBody || '').trim().startsWith('/')
+      let isPendingName = !String(messageBody || '').trim().startsWith('/')
         && await FeatureRegistrationService.isPendingName(user.id);
+
+      // On Matrix the name question may have been offered unasked (see
+      // handleGeneralConversation), so it must not block use: "no thanks"
+      // closes it, and a reply that is not a name is handled as a normal
+      // message with the question left open. Keeping chatting is often one
+      // word ("fractions"), which reads like a name, so a bare word is asked
+      // about before it is stored (resolveOfferedNameReply). Everywhere else
+      // the question follows a feature the teacher just used, and the next
+      // message is the answer.
+      const offered = isPendingName && driverForIdentifier(from) === 'matrix';
+      let result = null;
+      if (offered) {
+        if (FeatureRegistrationService.isDeclineReply(messageBody)) {
+          await FeatureRegistrationService.declineRegistration(user.id, from, user.preferred_language || 'en');
+          if (typingController) typingController.stop();
+          return;
+        }
+        result = await FeatureRegistrationService.handleNameResponse(
+          user.id, messageBody, from, user.preferred_language || 'en', 'text', { confirmBareWord: true }
+        );
+        if (result.chat) {
+          logToFile('📝 Name pending, but this reply is not a name; handling it as a message', { userId: user.id });
+          isPendingName = false;
+        }
+      }
+
       if (isPendingName) {
         logToFile('📝 User is pending name registration, handling name response', { userId: user.id });
 
         // Get user's current language
         const userLanguage = user.preferred_language || 'en';
 
-        // Handle the name response
-        const result = await FeatureRegistrationService.handleNameResponse(
-          user.id,
-          messageBody,
-          from,
-          userLanguage,
-          'text'
-        );
+        // Handle the name response (on Matrix, already read above)
+        if (!result) {
+          result = await FeatureRegistrationService.handleNameResponse(
+            user.id,
+            messageBody,
+            from,
+            userLanguage,
+            'text'
+          );
+        }
 
         if (result.success) {
           logToFile('✅ Name registration completed via text', { userId: user.id, firstName: result.firstName });
+        } else if (result.confirm && offered) {
+          // A bare word on Matrix may be chat or the name: ask once. "Yes" or
+          // the same word again takes it; anything else is chat.
+          const name = result.confirm;
+          const confirmMessages = {
+            en: `Shall I call you ${name}? Reply yes, or tell me your name.`,
+            ur: `کیا میں آپ کو ${name} کہہ کر بلاؤں؟ ہاں لکھ دیں، یا اپنا نام بتا دیں۔`,
+            ar: `هل أناديك ${name}؟ أجب بنعم، أو أخبرني باسمك.`,
+            es: `¿Te llamo ${name}? Responde sí, o dime tu nombre.`
+          };
+          await WhatsAppService.sendMessage(from, confirmMessages[userLanguage] || confirmMessages.en);
         } else if (result.confirm) {
           // A lone greeting word ("Salam") may be a greeting or the name.
           // Ask in words that make plain it can be the name; the same word
@@ -1443,6 +1496,14 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       return;
     }
 
+    // Matrix has no form, but the same reasoning holds: the person opened a
+    // room with Rumi and asked to register, so the name question is not a
+    // cold message there. Ask it now, worded as the answer to their request.
+    if (user?.id && driverForIdentifier(from) === 'matrix') {
+      await FeatureRegistrationService.sendNameQuestion(user.id, from, responseLanguage, 'text', { variant: 'requested' });
+      return;
+    }
+
     // Check if user has features but missed registration (recovery path)
     // This handles users who used features but never got asked for name
     if (user?.id) {
@@ -1813,6 +1874,12 @@ async function handleTextMessage(message, from, messageBody, user = null) {
     // command above for the full rationale.
     if (user?.id && (driverForIdentifier(from) === 'slack' || driverForIdentifier(from) === 'discord')) {
       await FeatureRegistrationService.sendNameQuestion(user.id, from, responseLanguage, 'text');
+      return;
+    }
+
+    // Matrix asks for the name straight away too (see /register above).
+    if (user?.id && driverForIdentifier(from) === 'matrix') {
+      await FeatureRegistrationService.sendNameQuestion(user.id, from, responseLanguage, 'text', { variant: 'requested' });
       return;
     }
 
@@ -2466,6 +2533,16 @@ async function handleGeneralConversation(from, messageBody, user, sessionId, res
 
     // Show stuck session reminder (non-blocking) if applicable
     await showStuckSessionReminder(from, user.id, responseLanguage);
+  }
+
+  // On Matrix a person can register without first using a feature, so the
+  // first conversation ends with an optional offer to register
+  // (offerRegistration skips anyone registered or already asked, and never
+  // throws). After the reply, so the offer never delays or replaces it.
+  // WhatsApp keeps asking only after a feature, where an unprompted name
+  // question reads as spam.
+  if (user?.id && driverForIdentifier(from) === 'matrix') {
+    await FeatureRegistrationService.offerRegistration(user.id, from, responseLanguage);
   }
 }
 

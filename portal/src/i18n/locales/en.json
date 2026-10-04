@@ -3,10 +3,14 @@
     "features": "Features",
     "meetRumi": "Meet Rumi"
   },
+  "channel": {
+    "chatWithRumi": "Chat with Rumi"
+  },
   "hero": {
     "title": "You're not",
     "titleContinued": "teaching alone",
     "subtitle": "Your 24/7 teaching companion. Ask questions, share struggles, get support—anytime, through WhatsApp.",
+    "subtitleNeutral": "Your 24/7 teaching companion. Ask questions, share struggles, get support—anytime, in your chat with Rumi.",
     "meetRumi": "Meet Rumi",
     "seeHowItWorks": "See How It Works"
   },

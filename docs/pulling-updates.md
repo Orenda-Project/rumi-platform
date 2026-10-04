@@ -69,6 +69,13 @@ NOTIFY pgrst, 'reload schema';
 The migration `V2.7.0__exec_sql_service_role_only.sql` applies the same `REVOKE` to an existing helper,
 and stops with an error if it could not.
 
+The migration `V2.11.0__portal_access.sql` creates the `portal_app_user` role the admin dashboard switches to
+for signed-in requests, and seeds `feature_permissions`. Without it, an existing deployment's dashboard signs in
+and then fails or answers 403 on every page. If the dashboard connects as a role other than the one that runs
+the migration, also run `GRANT portal_app_user TO <that role>;`. The role sees rows only for dashboard users
+with an unscoped role (`super_admin`, `admin`, `viewer`); partner roles get no teacher data until scoped
+policies exist (see `dashboard/docs/PARTNER_RBAC_STATUS.md`).
+
 ### 3. Install New Dependencies
 
 ```bash

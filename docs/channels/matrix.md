@@ -206,10 +206,43 @@ for that teacher go to their own DM. If Rumi cannot read a room's members, it tr
 
 ## In the apps
 
-- **Element treats a leading `/` as an app command** and does not send it. To send one of Rumi's
-  commands, type it with two slashes: `//menu` is sent as `/menu`.
+- **Element treats a leading `/` as an app command** and does not send it, so on the messenger every Rumi
+  command is typed as the bare word: `menu`, `quiz`, `register`, `language`. See
+  [Registration and commands](#registration-and-commands-on-the-messenger).
 - Element shows a small shield on Rumi's messages until the bot's device is cross-signed. It is cosmetic;
   messages are still encrypted.
+
+## Registration and commands on the messenger
+
+**Anyone can start chatting.** A person who is not registered gets Rumi's answer to whatever they sent first
+("Hi", or a teaching question), followed by one optional offer:
+
+> By the way, what should I call you? Tell me your name to register — or just keep chatting; you can type
+> register any time.
+
+- An introduction ("my name is Ayesha", "I'm Ayesha", "Hi, I'm Ayesha", "mera naam Ayesha hai") completes
+  registration: the `users` row gets `first_name` and `registration_completed = true`, and Rumi confirms ("Nice to
+  meet you, Ayesha!"), with a portal link when the account has a phone number to sign in with.
+- A bare word or two ("Ayesha") is asked about once, because keeping chatting is often one word ("fractions"):
+  *"Shall I call you Ayesha? Reply yes, or tell me your name."* "yes", the same name again, or an introduction
+  completes registration; anything else is answered as usual and the offer stays open.
+- Anything that is not a name (a question, a request, "ok", "got it") is answered as usual and the offer stays
+  open. "no thanks", "later" or "skip" closes it, also after the confirm question. The offer is made once.
+- `register` starts registration at any time; a registered person is told they already are.
+
+On WhatsApp nothing changes: Rumi asks for the name after a teacher's first finished feature, where an unprompted
+question would read as spam. Slack and Discord keep their registration form.
+
+**Commands are bare words.** Every Rumi command also works without its slash, on every channel: `menu`,
+`register`, `language`, `settings`, `status`, `portal`, `quiz`, `video`, `reading test`, `testpaper`,
+`my papers`, `homework`, `editclass`, `addclass`, `attendance`, `observe`. Only the whole message counts, so
+"menu items for lunch" is still chat. On the messenger, `quiz` also takes a topic (`quiz fractions`,
+`quiz me on the water cycle`), as `/quiz fractions` does elsewhere. `paper`, `exam` and `grade` stay
+slash-only because the bare words are ordinary answers ("grade 4").
+
+Rumi's own messages on the messenger name the bare word ("type quiz"); WhatsApp, Slack and Discord still see
+`/quiz`. The rewrite happens in the Matrix driver, so it covers every message, model replies included, and
+never touches a link (`https://…/portal/…`).
 
 ## What works on Matrix
 
@@ -220,7 +253,7 @@ on). "Degrades" means it works with a plainer experience; "breaks" means a teach
 |---|---|---|
 | Chat (text) | works | Reaction, read receipt, typing, reply |
 | Welcome for a new account | works | Greeting in a DM once the teacher joins it |
-| Registration | works | Name asked as a question, even when `REGISTRATION_FLOW_ID` is set for WhatsApp |
+| Registration | works | Offered after the first reply, or on `register` at any time; the name completes it. Asked as a question even when `REGISTRATION_FLOW_ID` is set for WhatsApp |
 | Menus and pickers | degrades | Numbered menu; reply with a number or the option's name |
 | Forms (reading setup, class setup, attendance) | degrades | One question per message; `cancel` leaves; commands still work |
 | Voice note in, spoken reply out | works | Reply is a voice message |

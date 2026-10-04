@@ -44,7 +44,8 @@ const PortalInternalEndpoint = require('./shared/routes/portal-internal-endpoint
 // (channel, channelUserId) pair user_channels expects, or null for a bare
 // WhatsApp phone number. Lives in channel-registry so it can be unit-tested
 // without booting this file.
-const { resolveChannelIdentity } = require('./shared/services/messaging/channel-registry');
+const { resolveChannelIdentity, driverForIdentifier } = require('./shared/services/messaging/channel-registry');
+const { normalizeCommand } = require('./shared/services/messaging/command-words');
 const { nativeFlowIdFor } = require('./shared/services/messaging/channel-capabilities');
 
 // Create Express app
@@ -314,6 +315,26 @@ app.get('/webhook', (req, res) => {
  */
 const sendText = (to, text) => WhatsAppService.sendMessage(to, text);
 
+/**
+ * Is this message a step toward registering, which the daily message cap lets
+ * through? "register" (slash or bare: on Matrix the slash cannot be typed),
+ * and the reply to a pending name question. On Matrix that question is also
+ * offered unasked and may be ignored while the person keeps chatting, so
+ * there only a reply that reads as the name, or turns the offer down, counts;
+ * a pending flag alone would lift the cap for good.
+ */
+async function isFinishingRegistration(user, from, messageBody) {
+  const text = String(messageBody || '').trim();
+  if (/^\/register\b/i.test(normalizeCommand(text, from))) return true;
+  if (user.registration_pending_name !== true) return false;
+  if (driverForIdentifier(from) !== 'matrix') return true;
+  // Lazy: the registration service pulls in the messaging facade, which this
+  // file wires up first.
+  const FeatureRegistrationService = require('./shared/services/feature-registration.service');
+  return FeatureRegistrationService.isDeclineReply(text)
+    || await FeatureRegistrationService.readsAsNameReply(user.id, text);
+}
+
 async function handleWebhookPost(req, res) {
   // A branch that is done early (`return` out of the list_reply routes) must
   // still answer Meta, or the request hangs until it times out and Meta
@@ -466,9 +487,9 @@ async function handleWebhookPost(req, res) {
 
     // Today's message allowance for this account's tier (limits/daily-caps.js;
     // no cap unless the operator set one). Told once, then quiet until the
-    // next school day. Finishing registration stays possible: /register and
-    // the name reply it asks for are never capped.
-    const finishingRegistration = user && (user.registration_pending_name === true || /^\/register\b/i.test(String(messageBody || '').trim()));
+    // next school day. Finishing registration stays possible: register (with
+    // or without its slash) and the name reply it asks for are never capped.
+    const finishingRegistration = user && await isFinishingRegistration(user, from, messageBody);
     if (user && !finishingRegistration) {
       const daily = await DailyCaps.claim(user, 'message');
       if (!daily.allowed) {

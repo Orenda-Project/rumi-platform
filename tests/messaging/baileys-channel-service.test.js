@@ -45,6 +45,14 @@ describe('baileys-channel.service — outbound', () => {
     expect(sock.sendMessage).toHaveBeenCalledWith('923001234567@s.whatsapp.net', { text: 'Hello there' });
   });
 
+  // The bare-word rewrite of command copy is Matrix-only (Element eats "/");
+  // WhatsApp users type the slash form, so their copy keeps it.
+  it('sendMessage keeps "/quiz" in command copy -- the Matrix rewrite does not apply on WhatsApp', async () => {
+    const { service, sock } = loadService();
+    await service.sendMessage('15550001234', 'Type /quiz to start a new quiz.');
+    expect(sock.sendMessage).toHaveBeenCalledWith('15550001234@s.whatsapp.net', { text: 'Type /quiz to start a new quiz.' });
+  });
+
   it('sendMessage returns false (never throws) when the socket rejects', async () => {
     const { service } = loadService({ sendMessageImpl: async () => { throw new Error('boom'); } });
     await expect(service.sendMessage('923001234567', 'hi')).resolves.toBe(false);

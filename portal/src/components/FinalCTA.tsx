@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
-import { ArrowRight } from "lucide-react";
-import { getWhatsAppUrl, trackCtaClick } from "@/lib/funnelTracking";
+import { ArrowRight, MessageCircle } from "lucide-react";
+import { trackCtaClick } from "@/lib/funnelTracking";
+import { landingChatHref, useChatChannel } from "@/hooks/useChatChannel";
 import { useTranslation } from "react-i18next";
 
 const FinalCTA = () => {
   const { t } = useTranslation();
-  const whatsappUrl = getWhatsAppUrl('https://wa.me/message/WCYNS4DTDB2MD1');
+  const channel = useChatChannel();
+  const chatHref = landingChatHref(channel);
 
   const handleCtaClickTracking = () => {
     trackCtaClick('footer');
@@ -27,24 +29,30 @@ const FinalCTA = () => {
             <span className="block mt-2">{t('finalCta.subtitleContinued')}</span>
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-            <Button
-              asChild
-              size="xl"
-              className="bg-accent hover:bg-accent/90 text-accent-foreground hover:scale-105 transition-all duration-300 shadow-2xl group"
-            >
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleCtaClickTracking}
+          {chatHref && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
+              <Button
+                asChild
+                size="xl"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground hover:scale-105 transition-all duration-300 shadow-2xl group"
               >
-                <WhatsAppIcon className="transition-transform group-hover:scale-110" size={20} />
-                {t('finalCta.cta')}
-                <ArrowRight className="transition-transform group-hover:translate-x-1" />
-              </a>
-            </Button>
-          </div>
+                <a
+                  href={chatHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleCtaClickTracking}
+                >
+                  {channel.whatsapp ? (
+                    <WhatsAppIcon className="transition-transform group-hover:scale-110" size={20} />
+                  ) : (
+                    <MessageCircle className="transition-transform group-hover:scale-110" size={20} />
+                  )}
+                  {channel.whatsapp ? t('finalCta.cta') : t('channel.chatWithRumi')}
+                  <ArrowRight className="transition-transform group-hover:translate-x-1" />
+                </a>
+              </Button>
+            </div>
+          )}
 
           <p className="text-sm text-primary-foreground/70 pt-8">
             {t('finalCta.note')}

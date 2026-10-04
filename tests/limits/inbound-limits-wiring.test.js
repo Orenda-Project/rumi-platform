@@ -66,6 +66,7 @@ function load(account) {
   jest.doMock('../../bot/shared/services/pdf-report.service', () => inert());
   jest.doMock('../../bot/shared/database/bot-helpers', () => inert({
     getOrCreateUser: jest.fn(async () => user),
+    getOrCreateUserByChannel: jest.fn(async () => user),
     getOrCreateSession: jest.fn().mockResolvedValue('session-1'),
   }));
   jest.doMock('../../bot/shared/services/session.service', () => inert({
@@ -215,6 +216,69 @@ describe('daily message caps by tier', () => {
     await post('/register');
     expect(Text.handleTextMessage).toHaveBeenCalledTimes(2);
     expect(Text.handleTextMessage.mock.calls[1][2]).toBe('/register');
+  });
+
+  it('a bare "register" also goes through after the cap (on Matrix the slash cannot be typed)', async () => {
+    process.env.DAILY_MESSAGE_CAP_UNREGISTERED = '1';
+    load(UNREGISTERED);
+    await post('hello');
+    await post('hello again');
+    await post('register');
+    expect(Text.handleTextMessage).toHaveBeenCalledTimes(2);
+    expect(Text.handleTextMessage.mock.calls[1][2]).toBe('register');
+  });
+
+  // On Matrix the name question is offered unasked and can be ignored, so a
+  // pending name must not lift the cap for everything that follows: only a
+  // reply that reads as the name (or turns the offer down) gets through.
+  const fromMatrix = (text) => {
+    const body = metaWebhook(text);
+    const value = body.entry[0].changes[0].value;
+    value.messages[0].from = 'mtx:15550100077';
+    value.contacts[0].wa_id = 'mtx:15550100077';
+    return postBody(body);
+  };
+
+  it('Matrix, name pending: a question past the cap is capped like any message', async () => {
+    process.env.DAILY_MESSAGE_CAP_UNREGISTERED = '1';
+    load({ ...UNREGISTERED, registration_pending_name: true });
+    await fromMatrix('How do I teach fractions?');
+    await fromMatrix('And what about decimals?');
+    expect(Text.handleTextMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('Matrix, name pending: the name itself still goes through past the cap', async () => {
+    process.env.DAILY_MESSAGE_CAP_UNREGISTERED = '1';
+    load({ ...UNREGISTERED, registration_pending_name: true });
+    await fromMatrix('How do I teach fractions?');
+    await fromMatrix('Ayesha');
+    expect(Text.handleTextMessage).toHaveBeenCalledTimes(2);
+    expect(Text.handleTextMessage.mock.calls[1][2]).toBe('Ayesha');
+  });
+
+  // A bare word gets "Shall I call you Fractions?" (the handler, not mocked
+  // here, stores that word). After it, "yes" finishes registering; more chat
+  // is chat and is capped.
+  const askedAbout = (word) => require('../../bot/shared/services/feature-registration.service')
+    ._storeNameCandidate(UNREGISTERED.id, word);
+
+  it('Matrix, after a confirm question: "yes" goes through past the cap', async () => {
+    process.env.DAILY_MESSAGE_CAP_UNREGISTERED = '1';
+    load({ ...UNREGISTERED, registration_pending_name: true });
+    await askedAbout('Fractions');
+    await fromMatrix('How do I teach fractions?');
+    await fromMatrix('yes');
+    expect(Text.handleTextMessage).toHaveBeenCalledTimes(2);
+    expect(Text.handleTextMessage.mock.calls[1][2]).toBe('yes');
+  });
+
+  it('Matrix, after a confirm question: a different word is chat and is capped', async () => {
+    process.env.DAILY_MESSAGE_CAP_UNREGISTERED = '1';
+    load({ ...UNREGISTERED, registration_pending_name: true });
+    await askedAbout('Fractions');
+    await fromMatrix('How do I teach fractions?');
+    await fromMatrix('decimals');
+    expect(Text.handleTextMessage).toHaveBeenCalledTimes(1);
   });
 
   it('a registered account is not capped by the unregistered cap (and the defaults cap nobody)', async () => {

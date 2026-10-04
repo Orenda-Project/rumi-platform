@@ -119,6 +119,18 @@ describe('isCommandLike — a command must never be eaten by a pending question'
     expect(isCommandLike('attendance')).toBe(true);
   });
 
+  // Every command also works as the bare word, so the bare word must win over
+  // a pending question the same way the slash form does.
+  it('recognises a bare command word as a command', () => {
+    const { isCommandLike } = loadAdapter();
+    expect(isCommandLike('menu')).toBe(true);
+    expect(isCommandLike('Quiz')).toBe(true);
+    expect(isCommandLike('reading test')).toBe(true);
+    // A bare word WITH an argument is only a command on Matrix.
+    expect(isCommandLike('quiz fractions')).toBe(false);
+    expect(isCommandLike('menu items for lunch')).toBe(false);
+  });
+
   it('does not mistake ordinary answers or prose for commands', () => {
     const { isCommandLike } = loadAdapter();
     expect(isCommandLike('Ahmed Khan')).toBe(false);

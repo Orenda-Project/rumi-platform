@@ -47,6 +47,7 @@ const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const { prefixFor } = require('./channel-registry');
 const matrixIdentity = require('./matrix-identity');
 const pendingOptions = require('./pending-options');
+const { channelCommandCopy } = require('./command-words');
 
 const META_SOURCE_PATH = path.join(__dirname, 'meta-channel.service.js');
 const MATRIX_PREFIX = prefixFor('matrix'); // 'matrix' -- kept indirect so a rename to CHANNEL_PREFIXES stays a one-line fix
@@ -372,8 +373,15 @@ function renderMarkdownToHtml(text) {
   return html.replace(/\u0000(\d+)\u0000/g, (_, i) => slots[Number(i)]);
 }
 
+// Element takes any message starting with "/" as one of its own client
+// commands, so "type /quiz" is advice a Matrix user cannot follow. Every
+// command also works as the bare word, and every text this driver sends --
+// ux strings, LLM replies, menus rendered as text, captions -- names that form
+// instead (command-words.js#channelCommandCopy; URLs and paths are left alone).
+const commandCopy = (text) => channelCommandCopy(text, `${prefixFor('matrix')}:`);
+
 function buildTextContent(rawText) {
-  const text = removeEmotionTags(rawText);
+  const text = commandCopy(removeEmotionTags(rawText));
   const content = { msgtype: 'm.text', body: text };
   if (isMarkdownish(text)) {
     content.format = 'org.matrix.custom.html';
@@ -777,7 +785,8 @@ function voiceMessageFields(buffer) {
 }
 
 /** Uploads a buffer to the homeserver's media repo, then sends it as the given msgtype. Returns the event id. */
-async function uploadAndSend(to, buffer, mimeType, filename, msgtype, caption, { voice = false } = {}) {
+async function uploadAndSend(to, buffer, mimeType, filename, msgtype, rawCaption, { voice = false } = {}) {
+  const caption = commandCopy(rawCaption);
   const roomId = await getRoomId(to);
   const client = await getClient();
   const media = await uploadForRoom(client, roomId, buffer, mimeType, filename);
@@ -1073,7 +1082,9 @@ async function sendLanguageSelectionList(to, currentLanguage = 'en', region = nu
   return sendInteractiveMessage(to, {
     header: 'Select Language',
     body: 'Choose your preferred language. I will respond in this language for all conversations.',
-    footer: 'You can change this anytime by typing /language',
+    // Not "typing /language": Element eats the slash, and the bare-word
+    // rewrite of that would read "by typing language".
+    footer: 'Send "language" anytime to change this',
     action: { button: 'Languages', sections: [{ title: 'Available Languages', rows }] },
   });
 }

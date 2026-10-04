@@ -5,6 +5,133 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2026-10-04
+
+**Anyone can start chatting on Rumi Messenger, and is offered registration.** On Matrix, a person who is not
+registered gets Rumi's answer to whatever they sent first, then one optional offer: "what should I call you? … or
+just keep chatting; you can type register any time". "My name is Ayesha" completes registration at once; a bare
+"Ayesha" is confirmed first ("Shall I call you Ayesha? Reply yes, or tell me your name."), so one-word chat such as
+"fractions" or "Shukriya" never becomes a name. A question asked while
+the offer is open is answered as usual, "no thanks" closes the offer, and `register` starts it at any time.
+Before this, registration on Matrix only followed a finished lesson plan, reading assessment or video, so on a
+deployment with those off it never completed. WhatsApp, Slack and Discord are unchanged.
+
+**Commands without the slash.** Element treats `/quiz` as one of its own commands and does not send it. Every Rumi
+command now also works as the bare word on every channel (`menu`, `quiz`, `register`, `language`,
+`reading test`, …), and on Matrix Rumi's own messages say "type quiz", not "type /quiz".
+
+**Public limits.** Rumi can now run on a public link, where anyone can sign up. One account cannot flood it,
+a stranger's account gets a small daily allowance until it finishes registration, and when the model budget
+runs out teachers hear "Rumi is very busy right now" instead of an error, while the operator gets one alert
+instead of thousands.
+
+**"Rumi is typing…" lasts as long as the work.** On Rumi Messenger a teacher now sees Rumi typing from their message until
+the answer arrives, including a two-minute lesson plan made by the worker, and it stops when the reply lands.
+
+> **Upgrade notes — read before you update.**
+> - **Apply `infrastructure/supabase/migrations/V2.11.0__portal_access.sql`** (additive, safe to re-run). It creates
+>   the `portal_app_user` role the admin dashboard switches to and seeds `feature_permissions`. Without it, a
+>   dashboard on a database built from the released SQL signs in, then fails or answers 403 on every page. If the
+>   dashboard connects as another role, also `GRANT portal_app_user TO <that role>;`.
+> - **Partner roles see no teacher data yet.** The admin dashboard's database role (`portal_app_user`) returns rows
+>   only while the signed-in dashboard user is active and has an unscoped role: `super_admin`, `admin` or `viewer`.
+>   `partner_admin` and `partner_viewer` get no teacher data through it (teachers, conversations, coaching, lesson
+>   plans, videos, reading assessments and every other row-level-security table) until policies that apply a
+>   partner's access scope are added. Keep partner invitations on hold, or expect partner pages to be empty; see
+>   `dashboard/docs/PARTNER_RBAC_STATUS.md`. An earlier build of this migration on the release branch let any
+>   signed-in dashboard user read every row; if you applied it, run the current file once by hand with `psql`.
+> - The dashboard and the portal build now install with `npm ci --omit=dev`.
+> - On a deployment with no WhatsApp, set `CHANNEL_DRIVER=none` on the dashboard too (and optionally
+>   `PORTAL_CHAT_URL`), so the landing page and portal stop saying "through WhatsApp".
+> - Tested end to end on Rumi Messenger with `CHANNEL_DRIVER=none`: registration offered and completed 9/9,
+>   register any time 9/9, bare-word commands with a real topic quiz 6/6, the message cap with registration 9/9, dashboard from a production install,
+>   portal copy with and without WhatsApp.
+> - **The per-minute rate limit is the one limit that is on by default:** 30 text messages and 120 media messages
+>   per sender per minute. Raise `INBOUND_RATE_LIMIT_PER_MINUTE` / `INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE`, or set
+>   them to `off`, if your teachers need more. Everything else stays off until you set it.
+
+### Added
+
+- **Registration offer on Matrix** (`FeatureRegistrationService.offerRegistration`, called after a general-conversation
+  reply). It is sent once (remembered in Redis, or in memory when Redis is down) and skipped for anyone registered or
+  already asked. `register` / `/register` on Matrix asks directly ("Let's get you registered. What should I call
+  you?"). While the offer is open on Matrix, `looksLikeNameReply` tells a name from a question or request, and
+  `isDeclineReply` ("no thanks", "later", "skip", romanized and native forms) closes the offer.
+- **`bot/shared/services/messaging/command-words.js`**: the one list of Rumi's text commands.
+  - `normalizeCommand` maps a whole-message bare command to its slash form at the top of `handleTextMessage`.
+  - `isCommandText` is used by the Matrix and Baileys adapters, so a bare command typed during an active form
+    leaves it.
+  - `channelCommandCopy` rewrites `/quiz` to `quiz` in every outbound Matrix text, including captions and model
+    replies, and never inside a URL.
+  - On Matrix, `quiz <topic>` (and `quiz me on <topic>`) starts a topic quiz.
+  - `paper`, `exam` and `grade` stay slash-only, because the bare words are ordinary replies.
+- **`GET /api/portal/channels`** (dashboard, public) returns `{ whatsapp, chatUrl }`, using the bot's
+  `CHANNEL_DRIVER` rule. The landing page and the portal pages name WhatsApp and link to it only when the
+  deployment runs it; otherwise "in your chat with Rumi" and an optional "Chat with Rumi" link (`PORTAL_CHAT_URL`).
+- **Schema:**
+  - Role `portal_app_user`: NOLOGIN, not BYPASSRLS, granted to the role that loads the schema.
+  - Grants on tables and sequences.
+  - A `portal_app_user_access` policy on each RLS table. It lets rows through only when
+    `portal_user_is_unscoped()` is true: the signed-in dashboard user is active and is `super_admin`, `admin` or
+    `viewer`. The function is SECURITY DEFINER with a fixed search_path, so the policy on `dashboard_users` does not
+    recurse.
+  - `feature_permissions` seed: 18 features × `super_admin`, `admin`, `viewer`, `partner_admin`,
+    `partner_viewer`.
+  - All of this is in `00/01/02` and in `V2.11.0__portal_access.sql`.
+- **A per-sender inbound rate limit** on every channel (WhatsApp, Slack, Discord, Matrix). It is checked in
+  `handleWebhookPost`, the one entry point every channel dispatches into, before the account lookup and before
+  any model call. `INBOUND_RATE_LIMIT_PER_MINUTE` defaults to 30. Media (images, documents, audio, voice
+  notes, video, stickers) counts in its own bucket, `INBOUND_MEDIA_RATE_LIMIT_PER_MINUTE`, default 120, so a
+  teacher can still send a class set of exam photos at once. Over the limit the sender gets one "slow down"
+  per window, then silence. With Redis down, an in-process sliding window takes over instead of failing open.
+  `RATE_LIMIT_BYPASS_NUMBERS` is honoured.
+- **Daily caps by account tier**, per school day (`SCHOOL_TIMEZONE`): `DAILY_MESSAGE_CAP_UNREGISTERED`,
+  `DAILY_MESSAGE_CAP_REGISTERED`, `DAILY_LESSON_PLAN_CAP_UNREGISTERED`, `DAILY_COACHING_CAP_UNREGISTERED` and
+  `DAILY_QUIZ_CAP_UNREGISTERED`. An empty value means no cap, which is the default. Each job cap is checked where
+  the job starts: lesson plans (text, voice, quiz follow-up, textbook photo), coaching (`initiateSession`),
+  lesson quizzes (where it lowers `QUIZ_DAILY_CAP`) and class quizzes. `/register` and the name reply always get
+  through.
+- **A model budget breaker** in `llm-client.js`. A provider refusal for money (OpenRouter 402, 403 "Key limit
+  exceeded", OpenAI `insufficient_quota`) trips it for `MODEL_BUDGET_COOLDOWN_SECONDS` (default 300). That
+  message's own apology is replaced by one "busy" reply. New messages get "busy" once per sender, with no model
+  call. One `model_budget_exhausted` alert is logged per cooldown, shared by the bot and the worker. Worker jobs
+  run inside the same guard. A process that learns of the trip from Redis waits only for the shared flag's
+  remaining time, so every process recovers when the cooldown ends.
+- `OPENROUTER_BASE_URL`, an OpenRouter-compatible endpoint (a gateway, or a test double).
+- `docs/features/public-limits.md` and `docs/running-in-public.md`: every limit with recommended public
+  values, plus the Synapse-side measures (registration behind a sign-up service, random usernames, federation
+  off, a scoped user directory, rate limits, the admin API off the public address). Also a section in
+  `docs/channels/matrix.md`, a `.env.template` block, README rows and a SETUP step.
+- `MATRIX_TYPING_MAX_SECONDS` in `.env.template`, and a "Typing and read receipts" section in
+  `docs/channels/matrix.md`.
+
+### Fixed
+
+- A production install of the dashboard crashed with `Cannot find module 'redis'`: `redis` and `ioredis` are now
+  dependencies. The portal build (`vite`, its React plugin, PostCSS, Tailwind, autoprefixer) works from
+  `npm ci --omit=dev`, and `lovable-tagger` is loaded in development only.
+- The daily message cap for unregistered accounts (v2.11.0 limits) let only `/register` through. It now accepts
+  `register` with or without the slash. On Matrix, an open registration offer lifts the cap only for a reply that
+  reads as a name (or "no thanks"), so ignoring the offer no longer uncaps the account.
+- On Matrix, a pending name question no longer turns a question into a name ("How do I teach fractions?" used to
+  register a teacher called "How"), and "register" typed while a name is pending is no longer taken as the name.
+- `text-message.handler.js` resolved a Matrix sender (`mtx:1555…`) by slicing off the length of `matrix:`. That
+  dropped the number's first digits and created a second account when a new account's first messages raced. It
+  now uses the shared resolver in `channel-registry.js`.
+- **"Rumi is typing…" on Matrix now ends when Rumi replies and lasts as long as the work.** Before this, a reply
+  on a path whose handler never stopped its typing controller left the typing on for about 12 s after the answer.
+  A lesson plan, which the worker makes in about two minutes, showed no typing at all after the bot's "I'm
+  preparing…". Typing is now one session per room, run by the bot. The inbound message, a handler's controller
+  or a worker job hold it, and the bot refreshes it before Matrix's timeout runs out. Rumi's reply ends it,
+  whether the bot sends it or the worker does through the relay. While a worker job is still running, other
+  messages to the room (the bot's "Making your test paper…", a reminder, an answer to a mid-job "thanks") leave
+  it on; the job's own delivery ends it. A safety cap ends it
+  after `MATRIX_TYPING_MAX_SECONDS` (default 300). Typing failures are logged and never block a reply. Read
+  receipts, and the silence for group messages Rumi ignores, are unchanged.
+- **The worker shows typing while it makes what a Matrix teacher asked for**: a lesson plan, photo lesson plan,
+  test paper, lesson quiz or homework bundle (`bot/shared/services/messaging/job-typing.js`, wrapped around
+  every job in `sqs-worker.js`).
+
 ## [2.10.0] - 2026-10-03
 
 **Observe gets Section B: did the lesson follow its plan?** When an observed lesson was taught from a plan Rumi made

@@ -245,7 +245,7 @@ Pashto and Balochi (via Meta's MMS-ASR) — Sri Lankan Tamil, and a complete **I
 
 Every one works end to end — teachers chat and send voice notes in their language, get spoken and written
 replies back, and generate **lesson plans localized to their classrooms** (₹ money problems, locally familiar
-names and contexts). Pick a language anytime with **`/language`**, or just message Rumi in your own script.
+names and contexts). Pick a language anytime with **`/language`** (on Rumi Messenger, just `language`: every command also works as the bare word), or just message Rumi in your own script.
 Which languages appear is driven per-region by config (`region_features`), so a deployment shows only what it
 serves.
 

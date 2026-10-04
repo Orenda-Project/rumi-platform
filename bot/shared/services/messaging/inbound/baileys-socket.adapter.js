@@ -23,6 +23,7 @@ const connection = require('../baileys-connection');
 const baileysChannel = require('../baileys-channel.service');
 const pendingOptions = require('../pending-options');
 const textFlow = require('../text-flow');
+const { isCommandText } = require('../command-words');
 
 // A stable, non-test, non-zero entry id — passes validators.isTestWebhook().
 const SYNTHETIC_ENTRY_ID = 'baileys-sandbox';
@@ -260,12 +261,17 @@ async function toInteractiveSelection(from, text) {
  * created a class whose only student was named "add class".
  *
  * The keyword lists are not duplicated here; the same detector the text handler
- * routes on is asked, so the two cannot drift.
+ * routes on is asked, so the two cannot drift. Likewise a bare command word
+ * ("menu", "quiz") is asked of command-words.js, the list the text handler
+ * turns into slash commands.
+ *
+ * @param {string} text
+ * @param {string} [from] the sender; on Matrix a bare command may carry an argument
  */
-function isCommandLike(text) {
+function isCommandLike(text, from) {
   const trimmed = String(text || '').trim();
   if (!trimmed) return false;
-  if (trimmed.startsWith('/')) return true;
+  if (isCommandText(trimmed, from)) return true;
 
   try {
     // eslint-disable-next-line global-require -- keeps this adapter's load light
@@ -379,7 +385,7 @@ async function mapToMetaShape(waMessage, downloadMediaMessage, sock) {
     // get stuck: typing /menu (or "add class") mid-flow does what it says. The
     // abandoned flow is discarded rather than left pending, or the NEXT reply
     // (meant for whatever the command started) would be swallowed as its answer.
-    if (isCommandLike(text)) {
+    if (isCommandLike(text, from)) {
       if (await textFlow.isActive(from)) {
         await textFlow.clear(from);
         await pendingOptions.clear(from);

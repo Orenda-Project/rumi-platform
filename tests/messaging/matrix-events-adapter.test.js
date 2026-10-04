@@ -973,6 +973,31 @@ describe('text flows (a WhatsApp Flow degraded to one question per message)', ()
     expect(mapped.text.body).toBe('/menu');
   });
 
+  // Element eats "/menu" as one of its own client commands, so on Matrix the
+  // bare word is how a teacher types a command: it must win over a flow too.
+  it('a bare command word ("menu") wins over an active flow exactly as "/menu" does', async () => {
+    const { textFlow } = loadWithTextFlow({ isActive: jest.fn().mockResolvedValue(true) });
+    const mapped = await adapter.mapMessageToMetaShape('!room:x', textEvent('menu'), OWN_USER_ID, STARTED_AT);
+    expect(textFlow.advance).not.toHaveBeenCalled();
+    expect(textFlow.clear).toHaveBeenCalledWith('matrix:@teacher:example.org');
+    expect(mapped.type).toBe('text');
+    expect(mapped.text.body).toBe('menu');
+  });
+
+  it('"quiz fractions" (the Matrix form of "/quiz fractions") also wins over an active flow', async () => {
+    const { textFlow } = loadWithTextFlow({ isActive: jest.fn().mockResolvedValue(true) });
+    await adapter.mapMessageToMetaShape('!room:x', textEvent('quiz fractions'), OWN_USER_ID, STARTED_AT);
+    expect(textFlow.advance).not.toHaveBeenCalled();
+    expect(textFlow.clear).toHaveBeenCalledWith('matrix:@teacher:example.org');
+  });
+
+  it('an ordinary answer that merely contains a command word is still the flow\'s', async () => {
+    const { textFlow } = loadWithTextFlow({ isActive: jest.fn().mockResolvedValue(true) });
+    await adapter.mapMessageToMetaShape('!room:x', textEvent('menu items for lunch'), OWN_USER_ID, STARTED_AT);
+    expect(textFlow.advance).toHaveBeenCalledWith('matrix:@teacher:example.org', 'menu items for lunch');
+    expect(textFlow.clear).not.toHaveBeenCalled();
+  });
+
   it('a second unmatched reply gives the flow up and lets the message through to normal handling', async () => {
     const { textFlow } = loadWithTextFlow({ advance: jest.fn().mockResolvedValue({ status: 'unmatched', strikes: 2 }) });
     const mapped = await adapter.mapMessageToMetaShape('!room:x', textEvent('what is photosynthesis'), OWN_USER_ID, STARTED_AT);

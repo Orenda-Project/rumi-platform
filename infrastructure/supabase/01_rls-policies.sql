@@ -259,3 +259,34 @@ DROP POLICY IF EXISTS "service_role_observation_schedules" ON observation_schedu
 CREATE POLICY "service_role_observation_schedules" ON observation_schedules FOR ALL USING (auth.role() = 'service_role');
 DROP POLICY IF EXISTS "service_role_coach_directory" ON coach_directory;
 CREATE POLICY "service_role_coach_directory" ON coach_directory FOR ALL USING (auth.role() = 'service_role');
+
+-- =============================================================================
+-- The admin dashboard's role (portal_app_user, created in 00_complete-schema.sql)
+-- The dashboard reads and writes as portal_app_user once a dashboard user has
+-- signed in. It is not a bypass-RLS role, so on a table with RLS on and only
+-- the service_role policy it would see zero rows. One policy per RLS table lets
+-- it in, but only while the dashboard user set on the connection
+-- (set_portal_user_context) is active and has an unscoped role: super_admin,
+-- admin or viewer (portal_user_is_unscoped(), in 00). Partner roles get no
+-- rows at all, teacher data included, until policies that apply a partner's
+-- access_scopes row exist; "signed in" alone would hand a school-scoped partner
+-- every teacher and conversation. The check is wrapped in a SELECT so it runs
+-- once per query, not once per row. Runs over every RLS table so none is
+-- missed; a table that turns RLS on later needs this run again (V2.11.0 does
+-- the same). Dropping by name replaces the earlier, open policy. Safe to re-run.
+-- =============================================================================
+DO $$
+DECLARE
+  t record;
+BEGIN
+  FOR t IN
+    SELECT c.relname
+    FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') AND c.relrowsecurity
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS portal_app_user_access ON public.%I', t.relname);
+    EXECUTE format($p$CREATE POLICY portal_app_user_access ON public.%I FOR ALL TO portal_app_user
+      USING ((SELECT public.portal_user_is_unscoped()))
+      WITH CHECK ((SELECT public.portal_user_is_unscoped()))$p$, t.relname);
+  END LOOP;
+END $$;

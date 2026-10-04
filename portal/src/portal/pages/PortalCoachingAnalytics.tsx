@@ -8,11 +8,13 @@ import LoadingState from '../components/LoadingState';
 import { Button } from '@/components/ui/button';
 import { portal } from '../services/api';
 import { useToast } from '@/hooks/use-toast';
+import { useChatChannel } from '@/hooks/useChatChannel';
 import type { CoachingAnalytics } from '../types/portal';
 
 const PortalCoachingAnalytics = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const channel = useChatChannel();
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<CoachingAnalytics | null>(null);
 
@@ -329,15 +331,17 @@ const PortalCoachingAnalytics = () => {
                 Based on your recent sessions, we recommend focusing on <strong>{analytics.insights.focusArea}</strong>. 
                 This area shows the most opportunity for improvement and can have a significant impact on your overall teaching effectiveness.
               </p>
-              <Button asChild className="bg-accent hover:bg-accent/90">
-                <a 
-                  href="https://wa.me/message/WCYNS4DTDB2MD1" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  Get Coaching on This Area
-                </a>
-              </Button>
+              {channel.chatUrl && (
+                <Button asChild className="bg-accent hover:bg-accent/90">
+                  <a
+                    href={channel.chatUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Get Coaching on This Area
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
         </div>

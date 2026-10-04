@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useChatChannel } from '@/hooks/useChatChannel';
 import type { VideoRequest, Pagination } from '../types/portal';
 
 const statusConfig = {
@@ -31,6 +32,7 @@ const languageNames: Record<string, string> = {
 };
 
 const PortalVideos = () => {
+  const channel = useChatChannel();
   const [videos, setVideos] = useState<VideoRequest[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -178,7 +180,7 @@ const PortalVideos = () => {
             icon={Video}
             title="No videos found"
             description={videos.length === 0
-              ? "Your generated videos will appear here. Start by requesting a video through Rumi on WhatsApp!"
+              ? `Your generated videos will appear here. Start by requesting a video ${channel.whatsapp ? "through Rumi on WhatsApp" : "in your chat with Rumi"}!`
               : "No videos match your search criteria. Try adjusting your filters."
             }
           />

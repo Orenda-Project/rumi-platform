@@ -4387,6 +4387,93 @@ CREATE TABLE IF NOT EXISTS coach_directory (
     CHECK (match_method <> 'confirmed' OR confirmed_at IS NOT NULL)
 );
 
+-- =============================================================================
+-- portal_app_user: the role the admin dashboard works in
+-- For every signed-in admin request the dashboard runs SET ROLE portal_app_user
+-- and set_portal_user_context(<admin id>) on its own connection
+-- (dashboard/middleware/rbac/database-context.js), and reads and writes through
+-- it: users and activity, coaching, videos, retention, access scopes,
+-- invitations, the materialized views. Without the role every admin page fails.
+--
+-- Least privilege that works:
+--   - NOLOGIN: nobody connects as it. Only the role that ran this file (the one
+--     the dashboard connects as, SUPABASE_DB_USER) is granted it, so it is
+--     never reachable from the REST API. If the dashboard connects as a
+--     different role, grant portal_app_user to that role too.
+--   - Not BYPASSRLS (creating such a role needs a superuser on many hosts). It
+--     sees rows through one policy per RLS table (01_rls-policies.sql), and
+--     only while the signed-in dashboard user has an unscoped role (see
+--     portal_user_is_unscoped() below).
+--   - Table DML and sequences, on every table: the dashboard's queries span most
+--     of the schema, and a missing grant is a failed admin page. No DDL, no
+--     function rights beyond what PUBLIC already has, so the one-time SQL
+--     helper from SETUP.md stays service_role only.
+-- Partner roles (partner_admin, partner_viewer: a dashboard user who may see
+-- only some teachers) get NO rows from any RLS table through this role. The
+-- dashboard's pages that read the tables themselves (a teacher's detail,
+-- conversations, coaching, videos) show nothing to a partner until policies
+-- that apply the partner's access_scopes row exist (pages on the dashboard's
+-- materialized views filter in the query and are not covered here). Failing
+-- closed is the point: "signed in" alone would hand a partner every teacher.
+-- Roles are cluster-wide, so the CREATE is guarded; everything here is safe to
+-- run again. Kept last so the grants cover every table above.
+-- =============================================================================
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'portal_app_user') THEN
+    CREATE ROLE portal_app_user NOLOGIN;
+  END IF;
+END $$;
+
+-- SET ROLE needs membership unless the session user is a superuser (a hosted
+-- database's owner role usually is not).
+GRANT portal_app_user TO CURRENT_USER;
+
+GRANT USAGE ON SCHEMA public TO portal_app_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO portal_app_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO portal_app_user;
+-- Tables this role creates later (a migration) get the same grants.
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO portal_app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO portal_app_user;
+
+-- The one check every portal_app_user policy makes: is the dashboard user set
+-- on this connection (set_portal_user_context) active, with a role that sees
+-- every teacher? Partner roles are not on the list, so they get no rows.
+-- SECURITY DEFINER: it reads dashboard_users, which has RLS and this same
+-- policy; run as the caller it would need the answer it is computing. It runs
+-- as the schema's owner instead, with a fixed search_path so nothing on the
+-- caller's path is picked up. It takes no arguments and only answers about the
+-- current setting, so it cannot be used to look up other dashboard users.
+-- The id is compared as text, so a malformed setting answers false rather than
+-- raising an error.
+CREATE OR REPLACE FUNCTION public.portal_user_is_unscoped()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SECURITY DEFINER
+ SET search_path = pg_catalog, public
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.dashboard_users du
+    WHERE du.id::text = NULLIF(current_setting('app.portal_user_id', true), '')
+      AND du.is_active IS TRUE
+      AND du.role IN ('super_admin', 'admin', 'viewer')
+  )
+$function$;
+
+-- Only the dashboard's role may call it. Supabase grants new functions to its
+-- API roles by default, so those are revoked by name where they exist.
+REVOKE ALL ON FUNCTION public.portal_user_is_unscoped() FROM PUBLIC;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
+     AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON FUNCTION public.portal_user_is_unscoped() FROM anon, authenticated;
+  END IF;
+END $$;
+GRANT EXECUTE ON FUNCTION public.portal_user_is_unscoped() TO portal_app_user;
+
 -- Reload PostgREST's schema cache last, so the reconciled columns + functions
 -- above are immediately visible to the REST API (the earlier NOTIFY predates these DDLs).
 NOTIFY pgrst, 'reload schema';

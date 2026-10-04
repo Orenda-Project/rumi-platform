@@ -287,9 +287,13 @@ describe('/quiz', () => {
     expect(mockTopic.startTopicQuiz).not.toHaveBeenCalled();
   });
 
-  test('flag off: a bare "quiz" is not taken as the command (unchanged)', async () => {
+  // This used to assert the opposite: with the flag off, a bare "quiz" was not
+  // the command. Every command now works as the bare word on every channel —
+  // Element (Matrix) eats "/quiz" as its own client command, so there the bare
+  // word is the only way to ask — so a bare "quiz" is /quiz, flag or no flag.
+  test('flag off: a bare "quiz" is the /quiz command too, on the classic path', async () => {
     await say(TEACHER, 'quiz');
-    expect(mockOrchestrator.initiateQuizRequest).not.toHaveBeenCalled();
+    expect(mockOrchestrator.initiateQuizRequest).toHaveBeenCalledWith(TEACHER, TEACHER_PHONE, 'sess-1', 'en', null);
     expect(mockMenu.openQuizMenu).not.toHaveBeenCalled();
   });
 

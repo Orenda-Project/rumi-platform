@@ -1,11 +1,14 @@
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import { MessageCircle } from "lucide-react";
 import rumiLogo from "@/assets/rumi-logo.png";
-import { getWhatsAppUrl, trackCtaClick } from "@/lib/funnelTracking";
+import { trackCtaClick } from "@/lib/funnelTracking";
+import { landingChatHref, useChatChannel } from "@/hooks/useChatChannel";
 
 const HowItWorks = () => {
-  const whatsappUrl = getWhatsAppUrl('https://wa.me/message/WCYNS4DTDB2MD1');
+  const channel = useChatChannel();
+  const chatHref = landingChatHref(channel);
 
   const handleCtaClickTracking = () => {
     trackCtaClick('how-it-works');
@@ -24,8 +27,17 @@ const HowItWorks = () => {
               How Rumi Works
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed font-light max-w-3xl mx-auto">
-              Rumi lives in WhatsApp. No app to download. No new platform to learn.
-              Just open WhatsApp and start talking to someone who understands teaching.
+              {channel.whatsapp ? (
+                <>
+                  Rumi lives in WhatsApp. No app to download. No new platform to learn.
+                  Just open WhatsApp and start talking to someone who understands teaching.
+                </>
+              ) : (
+                <>
+                  Rumi lives in your chat. No new platform to learn.
+                  Just open your chat with Rumi and start talking to someone who understands teaching.
+                </>
+              )}
             </p>
           </div>
         </section>
@@ -199,22 +211,28 @@ const HowItWorks = () => {
               Teaching is lonely. It doesn't have to be.
             </p>
 
-            <Button
-              asChild
-              variant="secondary"
-              size="xl"
-              className="group text-lg px-8 py-6 bg-accent text-accent-foreground hover:bg-accent/90"
-            >
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleCtaClickTracking}
+            {chatHref && (
+              <Button
+                asChild
+                variant="secondary"
+                size="xl"
+                className="group text-lg px-8 py-6 bg-accent text-accent-foreground hover:bg-accent/90"
               >
-                <WhatsAppIcon className="transition-transform group-hover:scale-110" size={24} />
-                Meet Rumi
-              </a>
-            </Button>
+                <a
+                  href={chatHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleCtaClickTracking}
+                >
+                  {channel.whatsapp ? (
+                    <WhatsAppIcon className="transition-transform group-hover:scale-110" size={24} />
+                  ) : (
+                    <MessageCircle className="transition-transform group-hover:scale-110" size={24} />
+                  )}
+                  {channel.whatsapp ? "Meet Rumi" : "Chat with Rumi"}
+                </a>
+              </Button>
+            )}
           </div>
         </section>
       </main>

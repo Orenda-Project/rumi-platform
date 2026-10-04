@@ -13,7 +13,8 @@ The front door. Rumi keeps onboarding light: a new teacher can start using a fea
 1. **A new number messages Rumi** and is welcomed.
 2. **The teacher uses a feature** (asks a question, requests a lesson plan, …) right away.
 3. **Rumi asks for their name** after that first interaction and stores the profile, plus a [portal](teacher-portal.md) setup link when they have a phone number to sign in with.
-4. **Optional richer intake:** if a `REGISTRATION_FLOW_ID` is configured, Rumi sends a native WhatsApp form collecting school, grade, and language up front instead.
+4. **On Rumi Messenger (Matrix)** the name is not tied to a feature: after Rumi's first reply to someone who is not registered, it offers registration once ("what should I call you? … or just keep chatting"), and `register` starts it at any time. An introduction ("my name is Ayesha") registers at once; a bare name is asked about first ("Shall I call you Ayesha? Reply yes, or tell me your name."), since one-word chat reads like a name. A reply that is not a name is answered as usual, and "no thanks" closes the offer. Details: [Matrix channel](../channels/matrix.md#registration-and-commands-on-the-messenger).
+5. **Optional richer intake:** if a `REGISTRATION_FLOW_ID` is configured, Rumi sends a native WhatsApp form collecting school, grade, and language up front instead.
 
 ## What the teacher experiences
 

@@ -52,7 +52,9 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tanstack/react-query": "^5.83.0",
+    "@vitejs/plugin-react-swc": "^3.11.0",
     "apexcharts": "^5.3.6",
+    "autoprefixer": "^10.4.21",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -64,6 +66,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "postcss": "^8.5.6",
     "react": "^18.3.1",
     "react-apexcharts": "^1.8.0",
     "react-day-picker": "^8.10.1",
@@ -75,8 +78,10 @@
     "recharts": "^2.15.4",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
+    "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
+    "vite": "^5.4.19",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -89,19 +94,14 @@
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
-    "@vitejs/plugin-react-swc": "^3.11.0",
-    "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "jsdom": "^25.0.1",
     "lovable-tagger": "^1.1.11",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19",
     "vitest": "^2.1.9"
   }
 }
