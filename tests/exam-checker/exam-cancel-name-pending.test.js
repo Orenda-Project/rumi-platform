@@ -114,6 +114,13 @@ const mockActive = (userId) => {
 const mockFindById = (id) => [...mockStore.sessions.values()].find((s) => s.id === id) || null;
 jest.mock('../../bot/shared/services/exam-checker/exam-session.service', () => ({
   getActive: jest.fn(async (userId) => mockActive(userId)),
+  getOrCreate: jest.fn(async (userId) => {
+    const existing = mockActive(userId);
+    if (existing) return existing;
+    const created = { id: 'exam-session-new', user_id: userId, status: 'collecting_images', original_images: [] };
+    mockStore.sessions.set(userId, created);
+    return created;
+  }),
   getById: jest.fn(async (id) => mockFindById(id)),
   updateStatus: jest.fn(async (id, status) => {
     const s = mockFindById(id);
@@ -178,6 +185,37 @@ describe('name pending on Matrix, an empty exam session open', () => {
 
     expect(nameResponseSpy).toHaveBeenCalled();
     expect(sent().join('\n')).toMatch(/Shall I call you Sadia\?/);
+  });
+});
+
+describe('name pending on Matrix, a short exam request', () => {
+  // Found in E2E: after a first question the bot offers the name question,
+  // and "check my papers" came back as "Shall I call you Check?".
+  test.each(['check my papers', 'check exams', 'امتحان چیک کرو'])('"%s" opens the exam checker and is not taken as the name', async (body) => {
+    await send(body);
+
+    expect(mockStore.sessions.get(NEW_TEACHER.id).status).toBe('collecting_images');
+    expect(sent().join('\n')).not.toMatch(/Shall I call you/);
+    expect(nameResponseSpy).not.toHaveBeenCalled();
+  });
+
+  test('a question about exams is still not a request (goes to the name capture as any chat does)', async () => {
+    await send('How do I grade papers fairly?');
+
+    expect(mockStore.sessions.get(NEW_TEACHER.id)).toBeUndefined();
+    expect(nameResponseSpy).toHaveBeenCalled();
+  });
+
+  test('with the exam checker switched off, "check exams" goes to the name capture as before', async () => {
+    process.env.EXAM_CHECKER_ENABLED = 'false';
+    try {
+      await send('check exams');
+    } finally {
+      delete process.env.EXAM_CHECKER_ENABLED;
+    }
+
+    expect(mockStore.sessions.get(NEW_TEACHER.id)).toBeUndefined();
+    expect(nameResponseSpy).toHaveBeenCalled();
   });
 });
 
