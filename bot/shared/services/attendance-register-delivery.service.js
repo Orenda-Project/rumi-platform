@@ -10,13 +10,13 @@
  * as data loss.
  */
 
-const crypto = require('crypto');
 const fs = require('fs');
 const WhatsAppService = require('./whatsapp.service');
 const { logToFile } = require('../utils/logger');
 const { uploadBuffer, isR2Configured } = require('../storage/r2');
 const { TEMP_DIR } = require('../utils/constants');
 const { privateTempPath, removePrivateTemp } = require('../utils/private-temp');
+const { shortSha256, takeUploadedSha256 } = require('../utils/upload-digest');
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -60,10 +60,11 @@ async function deliverRegisterFile({ to, buffer, fileName, caption, r2Key }) {
     // from tests too, where the register would otherwise be lost to ENOENT.)
     temp = privateTempPath(TEMP_DIR, fileName, 'reg-');
     fs.writeFileSync(temp.filePath, buffer);
-    // What is on disk at the moment the upload is handed the path — the bytes the
-    // teacher is sent. Logged beside the buffer's so a mismatch is visible.
-    fileSha256 = shortSha256(fs.readFileSync(temp.filePath));
     sent = Boolean(await WhatsAppService.sendDocument(to, temp.filePath, fileName, caption));
+    // The bytes the driver actually uploaded from this path — hashed where the
+    // upload reads them, so a file changed under a lazy read shows as a mismatch
+    // with the buffer's sha. null when the driver ran elsewhere (upload-digest.js).
+    fileSha256 = takeUploadedSha256(temp.filePath);
   } catch (error) {
     logToFile('❌ Register send failed', { fileName, error: error.message });
   } finally {
@@ -75,11 +76,6 @@ async function deliverRegisterFile({ to, buffer, fileName, caption, r2Key }) {
     fileName, delivered: sent, bufferSha256: shortSha256(buffer), fileSha256,
   });
   return { sent, url };
-}
-
-/** First 12 hex chars of a sha256 — enough to tell two registers apart in a log line. */
-function shortSha256(buf) {
-  return crypto.createHash('sha256').update(buf).digest('hex').slice(0, 12);
 }
 
 module.exports = { deliverRegisterFile, XLSX_MIME };

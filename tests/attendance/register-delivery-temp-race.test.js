@@ -20,6 +20,7 @@ process.env.CHANNEL_DRIVER = 'meta';
 
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 const { createAttendanceDb } = require('./_helpers/attendance-db');
 
 let mockDb;
@@ -101,7 +102,7 @@ const markFor = (userId) => {
 let uploads;
 let sends;
 
-function fakeGraphApi({ uploadDelayMs = 200, refuseSend = false } = {}) {
+function fakeGraphApi({ uploadDelayMs = 200, refuseSend = false, beforeRead = null } = {}) {
   uploads = new Map();
   sends = [];
   let n = 0;
@@ -110,6 +111,7 @@ function fakeGraphApi({ uploadDelayMs = 200, refuseSend = false } = {}) {
     if (/\/media$/.test(url)) {
       const id = `media-${++n}`;
       await sleep(uploadDelayMs); // connect to graph.facebook.com before the body is streamed
+      if (beforeRead) beforeRead();
       const file = body.parts.find((p) => p.name === 'file').value;
       const chunks = [];
       for await (const chunk of file) chunks.push(chunk);
@@ -186,6 +188,27 @@ describe('the delivery log says which bytes went out', () => {
     expect(delivered[1]).toMatchObject({ delivered: true, bufferSha256: expected, fileSha256: expected });
     expect(delivered[1].bufferSha256).toMatch(/^[0-9a-f]{12}$/);
     expect(JSON.stringify(delivered[1])).not.toContain('15550100001');
+  });
+
+  it('logs the sha of the bytes the upload actually read, so a file swapped under the driver shows as a mismatch', async () => {
+    // Whatever replaces the file between the hand-off and the lazy read is what the
+    // teacher receives; the log must say so, not repeat the buffer's sha.
+    const swapped = Buffer.from('another register entirely');
+    fakeGraphApi({
+      uploadDelayMs: 0,
+      beforeRead: () => {
+        const [dir] = fs.readdirSync(TEMP_DIR);
+        const [file] = fs.readdirSync(path.join(TEMP_DIR, dir));
+        fs.writeFileSync(path.join(TEMP_DIR, dir, file), swapped);
+      },
+    });
+    const result = await markFor('t1');
+    expect(result.success).toBe(true);
+
+    const [received] = [...uploads.values()];
+    expect(sha12(received)).toBe(sha12(swapped));
+    const delivered = line('✅ Register delivered');
+    expect(delivered[1]).toMatchObject({ bufferSha256: sha12(generatedFor('t1')), fileSha256: sha12(swapped) });
   });
 
   it('says delivered:false — never ✅ — when the channel refuses the document', async () => {

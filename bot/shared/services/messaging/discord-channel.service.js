@@ -62,6 +62,7 @@
 const fs = require('fs');
 const path = require('path');
 const { logToFile } = require('../../utils/logger');
+const { noteUploadedBytes } = require('../../utils/upload-digest');
 const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const { prefixFor } = require('./channel-registry');
@@ -326,6 +327,7 @@ async function sendFile(to, buffer, filename, caption) {
 async function sendDocument(to, filePath, filename, caption) {
   try {
     const buffer = fs.readFileSync(filePath);
+    noteUploadedBytes(filePath, buffer); // what the caller's log reports as sent
     return await sendFile(to, buffer, filename, caption);
   } catch (error) {
     logToFile('❌ Discord: error sending document', { ...discordErrorDetail(error) });

@@ -24,6 +24,7 @@ const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
+const { digestingStream } = require('../../utils/upload-digest');
 
 // Prefer ASSET_BASE_URL; fall back to legacy ASSETS_BASE_URL. Empty when
 // neither is set — the carousel template builder below guards against that.
@@ -352,11 +353,15 @@ class WhatsAppService {
       };
       const contentType = mimeTypes[ext] || 'application/octet-stream';
 
-      // Upload document to WhatsApp
+      // Upload document to WhatsApp. The stream is read only when the body goes
+      // out, so it is hashed as it is read: the sha recorded for this path is of
+      // the bytes the recipient gets (upload-digest.js). form-data cannot measure
+      // a wrapped stream, so the length is given.
       const formData = new FormData();
-      formData.append('file', fs.createReadStream(filePath), {
+      formData.append('file', digestingStream(fs.createReadStream(filePath), filePath), {
         contentType: contentType,
         filename: filename,
+        knownLength: fs.statSync(filePath).size,
       });
       formData.append('messaging_product', 'whatsapp');
 

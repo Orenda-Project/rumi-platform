@@ -61,6 +61,10 @@ person receives the other's file, with no error. The file inside keeps the name 
 directory is unique. Use the helper for any new code that writes a file and hands its path to a send, an upload or
 a transcription.
 
+To log which bytes a `sendDocument` actually sent, take `takeUploadedSha256(path)` from
+`bot/shared/utils/upload-digest.js` after the send returns: each driver records a short sha of what it read from
+that path (the Meta driver as its upload stream is consumed).
+
 ## Message Flow
 
 1. WhatsApp sends webhook POST to `/webhook`
