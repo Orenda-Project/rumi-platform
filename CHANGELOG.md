@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.5] - 2026-10-05
+
+**Patch: two people sending or receiving at the same moment each get their own file.** This affects every deployment
+on the Meta WhatsApp driver, and every deployment that takes voice notes, attendance or reports. Upgrade.
+
+> **Upgrade notes.** No migration and no new setting. The `✅ Register delivered` log line gains `delivered`,
+> `bufferSha256` and `fileSha256`. A register the channel refused now logs `⚠️ Register not delivered` instead of a ✅.
+
+### Fixed
+
+- **An attendance register can no longer reach another school.** A register's file name carries no school:
+  `Attendance_5_A_September_2026.xlsx` is the same at every school with a "Grade 5 A". Delivery wrote it to
+  `temp/<file name>`, and the Meta upload reads the file only when the request body goes out. So when two teachers
+  marked the same class name at the same moment, one teacher could receive the other school's register, with that
+  school's children's names and attendance, and both deliveries reported success. Each delivery now writes into a
+  directory of its own. The file keeps its name; only the directory is unique.
+- **Voice notes are transcribed as the sender's own words.** Inbound voice notes, attendance roll calls,
+  comprehension answers, reading recordings, classroom recordings and observe debriefs were written to files named by
+  the clock alone (`audio_<milliseconds>.ogg`). Two notes arriving in the same millisecond shared a file, and one
+  teacher could be answered with another's words. Each note now gets its own directory, and the WAV made from it is
+  written into the same directory.
+- **Audio, video, image and document sends on the Meta driver send their own bytes.** `sendAudio`, `sendVideo`,
+  `sendDocumentFromUrl`, `sendImageFromUrl` and `sendImageWithButtons` used clock-named temp files. Two sends in one
+  millisecond could swap, or one send could report failure because the other had deleted the file. `sendAudio` and
+  `sendVideo` also left their file behind when a send failed.
+- **Reports and PDFs.** Quiz reports (`quiz-report-<quiz>.pdf`, the same name for every teacher of that quiz), lesson
+  plans (named after the topic), coaching reports, homework bundles, picture lesson plans, transcript and class quiz
+  reports, reading reports and passage images each now write into a directory of their own. So does the observe coach
+  card.
+- **A refused register is not logged as delivered.** The log line now says `delivered: false`, and it carries a short
+  sha256 of the generated register (`bufferSha256`) and of the bytes the channel actually uploaded (`fileSha256`,
+  hashed where the upload reads the file), so a file that changed under the upload shows as a mismatch.
+- **A child's comprehension answer is removed from disk on every path.** The recording was written before its
+  cleanup started, so an error in the lookups before scoring left it in `temp/`.
+- **Passage images are removed when a send fails.** A database or send error after the image was written left it in
+  `temp/`.
+- **A picture lesson plan for a grade such as "5/6" is delivered.** The grade went into the file name as typed, and
+  the `/` made the download fail. The name is now `Grade5_6_…`, and PDF downloads always stay inside their directory.
+
+### Added
+
+- `bot/shared/utils/private-temp.js`: `privateTempPath(baseDir, fileName, prefix)` and `removePrivateTemp(handle)`.
+  Use them for any new code that writes a file and hands its path to a send, an upload or a transcription. See
+  `docs/architecture.md` › *Temp files for media*. A file name with nothing left after `basename` (`''`, `.`, `..`)
+  becomes `file`.
+- `bot/shared/utils/upload-digest.js`: each channel driver records a short sha of the bytes its `sendDocument` read
+  from a path; `takeUploadedSha256(path)` returns it once, after the send.
+
+### Tests
+
+- New tests that drive the live paths, with only the network faked: `tests/attendance/register-delivery-temp-race.test.js`,
+  `tests/whatsapp/send-temp-collision.test.js`, `tests/services/inbound-audio-temp-collision.test.js`,
+  `tests/reports/report-temp-collision.test.js` (now also two teachers' reading reports and picture lesson plans) and
+  `tests/observe/observe-card-temp.test.js`; plus `tests/unit/private-temp.test.js`, `tests/unit/upload-digest.test.js`,
+  `tests/reading/passage-image-temp.test.js` and `tests/services/content-download-pdf.test.js`.
+- `tests/attendance/class-register-delivery.test.js` no longer fails intermittently when two test processes share
+  `bot/temp`. Before: 8 of 20 paired runs failed. After: 0 of 20.
+
 ## [2.11.4] - 2026-10-05
 
 **Patch: the exam checker starts only when a teacher asks for it, and `cancel` gets them out.** Any deployment where
