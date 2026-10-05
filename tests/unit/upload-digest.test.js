@@ -44,6 +44,17 @@ describe('digestingStream', () => {
     expect(takeUploadedSha256(f)).toBe(shortSha256(Buffer.from('a different register')));
   });
 
+  it('forgets the previous send\'s sha for a path when a new send of that path starts', async () => {
+    const f = path.join(dir, 'reused.xlsx');
+    fs.writeFileSync(f, 'first send');
+    await readAll(digestingStream(fs.createReadStream(f), f)); // recorded, never taken
+    const second = digestingStream(fs.createReadStream(f), f);
+    second.on('error', () => {}); // the upload listens, as form-data/axios do
+    second.destroy(new Error('upload failed before the stream ended'));
+    await sleep(10);
+    expect(takeUploadedSha256(f)).toBeNull();
+  });
+
   it('passes a read error on', async () => {
     const f = path.join(dir, 'missing.xlsx');
     await expect(readAll(digestingStream(fs.createReadStream(f), f))).rejects.toThrow(/ENOENT/);

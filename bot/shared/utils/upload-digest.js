@@ -43,6 +43,8 @@ function noteUploadedBytes(filePath, buffer) {
  * error is passed on, so the upload fails as it did on the bare stream.
  */
 function digestingStream(source, filePath) {
+  // A new send of this path: an earlier send's sha must not be read as this one's.
+  digests.delete(filePath);
   const hash = crypto.createHash('sha256');
   let flowing = false;
   const tap = new Readable({

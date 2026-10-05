@@ -356,12 +356,14 @@ class WhatsAppService {
       // Upload document to WhatsApp. The stream is read only when the body goes
       // out, so it is hashed as it is read: the sha recorded for this path is of
       // the bytes the recipient gets (upload-digest.js). form-data cannot measure
-      // a wrapped stream, so the length is given.
+      // a wrapped stream, so the length is given. The size is taken first: a
+      // missing file then fails here, before a stream exists whose error nobody hears.
+      const knownLength = fs.statSync(filePath).size;
       const formData = new FormData();
       formData.append('file', digestingStream(fs.createReadStream(filePath), filePath), {
         contentType: contentType,
         filename: filename,
-        knownLength: fs.statSync(filePath).size,
+        knownLength,
       });
       formData.append('messaging_product', 'whatsapp');
 
