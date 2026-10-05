@@ -307,6 +307,7 @@ class PassageGenerationService {
     passageConfig,
     userLanguage = 'en'
   ) {
+    let tempImage = null;
     try {
       logToFile('📝 Starting passage generation', {
         assessmentId,
@@ -401,7 +402,7 @@ class PassageGenerationService {
       // directory of this call's own: two generations for one assessment (a
       // repeated request) shared `passage_<id>.png`, so one could be sent the
       // other's image or lose its file to the other's cleanup.
-      const tempImage = privateTempPath(TEMP_DIR, `passage_${assessmentId}.png`, 'passage-');
+      tempImage = privateTempPath(TEMP_DIR, `passage_${assessmentId}.png`, 'passage-');
       const tempImagePath = tempImage.filePath;
       fs.writeFileSync(tempImagePath, imageBuffer);
       logToFile('📁 Passage image saved to temp file', { tempImagePath });
@@ -542,6 +543,10 @@ class PassageGenerationService {
       );
 
       throw error;
+    } finally {
+      // A database or send error after the write must not leave the image
+      // behind (Step 6b removes it early on success; this is a no-op then).
+      removePrivateTemp(tempImage);
     }
   }
 
