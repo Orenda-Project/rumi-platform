@@ -230,36 +230,39 @@ async function handleVoiceMessage(message, from, user = null) {
 
           // Save to temp file for transcription — in a private directory: a
           // clock-named file is shared by two answers in the same millisecond,
-          // and one learner's answer would be scored as the other's.
+          // and one learner's answer would be scored as the other's. The try
+          // opens at once: a child's recording must not outlive an error in the
+          // lookups below.
           const comprehensionTemp = privateTempPath(TEMP_DIR, 'comprehension.ogg', 'comprehension-');
           const audioPath = comprehensionTemp.filePath;
-          fs.writeFileSync(audioPath, audioBuffer);
-
-          logToFile('Audio saved for comprehension answer', { audioPath });
-
-          // Stop typing indicator
-          typingController.stop();
-
-          // Import ComprehensionService
-          const ComprehensionService = require('../services/reading/comprehension.service');
-
-          // Get question data from Redis flow state
-          const questions = activeFlow.questions;
-          const currentQuestionIndex = activeFlow.current_question_index;
-          const questionData = questions[currentQuestionIndex];
-          const assessmentId = activeFlow.assessment_id;
-
-          // Get language from assessment record
-          const { data: assessment } = await supabase
-            .from('reading_assessments')
-            .select('language')
-            .eq('id', assessmentId)
-            .single();
-          const language = assessment?.language || 'en';
-
-          // Evaluate answer
+          let ComprehensionService, questions, currentQuestionIndex, questionData, assessmentId, language;
           let answerEvaluation;
           try {
+            fs.writeFileSync(audioPath, audioBuffer);
+
+            logToFile('Audio saved for comprehension answer', { audioPath });
+
+            // Stop typing indicator
+            typingController.stop();
+
+            // Import ComprehensionService
+            ComprehensionService = require('../services/reading/comprehension.service');
+
+            // Get question data from Redis flow state
+            questions = activeFlow.questions;
+            currentQuestionIndex = activeFlow.current_question_index;
+            questionData = questions[currentQuestionIndex];
+            assessmentId = activeFlow.assessment_id;
+
+            // Get language from assessment record
+            const { data: assessment } = await supabase
+              .from('reading_assessments')
+              .select('language')
+              .eq('id', assessmentId)
+              .single();
+            language = assessment?.language || 'en';
+
+            // Evaluate answer
             answerEvaluation = await ComprehensionService.evaluateAnswer(
               questionData,
               audioPath,

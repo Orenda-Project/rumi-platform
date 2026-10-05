@@ -185,9 +185,9 @@ const userFor = (who) => ({
 });
 const ONE_TEACHER = { ...userFor('15550100203') };
 
-function loadHandler(route) {
+function loadHandler(route, { flow, tables: extraTables } = {}) {
   commonMocks();
-  const tables = {};
+  const tables = { ...extraTables };
   if (route === 'coaching') tables.coaching_sessions = { id: 'coaching-1', conversation_state: { current_state: 'q1' } };
   if (route === 'reading') {
     tables.reading_assessments = {
@@ -232,10 +232,10 @@ function loadHandler(route) {
     }),
   }));
   jest.doMock('../../bot/shared/services/redis-comprehension.service', () => inert({
-    findActiveFlowByUser: jest.fn().mockResolvedValue(route === 'comprehension' ? {
+    findActiveFlowByUser: jest.fn().mockResolvedValue(route === 'comprehension' ? (flow || {
       assessment_id: 'assessment-9', current_question_index: 0, answers: [],
       questions: [{ id: 'q1', question: 'Who found the kite?' }, { id: 'q2', question: 'Where was it?' }],
-    } : null),
+    }) : null),
     recordAnswer: jest.fn().mockResolvedValue({ current_question_index: 1, answers: [{ correct: true }] }),
     abandonUserFlows: jest.fn().mockResolvedValue(0),
   }));
@@ -404,5 +404,34 @@ describe.each(rows)('%s', (_name, load, callers, sites) => {
       }
     }
     expect(fs.readdirSync(TEMP)).toEqual([]);
+  });
+});
+
+describe('handler: comprehension answer, an error before the answer is scored', () => {
+  it('removes the learner\'s recording anyway', async () => {
+    // A flow state with no questions (a stale or half-written Redis record) throws
+    // between the write and the scoring — the recording must not stay on disk.
+    const call = loadHandler('comprehension', { flow: { assessment_id: 'assessment-9', current_question_index: 0, answers: [], questions: null } });
+    await caller.run(A, async () => {
+      try { await call(A, userFor(A)); } catch (_) { /* the handler may rethrow; only the disk matters here */ }
+    });
+    expect(received.filter((r) => r.site === 'evaluate')).toEqual([]);
+    expect(fs.readdirSync(TEMP, { recursive: true })).toEqual([]);
+  });
+
+  it('still scores the last answer in the assessment\'s language', async () => {
+    const call = loadHandler('comprehension', {
+      flow: { assessment_id: 'assessment-9', current_question_index: 0, answers: [], questions: [{ id: 'q1', question: 'Who found the kite?' }] },
+      tables: { reading_assessments: { id: 'assessment-9', language: 'ur', grade_level: 3 } },
+    });
+    const ComprehensionService = require('../../bot/shared/services/reading/comprehension.service');
+    await caller.run(A, async () => {
+      try { await call(A, userFor(A)); } catch (_) { /* later steps are not under test */ }
+    });
+    expect(ComprehensionService.evaluateAnswer).toHaveBeenCalledWith(expect.objectContaining({ id: 'q1' }), expect.any(String), 'ur');
+    expect(ComprehensionService.analyzeComprehension).toHaveBeenCalledWith(
+      [{ id: 'q1', question: 'Who found the kite?' }], expect.any(Array), 3, 'ur',
+    );
+    expect(fs.readdirSync(TEMP, { recursive: true })).toEqual([]);
   });
 });
