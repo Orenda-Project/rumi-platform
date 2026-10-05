@@ -7,9 +7,11 @@
  * `quiz-report-<quizId>.pdf` when the same quiz's report is generated for two
  * people, `report_<sessionId>_<ms>.pdf` when the same session's report is sent twice
  * in one millisecond, `lesson_plan_<topic>.pdf` when two teachers ask for the same
- * topic — lets the second write overwrite the first, so the first person is sent the
- * second person's document, with no error anywhere; or one send's cleanup removes the
- * other's file before it is read.
+ * topic, `Fluency_Only_Student_<date>.pdf` when two teachers' reading reports for a
+ * "Student" land on the same day, `Grade5_Science_Plants_LessonPlan.pdf` when two
+ * teachers send the same textbook lesson — lets the second write overwrite the first,
+ * so the first person is sent the second person's document, with no error anywhere; or
+ * one send's cleanup removes the other's file before it is read.
  *
  * Each case runs the REAL service through the messaging facade into the Meta driver
  * (so the real fs.createReadStream runs). Only the boundaries are faked: the
@@ -36,6 +38,7 @@ for (const d of [mockTempDir, OS_TMP, WORKER_TMP]) fs.mkdirSync(d, { recursive: 
 process.env.TEMP_DIR = WORKER_TMP;
 
 let mockDb;
+let mockR2Configured = true;
 jest.mock('../../bot/shared/config/supabase', () => new Proxy({}, { get: (_t, k) => mockDb[k] }));
 jest.mock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn(), logError: jest.fn(), logWarn: jest.fn() }));
 jest.mock('../../bot/shared/utils/constants', () => {
@@ -46,7 +49,7 @@ jest.mock('../../bot/shared/storage/r2', () => ({
   uploadReportPDF: jest.fn(async () => 'https://storage.example/report.pdf'),
   uploadVoiceDebrief: jest.fn(),
   uploadImageWithRetry: jest.fn(),
-  isR2Configured: () => true,
+  isR2Configured: () => mockR2Configured,
   getSignedUrl: jest.fn(),
   downloadFromR2: jest.fn(),
   extractKeyFromUrl: jest.fn(),
@@ -60,6 +63,31 @@ jest.mock('../../bot/shared/utils/html-to-pdf', () => ({
 jest.mock('pdfkit', () => function FakePDF() {}, { virtual: true });
 jest.mock('jsonrepair', () => ({ jsonrepair: (s) => s }), { virtual: true });
 jest.mock('pdf-parse', () => jest.fn(async () => ({ text: '' })), { virtual: true });
+// The model client is the network: every completion is a one-line message.
+jest.mock('../../bot/shared/services/llm-client', () => ({
+  getClient: () => ({ chat: { completions: { create: async () => ({ choices: [{ message: { content: 'The assessment is complete.' } }] }) } } }),
+}));
+// The reading report renderer: its bytes name the teacher it was rendered for.
+jest.mock('../../bot/shared/services/reading/report.service', () => ({
+  generateReadingAssessmentReport: jest.fn(async (d) => Buffer.from(`%PDF-1.4 reading report for ${d.studentIdentifier}, teacher ${d.teacherName}`)),
+}));
+// Pic-to-LP collaborators that are not under test; Gamma is the network.
+jest.mock('../../bot/shared/services/limits/daily-caps', () => ({ allowOrExplainForUserId: jest.fn(async () => true) }));
+jest.mock('../../bot/shared/services/lesson-plan-availability', () => ({
+  lessonPlansAvailable: () => true, explainIfUnavailable: jest.fn(),
+}));
+jest.mock('../../bot/shared/services/pic-to-lp/pic-lp-session.service', () => ({ updateStatus: jest.fn() }));
+jest.mock('../../bot/shared/services/lesson-plan-prompts.service', () => ({
+  buildChapterPrompt: (_subject, _grade, content) => content,
+}), { virtual: true });
+jest.mock('../../bot/shared/services/pic-to-lp/gamma-client.service', () => ({
+  // The plan Gamma makes is the one for the pages in the prompt.
+  generate: jest.fn(async ({ prompt }) => ({
+    success: true, pdfUrl: `https://cdn.example/${/pages of (teacher-\w)/.exec(prompt)[1]}.pdf`,
+  })),
+  SUPPORTED_LANGUAGES: ['en'],
+}));
+jest.mock('../../bot/shared/utils/structured-logger', () => ({ logEvent: jest.fn() }));
 // Lesson-plan worker collaborators that are not under test.
 jest.mock('../../bot/shared/services/lesson-plan-queue.service', () => ({
   getRequest: jest.fn(async () => null), markProcessing: jest.fn(), markCompleted: jest.fn(), markFailed: jest.fn(),
@@ -89,6 +117,9 @@ const axios = require('axios'); // mapped stub — the network boundary
 const QuizReportService = require('../../bot/shared/services/quiz/quiz-report.service');
 const ReportGeneratorService = require('../../bot/shared/services/coaching/report-generator.service');
 const LessonPlanWorker = require('../../bot/workers/lesson-plan-generation.worker');
+const AnalysisService = require('../../bot/shared/services/reading/analysis.service');
+const LpHandoff = require('../../bot/shared/services/pic-to-lp/lp-handoff.service');
+const r2 = require('../../bot/shared/storage/r2');
 
 const A = '15550100301';
 const B = '15550100302';
@@ -249,5 +280,97 @@ describe('lesson plan: two teachers ask for the same topic at once (display-name
   it('leaves nothing behind in the temp directory', async () => {
     await Promise.all([job(A, 'teacher-a'), job(B, 'teacher-b')]);
     expect(fs.readdirSync(WORKER_TMP)).toEqual([]);
+  });
+});
+
+describe('reading report, no object storage: two teachers, a "Student" each, the same day', () => {
+  const assessmentFor = (who) => ({
+    id: `assessment-${who}`, user_id: `user-${who}`, student_identifier: null, created_at: '2026-09-14T09:00:00Z',
+    language: 'en', grade_level: 3, passage_type: 'sentences', passage_text: 'The kite flew.',
+    wcpm: 42, accuracy_percentage: 90, comprehension_score: null,
+  });
+
+  beforeEach(() => {
+    jest.spyOn(Date, 'now').mockReturnValue(1790000000000);
+    mockR2Configured = false;
+    mockDb = makeFakeDb({
+      users: [{ id: 'user-a', first_name: 'Avery' }, { id: 'user-b', first_name: 'Blair' }],
+      reading_assessments: [assessmentFor('a'), assessmentFor('b')],
+    });
+    // The report travels as a file:// URL. The storage read is the boundary: like the
+    // drivers that serve file:// URLs, it reads the file at the path it is given —
+    // after a moment, as a real download would.
+    r2.extractKeyFromUrl.mockImplementation((url) => url);
+    r2.downloadFromR2.mockImplementation(async (url) => {
+      await sleep(50);
+      return fs.readFileSync(url.slice('file://'.length));
+    });
+    // Voice feedback is a later, optional step this case does not cover.
+    jest.spyOn(AnalysisService, 'generateVoiceFeedback').mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    mockR2Configured = true;
+    r2.extractKeyFromUrl.mockReset();
+    r2.downloadFromR2.mockReset();
+  });
+
+  const both = () => Promise.allSettled([
+    AnalysisService.generateAndSendFluencyReport(assessmentFor('a'), A, 'en'),
+    AnalysisService.generateAndSendFluencyReport(assessmentFor('b'), B, 'en'),
+  ]);
+
+  it('sends each teacher the report rendered for their own student', async () => {
+    const results = await both();
+    expect(results.map((r) => r.status)).toEqual(['fulfilled', 'fulfilled']);
+
+    const docs = sends.filter((s) => s.mediaId);
+    expect(docs.map((s) => s.filename)).toEqual(['Reading_Assessment_Report.pdf', 'Reading_Assessment_Report.pdf']);
+    const got = received();
+    expect({ [A]: String(got[A]), [B]: String(got[B]) }).toEqual({
+      [A]: '%PDF-1.4 reading report for Student, teacher Avery',
+      [B]: '%PDF-1.4 reading report for Student, teacher Blair',
+    });
+  });
+
+  it('leaves nothing behind in the temp directory', async () => {
+    await both();
+    expect(fs.readdirSync(mockTempDir)).toEqual([]);
+  });
+});
+
+describe('pic-to-LP: two teachers photograph the same lesson at once (form-named file)', () => {
+  const PDF = {
+    'https://cdn.example/teacher-a.pdf': Buffer.from('%PDF-1.4 plan from the first teacher\'s pages'),
+    'https://cdn.example/teacher-b.pdf': Buffer.from('%PDF-1.4 plan from the second teacher\'s pages, longer'),
+  };
+  const formData = { grade: '5', subject: 'Science', topic: 'Plants', language: 'en', lesson_plan_format: 'detailed' };
+  const handoff = (phone, who, form = formData) => LpHandoff.generateAndDeliver({
+    session: { id: `session-${who}`, user_id: `user-${who}`, pages: ['p1'], detected: { ocr_text: `pages of ${who}` } },
+    formData: form,
+    from: phone,
+  });
+
+  beforeEach(() => {
+    jest.spyOn(Date, 'now').mockReturnValue(1790000000000);
+    mockDb = makeFakeDb({});
+    axios.get.mockReset();
+    axios.get.mockImplementation(async (url) => ({ status: 200, data: PDF[url] }));
+  });
+
+  it('sends each teacher the plan made from their own pages', async () => {
+    const results = await Promise.all([handoff(A, 'teacher-a'), handoff(B, 'teacher-b')]);
+    expect(results.map((r) => r.success)).toEqual([true, true]);
+
+    const docs = sends.filter((s) => s.mediaId);
+    expect(docs.map((s) => s.filename)).toEqual(['Grade5_Science_Plants_LessonPlan.pdf', 'Grade5_Science_Plants_LessonPlan.pdf']);
+    const got = received();
+    expect(sha12(got[A])).toBe(sha12(PDF['https://cdn.example/teacher-a.pdf']));
+    expect(sha12(got[B])).toBe(sha12(PDF['https://cdn.example/teacher-b.pdf']));
+  });
+
+  it('leaves nothing behind in the temp directory', async () => {
+    await Promise.all([handoff(A, 'teacher-a'), handoff(B, 'teacher-b')]);
+    expect(fs.readdirSync(mockTempDir)).toEqual([]);
   });
 });
