@@ -196,7 +196,9 @@ ${lpTemplate.inputText}`;
         responseType: 'arraybuffer'
       });
 
-      const pdfPath = path.join(tempDir, filename);
+      // basename: callers name the file from what a teacher typed (a topic, a
+      // grade), and a '/' or '..' in it must not write outside tempDir.
+      const pdfPath = path.join(tempDir, path.basename(filename));
       fs.writeFileSync(pdfPath, response.data);
 
       logToFile('PDF downloaded successfully', { pdfPath });

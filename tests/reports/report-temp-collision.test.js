@@ -373,4 +373,12 @@ describe('pic-to-LP: two teachers photograph the same lesson at once (form-named
     await Promise.all([handoff(A, 'teacher-a'), handoff(B, 'teacher-b')]);
     expect(fs.readdirSync(mockTempDir)).toEqual([]);
   });
+
+  it('delivers a plan whose grade has a slash in it, under a name with none', async () => {
+    const result = await handoff(A, 'teacher-a', { ...formData, grade: '5/6' });
+    expect(result.success).toBe(true);
+    expect(sends.filter((s) => s.mediaId).map((s) => s.filename)).toEqual(['Grade5_6_Science_Plants_LessonPlan.pdf']);
+    expect(sha12(received()[A])).toBe(sha12(PDF['https://cdn.example/teacher-a.pdf']));
+    expect(fs.readdirSync(mockTempDir)).toEqual([]);
+  });
 });

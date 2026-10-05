@@ -295,7 +295,7 @@ async function generateAndDeliver({ session, formData, from }) {
 function makeFilename(formData) {
   const slug = (s) => String(s || '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40);
   const parts = [
-    `Grade${formData.grade || 'X'}`,
+    `Grade${slug(formData.grade) || 'X'}`,
     slug(formData.subject) || 'Subject',
     slug(formData.topic) || 'Lesson',
   ];
