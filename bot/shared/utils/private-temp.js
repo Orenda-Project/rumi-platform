@@ -27,7 +27,11 @@ const path = require('path');
 function privateTempPath(baseDir, fileName, prefix = 'send-') {
   if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
   const dir = fs.mkdtempSync(path.join(baseDir, prefix));
-  return { dir, filePath: path.join(dir, path.basename(String(fileName))) };
+  // basename keeps a user-typed name inside the directory; a name with nothing
+  // left ('', '.', '..', 'a/..') would be the directory itself or its parent,
+  // so it falls back to 'file' (as materialise() in the matrix relay does).
+  const base = fileName == null ? '' : path.basename(String(fileName));
+  return { dir, filePath: path.join(dir, base && base !== '.' && base !== '..' ? base : 'file') };
 }
 
 /** Remove what privateTempPath made. Never throws: a temp file is not worth an error. */

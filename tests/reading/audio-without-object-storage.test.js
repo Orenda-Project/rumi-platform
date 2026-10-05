@@ -78,7 +78,7 @@ describe('transcription.service.downloadAudio — file:// URLs', () => {
 
     const result = await service.downloadAudio(`file://${source}`, 'assess-1');
 
-    expect(fs.readFileSync(result, 'utf-8')).toBe('OGGAUDIOBYTES');
+    expect(fs.readFileSync(result.filePath, 'utf-8')).toBe('OGGAUDIOBYTES');
     expect(downloadFromR2).not.toHaveBeenCalled();
   });
 
@@ -91,8 +91,8 @@ describe('transcription.service.downloadAudio — file:// URLs', () => {
 
     const returned = await service.downloadAudio(`file://${source}`, 'assess-2');
 
-    expect(returned).not.toBe(source);
-    fs.unlinkSync(returned); // simulate the caller's cleanup
+    expect(returned.filePath).not.toBe(source);
+    fs.rmSync(returned.dir, { recursive: true }); // simulate the caller's cleanup
     expect(fs.existsSync(source)).toBe(true);
   });
 
@@ -109,7 +109,36 @@ describe('transcription.service.downloadAudio — file:// URLs', () => {
     const result = await service.downloadAudio('https://bucket.r2.dev/audio/x.ogg', 'assess-4');
 
     expect(downloadFromR2).toHaveBeenCalledWith('audio/x.ogg');
-    expect(fs.readFileSync(result, 'utf-8')).toBe('FROM-R2');
+    expect(fs.readFileSync(result.filePath, 'utf-8')).toBe('FROM-R2');
+  });
+
+  it('hands back the private directory it made, with the file inside it', async () => {
+    const { service, downloadFromR2 } = loadService();
+    downloadFromR2.mockResolvedValue(Buffer.from('FROM-R2'));
+
+    const result = await service.downloadAudio('https://bucket.r2.dev/audio/x.ogg', 'assess-5');
+
+    expect(path.dirname(result.dir)).toBe(tmpDir);
+    expect(path.dirname(result.filePath)).toBe(result.dir);
+  });
+
+  it('transcribeReading removes the directory it was handed — not one derived from the file path', async () => {
+    // Re-deriving path.dirname(file) is right only while every download is one
+    // level deep; removing the handle is right whatever its shape.
+    const { service } = loadService();
+    const AudioService = require('../../bot/shared/services/audio.service');
+    const dir = fs.mkdtempSync(path.join(tmpDir, 'reading-'));
+    fs.mkdirSync(path.join(dir, 'nested'));
+    const filePath = path.join(dir, 'nested', 'reading.ogg');
+    fs.writeFileSync(filePath, 'BYTES');
+    jest.spyOn(service, 'downloadAudio').mockResolvedValue({ dir, filePath });
+    jest.spyOn(AudioService, 'transcribe').mockResolvedValue({ text: 'the kite flew', language: 'en' });
+    jest.spyOn(service, 'processTranscription').mockResolvedValue({ text: 'the kite flew' });
+
+    await service.transcribeReading('assess-6', 'https://bucket.r2.dev/audio/x.ogg', 'en');
+
+    expect(AudioService.transcribe).toHaveBeenCalledWith(filePath, true, 'en');
+    expect(fs.existsSync(dir)).toBe(false);
   });
 });
 

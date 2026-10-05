@@ -17,7 +17,6 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 const AudioService = require('../audio.service');
 const WhatsAppService = require('../whatsapp.service');
 const { logToFile } = require('../../utils/logger');
@@ -34,7 +33,7 @@ class TranscriptionService {
    * @returns {Promise<object>} Transcription result with speaker filtering
    */
   static async transcribeReading(assessmentId, audioUrl, expectedLanguage = 'en') {
-    let tempAudioPath = null;
+    let tempAudio = null;
 
     try {
       logToFile('📝 Starting reading transcription', {
@@ -44,7 +43,8 @@ class TranscriptionService {
       });
 
       // Step 1: Download audio from R2
-      tempAudioPath = await this.downloadAudio(audioUrl, assessmentId);
+      tempAudio = await this.downloadAudio(audioUrl, assessmentId);
+      const tempAudioPath = tempAudio.filePath;
 
       // Step 2: Transcribe with Soniox (speaker diarization enabled)
       // Pass expected language to force correct transcription language
@@ -70,10 +70,8 @@ class TranscriptionService {
       );
 
       // Clean up temp file (and the private directory it was made in)
-      if (tempAudioPath) {
-        removePrivateTemp({ dir: path.dirname(tempAudioPath) });
-        logToFile('Temp audio file cleaned up', { tempAudioPath });
-      }
+      removePrivateTemp(tempAudio);
+      logToFile('Temp audio file cleaned up', { tempAudioPath });
 
       return processedResult;
 
@@ -85,7 +83,7 @@ class TranscriptionService {
       });
 
       // Clean up temp file on error (removePrivateTemp never throws)
-      if (tempAudioPath) removePrivateTemp({ dir: path.dirname(tempAudioPath) });
+      removePrivateTemp(tempAudio);
 
       throw error;
     }
@@ -97,11 +95,11 @@ class TranscriptionService {
    * The file is made in its own private directory: a path from the assessment
    * id and the clock is shared by two downloads for the same assessment in one
    * millisecond (a redelivered job), and one would transcribe the other's
-   * bytes or find them already deleted. The caller removes the directory
-   * (path.dirname of the returned path) when done.
+   * bytes or find them already deleted. The caller removes what it is handed
+   * (removePrivateTemp) when done.
    * @param {string} audioUrl - R2 URL
    * @param {string} assessmentId - Assessment ID for filename
-   * @returns {Promise<string>} Local file path
+   * @returns {Promise<{dir: string, filePath: string}>} the private temp handle
    */
   static async downloadAudio(audioUrl, assessmentId) {
     try {
@@ -126,7 +124,7 @@ class TranscriptionService {
         logToFile('✅ Audio read from local disk (no object storage configured)', {
           sourcePath, path: localTemp, size: fs.statSync(localTemp).size,
         });
-        return localTemp;
+        return temp;
       }
 
       const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
@@ -158,7 +156,7 @@ class TranscriptionService {
         path: tempPath
       });
 
-      return tempPath;
+      return temp;
 
     } catch (error) {
       logToFile('❌ Error downloading audio from R2', {
