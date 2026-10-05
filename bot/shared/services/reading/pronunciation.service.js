@@ -22,11 +22,11 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 const { getClient } = require('../llm-client');
 const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
 const { OPENAI_API_KEY, TEMP_DIR } = require('../../utils/constants');
+const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
 
 const openai = getClient();
 
@@ -119,6 +119,7 @@ class PronunciationService {
     }
 
     let tempAudioPath = null;
+    let temp = null;
 
     try {
       logToFile('Using Azure Pronunciation Assessment for English', { assessmentId });
@@ -138,7 +139,11 @@ class PronunciationService {
         size: audioBuffer.length
       });
 
-      tempAudioPath = path.join(TEMP_DIR, `azure_pronunciation_${assessmentId}.wav`);
+      // A private directory per call: a path from the assessment id alone is
+      // shared by two assessments of the same recording at once (a retried
+      // job), and the two ffmpeg conversions would write into one file.
+      temp = privateTempPath(TEMP_DIR, `azure_pronunciation_${assessmentId}.wav`, 'pronunciation-');
+      tempAudioPath = temp.filePath;
 
       // Convert to WAV format (Azure requires WAV)
       const AudioService = require('../audio.service');
@@ -197,9 +202,7 @@ class PronunciationService {
       });
 
       // Clean up temp file
-      if (tempAudioPath && fs.existsSync(tempAudioPath)) {
-        fs.unlinkSync(tempAudioPath);
-      }
+      removePrivateTemp(temp);
 
       // Parse pronunciation assessment result
       if (azureResult.reason === sdk.ResultReason.RecognizedSpeech) {
@@ -310,14 +313,8 @@ class PronunciationService {
         audioExists: tempAudioPath ? fs.existsSync(tempAudioPath) : false
       });
 
-      // Clean up temp file on error
-      if (tempAudioPath && fs.existsSync(tempAudioPath)) {
-        try {
-          fs.unlinkSync(tempAudioPath);
-        } catch (cleanupError) {
-          logToFile('Warning: Temp file cleanup failed', { error: cleanupError.message });
-        }
-      }
+      // Clean up temp file on error (removePrivateTemp never throws)
+      removePrivateTemp(temp);
 
       // Fallback to alternative assessment
       logToFile('Using fallback pronunciation assessment (text-based)', {
