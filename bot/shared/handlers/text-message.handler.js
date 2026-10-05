@@ -347,7 +347,8 @@ async function handleTextMessage(message, from, messageBody, user = null) {
       // it is not the name. The name question comes back after a feature.
       // Nor is a short exam request ("check my papers"): it opens the exam
       // checker. Nor is a cancel word ("منسوخ") while an exam session is open:
-      // it ends it.
+      // it ends it. Nor is anything sent while Rumi collects an answer key: a
+      // one-word answer ("Paris") is the answer, not the teacher's name.
       let isPendingName = !String(messageBody || '').trim().startsWith('/')
         && await FeatureRegistrationService.isPendingName(user.id);
       if (isPendingName) {
@@ -357,6 +358,9 @@ async function handleTextMessage(message, from, messageBody, user = null) {
           isPendingName = false;
         } else if (ExamCheckerHandler.isExamCancelCommand(messageBody)
           && await ExamCheckerHandler.hasActiveExamSession(user.id)) {
+          isPendingName = false;
+        } else if (ExamCheckerHandler.isExamCheckerEnabled()
+          && await ExamCheckerHandler.isCollectingAnswerKey(user.id)) {
           isPendingName = false;
         }
       }

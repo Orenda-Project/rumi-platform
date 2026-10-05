@@ -128,6 +128,13 @@ jest.mock('../../bot/shared/services/exam-checker/exam-session.service', () => (
     return s;
   }),
   update: jest.fn(async (id, patch) => Object.assign(mockFindById(id), patch)),
+  addAnswer: jest.fn(async (id, questionId, answer) => {
+    const s = mockFindById(id);
+    const scheme = s.marking_scheme || { questions: [], totalMarks: 0 };
+    scheme.questions.push({ id: questionId, answer: answer.answer, marks: 1 });
+    scheme.totalMarks += 1;
+    s.marking_scheme = scheme;
+  }),
 }));
 
 const WhatsAppService = require('../../bot/shared/services/whatsapp.service');
@@ -236,5 +243,63 @@ describe('name pending on Matrix, no exam session open (unchanged)', () => {
       NEW_TEACHER.id, 'Sadia', FROM, 'en', 'text', { confirmBareWord: true }
     );
     expect(sent().join('\n')).toMatch(/Shall I call you Sadia\?/);
+  });
+});
+
+describe('name pending on Matrix, a short question about exams (S3)', () => {
+  test.each(['how to grade papers', 'امتحان چیک کیسے کروں', 'كيف تصحيح امتحان'])('"%s" opens no session', async (body) => {
+    await send(body);
+
+    expect(mockStore.sessions.get(NEW_TEACHER.id)).toBeUndefined();
+    expect(sent().join('\n')).not.toMatch(/0 images/);
+  });
+
+  test('"can you check my papers" opens the exam checker and is not taken as the name', async () => {
+    await send('can you check my papers');
+
+    expect(mockStore.sessions.get(NEW_TEACHER.id).status).toBe('collecting_images');
+    expect(nameResponseSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('name pending on Matrix, answer-key entry open (N7)', () => {
+  const openAnswerKey = () => {
+    mockStore.sessions.set(NEW_TEACHER.id, {
+      id: 'exam-session-answers', user_id: NEW_TEACHER.id, status: 'collecting_answers',
+      original_images: [{ url: 'https://files.example.test/p1.jpg', pageNumber: 1 }],
+      detected_questions: [
+        { id: 'Q1', type: 'short_answer', text: 'Capital of France?' },
+        { id: 'Q2', type: 'short_answer', text: 'Name a primary colour.' },
+      ],
+      marking_scheme: { questions: [], totalMarks: 0 },
+    });
+  };
+
+  test('"Paris" twice is stored as two answers, never as the name', async () => {
+    openAnswerKey();
+    const supabase = require('../../bot/shared/config/supabase');
+
+    await send('Paris');
+    await send('Paris');
+
+    expect(mockStore.sessions.get(NEW_TEACHER.id).marking_scheme.questions).toEqual([
+      { id: 'Q1', answer: 'Paris', marks: 1 },
+      { id: 'Q2', answer: 'Paris', marks: 1 },
+    ]);
+    expect(nameResponseSpy).not.toHaveBeenCalled();
+    expect(sent().join('\n')).not.toMatch(/Shall I call you|Nice to meet you/);
+    expect(supabase.from.mock.calls.filter((c) => c[0] === 'users')).toEqual([]);
+  });
+
+  test('with the exam checker switched off, "Paris" goes to the name capture as before', async () => {
+    openAnswerKey();
+    process.env.EXAM_CHECKER_ENABLED = 'false';
+    try {
+      await send('Paris');
+    } finally {
+      delete process.env.EXAM_CHECKER_ENABLED;
+    }
+
+    expect(nameResponseSpy).toHaveBeenCalled();
   });
 });

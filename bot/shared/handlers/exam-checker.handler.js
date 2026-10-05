@@ -214,6 +214,23 @@ async function hasActiveExamSession(userId) {
 }
 
 /**
+ * Is Rumi collecting this user's answer key? Every message there is an answer.
+ * It is asked for every message while a name is pending, so a failed lookup
+ * answers false and the message is read as the name, as before.
+ * @param {string} userId - User UUID
+ * @returns {Promise<boolean>}
+ */
+async function isCollectingAnswerKey(userId) {
+  try {
+    const state = await ExamCheckerOrchestrator.getSessionState(userId);
+    return state.active && state.state === SESSION_STATES.COLLECTING_ANSWERS;
+  } catch (error) {
+    logToFile('⚠️ Exam session lookup failed (non-fatal)', { userId, error: error.message });
+    return false;
+  }
+}
+
+/**
  * Handle text message for exam checker
  * @param {Object} message - WhatsApp message
  * @param {string} from - Phone number
@@ -569,6 +586,7 @@ module.exports = {
   isExamCheckerEnabled,
   isExamCheckerButton,
   hasActiveExamSession,
+  isCollectingAnswerKey,
 
   // Handler functions
   handleExamText,
