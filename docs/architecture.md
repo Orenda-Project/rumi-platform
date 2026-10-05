@@ -50,6 +50,17 @@ Meta WhatsApp API
 | Branding | `bot/shared/config/branding.js` | Customizable bot identity |
 | Feature gating | `bot/shared/config/feature-availability.js` | Presence-based feature availability (no tiers) |
 
+## Temp files for media
+
+Every media send or receive that touches disk writes into a directory of its own:
+`privateTempPath(baseDir, fileName, prefix)` from `bot/shared/utils/private-temp.js`, removed with
+`removePrivateTemp(handle)` in a `finally`. The Meta upload reads a file only when the request body goes out, and
+voice notes are read back after awaits, so a path named by the clock (`audio_${Date.now()}.ogg`) or by a display
+name (`Attendance_Grade_5_A_September_2026.xlsx`, the same at every school) is shared by two concurrent calls: one
+person receives the other's file, with no error. The file inside keeps the name the recipient should see; only the
+directory is unique. Use the helper for any new code that writes a file and hands its path to a send, an upload or
+a transcription.
+
 ## Message Flow
 
 1. WhatsApp sends webhook POST to `/webhook`
