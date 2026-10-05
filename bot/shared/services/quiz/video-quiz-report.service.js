@@ -962,8 +962,8 @@ async function sendAsPdf({ phone, shareCode, students, hardest, guidance,
                            language, contentLanguage, caption: captionFor, teacherName = '' }) {
   const fs = require('fs');
   const os = require('os');
-  const path = require('path');
-  let tempPath = null;
+  const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
+  let tmp = null;
   try {
     const buffer = await renderReportPdf({
       topic: shareCode.topic || 'Video quiz',
@@ -981,7 +981,12 @@ async function sendAsPdf({ phone, shareCode, students, hardest, guidance,
 
     const safeTopic = String(shareCode.topic || 'quiz')
       .replace(/[^a-z0-9]+/gi, '_').slice(0, 40);
-    tempPath = path.join(os.tmpdir(), `class-quiz-${shareCode.id}.pdf`);
+    // A directory of this call's own. The share code names the quiz, not the
+    // send: if two sends of one share code ever overlap (the single-flight claim
+    // is best-effort), a shared `class-quiz-<id>.pdf` lets one overwrite or
+    // remove the file the other's upload has not read yet.
+    tmp = privateTempPath(os.tmpdir(), `class-quiz-${shareCode.id}.pdf`, 'class-quiz-');
+    const tempPath = tmp.filePath;
     fs.writeFileSync(tempPath, buffer);
 
     // The caption is chrome, so it comes from the caller's teacher-language
@@ -999,10 +1004,9 @@ async function sendAsPdf({ phone, shareCode, students, hardest, guidance,
     });
     return false;
   } finally {
-    // sendDocument reads the file synchronously before returning, so it is safe
+    // sendDocument has finished with the file once it resolves, so it is safe
     // to clear here; leaving these behind fills the worker's disk over weeks.
-    try { if (tempPath && fs.existsSync(tempPath)) fs.unlinkSync(tempPath); }
-    catch { /* a stray temp file is not worth failing the report over */ }
+    removePrivateTemp(tmp);
   }
 }
 

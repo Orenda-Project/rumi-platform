@@ -18,7 +18,6 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 const os = require('os');
 const { PDFDocument } = require('pdf-lib');
 
@@ -27,6 +26,7 @@ const WhatsAppService = require('../shared/services/whatsapp.service');
 const { downloadFromR2 } = require('../shared/storage/r2');
 const { logToFile } = require('../shared/utils/logger');
 const { logEvent } = require('../shared/utils/structured-logger');
+const { privateTempPath, removePrivateTemp } = require('../shared/utils/private-temp');
 
 const SUBJECT_DISPLAY = { maths: 'Maths', english: 'English', urdu: 'Urdu' };
 
@@ -98,7 +98,7 @@ async function process(args) {
     isLastGroup = true,
   } = args;
   const t0 = Date.now();
-  let tempPath = null;
+  let tmp = null;
 
   if (!phone) {
     logEvent('homework.bundle.failed', { userId, requestId, grade, subject, error: 'no_phone' });
@@ -134,7 +134,10 @@ async function process(args) {
     const filename = makeFilename({ grade, subject, chapterNumbers });
     const caption = localizedDeliveryCaption({ grade, subject, chapterNumbers, language });
 
-    tempPath = path.join(os.tmpdir(), `homework_${userId}_${grade}_${subject}_${Date.now()}.pdf`);
+    // A directory of this job's own: the groups of one request share user, grade
+    // and subject, and two landing in the same millisecond shared the path.
+    tmp = privateTempPath(os.tmpdir(), `homework_${userId}_${grade}_${subject}.pdf`, 'homework-');
+    const tempPath = tmp.filePath;
     fs.writeFileSync(tempPath, buffer);
 
     const sendResult = await WhatsAppService.sendDocument(phone, tempPath, filename, caption);
@@ -227,9 +230,7 @@ async function process(args) {
     }
     throw e; // SQS DLQ handles retry for transient errors
   } finally {
-    if (tempPath && fs.existsSync(tempPath)) {
-      try { fs.unlinkSync(tempPath); } catch (_) { /* best-effort */ }
-    }
+    removePrivateTemp(tmp);
   }
 }
 

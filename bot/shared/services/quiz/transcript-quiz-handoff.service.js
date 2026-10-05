@@ -19,7 +19,6 @@
  */
 const fs = require('fs');
 const os = require('os');
-const path = require('path');
 const supabase = require('../../config/supabase');
 const WhatsAppService = require('../whatsapp.service');
 const { logToFile } = require('../../utils/logger');
@@ -28,6 +27,7 @@ const { resolveUx } = require('../../config/ux-strings');
 const { teacherLanguageFor, formatLessonDate, lessonLabel } = require('./transcript-quiz-language');
 const { isRecordedQuiz, lessonSessionFor, handoffIntroKey } = require('./quiz-sources');
 const Funnel = require('./quiz-funnel');
+const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
 
 const GAP_MS = 1200;
 // The nudge's wait belongs to the nudge service (one number for "when it is due"
@@ -151,12 +151,27 @@ async function sendHandoff(quizId, phone, { firstSend = false, prepared = null }
   const r2 = R2.isR2Configured();
   let pdfKey = r2 ? (meta.pdf_key || null) : null;
   let tempPath = null;
+  // A directory of this call's own: two resends of the same quiz can overlap, and
+  // a shared `transcript-quiz-<quizId>.pdf` let one call's cleanup remove the
+  // file the other's upload had not read yet.
+  let tmp = null;
+  const writeTemp = (buffer) => {
+    removePrivateTemp(tmp);
+    tmp = privateTempPath(os.tmpdir(), `transcript-quiz-${quizId}.pdf`, 'transcript-quiz-');
+    try {
+      fs.writeFileSync(tmp.filePath, buffer);
+    } catch (err) {
+      removePrivateTemp(tmp);
+      tmp = null;
+      throw err;
+    }
+    return tmp.filePath;
+  };
   let rerendered = false;
   if (pdfKey) {
     try {
       const buffer = await R2.downloadFromR2(pdfKey);
-      tempPath = path.join(os.tmpdir(), `transcript-quiz-${quizId}.pdf`);
-      fs.writeFileSync(tempPath, buffer);
+      tempPath = writeTemp(buffer);
     } catch (err) {
       logToFile('⚠️ transcript quiz: stored PDF could not be fetched from R2, re-rendering', { quizId, error: err.message });
       tempPath = null;
@@ -186,8 +201,7 @@ async function sendHandoff(quizId, phone, { firstSend = false, prepared = null }
           logToFile('⚠️ transcript quiz: PDF upload to R2 failed (continuing)', { quizId, error: upErr.message });
         }
       }
-      tempPath = path.join(os.tmpdir(), `transcript-quiz-${quizId}.pdf`);
-      fs.writeFileSync(tempPath, buffer);
+      tempPath = writeTemp(buffer);
     } catch (err) {
       logToFile('⚠️ transcript quiz: PDF render failed (sending the link without it)', { quizId, error: err.message });
     }
@@ -204,8 +218,11 @@ async function sendHandoff(quizId, phone, { firstSend = false, prepared = null }
   let pdfSent = false;
   if (tempPath) {
     const { pdfFilename } = require('./transcript-quiz-render');
-    pdfSent = await WhatsAppService.sendDocument(phone, tempPath, pdfFilename(quiz.topic), caption);
-    try { fs.unlinkSync(tempPath); } catch { /* not worth failing over */ }
+    try {
+      pdfSent = await WhatsAppService.sendDocument(phone, tempPath, pdfFilename(quiz.topic), caption);
+    } finally {
+      removePrivateTemp(tmp);
+    }
   }
   if (!pdfSent) {
     await WhatsAppService.sendMessage(phone, `${caption}\n\n${resolveUx('tqForwardThis', { language: teacherLang })}`);

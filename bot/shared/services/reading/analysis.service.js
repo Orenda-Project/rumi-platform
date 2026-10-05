@@ -29,6 +29,7 @@ const fs = require('fs');
 const path = require('path');
 const { isR2Configured } = require('../../storage/r2');
 const { TEMP_DIR } = require('../../utils/constants');
+const { privateTempPath } = require('../../utils/private-temp');
 const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
 const { displayName } = require('../../utils/display-name');
@@ -407,6 +408,12 @@ class AnalysisService {
         if (fs.existsSync(localPath)) {
           fs.unlinkSync(localPath);
           logToFile('🗑️ Removed local assessment artifact', { assessmentId, localPath });
+        }
+        // A file kept in a private directory under TEMP_DIR (privateTempPath)
+        // takes its directory with it; rmdir refuses anything not empty.
+        const dir = path.dirname(localPath);
+        if (path.dirname(dir) === path.resolve(TEMP_DIR) && fs.existsSync(dir)) {
+          fs.rmdirSync(dir);
         }
       } catch (error) {
         logToFile('⚠️ Could not remove local assessment artifact', {
@@ -1020,7 +1027,11 @@ Output the complete enhanced summary (not just the new parts).`;
       // been RENDERED failed on upload, which marked the whole assessment 'failed'
       // and sent the teacher nothing — after a student had read the passage aloud.
       if (!isR2Configured()) {
-        const localPath = path.join(TEMP_DIR, fileName);
+        // In a directory of this report's own: the name carries only the
+        // student's label and the day, so two teachers' reports for a "Student"
+        // on the same day shared the path and one was sent the other's report.
+        // _cleanupLocalArtifacts removes the directory with the file.
+        const localPath = privateTempPath(TEMP_DIR, fileName, 'reading-report-').filePath;
         fs.writeFileSync(localPath, pdfBuffer);
         logToFile('✅ Report PDF kept on local disk (no object storage configured)', {
           path: localPath, bytes: pdfBuffer.length,

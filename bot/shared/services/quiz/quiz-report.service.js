@@ -4,7 +4,6 @@
 // (existing Puppeteer engine; Playwright migration swaps transparently)
 
 const fs = require('fs');
-const path = require('path');
 const os = require('os');
 const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
@@ -13,6 +12,7 @@ const WhatsAppService = require('../whatsapp.service');
 const { htmlToPdf } = require('../../utils/html-to-pdf');
 const renderQuizReportHtml = require('../../templates/quiz-report.template');
 const { uploadReportPDF } = require('../../storage/r2');
+const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
 
 class QuizReportService {
   /**
@@ -133,9 +133,13 @@ class QuizReportService {
       // Bundle delivery — PDF caption carries the headline + portal
       // link; insight body + buttons follow ~2s later. No drip-fed "see more
       // in your portal" message.
-      const tempPath = path.join(os.tmpdir(), `quiz-report-${quizId}.pdf`);
-      fs.writeFileSync(tempPath, pdfBuffer);
+      // A directory of this call's own: the same quiz's report can be generated
+      // for two people at once, and a shared `quiz-report-<quizId>.pdf` let one
+      // overwrite (or unlink) the file the other's upload was still to read.
+      const tmp = privateTempPath(os.tmpdir(), `quiz-report-${quizId}.pdf`, 'quiz-report-');
+      const tempPath = tmp.filePath;
       try {
+        fs.writeFileSync(tempPath, pdfBuffer);
         const filename = `Quiz_${(quiz.topic || 'report').replace(/[^a-z0-9]+/gi, '_')}.pdf`;
         // Append the portal trends link only when PORTAL_URL is configured.
         const portalBase = require('../../config/branding').portalUrl();
@@ -151,7 +155,7 @@ class QuizReportService {
           insight.caption + portalLink
         );
       } finally {
-        try { fs.unlinkSync(tempPath); } catch (_) {}
+        removePrivateTemp(tmp);
       }
 
       logToFile('✅ Quiz report PDF sent', { quizId, pdfUrl: redactUrl(pdfUrl), band: insight.band });
