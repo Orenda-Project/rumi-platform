@@ -10,12 +10,13 @@
  * as data loss.
  */
 
-const path = require('path');
+const crypto = require('crypto');
 const fs = require('fs');
 const WhatsAppService = require('./whatsapp.service');
 const { logToFile } = require('../utils/logger');
 const { uploadBuffer, isR2Configured } = require('../storage/r2');
 const { TEMP_DIR } = require('../utils/constants');
+const { privateTempPath, removePrivateTemp } = require('../utils/private-temp');
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -46,23 +47,39 @@ async function deliverRegisterFile({ to, buffer, fileName, caption, r2Key }) {
   }
 
   let sent = false;
-  let tempFilePath = null;
+  let temp = null;
+  let fileSha256 = null;
   try {
-    // whatsapp-bot.js creates TEMP_DIR at boot, but this also runs on a fresh
-    // container (and from tests) where that boot has not happened; without it the
-    // register is generated and then lost to ENOENT.
-    if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
-    tempFilePath = path.join(TEMP_DIR, fileName);
-    fs.writeFileSync(tempFilePath, buffer);
-    sent = Boolean(await WhatsAppService.sendDocument(to, tempFilePath, fileName, caption));
+    // ONE DIRECTORY PER DELIVERY. The file name carries no school ("Grade 5 A,
+    // September 2026" is the same name everywhere), and the Meta upload reads the file
+    // lazily, after the HTTP connection is up. Written straight into TEMP_DIR, a second
+    // delivery of the same name overwrote the first one's file before it was read, and
+    // the first teacher received the other school's register. The file keeps its
+    // display name; only the directory is unique. (privateTempPath also creates
+    // TEMP_DIR: whatsapp-bot.js does at boot, but this runs on fresh containers and
+    // from tests too, where the register would otherwise be lost to ENOENT.)
+    temp = privateTempPath(TEMP_DIR, fileName, 'reg-');
+    fs.writeFileSync(temp.filePath, buffer);
+    // What is on disk at the moment the upload is handed the path — the bytes the
+    // teacher is sent. Logged beside the buffer's so a mismatch is visible.
+    fileSha256 = shortSha256(fs.readFileSync(temp.filePath));
+    sent = Boolean(await WhatsAppService.sendDocument(to, temp.filePath, fileName, caption));
   } catch (error) {
     logToFile('❌ Register send failed', { fileName, error: error.message });
   } finally {
-    try {
-      if (tempFilePath && fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
-    } catch { /* a temp file is not worth an error */ }
+    removePrivateTemp(temp);
   }
+  // A refused document is logged as refused: a ✅ on a false send made failed
+  // uploads look like deliveries. No address in the line, only which bytes.
+  logToFile(sent ? '✅ Register delivered' : '⚠️ Register not delivered', {
+    fileName, delivered: sent, bufferSha256: shortSha256(buffer), fileSha256,
+  });
   return { sent, url };
+}
+
+/** First 12 hex chars of a sha256 — enough to tell two registers apart in a log line. */
+function shortSha256(buf) {
+  return crypto.createHash('sha256').update(buf).digest('hex').slice(0, 12);
 }
 
 module.exports = { deliverRegisterFile, XLSX_MIME };

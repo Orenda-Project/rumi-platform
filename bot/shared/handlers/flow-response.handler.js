@@ -563,7 +563,7 @@ async function handleAttendanceMarkingFlow(message, phoneNumber, userId) {
             : `Sorry, there was an error saving attendance: ${deliveryResult.error}`
         );
       } else {
-        logToFile('✅ Register delivered', { userId, fileName: deliveryResult.fileName, replaced: deliveryResult.replaced });
+        logToFile('✅ Attendance marked, register sent', { userId, fileName: deliveryResult.fileName, replaced: deliveryResult.replaced });
       }
     } catch (deliveryError) {
       logToFile('❌ Excel delivery exception', { userId, error: deliveryError.message });
