@@ -73,8 +73,29 @@ const EXAM_ANSWER_CANCEL_COMMAND = '/cancel';
 // A trigger phrase (not a command) opens a session only in a short request
 // like "check exams for class 5". A longer message, or a question ("How do I
 // grade papers fairly?"), is a teacher talking about exams: ordinary chat.
+// Only a token with a letter or digit counts as a word, so an emoji or a dash
+// does not push a request over the limit.
 const PHRASE_TRIGGER_MAX_WORDS = 6;
 const QUESTION_MARK = /[?؟]/;
+const COUNTED_WORD = /[\p{L}\p{N}]/u;
+
+// Teachers often leave the question mark off, especially in Urdu and Arabic
+// chat, so a question word also makes a message a question. "can", "could",
+// "please" and the Urdu requests (کرو, کریں) ask for something and are left out.
+const QUESTION_WORDS = [
+  // English
+  'how', 'what', 'why', 'when', 'where', 'which', 'who', 'should',
+  // Urdu
+  'کیسے', 'کیا', 'کیوں', 'کب', 'کہاں', 'کون', 'طریقہ',
+  // Arabic
+  'كيف', 'ما', 'ماذا', 'لماذا', 'متى', 'أين', 'هل'
+];
+// Urdu کیا is also the verb "do": right after چیک or گریڈ ("امتحان چیک کیا
+// جائے", "پرچے چیک کیا کریں") it is part of a request, not "what".
+const URDU_VERB_KIYA = '(?<!(?:چیک|گریڈ)\\s+)';
+
+// Direction marks (LRM, RLM, ALM) that RTL keyboards insert between words.
+const DIRECTION_MARKS = /[\u200E\u200F\u061C]/g;
 
 // Punctuation a command may carry: "/exam." and "/exam!" are still /exam.
 const TRAILING_PUNCTUATION = /[.,!?؟،]+$/;
@@ -91,15 +112,21 @@ const PHRASE_PATTERNS = EXAM_CHECK_KEYWORDS
     `(?<!${WORD_CHAR})${escapeRegExp(keyword.toLowerCase()).replace(/ /g, '\\s+')}(?!${WORD_CHAR})`,
     'u'
   ));
+const QUESTION_WORD_PATTERN = new RegExp(
+  `(?<!${WORD_CHAR})(?:${QUESTION_WORDS
+    .map((word) => (word === 'کیا' ? URDU_VERB_KIYA : '') + escapeRegExp(normalizeForMatch(word)))
+    .join('|')})(?!${WORD_CHAR})`,
+  'u'
+);
 
 /**
- * Lower-case and write the Arabic alef with hamza or madda (أ إ آ) as a plain
- * alef, so "ألغاء" and "إلغاء" compare equal to "الغاء".
+ * Lower-case, drop direction marks, and write the Arabic alef with hamza or
+ * madda (أ إ آ) as a plain alef, so "ألغاء" and "إلغاء" compare equal to "الغاء".
  * @param {string} text
  * @returns {string}
  */
 function normalizeForMatch(text) {
-  return text.toLowerCase().replace(/[أإآ]/g, 'ا');
+  return text.toLowerCase().replace(DIRECTION_MARKS, '').replace(/[أإآ]/g, 'ا');
 }
 
 /**
@@ -119,7 +146,8 @@ function isExamCheckerEnabled() {
  * a phrase ("check exams") only as whole words, so a link like
  * https://example.org/exam/results or a word like "recheck" never opens a
  * session. In a chat message a phrase also needs a short request with no
- * question mark (see PHRASE_TRIGGER_MAX_WORDS); a photo caption needs neither,
+ * question mark and no question word (see PHRASE_TRIGGER_MAX_WORDS and
+ * QUESTION_WORDS); a photo caption needs none of this,
  * since the photo already says what the teacher wants.
  * @param {string} text - Message text
  * @param {Object} [options]
@@ -136,7 +164,9 @@ function shouldTriggerExamChecker(text, { caption = false } = {}) {
     return true;
   }
 
-  if (!caption && (words.length > PHRASE_TRIGGER_MAX_WORDS || QUESTION_MARK.test(normalizedText))) {
+  if (!caption && (words.filter((word) => COUNTED_WORD.test(word)).length > PHRASE_TRIGGER_MAX_WORDS
+    || QUESTION_MARK.test(normalizedText)
+    || QUESTION_WORD_PATTERN.test(normalizedText))) {
     return false;
   }
 

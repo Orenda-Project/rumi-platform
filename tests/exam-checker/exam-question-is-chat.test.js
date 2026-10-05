@@ -290,3 +290,84 @@ describe('N2: more ways to say cancel', () => {
     expect(sent()).toMatch(/Exam checking cancelled/);
   });
 });
+
+describe('S3: a short question with no question mark is ordinary chat', () => {
+  test.each([
+    'how to grade papers',
+    'what is exam check',
+    'Why grade papers',
+    'امتحان چیک کیسے کروں',
+    'پرچے چیک کرنے کا طریقہ',
+    'کیا پیپر چیک ہو گئے',
+    'كيف تصحيح امتحان',
+    'ما هو تصحيح الامتحان',
+    'هل تصحيح الامتحان صعب',
+  ])('"%s" is answered and stored once, and opens no session', async (body) => {
+    await send(body);
+
+    expect(session()).toBeUndefined();
+    expect(sent()).not.toMatch(/0 images/);
+    expect(OpenAIService.getResponseWithFormat).toHaveBeenCalledTimes(1);
+    expect(storedRoles()).toEqual(['user', 'assistant']);
+  });
+
+  // "can", "could" and "please" ask for something; they are not question words.
+  // Urdu "کیا" right after the verb ("چیک کیا جائے", "چیک کیا کریں") is the
+  // verb "do", a polite request, not "what".
+  test.each([
+    'check my papers please',
+    'please check exams for class 5',
+    'can you check my papers',
+    'could you grade papers',
+    'امتحان چیک کرو',
+    'امتحان چیک کیا جائے',
+    'پرچے چیک کیا کریں',
+  ])('"%s" still opens a session', async (body) => {
+    await send(body);
+
+    expect(session().status).toBe('collecting_images');
+    expect(OpenAIService.getResponseWithFormat).not.toHaveBeenCalled();
+  });
+
+  test('a question word inside a longer word does not count ("showcase", "whoever")', () => {
+    const { shouldTriggerExamChecker } = require('../../bot/shared/handlers/exam-checker.handler');
+
+    expect(shouldTriggerExamChecker('check exams showcase')).toBe(true);
+    expect(shouldTriggerExamChecker('whoever check papers')).toBe(true);
+  });
+
+  test('a photo caption with a question word still opens a session', () => {
+    const { shouldTriggerExamChecker } = require('../../bot/shared/handlers/exam-checker.handler');
+
+    expect(shouldTriggerExamChecker('how to grade papers', { caption: true })).toBe(true);
+    expect(shouldTriggerExamChecker('امتحان چیک کیسے کروں', { caption: true })).toBe(true);
+  });
+});
+
+describe('N5: only words with a letter or digit count, and direction marks are ignored', () => {
+  test.each([
+    'please check exams for class 5 🙏',
+    'please check exams for class 5 ‎',
+    'check exams - - - - -',
+    'check exams 🙏 🙏 🙏 🙏 🙏',
+    'امتحان ‏ چیک کرو',
+    'امتحان چیک؜ کرو',
+  ])('"%s" opens a session', async (body) => {
+    await send(body);
+
+    expect(session().status).toBe('collecting_images');
+  });
+
+  test('a seventh real word still makes it chat', async () => {
+    await send('please check exams for my class 5 🙏');
+
+    expect(session()).toBeUndefined();
+    expect(OpenAIService.getResponseWithFormat).toHaveBeenCalledTimes(1);
+  });
+
+  test('a direction mark between a phrase\'s words matches in a caption too', () => {
+    const { shouldTriggerExamChecker } = require('../../bot/shared/handlers/exam-checker.handler');
+
+    expect(shouldTriggerExamChecker('امتحان ‏ چیک کرو', { caption: true })).toBe(true);
+  });
+});
