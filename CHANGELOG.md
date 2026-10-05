@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.4] - 2026-10-05
+
+**Patch: the exam checker starts only when a teacher asks for it, and `cancel` gets them out.** Any deployment where
+teachers paste links into chat is affected; upgrade.
+
+> **Upgrade notes.** No migration. One new optional setting, `EXAM_CHECKER_ENABLED`. It is on by default, so nothing
+> changes unless you set it. On a public instance, read `docs/running-in-public.md`.
+
+### Fixed
+
+- **A link no longer opens an exam session.** The exam checker's keywords were matched anywhere in a message, so
+  `https://example.org` (which contains `//exam`), any `/exam…` path, or a word like "recheck exams" started a session.
+  The teacher got "You have 0 images" instead of an answer, and that message was never stored as chat. Now a command
+  (`/exam`, `/exams`, `/grade`, `/checkexam`) counts only as the whole message or its first word, with or without a
+  full stop or other punctuation after it (`/exam.`). A phrase ("check exams", and the Urdu and Arabic phrases) counts
+  only as whole words, using a Unicode-aware word boundary.
+- **A question about exams is answered, not taken as a request.** "How do I grade papers fairly?" or "کل امتحان چیک
+  ہوگا؟ تیاری کیسے کروں" opened an exam session and was never answered. A phrase now starts the exam checker only in a
+  short request: 6 words or fewer (an emoji or a dash is not a word), with no `?` or `؟` and no question word such as
+  "how", "what", "کیسے", "کیا" or "كيف". So "how to grade papers" and "امتحان چیک کیسے کروں", typed without a question
+  mark, are answered too. Requests such as "can you check my papers" and "امتحان چیک کرو" still start it. Anything
+  longer, and any question, is ordinary chat. Commands and photo captions work as before. On Matrix, a short request
+  sent while Rumi is asking for the teacher's name is no longer taken as the name.
+- **`cancel` leaves an exam session.** `cancel`, `/cancel`, `stop`, `منسوخ`, `منسوخ کریں`, `روکیں`, `إلغاء` and
+  `الغاء` (and `ألغاء`: the alef with hamza or madda counts as a plain alef) work when sent on their own. That includes
+  the "0 images" prompt, and the moment on Matrix when Rumi has just asked for the teacher's name. Before, they stayed in
+  the session, or were taken as a name. While Rumi is collecting the answer key, a one-word answer such as "Stop" is
+  stored as the answer, so there only `/cancel` ends the session, and each answer prompt says "Send /cancel to stop".
+  On Matrix, a one-word answer such as "Paris" sent while Rumi is also waiting for the teacher's name is stored as the
+  answer; before, it was taken as the teacher's name.
+- **Ordinary chat ends an empty exam session.** If a session has no photos yet and the teacher sends a normal message,
+  the session closes quietly and the message is answered and stored as chat.
+- **The worker's stale exam-session recovery works.** It used the database client without loading it, so it failed at
+  every boot and every sweep with a bare "Error recovering stale exam sessions". The log line now also carries
+  `errorCode` and `errorName`, which the operator console shows.
+- **The dashboard's GitHub tree lookup reports a missing branch.** With no branch given, a 404 threw
+  `config is not defined` instead of "Branch not found".
+
+### Added
+
+- `EXAM_CHECKER_ENABLED`: set it to `false`, `0` or `off` to stop `/exam`, the trigger phrases and photo captions
+  from starting exam sessions. A session that is already open still closes with `cancel`. Documented in
+  `docs/features/exam-checker.md` and `docs/running-in-public.md`.
+
+### Removed
+
+- `dashboard/routes/billing.routes.js`, its service and its test. The route was never mounted and its page did not
+  exist. The API-health pages cover the same usage checks. `.env.template` no longer says `ANTHROPIC_API_KEY` is used
+  for billing analysis.
+
+### Tests
+
+- The admin-view guard tests are stricter:
+  - every JavaScript MIME type counts as a script;
+  - a `<script type>` the guard does not know fails the test instead of being skipped;
+  - `<!-->` is read as a whole comment;
+  - the HTML-sink scan follows only top-level `const` and parses scripts as strict code, so `with` fails it.
+
 ## [2.11.3] - 2026-10-04
 
 **Security patch: the admin pages show what the public types as text.** Every deployment of v2.11.2 or earlier that

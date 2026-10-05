@@ -7,7 +7,7 @@
  * Created: 2026-01-24
  */
 
-const { ExamCheckerOrchestrator, ExamSessionService } = require('../services/exam-checker');
+const { ExamCheckerOrchestrator, SESSION_STATES } = require('../services/exam-checker');
 const WhatsAppService = require('../services/whatsapp.service');
 const { uploadImageWithRetry } = require('../storage/r2');
 const { logToFile } = require('../utils/logger');
@@ -62,22 +62,136 @@ const EXAM_CHECK_KEYWORDS = [
 // Button prefixes for exam checker
 const EXAM_BUTTON_PREFIX = 'ech_';
 
+// Words that end an exam session, compared against the whole message. The
+// same words the bot already uses to leave attendance entry ('cancel',
+// 'منسوخ') and a quiz ('stop', 'روکیں'), plus the Urdu imperative and Arabic.
+// While Rumi is collecting the answer key, any of these could be the answer
+// itself, so there only EXAM_ANSWER_CANCEL_COMMAND ends the session.
+const EXAM_CANCEL_WORDS = ['cancel', '/cancel', 'stop', 'منسوخ', 'منسوخ کریں', 'روکیں', 'إلغاء', 'الغاء'];
+const EXAM_ANSWER_CANCEL_COMMAND = '/cancel';
+
+// A trigger phrase (not a command) opens a session only in a short request
+// like "check exams for class 5". A longer message, or a question ("How do I
+// grade papers fairly?"), is a teacher talking about exams: ordinary chat.
+// Only a token with a letter or digit counts as a word, so an emoji or a dash
+// does not push a request over the limit.
+const PHRASE_TRIGGER_MAX_WORDS = 6;
+const QUESTION_MARK = /[?؟]/;
+const COUNTED_WORD = /[\p{L}\p{N}]/u;
+
+// Teachers often leave the question mark off, especially in Urdu and Arabic
+// chat, so a question word also makes a message a question. "can", "could",
+// "please" and the Urdu requests (کرو, کریں) ask for something and are left out.
+const QUESTION_WORDS = [
+  // English
+  'how', 'what', 'why', 'when', 'where', 'which', 'who', 'should',
+  // Urdu
+  'کیسے', 'کیا', 'کیوں', 'کب', 'کہاں', 'کون', 'طریقہ',
+  // Arabic
+  'كيف', 'ما', 'ماذا', 'لماذا', 'متى', 'أين', 'هل'
+];
+// Urdu کیا is also the verb "do": right after چیک or گریڈ ("امتحان چیک کیا
+// جائے", "پرچے چیک کیا کریں") it is part of a request, not "what".
+const URDU_VERB_KIYA = '(?<!(?:چیک|گریڈ)\\s+)';
+
+// Direction marks (LRM, RLM, ALM) that RTL keyboards insert between words.
+const DIRECTION_MARKS = /[\u200E\u200F\u061C]/g;
+
+// Punctuation a command may carry: "/exam." and "/exam!" are still /exam.
+const TRAILING_PUNCTUATION = /[.,!?؟،]+$/;
+
+// A letter, mark, digit or underscore on either side means the keyword is part
+// of a longer word. JS's \b only knows ASCII, so it cannot do this for Urdu or
+// Arabic script.
+const WORD_CHAR = '[\\p{L}\\p{M}\\p{N}_]';
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const EXAM_COMMANDS = EXAM_CHECK_KEYWORDS.filter((keyword) => keyword.startsWith('/'));
+const PHRASE_PATTERNS = EXAM_CHECK_KEYWORDS
+  .filter((keyword) => !EXAM_COMMANDS.includes(keyword))
+  .map((keyword) => new RegExp(
+    `(?<!${WORD_CHAR})${escapeRegExp(keyword.toLowerCase()).replace(/ /g, '\\s+')}(?!${WORD_CHAR})`,
+    'u'
+  ));
+const QUESTION_WORD_PATTERN = new RegExp(
+  `(?<!${WORD_CHAR})(?:${QUESTION_WORDS
+    .map((word) => (word === 'کیا' ? URDU_VERB_KIYA : '') + escapeRegExp(normalizeForMatch(word)))
+    .join('|')})(?!${WORD_CHAR})`,
+  'u'
+);
+
 /**
- * Check if a text message should trigger exam checker
- * @param {string} text - Message text
+ * Lower-case, drop direction marks, and write the Arabic alef with hamza or
+ * madda (أ إ آ) as a plain alef, so "ألغاء" and "إلغاء" compare equal to "الغاء".
+ * @param {string} text
+ * @returns {string}
+ */
+function normalizeForMatch(text) {
+  return text.toLowerCase().replace(DIRECTION_MARKS, '').replace(/[أإآ]/g, 'ا');
+}
+
+/**
+ * Is the exam checker switched on? On unless EXAM_CHECKER_ENABLED says
+ * false / 0 / off, so a deployment that never sets it keeps exam checking.
  * @returns {boolean}
  */
-function shouldTriggerExamChecker(text) {
-  if (!text) return false;
-  const normalizedText = text.toLowerCase().trim();
+function isExamCheckerEnabled() {
+  const value = String(process.env.EXAM_CHECKER_ENABLED || '').trim().toLowerCase();
+  return !['false', '0', 'off'].includes(value);
+}
 
-  for (const keyword of EXAM_CHECK_KEYWORDS) {
-    if (normalizedText.includes(keyword.toLowerCase())) {
-      return true;
-    }
+/**
+ * Check if a text message should trigger exam checker.
+ *
+ * A command ("/exam") counts only as the whole message or its first word, and
+ * a phrase ("check exams") only as whole words, so a link like
+ * https://example.org/exam/results or a word like "recheck" never opens a
+ * session. In a chat message a phrase also needs a short request with no
+ * question mark and no question word (see PHRASE_TRIGGER_MAX_WORDS and
+ * QUESTION_WORDS); a photo caption needs none of this,
+ * since the photo already says what the teacher wants.
+ * @param {string} text - Message text
+ * @param {Object} [options]
+ * @param {boolean} [options.caption=false] - The text is a photo's caption
+ * @returns {boolean}
+ */
+function shouldTriggerExamChecker(text, { caption = false } = {}) {
+  if (!text) return false;
+  const normalizedText = normalizeForMatch(text).trim();
+  const words = normalizedText.split(/\s+/);
+
+  const firstWord = words[0].replace(TRAILING_PUNCTUATION, '');
+  if (EXAM_COMMANDS.includes(firstWord)) {
+    return true;
   }
 
-  return false;
+  if (!caption && (words.filter((word) => COUNTED_WORD.test(word)).length > PHRASE_TRIGGER_MAX_WORDS
+    || QUESTION_MARK.test(normalizedText)
+    || QUESTION_WORD_PATTERN.test(normalizedText))) {
+    return false;
+  }
+
+  return PHRASE_PATTERNS.some((pattern) => pattern.test(normalizedText));
+}
+
+/**
+ * Is this message one of the cancel words on its own? Case and surrounding
+ * punctuation are ignored ("Cancel!" counts); "do not cancel" does not. While
+ * the answer key is being collected only "/cancel" counts: a bare "Stop" there
+ * is the answer.
+ * @param {string} text - Message text
+ * @param {string} [state] - The open session's state, if known
+ * @returns {boolean}
+ */
+function isExamCancelCommand(text, state) {
+  if (!text) return false;
+  const normalizedText = normalizeForMatch(text)
+    .replace(/[^\p{L}\p{M}\p{N}\s/]/gu, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+  if (state && state === SESSION_STATES.COLLECTING_ANSWERS) {
+    return normalizedText === EXAM_ANSWER_CANCEL_COMMAND;
+  }
+  return EXAM_CANCEL_WORDS.some((word) => normalizeForMatch(word) === normalizedText);
 }
 
 /**
@@ -100,6 +214,23 @@ async function hasActiveExamSession(userId) {
 }
 
 /**
+ * Is Rumi collecting this user's answer key? Every message there is an answer.
+ * It is asked for every message while a name is pending, so a failed lookup
+ * answers false and the message is read as the name, as before.
+ * @param {string} userId - User UUID
+ * @returns {Promise<boolean>}
+ */
+async function isCollectingAnswerKey(userId) {
+  try {
+    const state = await ExamCheckerOrchestrator.getSessionState(userId);
+    return state.active && state.state === SESSION_STATES.COLLECTING_ANSWERS;
+  } catch (error) {
+    logToFile('⚠️ Exam session lookup failed (non-fatal)', { userId, error: error.message });
+    return false;
+  }
+}
+
+/**
  * Handle text message for exam checker
  * @param {Object} message - WhatsApp message
  * @param {string} from - Phone number
@@ -113,12 +244,31 @@ async function handleExamText(message, from, user) {
   const correlationId = generateCorrelationId();
 
   return runWithCorrelation(correlationId, async () => {
+    const session = await ExamCheckerOrchestrator.getSessionState(user.id);
+    const hasSession = session.active;
+
+    // A cancel word leaves the session from any state, even with the switch off
+    if (hasSession && isExamCancelCommand(text, session.state)) {
+      return handleExamCancel(from, user);
+    }
+
+    if (!isExamCheckerEnabled()) {
+      return null; // Switched off: no new sessions, and an open one is left alone
+    }
+
     // Check for trigger keywords or active session
     const triggered = shouldTriggerExamChecker(text);
-    const hasSession = await hasActiveExamSession(user.id);
 
     if (!triggered && !hasSession) {
       return null; // Not for exam checker
+    }
+
+    // A session with no images yet holds nothing to lose. Ordinary chat ends it
+    // quietly and goes on as ordinary chat instead of a "0 images" prompt.
+    if (!triggered && session.state === SESSION_STATES.COLLECTING_IMAGES && !session.imageCount) {
+      await ExamCheckerOrchestrator.cancelSession(session.sessionId);
+      logToFile('📝 Empty exam session closed by ordinary chat', { userId: user.id, sessionId: session.sessionId });
+      return null;
     }
 
     logToFile('📝 Exam checker text received', {
@@ -192,12 +342,16 @@ async function handleExamImage(message, from, user) {
   const correlationId = generateCorrelationId();
 
   return runWithCorrelation(correlationId, async () => {
+    if (!isExamCheckerEnabled()) {
+      return null; // Switched off: let image handler process it
+    }
+
     // Check if user has active exam session
     const hasSession = await hasActiveExamSession(user.id);
     const caption = message.image?.caption?.toLowerCase() || '';
 
     // Check if this image is for exam checking
-    const isForExam = hasSession || shouldTriggerExamChecker(caption);
+    const isForExam = hasSession || shouldTriggerExamChecker(caption, { caption: true });
 
     if (!isForExam) {
       return null; // Not for exam checker - let image handler process it
@@ -428,8 +582,11 @@ async function handleExamCancel(from, user) {
 module.exports = {
   // Detection functions
   shouldTriggerExamChecker,
+  isExamCancelCommand,
+  isExamCheckerEnabled,
   isExamCheckerButton,
   hasActiveExamSession,
+  isCollectingAnswerKey,
 
   // Handler functions
   handleExamText,
@@ -440,5 +597,8 @@ module.exports = {
 
   // Constants
   EXAM_CHECK_KEYWORDS,
+  EXAM_CANCEL_WORDS,
+  EXAM_ANSWER_CANCEL_COMMAND,
+  PHRASE_TRIGGER_MAX_WORDS,
   EXAM_BUTTON_PREFIX
 };

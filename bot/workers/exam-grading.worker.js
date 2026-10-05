@@ -24,6 +24,7 @@ const {
   AnnotationService,
   DeliveryService
 } = require('../shared/services/exam-checker');
+const supabase = require('../shared/config/supabase');
 const { logToFile } = require('../shared/utils/logger');
 const { runWithCorrelation, generateCorrelationId } = require('../shared/utils/structured-logger');
 
@@ -314,7 +315,7 @@ async function recoverStaleExamSessions() {
       .lt('processing_started_at', staleThreshold);
 
     if (error) {
-      logToFile('Error querying stale exam sessions', { error: error.message });
+      logToFile('Error querying stale exam sessions', { error: error.message, errorCode: error.code });
       return;
     }
 
@@ -351,7 +352,11 @@ async function recoverStaleExamSessions() {
       }
     }
   } catch (error) {
-    logToFile('Error recovering stale exam sessions', { error: error.message });
+    logToFile('Error recovering stale exam sessions', {
+      error: error.message,
+      errorCode: error.code || error.name,
+      errorName: error.name
+    });
   }
 }
 
