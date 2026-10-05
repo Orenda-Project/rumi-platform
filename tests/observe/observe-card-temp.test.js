@@ -17,6 +17,8 @@ jest.mock('../../bot/shared/utils/constants', () => {
   return { ...real, TEMP_DIR: f.mkdtempSync(p.join(os.tmpdir(), 'observe-card-')) };
 });
 jest.mock('../../bot/shared/services/whatsapp.service', () => ({ sendImage: jest.fn(), sendMessage: jest.fn() }));
+// The model client (and its bot-only jsonrepair) is a network boundary a card send never reaches.
+jest.mock('../../bot/shared/services/gpt5-mini.service', () => ({}));
 
 const fs = require('fs');
 const { TEMP_DIR } = require('../../bot/shared/utils/constants');

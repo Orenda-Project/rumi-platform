@@ -353,6 +353,8 @@ function loadObserveDebrief() {
   });
   jest.doMock('../../bot/shared/services/observe/observe-language', () => ({ languageFor: jest.fn().mockResolvedValue('en') }));
   jest.doMock('../../bot/shared/services/observe/observe-state.service', () => inert());
+  // The model client (and its bot-only jsonrepair) is a network boundary this row never reaches.
+  jest.doMock('../../bot/shared/services/gpt5-mini.service', () => inert());
   installAudioBoundary();
   const service = require('../../bot/shared/services/observe/observe-debrief.service');
   return (who) => service.processDebriefRecording('obs-1', { from: '15550100001', audioId: `media-${who}` });
