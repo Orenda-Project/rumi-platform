@@ -458,6 +458,24 @@ describe('matrix-channel.service -- media upload + send', () => {
     }
   });
 
+  it('sendDocument records the sha of the bytes it uploaded, for the caller\'s log', async () => {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const crypto = require('crypto');
+    const tmpFile = path.join(os.tmpdir(), `matrix-test-${Date.now()}-digest.pdf`);
+    fs.writeFileSync(tmpFile, 'pdfdata');
+    try {
+      const { service } = loadService();
+      const { takeUploadedSha256 } = require('../../bot/shared/utils/upload-digest');
+      await service.sendDocument(TO, tmpFile, 'lesson-plan.pdf', 'here you go');
+      expect(takeUploadedSha256(tmpFile)).toBe(crypto.createHash('sha256').update('pdfdata').digest('hex').slice(0, 12));
+      expect(takeUploadedSha256(tmpFile)).toBeNull(); // taken once
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
   // The attendance register is a spreadsheet; it used to go out as
   // application/octet-stream, so the teacher's app showed a generic file.
   it.each([

@@ -16,8 +16,6 @@
  * default) has no such dependency.
  */
 
-const fs = require('fs');
-const path = require('path');
 const WhatsAppService = require('../whatsapp.service');
 const PicLpSession = require('./pic-lp-session.service');
 const GammaClient = require('./gamma-client.service');
@@ -25,6 +23,7 @@ const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
 const { logEvent } = require('../../utils/structured-logger');
 const { TEMP_DIR } = require('../../utils/constants');
+const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
 const supabase = require('../../config/supabase');
 const DailyCaps = require('../limits/daily-caps');
 const LessonPlanAvailability = require('../lesson-plan-availability');
@@ -234,9 +233,13 @@ async function generateAndDeliver({ session, formData, from }) {
       ? '📄 آپ کا لیسن پلان تیار ہے۔'
       : '📄 Your lesson plan is ready.';
 
+    // The file name is built from the form (grade, subject, topic), so two
+    // teachers with the same lesson share it: download into a directory of this
+    // call's own, or one teacher is sent the other's plan.
+    const tmp = privateTempPath(TEMP_DIR, filename, 'pic-lp-');
     let tempPdfPath = null;
     try {
-      tempPdfPath = await ContentService.downloadPDF(gammaResult.pdfUrl, filename, TEMP_DIR);
+      tempPdfPath = await ContentService.downloadPDF(gammaResult.pdfUrl, filename, tmp.dir);
 
       const sendResult = await WhatsAppService.sendDocument(from, tempPdfPath, filename, docCaption);
 
@@ -274,9 +277,7 @@ async function generateAndDeliver({ session, formData, from }) {
       );
       return { success: false, error: sendErr.message, pdfUrl: gammaResult.pdfUrl };
     } finally {
-      if (tempPdfPath && fs.existsSync(tempPdfPath)) {
-        try { fs.unlinkSync(tempPdfPath); } catch (_) { /* best-effort cleanup */ }
-      }
+      removePrivateTemp(tmp);
     }
   } catch (error) {
     logToFile('❌ Pic-LP handoff threw', { error: error.message, sessionId: session.id });
@@ -294,7 +295,7 @@ async function generateAndDeliver({ session, formData, from }) {
 function makeFilename(formData) {
   const slug = (s) => String(s || '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40);
   const parts = [
-    `Grade${formData.grade || 'X'}`,
+    `Grade${slug(formData.grade) || 'X'}`,
     slug(formData.subject) || 'Subject',
     slug(formData.topic) || 'Lesson',
   ];

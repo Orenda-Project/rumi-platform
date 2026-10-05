@@ -1,7 +1,6 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
-const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
@@ -15,6 +14,7 @@ const {
   OPENAI_API_KEY
 } = require('../utils/constants');
 const { logToFile } = require('../utils/logger');
+const { privateTempPath, removePrivateTemp } = require('../utils/private-temp');
 const OpenAI = require('openai');
 
 // Set ffmpeg and ffprobe paths
@@ -63,7 +63,11 @@ class AudioService {
    */
   static async convertToWav(inputBuffer, outputPath) {
     return new Promise((resolve, reject) => {
-      const inputPath = path.join(TEMP_DIR, `input_${Date.now()}.ogg`);
+      // A private directory per conversion: a clock-named input is shared by two
+      // conversions in the same millisecond, and ffmpeg would read the other
+      // caller's audio (or find it already deleted).
+      const temp = privateTempPath(TEMP_DIR, 'input.ogg', 'convert-');
+      const inputPath = temp.filePath;
 
       // Write buffer to temp file
       fs.writeFileSync(inputPath, inputBuffer);
@@ -74,12 +78,12 @@ class AudioService {
         .audioChannels(1) // Mono
         .on('end', () => {
           // Clean up input file
-          fs.unlinkSync(inputPath);
+          removePrivateTemp(temp);
           resolve(outputPath);
         })
         .on('error', (err) => {
           // Clean up input file
-          if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+          removePrivateTemp(temp);
           reject(err);
         })
         .save(outputPath);
@@ -985,18 +989,21 @@ class AudioService {
    */
   static async getAudioDuration(audioBuffer) {
     return new Promise((resolve, reject) => {
-      const tempPath = path.join(TEMP_DIR, `duration_check_${Date.now()}.m4a`);
+      // Private directory per probe — a clock-named file is shared by two probes
+      // in the same millisecond, so one would measure the other's recording.
+      let temp = null;
 
       try {
+        temp = privateTempPath(TEMP_DIR, 'duration_check.m4a', 'probe-');
+        const tempPath = temp.filePath;
+
         // Write buffer to temp file
         fs.writeFileSync(tempPath, audioBuffer);
 
         // Use ffprobe to get duration
         ffmpeg.ffprobe(tempPath, (err, metadata) => {
           // Clean up temp file
-          if (fs.existsSync(tempPath)) {
-            fs.unlinkSync(tempPath);
-          }
+          removePrivateTemp(temp);
 
           if (err) {
             logToFile('Error getting audio duration with ffprobe', { error: err.message });
@@ -1013,9 +1020,7 @@ class AudioService {
         });
       } catch (error) {
         // Clean up temp file on error
-        if (fs.existsSync(tempPath)) {
-          fs.unlinkSync(tempPath);
-        }
+        removePrivateTemp(temp);
         logToFile('Error in getAudioDuration', { error: error.message });
         reject(error);
       }

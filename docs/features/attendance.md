@@ -122,6 +122,14 @@ working without it. Leave these unset on channels without Flows — every other 
 **Storage.** With R2 configured each register is also archived there; without it (or when it is down) the file is
 still sent.
 
+**Which file went out.** Every register is written into a private temp directory before it is sent, so two
+schools' "Grade 5 A" registers marked at the same moment cannot swap. The log line `✅ Register delivered` carries
+`bufferSha256` and `fileSha256` (the first 12 hex characters of the generated register and of the bytes the channel
+actually uploaded, hashed where the upload reads them; they match on a healthy send, and differ if the file changed
+under the upload) and no phone number. `fileSha256` is `null` when the send ran in another process (a Matrix send
+relayed from the worker). A send the channel refused logs
+`⚠️ Register not delivered` with `delivered: false`, and the teacher is told the attendance is saved.
+
 ### Configuration
 
 | Variable | Default | What it does |

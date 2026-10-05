@@ -476,19 +476,22 @@ async function startDebriefFromAudio(user, from, audioId, observeState, opts = {
  */
 async function _sendCardImage(sessionId, to, png, caption) {
   const fs = require('fs');
-  const path = require('path');
   const { TEMP_DIR } = require('../../utils/constants');
-  const file = path.join(TEMP_DIR, `observe_coach_card_${sessionId}_${Date.now()}.png`);
+  const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
+  // A directory of this send's own: session + clock is shared by a queue retry that
+  // overlaps the first delivery, and the upload reads the file after this returns
+  // to the event loop — one send's cleanup deleted the other's card mid-read.
+  let tmp = null;
   try {
-    if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
-    fs.writeFileSync(file, png);
-    const ok = await WhatsAppService.sendImage(to, file, caption);
+    tmp = privateTempPath(TEMP_DIR, `observe_coach_card_${sessionId}.png`, 'observe-card-');
+    fs.writeFileSync(tmp.filePath, png);
+    const ok = await WhatsAppService.sendImage(to, tmp.filePath, caption);
     return ok !== false;
   } catch (err) {
     logToFile('⚠️ observe debrief: card image send failed — text card instead', { sessionId, error: err.message });
     return false;
   } finally {
-    try { if (fs.existsSync(file)) fs.unlinkSync(file); } catch (_) { /* temp cleanup */ }
+    removePrivateTemp(tmp);
   }
 }
 
@@ -737,8 +740,8 @@ async function _loadCoach(observerUserId) {
  */
 async function processDebriefRecording(sessionId, payload = {}) {
   const fs = require('fs');
-  const path = require('path');
   const { TEMP_DIR } = require('../../utils/constants');
+  const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
   const TranscriptionProcessorService = require('../coaching/transcription-processor.service');
   const { MIN_TRANSCRIPT_CHARS, buildCoachFeedbackPrompt } = require('./observe-coach-feedback');
 
@@ -774,8 +777,12 @@ async function processDebriefRecording(sessionId, payload = {}) {
   const audioId = payload.audioId || observerDebrief.audio_id;
   if (!audioId) throw new Error('observe debrief: no audio id in payload or row');
 
-  const tempAudioPath = path.join(TEMP_DIR,
-    `observe_debrief_${sessionId}_${Date.now()}${tempExtensionFor(observerDebrief.audio_mime || payload.mimeType)}`);
+  // Created on first use, in a private directory: a path from the session id
+  // and the clock is shared by two deliveries of this job in one millisecond,
+  // and one would transcribe — then delete — the other's recording. The file
+  // keeps its name (and the extension the transcription fallback sniffs).
+  const tempName = `observe_debrief_${sessionId}_${Date.now()}${tempExtensionFor(observerDebrief.audio_mime || payload.mimeType)}`;
+  let temp = null;
   try {
     let transcript = observerDebrief.transcript || '';
 
@@ -783,9 +790,10 @@ async function processDebriefRecording(sessionId, payload = {}) {
       let transcription;
       let audioHash = null;
       try {
-        if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
         const raw = await WhatsAppService.downloadMedia(audioId);
         const audioData = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
+        temp = privateTempPath(TEMP_DIR, tempName, 'debrief-');
+        const tempAudioPath = temp.filePath;
         fs.writeFileSync(tempAudioPath, audioData);
         // A debrief is analysed once: checked on the downloaded bytes, BEFORE
         // transcription, so a repeat costs no transcription or LLM call.
@@ -835,7 +843,7 @@ async function processDebriefRecording(sessionId, payload = {}) {
     await _mergeObserverDebrief(sessionId, { feedback, completed_at: new Date().toISOString() });
     await _deliverCoachFeedback(sessionId, coach, from, feedback, S, lang);
   } finally {
-    try { if (fs.existsSync(tempAudioPath)) fs.unlinkSync(tempAudioPath); } catch (_) { /* temp cleanup */ }
+    removePrivateTemp(temp);
   }
 }
 
@@ -862,4 +870,5 @@ module.exports = {
   tempExtensionFor,
   coachFeedbackWithRepair,
   processDebriefRecording,
+  _sendCardImage, // for tests: the card's temp file must be private to one send
 };

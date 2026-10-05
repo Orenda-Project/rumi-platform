@@ -15,7 +15,6 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
 const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
@@ -31,6 +30,7 @@ const PDFReportService = require('../pdf-report.service');
 const FeatureLinkerService = require('../feature-linker.service');
 const { uploadVoiceDebrief, uploadReportPDF, isR2Configured } = require('../../storage/r2');
 const { TEMP_DIR } = require('../../utils/constants');
+const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
 const { getCoachingMessage } = require('../../config/coaching-messages');
 
 /**
@@ -1292,15 +1292,16 @@ class ReportGeneratorService {
    * @private
    */
   static async sendPDFReport(phoneNumber, coachingSessionId, pdfBuffer, teacherFirstName = 'Teacher', observationDate = null, languageCode = 'en') {
+    let tmp = null;
     try {
       await WhatsAppService.sendMessage(phoneNumber, getCoachingMessage('reportReady', languageCode));
 
-      const tempPdfPath = path.join(TEMP_DIR, `report_${coachingSessionId}_${Date.now()}.pdf`);
-
-      // Ensure temp directory exists
-      if (!fs.existsSync(TEMP_DIR)) {
-        fs.mkdirSync(TEMP_DIR, { recursive: true });
-      }
+      // A directory of this call's own (created with TEMP_DIR if absent). The
+      // session id and the clock do not make the path unique: the same session's
+      // report sent twice in one millisecond shared it, and one send could upload
+      // the other's bytes or lose its file to the other's cleanup.
+      tmp = privateTempPath(TEMP_DIR, `report_${coachingSessionId}.pdf`, 'coaching-report-');
+      const tempPdfPath = tmp.filePath;
 
       // Write PDF buffer to temp file
       fs.writeFileSync(tempPdfPath, pdfBuffer);
@@ -1322,11 +1323,6 @@ class ReportGeneratorService {
       // Send document with formatted filename
       await WhatsAppService.sendDocument(phoneNumber, tempPdfPath, filename);
 
-      // Clean up temp file
-      if (fs.existsSync(tempPdfPath)) {
-        fs.unlinkSync(tempPdfPath);
-      }
-
       logToFile('PDF report sent', { coachingSessionId });
     } catch (error) {
       logToFile('Warning: Failed to send PDF', {
@@ -1334,6 +1330,8 @@ class ReportGeneratorService {
         error: error.message
       });
       throw error; // PDF delivery is critical, fail if it doesn't work
+    } finally {
+      removePrivateTemp(tmp);
     }
   }
 

@@ -1,5 +1,5 @@
 /**
- * WhatsAppService.sendImageFromUrl — bd-1881.
+ * WhatsAppService.sendImageFromUrl.
  *
  * The coaching commitment-card path called WhatsAppService.sendImageFromUrl(...)
  * but the method did not exist. The closest method, sendImage, treats any arg
@@ -17,6 +17,7 @@ process.env.CHANNEL_DRIVER = 'meta';
 jest.mock('../../bot/shared/utils/constants', () => ({
   WHATSAPP_TOKEN: 'test-token',
   PHONE_NUMBER_ID: 'test-phone-id',
+  TEMP_DIR: '/tmp/rumi-test-temp', // fs is mocked below: nothing is written
 }));
 jest.mock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
 jest.mock('../../bot/shared/storage/r2', () => ({
@@ -31,6 +32,9 @@ jest.mock('fs', () => {
     mkdirSync: jest.fn(),
     writeFileSync: jest.fn(),
     unlinkSync: jest.fn(),
+    // The temp file lives in a private directory per send (private-temp.js).
+    mkdtempSync: jest.fn((prefix) => `${prefix}XXXXXX`),
+    rmSync: jest.fn(),
   };
 });
 
@@ -60,7 +64,7 @@ describe('WhatsAppService.sendImageFromUrl', () => {
   });
 
   it('downloads the R2 object and hands sendImage a FILE PATH, never the raw URL', async () => {
-    const result = await WhatsAppService.sendImageFromUrl('923001234567', R2_URL, 'Your next step');
+    const result = await WhatsAppService.sendImageFromUrl('15550100001', R2_URL, 'Your next step');
 
     expect(result).toBe(true);
     expect(extractKeyFromUrl).toHaveBeenCalledWith(R2_URL);
@@ -69,7 +73,7 @@ describe('WhatsAppService.sendImageFromUrl', () => {
 
     expect(sendImageSpy).toHaveBeenCalledTimes(1);
     const [to, pathArg, caption] = sendImageSpy.mock.calls[0];
-    expect(to).toBe('923001234567');
+    expect(to).toBe('15550100001');
     expect(caption).toBe('Your next step');
     // The whole point: sendImage receives a temp file path, not the URL.
     expect(pathArg).not.toBe(R2_URL);
@@ -78,14 +82,15 @@ describe('WhatsAppService.sendImageFromUrl', () => {
   });
 
   it('cleans up the temp file after sending', async () => {
-    await WhatsAppService.sendImageFromUrl('923001234567', R2_URL, 'cap');
+    await WhatsAppService.sendImageFromUrl('15550100001', R2_URL, 'cap');
     const written = fs.writeFileSync.mock.calls[0][0];
-    expect(fs.unlinkSync).toHaveBeenCalledWith(written);
+    // The file sits alone in its private directory; removing that removes it.
+    expect(fs.rmSync).toHaveBeenCalledWith(require('path').dirname(written), { recursive: true, force: true });
   });
 
   it('returns false (does not throw) when the R2 download fails', async () => {
     downloadFromR2.mockRejectedValue(new Error('R2 403'));
-    const result = await WhatsAppService.sendImageFromUrl('923001234567', R2_URL, 'cap');
+    const result = await WhatsAppService.sendImageFromUrl('15550100001', R2_URL, 'cap');
     expect(result).toBe(false);
     expect(sendImageSpy).not.toHaveBeenCalled();
   });

@@ -17,12 +17,12 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 const AudioService = require('../audio.service');
 const WhatsAppService = require('../whatsapp.service');
 const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
 const { TEMP_DIR } = require('../../utils/constants');
+const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
 
 class TranscriptionService {
   /**
@@ -33,7 +33,7 @@ class TranscriptionService {
    * @returns {Promise<object>} Transcription result with speaker filtering
    */
   static async transcribeReading(assessmentId, audioUrl, expectedLanguage = 'en') {
-    let tempAudioPath = null;
+    let tempAudio = null;
 
     try {
       logToFile('📝 Starting reading transcription', {
@@ -43,7 +43,8 @@ class TranscriptionService {
       });
 
       // Step 1: Download audio from R2
-      tempAudioPath = await this.downloadAudio(audioUrl, assessmentId);
+      tempAudio = await this.downloadAudio(audioUrl, assessmentId);
+      const tempAudioPath = tempAudio.filePath;
 
       // Step 2: Transcribe with Soniox (speaker diarization enabled)
       // Pass expected language to force correct transcription language
@@ -68,11 +69,9 @@ class TranscriptionService {
         assessmentId
       );
 
-      // Clean up temp file
-      if (tempAudioPath && fs.existsSync(tempAudioPath)) {
-        fs.unlinkSync(tempAudioPath);
-        logToFile('Temp audio file cleaned up', { tempAudioPath });
-      }
+      // Clean up temp file (and the private directory it was made in)
+      removePrivateTemp(tempAudio);
+      logToFile('Temp audio file cleaned up', { tempAudioPath });
 
       return processedResult;
 
@@ -83,14 +82,8 @@ class TranscriptionService {
         stack: error.stack
       });
 
-      // Clean up temp file on error
-      if (tempAudioPath && fs.existsSync(tempAudioPath)) {
-        try {
-          fs.unlinkSync(tempAudioPath);
-        } catch (cleanupError) {
-          logToFile('Warning: Temp file cleanup failed', { error: cleanupError.message });
-        }
-      }
+      // Clean up temp file on error (removePrivateTemp never throws)
+      removePrivateTemp(tempAudio);
 
       throw error;
     }
@@ -98,9 +91,15 @@ class TranscriptionService {
 
   /**
    * Download audio from R2 to temp file
+   *
+   * The file is made in its own private directory: a path from the assessment
+   * id and the clock is shared by two downloads for the same assessment in one
+   * millisecond (a redelivered job), and one would transcribe the other's
+   * bytes or find them already deleted. The caller removes what it is handed
+   * (removePrivateTemp) when done.
    * @param {string} audioUrl - R2 URL
    * @param {string} assessmentId - Assessment ID for filename
-   * @returns {Promise<string>} Local file path
+   * @returns {Promise<{dir: string, filePath: string}>} the private temp handle
    */
   static async downloadAudio(audioUrl, assessmentId) {
     try {
@@ -114,12 +113,18 @@ class TranscriptionService {
         if (!fs.existsSync(sourcePath)) {
           throw new Error(`Local audio no longer on disk: ${sourcePath}`);
         }
-        const localTemp = path.join(TEMP_DIR, `reading_${assessmentId}_${Date.now()}.ogg`);
-        fs.copyFileSync(sourcePath, localTemp);
+        const temp = privateTempPath(TEMP_DIR, `reading_${assessmentId}.ogg`, 'reading-');
+        const localTemp = temp.filePath;
+        try {
+          fs.copyFileSync(sourcePath, localTemp);
+        } catch (copyError) {
+          removePrivateTemp(temp);
+          throw copyError;
+        }
         logToFile('✅ Audio read from local disk (no object storage configured)', {
           sourcePath, path: localTemp, size: fs.statSync(localTemp).size,
         });
-        return localTemp;
+        return temp;
       }
 
       const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
@@ -135,8 +140,14 @@ class TranscriptionService {
       // Download using S3 client with proper authentication
       const audioBuffer = await downloadFromR2(key);
 
-      const tempPath = path.join(TEMP_DIR, `reading_${assessmentId}_${Date.now()}.ogg`);
-      fs.writeFileSync(tempPath, audioBuffer);
+      const temp = privateTempPath(TEMP_DIR, `reading_${assessmentId}.ogg`, 'reading-');
+      const tempPath = temp.filePath;
+      try {
+        fs.writeFileSync(tempPath, audioBuffer);
+      } catch (writeError) {
+        removePrivateTemp(temp);
+        throw writeError;
+      }
 
       logToFile('✅ Audio downloaded from R2', {
         url: redactUrl(audioUrl),
@@ -145,7 +156,7 @@ class TranscriptionService {
         path: tempPath
       });
 
-      return tempPath;
+      return temp;
 
     } catch (error) {
       logToFile('❌ Error downloading audio from R2', {

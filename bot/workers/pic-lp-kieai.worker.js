@@ -25,7 +25,6 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 const https = require('https');
 const sharp = require('sharp');
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
@@ -41,6 +40,7 @@ const { coachingNumberFor } = require('../shared/services/pic-to-lp/kieai-prompt
 const { logToFile } = require('../shared/utils/logger');
 const { logEvent } = require('../shared/utils/structured-logger');
 const { TEMP_DIR, RUMI_LOGO_R2_KEY } = require('../shared/utils/constants');
+const { privateTempPath, removePrivateTemp } = require('../shared/utils/private-temp');
 
 const PRESIGN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
@@ -144,6 +144,7 @@ function localizedErrorMessage(language) {
  */
 async function process({ sessionId, formData, from }) {
   const t0 = Date.now();
+  let tmp = null;
   let tempPdfPath = null;
 
   // Load fresh session state in case anything changed since enqueue
@@ -237,13 +238,11 @@ async function process({ sessionId, formData, from }) {
 
     // Assemble PDF
     const filename = makeFilename(formData);
-    // TEMP_DIR may not exist on the worker container by default (it's a
-    // separate instance from the web replica). mkdirSync recursive is
-    // idempotent — safe to call every time.
-    if (!fs.existsSync(TEMP_DIR)) {
-      fs.mkdirSync(TEMP_DIR, { recursive: true });
-    }
-    tempPdfPath = path.join(TEMP_DIR, `pic_lp_kieai_${sessionId}_${Date.now()}.pdf`);
+    // A directory of this job's own (TEMP_DIR is created if the worker container
+    // lacks it). Session id plus the clock is not unique: a redelivered job for
+    // the same session in the same millisecond shared the path.
+    tmp = privateTempPath(TEMP_DIR, `pic_lp_kieai_${sessionId}.pdf`, 'pic-lp-');
+    tempPdfPath = tmp.filePath;
     await assemblePDF({ page1Url: p1.url, page2Url: p2.url, outPath: tempPdfPath });
 
     // Deliver via WhatsApp (file path, NOT buffer)
@@ -361,9 +360,7 @@ async function process({ sessionId, formData, from }) {
     } catch (_) { /* best-effort */ }
     throw e; // SQS DLQ handles retry
   } finally {
-    if (tempPdfPath && fs.existsSync(tempPdfPath)) {
-      try { fs.unlinkSync(tempPdfPath); } catch (_) { /* best-effort */ }
-    }
+    removePrivateTemp(tmp);
   }
 }
 

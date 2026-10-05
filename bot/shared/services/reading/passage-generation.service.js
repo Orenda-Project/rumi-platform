@@ -29,6 +29,7 @@ const { generateAlphabetGrid } = require('../../utils/alphabet-grid-generator');
 const { generateRandomWords, generateWordGrid } = require('../../utils/word-grid-generator');
 const https = require('https');
 const { getPresignedUrl } = require('../../storage/r2');
+const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
 
 const openai = getClient();
 
@@ -306,6 +307,7 @@ class PassageGenerationService {
     passageConfig,
     userLanguage = 'en'
   ) {
+    let tempImage = null;
     try {
       logToFile('📝 Starting passage generation', {
         assessmentId,
@@ -396,8 +398,12 @@ class PassageGenerationService {
         );
       }
 
-      // Step 3b: Save image to temp file (needed for WhatsApp upload)
-      const tempImagePath = path.join(TEMP_DIR, `passage_${assessmentId}.png`);
+      // Step 3b: Save image to temp file (needed for WhatsApp upload), in a
+      // directory of this call's own: two generations for one assessment (a
+      // repeated request) shared `passage_<id>.png`, so one could be sent the
+      // other's image or lose its file to the other's cleanup.
+      tempImage = privateTempPath(TEMP_DIR, `passage_${assessmentId}.png`, 'passage-');
+      const tempImagePath = tempImage.filePath;
       fs.writeFileSync(tempImagePath, imageBuffer);
       logToFile('📁 Passage image saved to temp file', { tempImagePath });
 
@@ -443,15 +449,8 @@ class PassageGenerationService {
       await WhatsAppService.sendImage(phoneNumber, tempImagePath);
 
       // Step 6b: Clean up temp file
-      try {
-        fs.unlinkSync(tempImagePath);
-        logToFile('🗑️ Temp passage image deleted', { tempImagePath });
-      } catch (cleanupError) {
-        logToFile('⚠️ Could not delete temp file', {
-          path: tempImagePath,
-          error: cleanupError.message
-        });
-      }
+      removePrivateTemp(tempImage);
+      logToFile('🗑️ Temp passage image deleted', { tempImagePath });
 
       // Step 7: Send instructions in user's language
       // Add language-specific reading direction for letters type
@@ -544,6 +543,10 @@ class PassageGenerationService {
       );
 
       throw error;
+    } finally {
+      // A database or send error after the write must not leave the image
+      // behind (Step 6b removes it early on success; this is a no-op then).
+      removePrivateTemp(tempImage);
     }
   }
 
