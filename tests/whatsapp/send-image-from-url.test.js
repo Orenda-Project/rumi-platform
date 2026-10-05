@@ -17,6 +17,7 @@ process.env.CHANNEL_DRIVER = 'meta';
 jest.mock('../../bot/shared/utils/constants', () => ({
   WHATSAPP_TOKEN: 'test-token',
   PHONE_NUMBER_ID: 'test-phone-id',
+  TEMP_DIR: '/tmp/rumi-test-temp', // fs is mocked below: nothing is written
 }));
 jest.mock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
 jest.mock('../../bot/shared/storage/r2', () => ({

@@ -19,7 +19,7 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
-const { WHATSAPP_TOKEN, PHONE_NUMBER_ID } = require('../../utils/constants');
+const { WHATSAPP_TOKEN, PHONE_NUMBER_ID, TEMP_DIR } = require('../../utils/constants');
 const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
@@ -491,8 +491,7 @@ class WhatsAppService {
    * @returns {Promise<boolean>}
    */
   static async sendDocumentFromUrl(to, documentUrl, filename, caption) {
-    const path = require('path');
-    const tempDir = path.join(__dirname, '../../../temp');
+    const tempDir = TEMP_DIR;
     let temp = null;
 
     try {
@@ -531,8 +530,7 @@ class WhatsAppService {
    * @returns {Promise<boolean>}
    */
   static async sendAudioFromUrl(to, audioUrl) {
-    const path = require('path');
-    const tempDir = path.join(__dirname, '../../../temp');
+    const tempDir = TEMP_DIR;
 
     try {
       // Extract R2 key from URL and download using R2 client
@@ -566,8 +564,7 @@ class WhatsAppService {
    * @returns {Promise<boolean>}
    */
   static async sendImageFromUrl(to, imageUrl, caption = '') {
-    const path = require('path');
-    const tempDir = path.join(__dirname, '../../../temp');
+    const tempDir = TEMP_DIR;
     let temp = null;
 
     try {
@@ -745,8 +742,7 @@ class WhatsAppService {
    * @returns {Promise<boolean>}
    */
   static async sendVideoFromUrl(to, videoUrl, caption = '') {
-    const path = require('path');
-    const tempDir = path.join(__dirname, '../../../temp');
+    const tempDir = TEMP_DIR;
 
     try {
       // Extract R2 key from URL and download using R2 client
@@ -1011,8 +1007,7 @@ class WhatsAppService {
    * @returns {Promise<boolean>}
    */
   static async sendImageWithButtons(to, imageUrl, bodyText, buttons) {
-    const path = require('path');
-    const tempDir = path.join(__dirname, '../../../temp');
+    const tempDir = TEMP_DIR;
     let temp = null;
 
     try {
