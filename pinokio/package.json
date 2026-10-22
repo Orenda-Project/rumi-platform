@@ -1,0 +1,10 @@
+{
+  "name": "rumi-pinokio",
+  "version": "1.0.0",
+  "description": "Pinokio launcher for Rumi (github.com/Orenda-Project/rumi-platform), with a GUI setup wizard.",
+  "private": true,
+  "license": "Apache-2.0",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}

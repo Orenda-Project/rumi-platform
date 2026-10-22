@@ -1,0 +1,447 @@
+/*
+ * Rumi onboarding.
+ *
+ * The palette is not invented here: it is the semantic one Rumi's own CLI uses
+ * (bot/scripts/setup/ui.js), including its rule that amber means "your turn to
+ * act". So amber is the active call to action and nothing else, green marks what
+ * is genuinely done, and red is reserved for a real failure. Using green
+ * decoratively would make a finished step indistinguishable from a pretty border.
+ */
+
+:root {
+  /* Roles, straight from the CLI's PALETTE. */
+  --brand: #25d366;
+  --brand-hi: #7de8cd;
+  --brand-lo: #15803d;
+  --accent: #f5b042;
+  --danger: #ef5350;
+  --muted: #8c98a8;
+  --link: #0284c7;
+
+  --surface: #fbfaf8;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f1efea;
+  --rail: #14171c;
+  --rail-text: #e9edf2;
+  --text: #1a1d23;
+  --text-soft: #5b646f;
+  --line: #e2ded7;
+
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --step: clamp(1.9rem, 1.2rem + 2.2vw, 3.1rem);
+  --radius: 10px;
+  --rail-width: 248px;
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --fast: 140ms;
+  --normal: 280ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --link: #7dd3fc;
+    --surface: #14161a;
+    --surface-raised: #1b1e24;
+    --surface-sunken: #101216;
+    --rail: #0d0f13;
+    --rail-text: #e9edf2;
+    --text: #e8ebef;
+    --text-soft: #9aa5b1;
+    --line: #2a2f37;
+  }
+}
+
+:root[data-theme="dark"] {
+  --link: #7dd3fc;
+  --surface: #14161a;
+  --surface-raised: #1b1e24;
+  --surface-sunken: #101216;
+  --rail: #0d0f13;
+  --rail-text: #e9edf2;
+  --text: #e8ebef;
+  --text-soft: #9aa5b1;
+  --line: #2a2f37;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--rail-width) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.rail {
+  background: var(--rail);
+  color: var(--rail-text);
+  padding: 30px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  /* A faint wash rather than a flat block, so the rail reads as a surface
+     behind the content instead of a swatch beside it. */
+  background-image: radial-gradient(120% 60% at 0% 0%, rgba(37, 211, 102, 0.14), transparent 60%);
+}
+
+.rail__brand { display: flex; align-items: center; gap: 10px; }
+
+.rail__mark {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.18);
+}
+
+.rail__name {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  letter-spacing: 0.01em;
+}
+
+.rail__foot { margin-top: auto; font-size: 0.85rem; }
+
+.content {
+  padding: clamp(32px, 2rem + 3vw, 84px) clamp(20px, 1rem + 4vw, 92px);
+  max-width: 820px;
+  /* Centred in whatever space the rail leaves, so a wide window reads as a
+     deliberate column rather than content pinned to one edge. */
+  margin-inline: auto;
+  width: 100%;
+  outline: none;
+}
+
+/* ── Step rail ──────────────────────────────────────────────────────────── */
+
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+
+.step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: rgba(233, 237, 242, 0.62);
+  font-size: 0.92rem;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.step__dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: rgba(233, 237, 242, 0.26);
+  flex: none;
+  transition: background var(--normal) var(--ease), box-shadow var(--normal) var(--ease);
+}
+
+.step[data-state="active"] { color: #fff; background: rgba(255, 255, 255, 0.07); }
+.step[data-state="active"] .step__dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.22);
+}
+
+.step[data-state="done"] { color: rgba(233, 237, 242, 0.85); }
+.step[data-state="done"] .step__dot { background: var(--brand); }
+
+.step[data-state="blocked"] .step__dot { background: var(--danger); }
+
+/* ── Type ───────────────────────────────────────────────────────────────── */
+
+.eyebrow {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-soft);
+  margin: 0 0 14px;
+}
+
+h1 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: var(--step);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  margin: 0 0 18px;
+}
+
+.lede { font-size: 1.08rem; color: var(--text-soft); margin: 0 0 34px; max-width: 58ch; }
+
+.section-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--text-soft);
+  font-weight: 600;
+  margin: 34px 0 14px;
+}
+
+.link { color: var(--link); text-decoration: none; border-bottom: 1px solid transparent; }
+.link:hover { border-bottom-color: currentColor; }
+.link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+
+/* ── Panels ─────────────────────────────────────────────────────────────── */
+
+.panel[hidden] { display: none; }
+
+.panel {
+  animation: rise var(--normal) var(--ease) both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.needs { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.needs li {
+  display: grid; gap: 2px;
+  padding: 15px 18px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.needs b { font-size: 0.98rem; }
+.needs span { color: var(--text-soft); font-size: 0.93rem; }
+
+/* ── Credential groups ──────────────────────────────────────────────────── */
+
+.groups { display: grid; gap: 26px; }
+
+.group__title { font-family: var(--serif); font-size: 1.32rem; margin: 0 0 3px; font-weight: 500; }
+.group__blurb { color: var(--text-soft); font-size: 0.93rem; margin: 0 0 16px; }
+
+.field {
+  display: grid;
+  gap: 7px;
+  padding: 17px 19px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 11px;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.16);
+}
+
+.field[data-state="ok"] { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
+.field[data-state="bad"] { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
+
+.field__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.field__label { font-weight: 600; font-size: 0.96rem; }
+.field__key { font-family: var(--mono); font-size: 0.74rem; color: var(--muted); }
+.field__hint { color: var(--text-soft); font-size: 0.88rem; margin: 0; }
+
+.field__row { display: flex; gap: 8px; }
+
+input[type="text"], input[type="password"] {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.94rem;
+  padding: 9px 12px;
+  color: var(--text);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.verdict { font-size: 0.87rem; display: flex; align-items: center; gap: 7px; min-height: 1.2em; }
+/* Nothing to report yet: take up no room rather than leaving a gap in the card. */
+.verdict[data-tone="idle"] { display: none; }
+.verdict[data-tone="ok"] { color: var(--brand-lo); }
+.verdict[data-tone="bad"] { color: var(--danger); }
+.verdict[data-tone="busy"] { color: var(--text-soft); }
+:root[data-theme="dark"] .verdict[data-tone="ok"] { color: var(--brand); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .verdict[data-tone="ok"] { color: var(--brand); }
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.actions { display: flex; gap: 10px; margin-top: 36px; align-items: center; }
+
+.btn {
+  font: inherit;
+  font-size: 0.93rem;
+  font-weight: 550;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: transform var(--fast) var(--ease), background var(--fast) var(--ease),
+              border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.btn:hover { border-color: var(--muted); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* Amber is "your turn to act" -- so it marks exactly one button per screen. */
+.btn--act {
+  background: var(--accent);
+  border-color: transparent;
+  color: #241a05;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+.btn--act:hover { background: color-mix(in srgb, var(--accent) 88%, #fff); box-shadow: 0 3px 10px rgba(245, 176, 66, 0.3); }
+
+.btn--small { padding: 7px 13px; font-size: 0.86rem; }
+
+/* ── Notices, progress, QR ──────────────────────────────────────────────── */
+
+.notice {
+  border-left: 3px solid var(--accent);
+  background: var(--surface-raised);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 15px 19px;
+  margin: 22px 0;
+  font-size: 0.93rem;
+}
+.notice--bad { border-left-color: var(--danger); }
+.notice--ok { border-left-color: var(--brand); }
+.notice ul { margin: 8px 0 0; padding-left: 20px; }
+.notice p:last-child { margin-bottom: 0; }
+
+pre.sql {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 15px 17px;
+  overflow-x: auto;
+  max-height: 260px;
+  margin: 0 0 12px;
+}
+
+.bar {
+  height: 7px;
+  background: var(--surface-sunken);
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 14px 0 8px;
+}
+.bar__fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--brand-lo), var(--brand));
+  border-radius: 99px;
+  transition: width var(--normal) var(--ease);
+}
+
+.qr {
+  display: grid;
+  place-items: center;
+  gap: 14px;
+  padding: 26px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  max-width: 420px;
+}
+.qr img {
+  width: 280px; height: 280px;
+  border-radius: 8px;
+  background: #fff;
+  /* Codes rotate every ~20s; a soft swap is less jarring than a hard cut. */
+  animation: swap var(--normal) var(--ease);
+}
+@keyframes swap { from { opacity: 0.25; } to { opacity: 1; } }
+
+.qr__caption { color: var(--text-soft); font-size: 0.88rem; text-align: center; }
+
+.spinner {
+  width: 13px; height: 13px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 720ms linear infinite;
+  flex: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.tally { display: flex; gap: 18px; flex-wrap: wrap; margin: 0 0 22px; }
+.tally__item { display: grid; gap: 1px; }
+.tally__n { font-family: var(--serif); font-size: 1.7rem; line-height: 1; }
+.tally__l { font-size: 0.78rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.09em; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 760px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { flex-direction: row; align-items: center; gap: 18px; padding: 14px 16px; overflow-x: auto; }
+  .rail__foot { margin-top: 0; }
+  .steps { grid-auto-flow: column; gap: 4px; }
+  .step__label { display: none; }
+  .step { padding: 8px; }
+  .content { padding: 28px 16px 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Abilities ──────────────────────────────────────────────────────────── */
+
+/*
+ * An optional key is not really a setting, it is a capability: filling it in is
+ * what turns a feature on. So it is introduced by what it does for a teacher,
+ * with its variables underneath, rather than as a bare row named after a vendor.
+ */
+.ability {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  padding: 16px 18px;
+  margin: 0 0 12px;
+}
+.ability[data-state="on"] { border-left-color: var(--brand); }
+.ability[data-state="partial"] { border-left-color: var(--accent); }
+
+.ability__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ability__title { font-size: 1rem; font-weight: 600; margin: 0 0 4px; }
+
+.ability__state {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  flex: none;
+}
+.ability[data-state="on"] .ability__state { color: var(--brand-lo); }
+.ability[data-state="partial"] .ability__state { color: var(--accent); }
+
+.ability .field { background: var(--surface-sunken); margin-top: 12px; margin-bottom: 0; }
+.ability .field + .field { margin-top: 9px; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ability[data-state="on"] .ability__state { color: var(--brand); }
+}

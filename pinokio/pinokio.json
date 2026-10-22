@@ -1,0 +1,12 @@
+{
+  "title": "Rumi",
+  "description": "An open-source AI teaching companion that lives in WhatsApp — lesson plans, classroom coaching, reading assessments and voice in 15 languages.",
+  "icon": "icon.jpg",
+  "links": [{
+    "title": "Rumi",
+    "links": [
+      { "title": "Website", "value": "https://hellorumi.ai" },
+      { "title": "Github", "value": "https://github.com/Orenda-Project/rumi-platform" }
+    ]
+  }]
+}
