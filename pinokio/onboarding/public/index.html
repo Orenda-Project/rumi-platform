@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up Rumi</title>
+<link rel="icon" href="favicon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <nav class="rail" aria-label="Setup progress">
+    <div class="rail__brand">
+      <span class="rail__mark" aria-hidden="true"></span>
+      <span class="rail__name">Rumi</span>
+    </div>
+
+    <ol class="steps" id="steps">
+      <li class="step" data-step="welcome"><span class="step__dot"></span><span class="step__label">Welcome</span></li>
+      <li class="step" data-step="credentials"><span class="step__dot"></span><span class="step__label">Credentials</span></li>
+      <li class="step" data-step="database"><span class="step__dot"></span><span class="step__label">Database</span></li>
+      <li class="step" data-step="whatsapp"><span class="step__dot"></span><span class="step__label">WhatsApp</span></li>
+      <li class="step" data-step="done"><span class="step__dot"></span><span class="step__label">Done</span></li>
+    </ol>
+
+    <div class="rail__foot">
+      <a class="link" href="/console" target="_blank" rel="noreferrer">Advanced settings &rarr;</a>
+    </div>
+  </nav>
+
+  <main class="content" id="content" tabindex="-1">
+
+    <!-- Welcome -->
+    <section class="panel" data-panel="welcome" hidden>
+      <p class="eyebrow">Step 1 of 5</p>
+      <h1>An AI teaching companion<br>that lives in WhatsApp</h1>
+      <p class="lede">
+        This sets Rumi up on your own machine. It takes about fifteen minutes, and
+        explains each step as it goes.
+      </p>
+
+      <h2 class="section-title">What you'll need</h2>
+      <ul class="needs">
+        <li><b>A Supabase project</b><span>Where Rumi remembers teachers, lessons and assessments. The free tier is plenty.</span></li>
+        <li><b>An OpenRouter key</b><span>One key, many models. A few dollars goes a long way.</span></li>
+        <li><b>A second phone</b><span>Rumi links your WhatsApp the way WhatsApp Web does, so you cannot message yourself.</span></li>
+      </ul>
+
+      <div class="notice" id="welcome-problems" hidden>
+        <b>Some steps are unavailable.</b>
+        <ul id="welcome-problems-list"></ul>
+        <p>Everything else still works, and each of those steps will point you at the terminal instead.</p>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--act" data-go="credentials">Get started &rarr;</button>
+      </div>
+    </section>
+
+    <!-- Credentials -->
+    <section class="panel" data-panel="credentials" hidden>
+      <p class="eyebrow">Step 2 of 5</p>
+      <h1>Connect Rumi<br>to your accounts</h1>
+      <p class="lede">
+        Each value is checked against the real service as you save it. Nothing leaves
+        this machine except the request that tests it.
+      </p>
+      <div id="credential-groups" class="groups" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn" data-go="welcome">&larr; Back</button>
+        <button class="btn btn--act" data-go="database">Continue &rarr;</button>
+      </div>
+    </section>
+
+    <!-- Database -->
+    <section class="panel" data-panel="database" hidden>
+      <p class="eyebrow">Step 3 of 5</p>
+      <h1>Create the tables</h1>
+      <p class="lede">
+        Rumi needs about seventy tables. Supabase does not let a program run SQL
+        directly, so there is one thing to paste by hand &mdash; the only manual step
+        in the whole setup.
+      </p>
+      <div id="database-body" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn" data-go="credentials">&larr; Back</button>
+        <button class="btn btn--act" data-go="whatsapp">Continue &rarr;</button>
+      </div>
+    </section>
+
+    <!-- WhatsApp -->
+    <section class="panel" data-panel="whatsapp" hidden>
+      <p class="eyebrow">Step 4 of 5</p>
+      <h1>Link WhatsApp</h1>
+      <p class="lede">
+        On your phone, open WhatsApp &rarr; Settings &rarr; Linked devices &rarr;
+        Link a device, and point it at this code.
+      </p>
+      <div id="whatsapp-body" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn" data-go="database">&larr; Back</button>
+        <button class="btn btn--act" data-go="done">Continue &rarr;</button>
+      </div>
+    </section>
+
+    <!-- Done -->
+    <section class="panel" data-panel="done" hidden>
+      <p class="eyebrow">Step 5 of 5</p>
+      <h1>Ready when you are</h1>
+      <p class="lede">
+        Close this tab and press <b>Start</b> in the Pinokio sidebar. Then message
+        Rumi from your second phone and try <b>Hi</b>, or <b>/menu</b>.
+      </p>
+      <div id="done-body" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn" data-go="whatsapp">&larr; Back</button>
+        <a class="btn btn--act" href="/console" target="_blank" rel="noreferrer">Open the console &rarr;</a>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

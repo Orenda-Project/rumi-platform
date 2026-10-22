@@ -1,0 +1,26 @@
+# The launcher's own dependencies (qrcode, for the setup wizard).
+node_modules/
+
+# Pinokio launcher state. Generated per-install, never committed:
+# ENVIRONMENT holds this machine's launcher settings, and logs/ and cache/ are
+# written by Pinokio while scripts run.
+ENVIRONMENT
+/logs/
+/cache/
+
+# Agent guides Pinokio writes into the launcher folder. CLAUDE.md is ours and
+# committed; Pinokio never overwrites a file that already exists.
+/.clinerules
+/.cursorrules
+/.windsurfrules
+/.geminiignore
+/GEMINI.md
+/QWEN.md
+/AGENTS.md
+
+# Local Redis keeps its data next to the launcher (scripts/local-redis.js runs
+# redis-server from here). Runtime state, never committed.
+dump.rdb
+
+# The ports scripts/pick-port.js keeps for the bot and the wizard. Per machine.
+.ports.json

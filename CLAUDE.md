@@ -19,6 +19,7 @@ CLAUDE.md (this file)  →  <folder>/CLAUDE.md (router)  →  .claude/skills/<sk
 | Agent/skill config + what skills exist | [.claude/CLAUDE.md](.claude/CLAUDE.md) |
 | Set up a clone from scratch | [SETUP.md](SETUP.md) · `npm run doctor` (preflight) |
 | The operator web console (settings, health, pipeline, activity) | [bot/console/](bot/console/) · [docs/console.md](docs/console.md) |
+| The 1-click Pinokio launcher and its GUI setup wizard | [pinokio/CLAUDE.md](pinokio/CLAUDE.md) |
 | Customize branding / swap a framework / add a feature | [docs/agent-customization.md](docs/agent-customization.md) |
 | Architecture, cost, monitoring | [docs/architecture.md](docs/architecture.md) · [docs/cost-guide.md](docs/cost-guide.md) · [docs/monitoring.md](docs/monitoring.md) |
 
