@@ -2,8 +2,8 @@ const { TextractClient, AnalyzeDocumentCommand } = require('@aws-sdk/client-text
 const { logToFile } = require('../utils/logger');
 const { lazyClient } = require('../utils/lazy-client');
 
-// AWS Textract is the optional exam-checker OCR fallback (the primary is
-// Mistral). Lazy-initialised: the bot can boot without AWS Textract
+// AWS Textract is the optional OCR the lesson-plan extraction worker uses (the
+// exam checker reads with its own vision model). Lazy-initialised: the bot can boot without AWS Textract
 // credentials; the only call path that needs them is `extractText` itself.
 //
 // Supports the standard AWS env-var names; falls back to the dedicated
@@ -36,8 +36,7 @@ function assertTextractCredentialsPresent() {
     throw new Error(
       'AWS Textract cannot be invoked — missing credentials. Set either ' +
       '`AWS_TEXTRACT_ACCESS_KEY_ID`+`AWS_TEXTRACT_SECRET_ACCESS_KEY` OR the ' +
-      'generic `AWS_ACCESS_KEY_ID`+`AWS_SECRET_ACCESS_KEY` in .env, or use ' +
-      'the Mistral OCR primary instead.'
+      'generic `AWS_ACCESS_KEY_ID`+`AWS_SECRET_ACCESS_KEY` in .env.'
     );
   }
 }

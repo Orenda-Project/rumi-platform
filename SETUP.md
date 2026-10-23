@@ -138,12 +138,14 @@ cd bot && npm install && cd ..
    GRANT EXECUTE ON FUNCTION public.exec_sql(text) TO service_role;
    NOTIFY pgrst, 'reload schema';
    ```
-   Then run `npm run bootstrap:db` — it applies all three SQL files in order, statement by statement, and fails if the `users` table is still missing. (`rumi setup` does the same and will not continue without the tables.)
+   Then run `npm run bootstrap:db` — it applies all three SQL files in order, statement by statement, then every migration in `infrastructure/supabase/migrations/` (recording each one, so `migrate.js` later finds none pending), and fails if the `users` table is still missing. (`rumi setup` does the same and will not continue without the tables.)
 
    **Option B — manual paste:** In the SQL Editor, run these three files in order:
    - `infrastructure/supabase/00_complete-schema.sql` — all 76 tables, 40 functions, 29 triggers, 200+ indexes
    - `infrastructure/supabase/01_rls-policies.sql` — enables Row Level Security on all tables
    - `infrastructure/supabase/02_seed-data.sql` — adds reading assessment benchmarks
+
+   Then run `node infrastructure/scripts/migrate.js` once, which applies and records the migrations that the one-command setup applies for you.
 4. **Verify** by running `infrastructure/supabase/verify-schema.sql` — all checks should show PASS
 5. **Copy credentials** from Settings > API:
    - `SUPABASE_URL` — your project URL (e.g., `https://abcdefgh.supabase.co`)

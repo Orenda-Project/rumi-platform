@@ -22,7 +22,7 @@ function load({ session, gradeBatchImpl } = {}) {
       successful: [], failed: [], summary: { averagePercentage: 0 },
     }))),
   };
-  const OCRService = { extractBatch: jest.fn().mockResolvedValue({ provider: 'mistral', averageConfidence: 0.9 }) };
+  const OCRService = { extractBatch: jest.fn().mockResolvedValue({ provider: 'gemini-3.5-flash', averageConfidence: 0.9 }) };
   const QuestionDetectorService = { analyze: jest.fn().mockResolvedValue({ students: [], questions: [] }) };
   const AnnotationService = { annotateAll: jest.fn().mockResolvedValue([]) };
 

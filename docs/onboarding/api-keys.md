@@ -82,12 +82,6 @@ Optional (the Kie.ai image lesson-plan path is a cheaper alternative). **API key
 1. **kie.ai** → sign up (Google).
 2. Dashboard → **API Key** section → generate + copy.
 
-### Mistral → `MISTRAL_API_KEY` — *exam-checker OCR (vision)*
-**Free tier: yes, no card — but phone/SMS verification required.**
-1. **console.mistral.ai** → create account → verify phone via SMS.
-2. Sidebar → **API Keys** → **Create new key** → copy (shown once).
-> On the free plan, requests may be used to train Mistral's models.
-
 ### Axiom → `AXIOM_DATASET`, `AXIOM_TOKEN` — *optional structured logging*
 The bot logs to console + correlation IDs without it. **Free tier: 500 GB/mo ingest, no card.**
 1. **axiom.co** → sign up.
@@ -112,7 +106,7 @@ The `FLOW_PRIVATE_KEY` / `FLOW_PUBLIC_KEY` pair is **not a third-party signup** 
 Default `QUEUE_DRIVER=bullmq` uses Redis (no AWS needed). Only set these if you opt into SQS.
 
 ### Advanced / niche (most adopters skip)
-`GEMINI_API_KEY`, Mistral vision, `CHANDRA_*`, `DATALAB_API_KEY`, `MMS_SERVICE_URL`/`_API_KEY` (Modal), `ANTHROPIC_API_KEY` (dashboard only) — advanced; not needed for a standard deployment.
+`GEMINI_API_KEY`, `MMS_SERVICE_URL`/`_API_KEY` (Modal), `ANTHROPIC_API_KEY` (dashboard only) — advanced; not needed for a standard deployment.
 
 ---
 

@@ -286,7 +286,7 @@ async function ensureTables(io, env) {
 
   const applying = ui.spinner('Creating tables, security rules and starter data… (about a minute)');
   const result = await dbSetup.applySchema(env);
-  if (result.ok) applying.succeed(`Database ready ${ui.dim(`(${result.applied.length} files applied)`)}`);
+  if (result.ok) applying.succeed(`Database ready ${ui.dim(`(${result.applied.length} files and ${(result.migrations || []).length} migrations applied)`)}`);
   else {
     applying.fail('Could not finish setting up the tables');
     for (const failure of result.errors) console.log(ui.aside(`${failure.file}: ${failure.error}`));

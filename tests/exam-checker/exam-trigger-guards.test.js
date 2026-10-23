@@ -18,6 +18,7 @@ jest.mock('pdfkit', () => ({}), { virtual: true });
 jest.mock('../../bot/shared/config/supabase', () => ({ from: jest.fn() }));
 jest.mock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
 jest.mock('../../bot/shared/storage/r2', () => ({
+  isR2Configured: () => true,
   uploadImageWithRetry: jest.fn(async () => 'https://files.example.test/exam/page-1.jpg'),
 }));
 jest.mock('../../bot/shared/services/whatsapp.service', () => ({

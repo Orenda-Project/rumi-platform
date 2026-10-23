@@ -6,9 +6,9 @@
  *
  * Pipeline:
  * 1. Load session from database
- * 2. Run OCR on images (Mistral → Chandra fallback)
+ * 2. Read the papers with the exam-vision engine (Call A — the scheme withheld)
  * 3. Detect students and questions
- * 4. Grade with GPT-4o
+ * 4. Grade the copied answers with the exam-vision engine (Call B)
  * 5. Annotate images
  * 6. Deliver results via WhatsApp
  *

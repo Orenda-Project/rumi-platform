@@ -2,7 +2,7 @@
 
 ![Exam Checker](../images/features/exam-checker.jpg)
 
-> Photograph a stack of answer sheets; get them graded. Rumi reads the responses with vision OCR and scores against the answer key.
+> Photograph a stack of answer sheets; get them graded. Rumi reads the responses with a vision model and scores them against the answer key.
 
 ## What it is
 
@@ -11,8 +11,8 @@ A grading assistant. A teacher photographs students' completed exam or worksheet
 ## How it works
 
 1. **Teacher photographs** the answer sheets and sends them on WhatsApp.
-2. **Rumi extracts the responses** using a vision OCR model (Mistral vision, with a Chandra fallback and Surya for locating answers on the page).
-3. **Rumi grades** each response against the answer key / rubric using AI.
+2. **Rumi reads each page** with a vision model, copying every answer exactly as the student wrote it — mistakes included — and noting where on the page it sits. The answer key is kept out of this step.
+3. **Rumi grades** the copied answers against the answer key in a second call to the same model, and writes short feedback for each question.
 4. **The teacher receives** scored results with per-question feedback.
 
 ## What the teacher experiences
@@ -33,10 +33,39 @@ The trigger and cancel words cover English, Urdu and Arabic. There are no Kiswah
 
 ## Enable it
 
-Set **`MISTRAL_API_KEY`** (the vision OCR the exam checker uses). Optional fallbacks/aids: `CHANDRA_API_URL`, `SURYA_API_URL`. The exam-intake WhatsApp Flow ID lands in `EXAM_CHECKER_STUDENTS_FLOW_ID`.
+Nothing beyond the core LLM key: the exam checker reads and grades through `llm-client`, so `OPENROUTER_API_KEY` (or `OPENAI_API_KEY` with `LLM_PROVIDER=openai`) is all it needs. The exam-intake WhatsApp Flow ID lands in `EXAM_CHECKER_STUDENTS_FLOW_ID`.
 
-The exam checker is on unless **`EXAM_CHECKER_ENABLED`** is `false`, `0` or `off`. Switched off, commands, phrases and captions no longer start a session and an open session ignores new messages, but `cancel` still closes it. Every session costs vision-OCR calls, so on a public deployment see [Running Rumi in public](../running-in-public.md).
+The exam checker is on unless **`EXAM_CHECKER_ENABLED`** is `false`, `0` or `off` (or `RUMI_FEATURE_EXAM_OCR=off`). Switched off, commands, phrases and captions no longer start a session and an open session ignores new messages, but `cancel` still closes it. Every page costs one or two vision calls and every student one grading call, so on a public deployment see [Running Rumi in public](../running-in-public.md).
+
+## Storage
+
+The teacher's photos and the marked pages go to R2 when `R2_*` is set. Without it they are kept on local disk under `bot/temp/exam_checker/` and sent from there, as voice notes and reading reports are — so the exam checker runs on a sandbox with no bucket. Two limits: the Meta (Cloud API) driver cannot send a file from local disk, so a Meta deployment needs R2 (a warning is logged); and the bot and the worker must share that disk (one host). Files kept locally are not cleaned up automatically.
+
+## Models and prompts
+
+The engine is `bot/shared/services/exam-checker/exam-vision.service.js`. It makes two calls, each a job in `bot/shared/config/model-registry.js`:
+
+| Call | Job | Default model | Override | What it does |
+|------|-----|---------------|----------|--------------|
+| A — read | `exam.read` | `google/gemini-3.5-flash` | `EXAM_CHECKER_MODEL` | Copies each answer exactly, with a box around it (`box_2d` = `[ymin, xmin, ymax, xmax]` on a 0–1000 grid) and its script (`ur` / `en` / `mixed`). **Never shown the answer key.** |
+| A — hard page | `exam.readHard` | `google/gemini-2.5-pro` | `EXAM_CHECKER_HARD_MODEL` | The same read again, when more than a quarter of a page's answers (and at least two) come back with confidence below 0.6. |
+| B — grade | `exam.grade` | `google/gemini-3.5-flash` | `EXAM_CHECKER_MODEL` | Grades the copied text (no image, no boxes) against the answer key. One call per student. |
+
+With `LLM_PROVIDER=openai` all three default to `gpt-4.1`. Every call runs at temperature 0, asks for JSON, times out after 120 s and is not retried by the SDK; on OpenRouter it asks for the fastest host.
+
+**Why two calls.** A vision model that reads and grades in one pass quietly corrects a wrong answer — "2x3=5" becomes 6 — and then marks it right. Keeping the answer key out of the read keeps the copy honest. The read prompt (`CALL_A_SYS`) says so in as many words.
+
+**What the grading prompt (`CALL_B_SYS`) asks for**, question by question:
+
+1. **Can it be graded from the page?** A question that depends on something not there — words the teacher reads aloud, a listening track, a picture the model cannot see, a key it was not given — gets `cannot_grade` and 0/0, not a guessed mark. It drops out of the student's total.
+2. **The correct answer** — from the answer key when there is one, otherwise worked out by the model itself, never copied from the student.
+3. **The verdict** — `correct`, `partial` or `wrong`. Full marks or zero; partial credit only where the key defines it. No invented fractional weights.
+4. **Feedback** — one short sentence each: what the student attempted (feed-up), where it went wrong (feed-back), and the next step (feed-forward). The next step is what goes in the margin.
+
+Grading always adds up the per-question marks itself; the model's own `total_awarded` / `total_max` are not trusted. The board-specific letter grade (`grading-scale.service.js`) is applied to that percentage.
+
+**Trying it on one page.** `node scripts/exam-checker-dry-run.js <image> [scheme.json]` (from `bot/`) runs both calls and prints what each returned. Nothing is stored or sent.
 
 ## Customize
 
-Change the OCR provider, grading rubric, or feedback style — see the exam-checker services and the [Agent Customization Guide](../agent-customization.md).
+Swap a model with `EXAM_CHECKER_MODEL` / `EXAM_CHECKER_HARD_MODEL` (any model that takes images), or change the prompts, rubric or feedback style in `exam-vision.service.js` — see the [Agent Customization Guide](../agent-customization.md).

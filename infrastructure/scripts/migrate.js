@@ -1,8 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { createClient } = require('@supabase/supabase-js');
+const { createRequire } = require('module');
 const { EXEC_SQL_SQL } = require('./exec-sql-helper');
+const { loadRepoEnv } = require('./repo-env');
+
+// The repo root's package installs no copy of supabase-js; bot/ does. Run from
+// the root as SETUP.md says, a plain require failed before touching the database.
+function loadSupabase() {
+  try {
+    return require('@supabase/supabase-js');
+  } catch (err) {
+    if (err.code !== 'MODULE_NOT_FOUND') throw err;
+    return createRequire(path.resolve(__dirname, '../../bot/package.json'))('@supabase/supabase-js');
+  }
+}
+const { createClient } = loadSupabase();
 
 /**
  * MigrationRunner - Applies SQL migrations from files to a Supabase database.
@@ -245,6 +258,8 @@ module.exports = { MigrationRunner };
 
 // ── CLI entrypoint ──
 if (require.main === module) {
+  // The repo's .env, as bootstrap-db.js reads it; a variable set in the shell wins.
+  loadRepoEnv();
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

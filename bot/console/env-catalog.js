@@ -97,7 +97,6 @@ const EXTRA_GROUP = {
   ELEVENLABS_API_KEY: 'voice',
   UPLIFT_API_KEY: 'voice',
   AZURE_SPEECH_KEY: 'voice',
-  MISTRAL_API_KEY: 'documents',
   GAMMA_API_KEY: 'documents',
   KIE_API_KEY: 'documents',
   SLACK_BOT_TOKEN: 'channels',

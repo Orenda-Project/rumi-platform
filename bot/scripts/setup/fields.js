@@ -122,17 +122,10 @@ const OPTIONAL_EXTRAS = [
     where: 'portal.azure.com → create a Speech resource',
     secret: true,
   },
-  {
-    keys: ['MISTRAL_API_KEY'],
-    title: 'Read handwriting on exam papers',
-    why: 'Lets Rumi mark a photographed exam paper, not just a printed worksheet.',
-    where: 'console.mistral.ai → API Keys',
-    secret: true,
-  },
 ];
 
 // ── Slack (an additive messaging channel, not an "optional ability") ────────
-// Deliberately NOT in OPTIONAL_EXTRAS — unlike Soniox/Gamma/Azure/Mistral,
+// Deliberately NOT in OPTIONAL_EXTRAS — unlike Soniox/Gamma/Azure,
 // Slack is a whole second messaging channel with its own multi-part app-side
 // configuration (scopes, event subscriptions, interactivity, slash commands),
 // not a single key that switches a feature on. It gets its own wizard step

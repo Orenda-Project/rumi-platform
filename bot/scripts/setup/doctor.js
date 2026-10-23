@@ -52,7 +52,6 @@ const KEY_SOURCES = {
   AZURE_SPEECH_KEY: 'portal.azure.com → Speech resource',
   AZURE_SPEECH_REGION: 'portal.azure.com → Speech resource',
   KIE_API_KEY: 'kie.ai → API Key',
-  MISTRAL_API_KEY: 'console.mistral.ai → API Keys',
   SLACK_SIGNING_SECRET: 'api.slack.com/apps → your app → Basic Information → App Credentials',
   SLACK_BOT_TOKEN: 'api.slack.com/apps → your app → OAuth & Permissions → Bot User OAuth Token',
   AXIOM_DATASET: 'axiom.co → Datasets',
@@ -110,7 +109,7 @@ function analyzeEnv(env) {
   const features = FEATURES.map((f) => {
     // Features may declare keys two ways:
     //   - `keys`     → ALL required (the default, conjunctive)
-    //   - `keysAny`  → ANY one suffices (e.g. exam-checker OCR: Mistral OR Chandra)
+    //   - `keysAny`  → ANY one suffices (e.g. the exam checker: OpenRouter OR OpenAI)
     // A feature with no env keys (e.g. Chromium) is keyed off its probe, not env.
     if (Array.isArray(f.keysAny)) {
       const presentKeys = f.keysAny.filter((k) => isSet(env[k]));

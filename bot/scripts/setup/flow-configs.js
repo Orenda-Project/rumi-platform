@@ -124,7 +124,7 @@ const FLOW_CONFIGS = [
     // flow (the student list is dynamic per session) modelled on
     // attendance-marking. Endpoint INIT loads the session's detected_students;
     // completion returns confirmed_students. Only sent when the exam-checker
-    // feature is active (MISTRAL_API_KEY or CHANDRA_API_KEY) AND this Flow is
+    // feature is active (an LLM key: OPENROUTER_API_KEY or OPENAI_API_KEY) AND this Flow is
     // registered (EXAM_CHECKER_STUDENTS_FLOW_ID set).
     name: 'Exam Checker Confirm Students',
     jsonPath: path.join(FLOWS_DIR, 'exam-checker-confirm-students-flow.json'),

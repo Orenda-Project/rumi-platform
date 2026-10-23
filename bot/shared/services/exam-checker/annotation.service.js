@@ -19,10 +19,9 @@
  */
 
 const { createCanvas, loadImage, registerFont } = require('canvas');
-const axios = require('axios');
 const path = require('path');
 const PDFDocument = require('pdfkit');
-const r2Service = require('../../storage/r2');
+const { readExamFile, storeExamFile } = require('./exam-storage');
 const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
 
@@ -152,9 +151,9 @@ class AnnotationService {
    * @returns {string} Annotated image URL
    */
   static async annotateImage(imageUrl, annotations, sessionId) {
-    // Download original image
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    const imageBuffer = Buffer.from(response.data);
+    // Load the original photo: off disk, from our private bucket through the R2
+    // client, or over HTTP for any other URL
+    const imageBuffer = await readExamFile(imageUrl);
 
     // Load image into canvas
     const image = await loadImage(imageBuffer);
@@ -188,7 +187,7 @@ class AnnotationService {
       // Calculate position - use bbox if available, otherwise use relative positioning
       let x, y;
       if (bbox && bbox.x !== undefined && bbox.y !== undefined) {
-        // Use Surya bounding box coordinates (normalized 0-1)
+        // The answer box's position from the vision engine (normalized 0-1)
         x = width * bbox.x;
         y = height * bbox.y;
       } else {
@@ -225,12 +224,12 @@ class AnnotationService {
     // Export as PNG buffer
     const annotatedBuffer = canvas.toBuffer('image/png');
 
-    // Upload to R2
+    // Keep it: in R2 when configured, on local disk otherwise
     const safeName = (studentName || 'unknown').replace(/[^a-zA-Z0-9]/g, '_');
     const filename = `exams/${sessionId}/annotated_${safeName}_p${annotations.pageNumber}.png`;
-    const url = await r2Service.uploadBuffer(annotatedBuffer, filename, 'image/png');
+    const url = await storeExamFile({ buffer: annotatedBuffer, key: filename, contentType: 'image/png' });
 
-    logToFile('📷 Annotated image uploaded (Canvas)', { filename, url: redactUrl(url) });
+    logToFile('📷 Annotated image stored (Canvas)', { filename, url: redactUrl(url) });
 
     return url;
   }
@@ -465,9 +464,9 @@ class AnnotationService {
         doc.on('error', reject);
       });
 
-      // Upload to R2
+      // Keep it: in R2 when configured, on local disk otherwise
       const filename = `exams/${session.id}/summary_report.pdf`;
-      const url = await r2Service.uploadBuffer(pdfBuffer, filename, 'application/pdf');
+      const url = await storeExamFile({ buffer: pdfBuffer, key: filename, contentType: 'application/pdf' });
 
       logToFile('📄 PDF summary generated', { filename, url: redactUrl(url) });
       return url;
