@@ -9,7 +9,7 @@
 
 const { ExamCheckerOrchestrator, SESSION_STATES } = require('../services/exam-checker');
 const WhatsAppService = require('../services/whatsapp.service');
-const { uploadImageWithRetry } = require('../storage/r2');
+const { storeExamImage } = require('../services/exam-checker/exam-storage');
 const { logToFile } = require('../utils/logger');
 const { redactUrl } = require('../utils/redact-url');
 const { runWithCorrelation, generateCorrelationId } = require('../utils/structured-logger');
@@ -367,14 +367,14 @@ async function handleExamImage(message, from, user) {
     const typingController = WhatsAppService.startContinuousTypingIndicator(from, message.id);
 
     try {
-      // Download and upload image to R2
+      // Download the photo and keep it: in R2 when configured, on local disk otherwise
       const imageId = message.image?.id;
       const mimeType = message.image?.mime_type || 'image/jpeg';
 
       const imageBuffer = await WhatsAppService.downloadMedia(imageId);
-      const imageUrl = await uploadImageWithRetry(imageBuffer, user.id, imageId, mimeType);
+      const imageUrl = await storeExamImage({ buffer: imageBuffer, userId: user.id, imageId, mimeType });
 
-      logToFile('📷 Exam image uploaded to R2', { imageUrl: redactUrl(imageUrl), userId: user.id });
+      logToFile('📷 Exam image stored', { imageUrl: redactUrl(imageUrl), userId: user.id });
 
       // Process through orchestrator
       const response = await ExamCheckerOrchestrator.process(

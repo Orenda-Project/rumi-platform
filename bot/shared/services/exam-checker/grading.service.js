@@ -1,49 +1,22 @@
 /**
  * Grading Service for Exam Checker
- * Uses GPT-4o to grade student answers against marking scheme
- * Enhanced with board-specific scales and structured feedback
+ * Grades each student's copied answers against the marking scheme with the
+ * exam-vision engine (Call B — exam-vision.service.js), then applies the
+ * board-specific scale and structured feedback.
  *
  * Created: 2026-01-24
  * Updated: 2026-01-25 (Board scales + Feed Up/Back/Forward)
+ * Updated: 2026-10-19 (grades with the exam-vision engine)
  */
 
-const { getClient } = require('../llm-client');
 const supabase = require('../../config/supabase');
 const { logToFile } = require('../../utils/logger');
 const pLimit = require('p-limit');
 const GradingScaleService = require('./grading-scale.service');
 const FeedbackService = require('./feedback.service');
+const examVision = require('./exam-vision.service');
 
-const openai = getClient();
-
-// Grading system prompt
-const GRADING_SYSTEM_PROMPT = `You are an expert exam grader. Grade the student's answer fairly and accurately.
-
-You will receive:
-1. The question
-2. The correct answer / marking scheme
-3. The student's answer
-4. Maximum marks for this question
-
-Provide your grading as JSON:
-{
-  "marksAwarded": number,
-  "maxMarks": number,
-  "feedback": "brief constructive feedback",
-  "breakdown": [
-    { "criterion": "criterion name", "marks": number, "comment": "why" }
-  ],
-  "confidence": 0.0-1.0
-}
-
-Grading guidelines:
-- Be fair but strict
-- Award partial marks where appropriate
-- For MCQ/True-False: 0 or full marks only
-- For math: Check working, not just final answer
-- For essays: Consider content, structure, relevance
-- Penalize off-topic or irrelevant content
-- Be lenient with spelling if meaning is clear`;
+const VERDICTS = ['correct', 'partial', 'wrong', 'cannot_grade'];
 
 class GradingService {
   /**
@@ -111,49 +84,88 @@ class GradingService {
   }
 
   /**
-   * Grade a single student's submission
-   * Enhanced with board-specific grades and structured feedback
+   * Grade a single student's submission: one Call B for all their questions.
    * @param {object} session - Exam session
-   * @param {object} student - Student info with answers
-   * @param {object} markingScheme - Marking scheme
+   * @param {object} student - Student info (name, pageNumbers)
+   * @param {object} markingScheme - Marking scheme ({ questions: [{ id, text, answer, marks }] })
    * @returns {object} Grading result
    */
   static async gradeStudent(session, student, markingScheme) {
-    logToFile('📝 Grading student', { student: student.name });
+    logToFile('📝 Grading student (exam-vision)', { student: student.name });
 
-    const questionResults = [];
-    let totalMarks = 0;
-    let marksAwarded = 0;
     const board = session.board || session.grading_scale || 'Generic';
     const language = session.language || 'en';
+    const schemeQuestions = (markingScheme && markingScheme.questions) || [];
 
-    for (const question of markingScheme.questions) {
-      // Find student's answer for this question
-      const studentAnswer = this._findStudentAnswer(session, student, question.id);
+    // One item per scheme question: the student's copied answer, its box and
+    // the page it sits on.
+    const items = schemeQuestions.map((q) => {
+      const found = this._findStudentAnswerAndBox(session, student, q.id);
+      return {
+        question_id: q.id,
+        question_text: q.text || q.id,
+        answer_text_verbatim: found.answer || '',
+        box_2d: found.box_2d,
+        pageNumber: found.pageNumber,
+        script: found.script,
+      };
+    });
 
-      const result = await this.gradeQuestion(question, studentAnswer);
+    const graded = await examVision.gradeAnswers(items, markingScheme, {
+      grade: session.grade, subject: session.subject,
+    });
 
-      // Generate structured feedback for this question
-      const feedback = FeedbackService.generate({
-        question: question.text || question.id,
-        learningObjective: question.learningObjective,
-        studentAnswer,
-        correctAnswer: question.answer,
-        awarded: result.marksAwarded,
-        maxMarks: result.maxMarks,
-        language
-      });
+    const gradedById = {};
+    (graded.items || []).forEach((g) => { gradedById[g.question_id] = g; });
+    const schemeById = {};
+    schemeQuestions.forEach((q) => { schemeById[q.id] = q; });
 
-      questionResults.push({
-        questionId: question.id,
-        ...result,
-        structuredFeedback: feedback
-      });
+    const questionResults = items.map((it) => {
+      const g = gradedById[it.question_id] || {};
+      const scheme = schemeById[it.question_id] || {};
+      // The engine may ABSTAIN (cannot_grade) on a question that needs
+      // information not on the page — audio, dictation, an unseen picture.
+      // Such a question is worth 0/0: it must not count toward the total or be
+      // shown as a wrong answer.
+      const rawVerdict = VERDICTS.includes(g.verdict) ? g.verdict : null;
+      const cannotGrade = rawVerdict === 'cannot_grade';
+      const maxMarks = cannotGrade ? 0 : (typeof g.max_marks === 'number' ? g.max_marks : (scheme.marks || 1));
+      const awarded = cannotGrade ? 0 : (typeof g.awarded_marks === 'number' ? Math.min(g.awarded_marks, maxMarks) : 0);
+      const verdict = rawVerdict || (awarded >= maxMarks ? 'correct' : awarded > 0 ? 'partial' : 'wrong');
+      const structuredFeedback = {
+        feedUp: g.feedback_up || '',
+        feedBack: g.feedback_back || '',
+        feedForward: g.feedback_forward || '',
+      };
+      return {
+        questionId: it.question_id,
+        questionText: it.question_text,
+        questionType: scheme.type || 'unknown',
+        studentAnswer: it.answer_text_verbatim,
+        expectedAnswer: g.expected_answer ?? null,
+        marksAwarded: awarded,
+        maxMarks,
+        isCorrect: verdict === 'correct',
+        isPartial: verdict === 'partial',
+        cannotGrade,
+        verdict,
+        // The margin note is the actionable next step; the full feedback is kept structured.
+        feedback: structuredFeedback.feedForward || structuredFeedback.feedBack || structuredFeedback.feedUp || '',
+        structuredFeedback,
+        confidence: g.confidence ?? 0.8,
+        script: it.script || 'en',
+        pageNumber: it.pageNumber,
+        box_2d: it.box_2d || null,
+        bbox: this._markPosition(it.box_2d),
+      };
+    });
 
-      totalMarks += question.marks || 0;
-      marksAwarded += result.marksAwarded || 0;
-    }
-
+    // Always sum the per-question marks — never trust the model's own
+    // total_awarded / total_max, which can disagree with its per-question marks.
+    // cannot_grade questions are 0/0, so they drop out of both sums.
+    const totalMarks = questionResults.reduce((s, q) => s + (q.maxMarks || 0), 0);
+    const marksAwarded = questionResults.reduce((s, q) => s + (q.marksAwarded || 0), 0);
+    const cannotGradeCount = questionResults.filter(q => q.cannotGrade).length;
     const percentage = totalMarks > 0 ? Math.round((marksAwarded / totalMarks) * 100) : 0;
 
     // Get board-specific grade
@@ -168,6 +180,7 @@ class GradingService {
       totalMarks,
       marksAwarded,
       percentage,
+      cannotGradeCount,
       grade: gradeReport.grade,
       gradeReport, // Full grade details with GPA, division, etc.
       overallFeedback, // Feed Up/Back/Forward for whole exam
@@ -177,151 +190,61 @@ class GradingService {
   }
 
   /**
-   * Grade a single question
-   * @param {object} question - Question with correct answer
-   * @param {string} studentAnswer - Student's answer
-   * @returns {object} Grading result
+   * Where the annotator draws a question's mark: the right edge of the answer
+   * box, at its top, as 0-1 fractions of the page. box_2d is
+   * [ymin, xmin, ymax, xmax] on a 0-1000 grid. Null without a box — the
+   * annotator then falls back to its own layout.
    */
-  static async gradeQuestion(question, studentAnswer) {
-    // Handle empty answers
-    if (!studentAnswer || studentAnswer.trim() === '') {
-      return {
-        marksAwarded: 0,
-        maxMarks: question.marks || 1,
-        feedback: 'No answer provided',
-        breakdown: [],
-        confidence: 1.0
-      };
-    }
-
-    // For MCQ and True/False, do simple matching
-    if (question.type === 'mcq' || question.type === 'true_false') {
-      const isCorrect = this._checkExactMatch(question.answer, studentAnswer);
-      return {
-        marksAwarded: isCorrect ? (question.marks || 1) : 0,
-        maxMarks: question.marks || 1,
-        feedback: isCorrect ? 'Correct!' : `Incorrect. The answer is ${question.answer}`,
-        breakdown: [],
-        confidence: 1.0
-      };
-    }
-
-    // For other types, use GPT-4o
-    try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: GRADING_SYSTEM_PROMPT },
-          {
-            role: 'user',
-            content: `Grade this answer:
-
-Question (${question.type}, ${question.marks} marks): ${question.text || question.id}
-
-Correct Answer/Rubric: ${question.answer || question.rubric || 'Use your judgment'}
-
-Student's Answer: ${studentAnswer}
-
-Maximum Marks: ${question.marks || 1}`
-          }
-        ],
-        max_tokens: 500,
-        temperature: 0.3,
-        response_format: { type: 'json_object' }
-      });
-
-      const content = response.choices[0]?.message?.content;
-      const result = JSON.parse(content);
-
-      // Validate marks don't exceed max
-      result.marksAwarded = Math.min(result.marksAwarded || 0, question.marks || 1);
-      result.maxMarks = question.marks || 1;
-
-      return result;
-    } catch (error) {
-      logToFile('⚠️ GPT grading failed, using fallback', { error: error.message });
-
-      // Fallback: keyword matching
-      return this._fallbackGrading(question, studentAnswer);
-    }
+  static _markPosition(box2d) {
+    if (!Array.isArray(box2d) || box2d.length !== 4 || !box2d.every(n => typeof n === 'number')) return null;
+    const [ymin, , , xmax] = box2d;
+    const clamp = (v) => Math.min(Math.max(v, 0), 1);
+    return { x: clamp(xmax / 1000), y: clamp(ymin / 1000) };
   }
 
   /**
-   * Check exact match for MCQ/True-False
-   * @param {string} correct - Correct answer
-   * @param {string} student - Student answer
-   * @returns {boolean}
+   * Find a student's copied answer, its box, script and page for a question.
+   * Ids are compared loosely, so a scheme "Q1" matches a page "q1", "1" or "Q.1".
+   * @returns {{answer: string, box_2d: number[]|null, script: string|undefined, pageNumber: number|undefined}}
    */
-  static _checkExactMatch(correct, student) {
-    if (!correct || !student) return false;
+  static _findStudentAnswerAndBox(session, student, questionId) {
+    const allPages = (session.ocr_results && session.ocr_results.pages) || [];
+    const studentPages = (student.pageNumbers && student.pageNumbers.length > 0)
+      ? student.pageNumbers
+      : allPages.map(p => p.pageNumber);
+    const want = this._normalizeQuestionId(questionId);
 
-    const normalize = (s) => s.toString().toLowerCase().trim()
-      .replace(/[^a-z0-9]/g, '');
-
-    return normalize(correct) === normalize(student);
-  }
-
-  /**
-   * Fallback grading using keyword matching
-   * @param {object} question - Question
-   * @param {string} studentAnswer - Answer
-   * @returns {object} Grading result
-   */
-  static _fallbackGrading(question, studentAnswer) {
-    const maxMarks = question.marks || 1;
-    const correctAnswer = question.answer || '';
-
-    // Simple keyword matching
-    const correctWords = new Set(
-      correctAnswer.toLowerCase().split(/\s+/).filter(w => w.length > 3)
-    );
-    const studentWords = new Set(
-      studentAnswer.toLowerCase().split(/\s+/).filter(w => w.length > 3)
-    );
-
-    let matches = 0;
-    for (const word of studentWords) {
-      if (correctWords.has(word)) matches++;
+    for (const page of allPages) {
+      if (!studentPages.includes(page.pageNumber)) continue;
+      const q = (page.questions || []).find(qq =>
+        this._normalizeQuestionId(qq.id) === want || this._normalizeQuestionId(qq.number) === want
+      );
+      if (q && (q.studentAnswer || q.box_2d)) {
+        return {
+          answer: q.studentAnswer || '',
+          box_2d: Array.isArray(q.box_2d) ? q.box_2d : null,
+          script: q.script,
+          pageNumber: page.pageNumber,
+        };
+      }
     }
+    return { answer: '', box_2d: null, script: undefined, pageNumber: undefined };
+  }
 
-    const matchRatio = correctWords.size > 0 ? matches / correctWords.size : 0;
-    const marksAwarded = Math.round(matchRatio * maxMarks);
-
-    return {
-      marksAwarded,
-      maxMarks,
-      feedback: `Partial credit based on keyword matching (${Math.round(matchRatio * 100)}% match)`,
-      breakdown: [],
-      confidence: 0.5
-    };
+  /** "Q1", "q1", "Q.1", "Question 1" and "1" all become "1". */
+  static _normalizeQuestionId(value) {
+    return String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^(question|q)(?=\d)/, '');
   }
 
   /**
-   * Find student's answer for a question
+   * A student's copied answer for a question.
    * @param {object} session - Session with detected data
    * @param {object} student - Student info
    * @param {string} questionId - Question ID
    * @returns {string} Student's answer
    */
   static _findStudentAnswer(session, student, questionId) {
-    // Look in detected questions from the student's pages
-    const studentPages = student.pageNumbers || [];
-    const ocrResults = session.ocr_results || { pages: [] };
-
-    for (const page of ocrResults.pages) {
-      if (!studentPages.includes(page.pageNumber)) continue;
-
-      const question = page.questions?.find(q =>
-        q.number?.toString() === questionId.replace('Q', '') ||
-        q.id === questionId
-      );
-
-      if (question?.studentAnswer) {
-        return question.studentAnswer;
-      }
-    }
-
-    return '';
+    return this._findStudentAnswerAndBox(session, student, questionId).answer;
   }
 
   /**

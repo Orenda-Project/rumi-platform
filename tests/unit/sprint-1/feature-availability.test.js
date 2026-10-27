@@ -99,31 +99,38 @@ describe('feature-availability (presence-based gating)', () => {
     expect(fa.isFeatureAvailable(azure, { ...FULL_ENV, AZURE_SPEECH_KEY: 'k', AZURE_SPEECH_REGION: 'eastus' })).toBe(true);
   });
 
-  it('exam-checker gate is the disjunction of Mistral OR Chandra (matches OCR code)', () => {
-    // The OCR service tries Mistral first (MISTRAL_API_KEY), then falls
-    // back to Chandra (CHANDRA_API_KEY). The gate must reflect that: the
-    // feature is available iff EITHER key is configured.
+  it('exam-checker gate is the LLM key the vision engine reads with (matches exam-vision code)', () => {
+    // The exam checker reads and grades through llm-client (OpenRouter, or
+    // direct OpenAI on LLM_PROVIDER=openai). It has no key of its own, so it
+    // is on wherever the LLM is — the same gate as test papers.
     const exam = fa.FEATURES.find((f) => f.name.includes('Exam'));
-    expect(exam.keysAny).toEqual(['MISTRAL_API_KEY', 'CHANDRA_API_KEY']);
+    expect(exam.keysAny).toEqual(['OPENROUTER_API_KEY', 'OPENAI_API_KEY']);
     expect(exam.keys).toBeUndefined();
+    expect(JSON.stringify(exam)).not.toMatch(/MISTRAL|CHANDRA|SURYA/);
   });
 
   it('isFeatureAvailable honours `keysAny` (any-of) semantics', () => {
     const exam = fa.FEATURES.find((f) => f.name.includes('Exam'));
+    const noLlm = { ...FULL_ENV };
+    delete noLlm.OPENROUTER_API_KEY;
     // Neither key set — feature OFF
-    expect(fa.isFeatureAvailable(exam, FULL_ENV)).toBe(false);
-    // Mistral only — feature ON
-    expect(fa.isFeatureAvailable(exam, { ...FULL_ENV, MISTRAL_API_KEY: 'k' })).toBe(true);
-    // Chandra only — feature ON
-    expect(fa.isFeatureAvailable(exam, { ...FULL_ENV, CHANDRA_API_KEY: 'k' })).toBe(true);
+    expect(fa.isFeatureAvailable(exam, noLlm)).toBe(false);
+    // OpenRouter only — feature ON
+    expect(fa.isFeatureAvailable(exam, { ...noLlm, OPENROUTER_API_KEY: 'k' })).toBe(true);
+    // OpenAI only — feature ON
+    expect(fa.isFeatureAvailable(exam, { ...noLlm, OPENAI_API_KEY: 'k' })).toBe(true);
     // Both set — feature ON
-    expect(fa.isFeatureAvailable(exam, { ...FULL_ENV, MISTRAL_API_KEY: 'k', CHANDRA_API_KEY: 'k' })).toBe(true);
+    expect(fa.isFeatureAvailable(exam, { ...noLlm, OPENROUTER_API_KEY: 'k', OPENAI_API_KEY: 'k' })).toBe(true);
   });
 
   it('availableFeatures reflects exactly the keys provided', () => {
-    // No optional keys yet: the only feature on is the one that needs nothing
-    // beyond the required LLM key (test papers), so a fresh clone has it.
-    expect(fa.availableFeatures(FULL_ENV)).toEqual(['Test papers from the book (/testpaper)']);
+    // No optional keys yet: the features on are the ones that need nothing
+    // beyond the required LLM key (the exam checker and test papers), so a
+    // fresh clone has them.
+    expect(fa.availableFeatures(FULL_ENV)).toEqual([
+      'Exam checker (reads and marks photographed papers)',
+      'Test papers from the book (/testpaper)',
+    ]);
     const withGamma = fa.availableFeatures({ ...FULL_ENV, GAMMA_API_KEY: 'k' });
     expect(withGamma).toContain('Lesson-plan generation (Gamma)');
   });

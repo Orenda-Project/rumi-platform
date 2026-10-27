@@ -27,7 +27,7 @@ beyond hosting.
 | Reading pronunciation scoring | Azure Speech | `AZURE_SPEECH_KEY` | ~$25 | Only the English pronunciation path. |
 | Lesson plans (text) | Gamma | `GAMMA_API_KEY` | ~$50 | Per-plan generation; pre-generated curriculum LPs are free to serve. |
 | Pic-to-LP + Video | Kie.ai | `KIE_API_KEY` | usage-based | Image/video rendering; the heaviest per-artifact cost. |
-| Exam checker | Mistral (vision) | `MISTRAL_API_KEY` | usage-based | Per-page OCR + grading. |
+| Exam checker | OpenRouter (Gemini vision) | core LLM key | usage-based | One or two vision calls per page, one grading call per student. `EXAM_CHECKER_MODEL` picks the model. |
 | Observability | Axiom | `AXIOM_DATASET` + `AXIOM_TOKEN` | Free → paid | Optional; the bot logs to the console without it. |
 
 ## Optimisation tips

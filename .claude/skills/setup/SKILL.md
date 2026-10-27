@@ -252,7 +252,7 @@ on.
 | Reading pronunciation scoring | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` |
 | Lesson-plan generation | `GAMMA_API_KEY` |
 | Educational video | `VIDEO_GENERATION_ENABLED=true` + `KIE_API_KEY` |
-| Exam-checker OCR | `MISTRAL_API_KEY` or `CHANDRA_API_KEY` |
+| Exam checker | Nothing extra — it reads and grades with the core LLM key (`EXAM_CHECKER_ENABLED=false` turns it off) |
 
 The single source of truth is
 [bot/shared/config/feature-availability.js](../../../bot/shared/config/feature-availability.js) — read it

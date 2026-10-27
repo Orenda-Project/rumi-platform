@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**The exam checker reads and grades with one vision model, in two calls, and needs no key of its own.**
+
+> **Upgrade notes.** Existing Supabase deployments: run `node infrastructure/scripts/migrate.js` (migration
+> `V2.11.6__exam_ocr_provider_any_model.sql`, safe to re-run). Installs that applied the legacy
+> `bot/database/migrations/015_exam_checker.sql` have a CHECK on `exam_check_sessions.ocr_provider` that would reject
+> the new model name; the migration drops it, and only that one. `MISTRAL_API_KEY`, `CHANDRA_API_KEY`,
+> `CHANDRA_API_URL`, `SURYA_API_URL` and `DATALAB_API_KEY` are no longer read and can be removed from `.env`. New
+> optional settings: `EXAM_CHECKER_MODEL` (default `google/gemini-3.5-flash`) and `EXAM_CHECKER_HARD_MODEL` (default
+> `google/gemini-2.5-pro`). The exam checker is now on wherever the core LLM key is set; `EXAM_CHECKER_ENABLED=false`
+> or `RUMI_FEATURE_EXAM_OCR=off` still turns it off.
+
+### Changed
+
+- **A new exam-vision engine replaces Mistral, Chandra, Surya and GPT-4o.** Call A reads each page and copies every
+  answer exactly, with a box around it, and is never shown the answer key: a model that reads and grades in one pass
+  quietly corrects a wrong answer ("2x3=5" becomes 6) and then marks it right. Call B grades the copied text against
+  the key. Both are model-registry jobs (`exam.read`, `exam.readHard`, `exam.grade`) and go through `llm-client`.
+- **A hard page is read twice.** When more than a quarter of a page's answers (and at least two) come back below 0.6
+  confidence, it is read again on the stronger `exam.readHard` model.
+- **A question the model cannot mark from the page is not marked.** Dictation, "the word your teacher reads out", a
+  picture it cannot see: these come back `cannot_grade`, worth 0/0, and drop out of the student's total instead of
+  counting as wrong.
+- **One grading call per student**, not one per question, and the total is always the sum of the per-question marks,
+  never the model's own total. A mark is capped at the question's maximum.
+- **Ticks and crosses land on the answer.** The answer boxes from Call A now reach the annotator, which before drew
+  every mark down the right-hand margin.
+- **The dry-run script** (`bot/scripts/exam-checker-dry-run.js`) runs both calls on any image and prints what each
+  returned.
+
+- **The exam checker runs without R2.** With no `R2_*` set, every photo upload used to fail and the teacher got
+  "trouble processing that image" before anything was read. Photos and marked pages are now kept on local disk
+  (`bot/temp/exam_checker/`) and sent from there, like voice notes and reading reports. A Meta-driver deployment
+  still needs R2, and a warning says so.
+
+- **A fresh install gets every migration.** `npm run bootstrap:db` (and `rumi setup`) now ends by applying every
+  `infrastructure/supabase/migrations/V*.sql` in version order and recording each in `schema_versions`. A change not
+  yet folded into `00_complete-schema.sql` (V2.11.7) reaches new installs, and the first `migrate.js` run no longer
+  re-applies every migration as "pending". It stops at a failing migration and does not record it.
+
+### Fixed
+
+- **`node infrastructure/scripts/migrate.js` runs as SETUP.md says.** From the repo root it stopped at "Cannot find
+  module '@supabase/supabase-js'" (installed only under `bot/`) and never read `.env`. It now loads bot/'s copy of the
+  library and reads the repo `.env` with the same reader as `bootstrap-db.js` (a variable set in the shell still wins).
+- **The exam-checker conversation reaches a grade.** "✅ Yes, correct" on the question list was ignored, so the step
+  repeated itself for every message the teacher sent, "hi" included; it now moves on to the answer key, and the
+  list of questions is shown (it never reached the teacher). After each answer the next question is asked (Q1 was
+  asked again, and the next reply was filed under Q2). The answer-key summary shows the answers, "✏️ Edit scheme"
+  starts the key again, and the results are delivered with the grades and marked pages just produced (delivery
+  read them from a copy of the session made before grading).
+
+- **Marked pages reach the teacher.** Delivery sent each marked page with `sendImage()`, which takes a file path or a
+  media id, not a URL, so no marked page was ever sent. It now uses `sendImageFromUrl()`.
+- **The annotator reads a private bucket.** It fetched the original photo with a plain HTTP GET, which a private R2
+  bucket refuses; it now reads through the R2 client.
+
+### Removed
+
+- `surya.service.js` and the Mistral / Chandra code paths, and the "Read handwriting on exam papers" step in
+  `rumi setup`, which only asked for the Mistral key.
+
 ## [2.11.5] - 2026-10-05
 
 **Patch: two people sending or receiving at the same moment each get their own file.** This affects every deployment

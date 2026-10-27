@@ -100,7 +100,9 @@ class DeliveryService {
         if (imagesSent >= MAX_IMAGES) break;
 
         try {
-          await whatsappService.sendImage(phoneNumber, imageUrl, `${studentImages.student}'s graded exam`);
+          // A URL, not a file path: sendImageFromUrl lets the channel driver
+          // fetch it (an R2 object, or a file:// page kept on local disk).
+          await whatsappService.sendImageFromUrl(phoneNumber, imageUrl, `${studentImages.student}'s graded exam`);
           imagesSent++;
 
           // Rate limiting

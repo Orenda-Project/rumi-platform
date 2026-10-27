@@ -135,15 +135,17 @@ const FEATURES = [
   // gate — adding it would mark the feature OFF whenever the env var is unset,
   // which is the wrong semantics (you can set the key and gate it independently).
   { id: 'video_kie', name: 'Video generation (Kie.ai)', keys: ['KIE_API_KEY'], notes: 'Also requires VIDEO_GENERATION_ENABLED=true at runtime.' },
-  // Exam-checker OCR has TWO supported backends — Mistral Vision (primary)
-  // and Chandra / Datalab (fallback). The OCR service tries Mistral when
-  // MISTRAL_API_KEY is set, falls back to Chandra when CHANDRA_API_KEY is
-  // set. The feature is therefore available iff EITHER key is present;
-  // `keysAny` carries that disjunction semantics (vs `keys` which is AND).
+  // The exam checker reads and grades with the exam-vision engine, which goes
+  // through llm-client like every other LLM call — OpenRouter, or direct OpenAI
+  // on LLM_PROVIDER=openai. It has no key of its own, so it is on wherever the
+  // LLM is. EXAM_CHECKER_ENABLED=false (exam-checker.handler.js) or
+  // RUMI_FEATURE_EXAM_OCR=off turns it off.
   {
     id: 'exam_ocr',
-    name: 'Exam-checker OCR (Mistral or Chandra)',
-    keysAny: ['MISTRAL_API_KEY', 'CHANDRA_API_KEY'],
+    name: 'Exam checker (reads and marks photographed papers)',
+    keysAny: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
+    notes: 'Optional: EXAM_CHECKER_MODEL (reads and grades, default google/gemini-3.5-flash), '
+      + 'EXAM_CHECKER_HARD_MODEL (re-reads a hard page, default google/gemini-2.5-pro). Both must take images.',
   },
   // The lesson quiz needs no key of its own (it writes with OPENROUTER_API_KEY,
   // which is core); its one gate is the TRANSCRIPT_QUIZ_ENABLED flag, so the
@@ -221,8 +223,8 @@ function missingRequired(env = process.env) {
 /**
  * Is a single feature (by display name, entry object, or keys array)
  * available? An entry with `keys` requires ALL listed env vars; an entry
- * with `keysAny` requires AT LEAST ONE (e.g. exam-checker OCR works with
- * Mistral OR Chandra). Passing a bare array of strings keeps the legacy
+ * with `keysAny` requires AT LEAST ONE (e.g. test papers work with
+ * OpenRouter OR OpenAI). Passing a bare array of strings keeps the legacy
  * AND-semantics call shape that downstream code relies on.
  */
 function isFeatureAvailable(feature, env = process.env, opts = {}) {

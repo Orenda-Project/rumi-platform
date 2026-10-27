@@ -45,6 +45,14 @@ const JOBS = {
   // The class report's "For tomorrow" reteach box; the report arrives without
   // it if the call fails.
   'quiz.videoReport': { env: 'QUIZ_REPORT_MODEL', default: 'openai/gpt-5.4-mini', openaiDefault: 'gpt-5.4-mini' },
+  // The exam checker's vision engine (exam-checker/exam-vision.service.js).
+  // One model reads the page (with the marking scheme withheld) and then grades
+  // the copied answers, so read and grade share an env var. A page whose
+  // answers come back mostly low-confidence is read once more on the stronger
+  // exam.readHard model. Every model here must accept image input.
+  'exam.read': { env: 'EXAM_CHECKER_MODEL', default: 'google/gemini-3.5-flash', openaiDefault: 'gpt-4.1' },
+  'exam.grade': { env: 'EXAM_CHECKER_MODEL', default: 'google/gemini-3.5-flash', openaiDefault: 'gpt-4.1' },
+  'exam.readHard': { env: 'EXAM_CHECKER_HARD_MODEL', default: 'google/gemini-2.5-pro', openaiDefault: 'gpt-4.1' },
 };
 
 const PLATFORM_DEFAULT = 'openai/gpt-4o';

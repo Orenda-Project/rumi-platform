@@ -1,324 +1,140 @@
 /**
  * OCR Service for Exam Checker
- * Extracts text from exam images using Mistral (primary) → Chandra (fallback)
- * Enhanced with Surya bounding boxes for annotation positioning
+ *
+ * A thin adapter over the exam-vision engine (exam-vision.service.js): it reads
+ * each page with Call A and maps the result into the OCR shape the question
+ * detector and the worker already use. Each question carries its answer box
+ * (box_2d) and script, so grading can hand the box on to the annotator.
  *
  * Created: 2026-01-24
- * Updated: 2026-01-25 (Surya integration)
- * Beads: (OCR), (Surya integration)
+ * Updated: 2026-10-19 (reads with the exam-vision engine)
  */
 
-const axios = require('axios');
+const { readExamFile, isOwnBucketUrl } = require('./exam-storage');
 const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
-const SuryaService = require('./surya.service');
+const examVision = require('./exam-vision.service');
 
-// Provider configuration
-const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
-const CHANDRA_API_URL = process.env.CHANDRA_API_URL || 'https://api.chandra.datalab.to/v1/ocr';
-
-// OCR prompt for exam papers
-const OCR_SYSTEM_PROMPT = `You are an expert OCR system specialized in reading handwritten exam papers.
-
-Extract ALL text from this exam paper image, including:
-1. Student name (usually at top)
-2. Roll number / ID
-3. Question numbers and text
-4. Student's handwritten answers
-5. Any printed instructions
-
-Format your response as JSON:
-{
-  "studentName": "name if visible",
-  "rollNumber": "number if visible",
-  "questions": [
-    {
-      "number": "1",
-      "questionText": "printed question if visible",
-      "studentAnswer": "handwritten answer",
-      "confidence": 0.0-1.0
-    }
-  ],
-  "rawText": "all text in reading order",
-  "metadata": {
-    "isHandwritten": true/false,
-    "language": "detected language",
-    "pageType": "exam/answer_sheet/both"
-  }
+/**
+ * exam_check_sessions.ocr_provider is varchar(20), and a model id
+ * ("google/gemini-3.5-flash" is 23 characters) overflows it. Store the model
+ * without its vendor prefix, capped at 20; the full id is kept in
+ * metadata.engine.
+ */
+function shortProvider(model) {
+  return String(model || 'exam-vision').split('/').pop().slice(0, 20);
 }
 
-Be thorough - teachers need accurate transcription for grading.`;
+/**
+ * Turn an image reference into something the vision model can read. The model
+ * can open neither our private bucket nor a file on this machine (the photo is
+ * kept on local disk when R2 is not configured), so for those read the bytes
+ * and send them inline as a data URL. Any other URL passes through untouched.
+ */
+async function resolveImageForVision(imageUrl) {
+  if (!imageUrl.startsWith('file://') && !isOwnBucketUrl(imageUrl)) return imageUrl;
+  const buffer = await readExamFile(imageUrl);
+  const ext = (imageUrl.split('?')[0].split('.').pop() || 'jpeg').toLowerCase();
+  const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+  return examVision.toDataUrl(buffer, mime);
+}
 
 class OCRService {
   /**
    * Extract text from a batch of images
    * @param {Array} images - Array of image objects with url property
-   * @returns {object} Batch OCR results
+   * @returns {object} { pages, provider, averageConfidence, successRate, totalPages, successfulPages }
    */
   static async extractBatch(images) {
     if (!images || images.length === 0) {
       throw new Error('No images provided for OCR');
     }
 
-    logToFile('🔍 Starting batch OCR', { imageCount: images.length });
+    logToFile('🔍 Starting batch OCR (exam-vision)', { imageCount: images.length });
 
     const results = [];
-    let provider = 'mistral';
+    let provider = null;
     let totalConfidence = 0;
     let successCount = 0;
 
     for (const image of images) {
+      const pageNumber = image.pageNumber || results.length + 1;
       try {
         const result = await this.extractSingle(image.url);
-        results.push({
-          pageNumber: image.pageNumber || results.length + 1,
-          ...result,
-          success: true
-        });
+        results.push({ pageNumber, ...result, success: true });
         totalConfidence += result.confidence || 0.8;
         successCount++;
-        provider = result.provider;
+        provider = result.provider || provider;
       } catch (error) {
-        logToFile('⚠️ OCR failed for image', {
-          pageNumber: image.pageNumber,
-          error: error.message
-        });
-        results.push({
-          pageNumber: image.pageNumber || results.length + 1,
-          success: false,
-          error: error.message
-        });
+        logToFile('⚠️ OCR failed for image', { pageNumber, error: error.message });
+        results.push({ pageNumber, success: false, error: error.message });
       }
     }
 
     return {
       pages: results,
-      provider,
+      provider: provider || shortProvider(null),
       averageConfidence: successCount > 0 ? totalConfidence / successCount : 0,
       successRate: successCount / images.length,
       totalPages: images.length,
-      successfulPages: successCount
+      successfulPages: successCount,
     };
   }
 
   /**
-   * Extract text from a single image
-   * Enhanced with Surya bounding boxes for annotation positioning
+   * Read a single page with the exam-vision engine and map it into the OCR
+   * result shape.
    * @param {string} imageUrl - URL of the image
-   * @param {boolean} includeBoundingBoxes - Whether to fetch Surya bounding boxes
-   * @returns {object} OCR result with optional bounding boxes
+   * @returns {object} { studentName, rollNumber, grade, subject, questions[], rawText, metadata, provider, confidence }
    */
-  static async extractSingle(imageUrl, includeBoundingBoxes = true) {
-    let ocrResult;
+  static async extractSingle(imageUrl) {
+    logToFile('🔍 Reading exam page', { imageUrl: redactUrl(imageUrl) });
+    const visionUrl = await resolveImageForVision(imageUrl);
+    const page = await examVision.readPageWithEscalation(visionUrl);
+    const meta = page.page_meta || {};
+    // Call A tags the name / class / date header as items with ids like
+    // `student_name_ur` or `student_meta_en`. They are not questions and must
+    // not be graded (graded against themselves, they come back "correct").
+    const items = (page.items || []).filter(it => !OCRService._isHeaderItem(it));
 
-    // Try Mistral first
-    try {
-      ocrResult = await this._extractWithMistral(imageUrl);
-      ocrResult.provider = 'mistral';
-    } catch (mistralError) {
-      logToFile('⚠️ Mistral OCR failed, trying Chandra', { error: mistralError.message });
+    const questions = items.map((it, i) => ({
+      number: it.question_id || String(i + 1),
+      questionText: it.question_text || '',
+      studentAnswer: it.answer_text_verbatim || '',
+      box_2d: Array.isArray(it.box_2d) ? it.box_2d : null,
+      script: it.script || 'en',
+      confidence: it.confidence ?? 0.8,
+    }));
 
-      // Fallback to Chandra
-      try {
-        ocrResult = await this._extractWithChandra(imageUrl);
-        ocrResult.provider = 'chandra';
-      } catch (chandraError) {
-        logToFile('❌ Both OCR providers failed', {
-          mistral: mistralError.message,
-          chandra: chandraError.message
-        });
-        throw new Error('OCR failed with all providers');
-      }
-    }
+    const rawText = questions.map(q => `${q.number}. ${q.studentAnswer}`).join('\n');
+    const avgConf = questions.length
+      ? questions.reduce((s, q) => s + (q.confidence || 0), 0) / questions.length
+      : 0.5;
 
-    // Enhance with Surya bounding boxes for annotation positioning
-    if (includeBoundingBoxes) {
-      try {
-        ocrResult = await SuryaService.enhanceWithBoundingBoxes(imageUrl, ocrResult);
-        logToFile('✅ Enhanced OCR with Surya bounding boxes', {
-          questionCount: ocrResult.questions?.length || 0,
-          boxCount: ocrResult.boundingBoxes?.length || 0
-        });
-      } catch (suryaError) {
-        logToFile('⚠️ Surya enhancement failed, continuing without bounding boxes', {
-          error: suryaError.message
-        });
-        // Continue without bounding boxes - annotation will use fallback positioning
-      }
-    }
-
-    return ocrResult;
-  }
-
-  /**
-   * Extract text using Mistral Vision API
-   * @param {string} imageUrl - URL of the image
-   * @returns {object} Parsed OCR result
-   */
-  static async _extractWithMistral(imageUrl) {
-    const apiKey = process.env.MISTRAL_API_KEY;
-    if (!apiKey) {
-      throw new Error('MISTRAL_API_KEY not configured');
-    }
-
-    logToFile('🔍 Calling Mistral OCR', { imageUrl: redactUrl(imageUrl) });
-
-    const response = await axios.post(
-      MISTRAL_API_URL,
-      {
-        model: 'pixtral-large-latest',
-        messages: [
-          {
-            role: 'system',
-            content: OCR_SYSTEM_PROMPT
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: { url: imageUrl }
-              },
-              {
-                type: 'text',
-                text: 'Extract all text from this exam paper. Return JSON format.'
-              }
-            ]
-          }
-        ],
-        max_tokens: 4096,
-        temperature: 0.1,
-        response_format: { type: 'json_object' }
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      }
-    );
-
-    const content = response.data.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error('Empty response from Mistral');
-    }
-
-    try {
-      const parsed = JSON.parse(content);
-      return {
-        studentName: parsed.studentName,
-        rollNumber: parsed.rollNumber,
-        questions: parsed.questions || [],
-        rawText: parsed.rawText || content,
-        metadata: parsed.metadata || {},
-        confidence: this._calculateConfidence(parsed)
-      };
-    } catch (parseError) {
-      // Return raw text if JSON parsing fails
-      return {
-        rawText: content,
-        questions: [],
-        confidence: 0.5
-      };
-    }
-  }
-
-  /**
-   * Extract text using Chandra/Datalab OCR API
-   * @param {string} imageUrl - URL of the image
-   * @returns {object} Parsed OCR result
-   */
-  static async _extractWithChandra(imageUrl) {
-    const apiKey = process.env.CHANDRA_API_KEY;
-    if (!apiKey) {
-      throw new Error('CHANDRA_API_KEY not configured');
-    }
-
-    logToFile('🔍 Calling Chandra OCR', { imageUrl: redactUrl(imageUrl) });
-
-    const response = await axios.post(
-      CHANDRA_API_URL,
-      {
-        image_url: imageUrl,
-        output_format: 'json',
-        detect_handwriting: true,
-        languages: ['en', 'ur', 'ar']
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      }
-    );
-
-    const data = response.data;
-
-    // Parse Chandra response format
     return {
-      rawText: data.text || data.raw_text || '',
-      questions: this._parseQuestionsFromText(data.text || ''),
-      metadata: {
-        boundingBoxes: data.bounding_boxes,
-        language: data.detected_language
-      },
-      confidence: data.confidence || 0.7
+      studentName: meta.student_name || null,
+      rollNumber: meta.roll_number || null,
+      grade: meta.grade || null,
+      subject: meta.subject || null,
+      questions,
+      rawText,
+      metadata: { language: questions[0]?.script || 'en', engine: page._model },
+      provider: shortProvider(page._model),
+      confidence: avgConf,
     };
   }
 
   /**
-   * Parse questions from raw OCR text
-   * @param {string} text - Raw OCR text
-   * @returns {Array} Parsed questions
+   * Is this Call A item the name / class / date header rather than a question?
+   * Call A tags those with ids like `student_name_ur`; a bare "Name / Class /
+   * Date" question text is caught too.
    */
-  static _parseQuestionsFromText(text) {
-    const questions = [];
-
-    // Common question patterns
-    const patterns = [
-      /Q\.?\s*(\d+)[.:)]\s*(.*?)(?=Q\.?\s*\d+|$)/gis,
-      /(\d+)[.)]\s*(.*?)(?=\d+[.)]|$)/gis,
-      /Question\s*(\d+)[.:)]\s*(.*?)(?=Question\s*\d+|$)/gis
-    ];
-
-    for (const pattern of patterns) {
-      let match;
-      while ((match = pattern.exec(text)) !== null) {
-        questions.push({
-          number: match[1],
-          questionText: match[2]?.trim().substring(0, 200),
-          studentAnswer: '', // Will be filled by analysis
-          confidence: 0.6
-        });
-      }
-      if (questions.length > 0) break;
-    }
-
-    return questions;
-  }
-
-  /**
-   * Calculate confidence score from parsed result
-   * @param {object} parsed - Parsed OCR result
-   * @returns {number} Confidence 0-1
-   */
-  static _calculateConfidence(parsed) {
-    let score = 0.5; // Base score
-
-    if (parsed.studentName) score += 0.1;
-    if (parsed.rollNumber) score += 0.1;
-    if (parsed.questions?.length > 0) score += 0.2;
-    if (parsed.rawText?.length > 100) score += 0.1;
-
-    // Average question confidence
-    if (parsed.questions?.length > 0) {
-      const avgQConf = parsed.questions.reduce((sum, q) => sum + (q.confidence || 0.5), 0) / parsed.questions.length;
-      score = (score + avgQConf) / 2;
-    }
-
-    return Math.min(score, 1.0);
+  static _isHeaderItem(it) {
+    const id = String(it?.question_id || '').toLowerCase();
+    if (/^student[_-]?(name|meta|info|header)/.test(id)) return true;
+    const text = String(it?.question_text || '').trim().toLowerCase();
+    if (/^name\b/.test(text) && /(class|date|subject|roll)/.test(text)) return true;
+    return false;
   }
 }
 

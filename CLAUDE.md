@@ -53,7 +53,8 @@ CLAUDE.md (this file)  →  <folder>/CLAUDE.md (router)  →  .claude/skills/<sk
 - **Conformance guards** (`tests/setup/`) enforce: every `.from()` table + every `.rpc()` exists in the
   schema, every insert/select column exists, every schema table is referenced, entry files parse, and no
   secrets/internal-refs ship. Keep them green.
-- **DB bootstrap**: `npm run bootstrap:db` applies schema → RLS → seed (idempotent).
+- **DB bootstrap**: `npm run bootstrap:db` applies schema → RLS → seed → every `V*.sql` migration, recording each in
+  `schema_versions` (idempotent).
 
 ## Repo map
 

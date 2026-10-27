@@ -73,7 +73,7 @@ class ExamCheckerOrchestrator {
         [SESSION_STATES.COLLECTING_IMAGES]: () => this.handleImageCollection(session, message, userId),
         [SESSION_STATES.PROCESSING_OCR]: () => this.handleOCRProcessing(session, userId),
         [SESSION_STATES.CONFIRMING_STUDENTS]: () => this.handleStudentConfirmation(session, message, userId),
-        [SESSION_STATES.DETECTING_QUESTIONS]: () => this.handleQuestionDetection(session, userId),
+        [SESSION_STATES.DETECTING_QUESTIONS]: () => this.handleQuestionDetection(session, message, userId),
         [SESSION_STATES.COLLECTING_ANSWERS]: () => this.handleAnswerCollection(session, message, userId),
         [SESSION_STATES.CONFIRMING_SCHEME]: () => this.handleSchemeConfirmation(session, message, userId),
         [SESSION_STATES.GRADING]: () => this.handleGrading(session, userId),
@@ -170,14 +170,16 @@ class ExamCheckerOrchestrator {
     logToFile('⏳ Starting OCR processing', { sessionId: session.id, imageCount: session.original_images?.length });
 
     try {
-      // Extract text from all images (with Mistral → Chandra fallback)
+      // Read every page with the exam-vision engine (a hard page is read again on the stronger model)
       const ocrResults = await OCRService.extractBatch(session.original_images);
 
       // Detect students and questions from OCR results
       const { students, questions } = await QuestionDetectorService.analyze(ocrResults);
 
-      // Update session with detected data
+      // Update session with detected data. ocr_results too: grading reads each
+      // student's answers from the saved page readings.
       await ExamSessionService.update(session.id, {
+        ocr_results: ocrResults,
         detected_students: students,
         detected_questions: questions,
         ocr_provider: ocrResults.provider,
@@ -219,7 +221,12 @@ class ExamCheckerOrchestrator {
       });
       await ExamSessionService.update(session.id, { confirmed_students: students });
       await ExamSessionService.updateStatus(session.id, SESSION_STATES.DETECTING_QUESTIONS);
-      return this.handleQuestionDetection(session, userId);
+      // The copy in hand predates what was just read; the list is built from it.
+      return this.handleQuestionDetection(
+        { ...session, detected_students: students, detected_questions: questions, confirmed_students: students },
+        {},
+        userId
+      );
     } catch (error) {
       logToFile('❌ OCR processing failed', { sessionId: session.id, error: error.message });
       await ExamSessionService.updateStatus(session.id, SESSION_STATES.ERROR, { error_message: error.message });
@@ -258,28 +265,46 @@ class ExamCheckerOrchestrator {
 
       logToFile('✅ Students confirmed', { sessionId: session.id, count: confirmedStudents.length });
 
-      return this.handleQuestionDetection(session, userId);
+      return this.handleQuestionDetection(session, {}, userId);
     }
 
     return { text: 'Please confirm the student names in the form.' };
   }
 
   /**
-   * Handle question detection display and confirmation
+   * Handle question detection display and confirmation.
+   *
+   * The teacher's button decides what happens next. Anything else re-shows the
+   * list: it is the step's question, not a dead end — and the list sits in the
+   * interactive body, because a message with buttons is sent as its body alone.
    */
-  static async handleQuestionDetection(session, userId) {
+  static async handleQuestionDetection(session, message = {}, userId) {
     const ExamSessionService = require('./exam-session.service');
-    const questions = session.detected_questions || [];
 
+    // "✅ Yes, correct" → on to the answer key.
+    if (message.buttonId === 'ech_questions_correct') {
+      await ExamSessionService.updateStatus(session.id, SESSION_STATES.COLLECTING_ANSWERS);
+      return this.handleAnswerCollection(session, {}, userId);
+    }
+
+    // "✏️ Edit Qs" → the list cannot be edited in the chat yet; say how to redo it.
+    if (message.buttonId === 'ech_questions_edit') {
+      return {
+        text: '✏️ Editing the question list in the chat is not supported yet. Send /cancel, then "check exams" and clearer photos to read the papers again.'
+      };
+    }
+
+    const questions = session.detected_questions || [];
     const questionSummary = questions.map((q, i) =>
-      `Q${i + 1}: ${q.type} ${q.text ? `- "${q.text.substring(0, 30)}..."` : ''}`
+      `Q${i + 1}: ${q.text ? q.text.substring(0, 60) : q.type}`
     ).join('\n');
+    const listText = `📝 I found ${questions.length} question${questions.length !== 1 ? 's' : ''}:\n\n${questionSummary}\n\nIs this correct?`;
 
     return {
-      text: `📝 Detected ${questions.length} questions:\n\n${questionSummary}\n\nIs this correct?`,
+      text: listText,
       interactive: {
         type: 'button',
-        body: { text: 'Confirm or edit the questions.' },
+        body: { text: listText },
         action: {
           buttons: [
             { type: 'reply', reply: { id: 'ech_questions_correct', title: '✅ Yes, correct' } },
@@ -309,8 +334,11 @@ class ExamCheckerOrchestrator {
         answer: message.answer || message.text,
         buttonId: message.buttonId
       });
-      // Recurse for next question
-      return this.handleAnswerCollection(session, {}, userId);
+      // Recurse for next question — on the session as saved. The copy in hand
+      // predates this answer, so it would ask the same question again and file
+      // the teacher's next reply under the question after it.
+      const saved = await ExamSessionService.getById(session.id);
+      return this.handleAnswerCollection(saved || session, {}, userId);
     }
 
     // Generate prompt based on question type
@@ -328,14 +356,23 @@ class ExamCheckerOrchestrator {
       return this.handleGrading(session, userId);
     }
 
+    // "✏️ Edit scheme" → start the answer key again from Q1.
+    if (message.buttonId === 'ech_edit_scheme') {
+      await ExamSessionService.update(session.id, { marking_scheme: null });
+      await ExamSessionService.updateStatus(session.id, SESSION_STATES.COLLECTING_ANSWERS);
+      return this.handleAnswerCollection({ ...session, marking_scheme: null }, {}, userId);
+    }
+
     const scheme = session.marking_scheme || { questions: [], totalMarks: 0 };
     const summary = this._formatSchemeSummary(scheme);
+    // In the body: a message with buttons is sent as its body alone.
+    const schemeText = `📋 Marking scheme ready:\n\n${summary}\n\n📊 Total: ${scheme.totalMarks} marks`;
 
     return {
-      text: `📋 Marking scheme ready:\n\n${summary}\n\n📊 Total: ${scheme.totalMarks} marks`,
+      text: schemeText,
       interactive: {
         type: 'button',
-        body: { text: 'Start grading or edit the scheme.' },
+        body: { text: schemeText },
         action: {
           buttons: [
             { type: 'reply', reply: { id: 'ech_start_grading', title: '✅ Start grading' } },
@@ -377,6 +414,9 @@ class ExamCheckerOrchestrator {
         annotated_images: annotatedImages
       });
       await ExamSessionService.updateStatus(session.id, SESSION_STATES.DELIVERING_RESULTS);
+      // Delivery reads the grades and marked pages off the session it is given;
+      // the copy in hand predates them.
+      session = { ...session, grading_results: gradingResults, annotated_images: annotatedImages };
 
       logToFile('✅ Grading complete', {
         sessionId: session.id,
@@ -469,8 +509,9 @@ class ExamCheckerOrchestrator {
     if (!scheme.questions || scheme.questions.length === 0) {
       return 'No questions defined yet.';
     }
+    // The answer itself, so the teacher can check the key before grading.
     return scheme.questions.map(q =>
-      `${q.id}: ${q.type} (${q.marks} mark${q.marks !== 1 ? 's' : ''})`
+      `${q.id}: ${q.answer ?? '—'} (${q.marks} mark${q.marks !== 1 ? 's' : ''})`
     ).join('\n');
   }
 

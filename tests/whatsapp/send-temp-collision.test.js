@@ -17,11 +17,20 @@
 
 process.env.CHANNEL_DRIVER = 'meta';
 
-jest.mock('../../bot/shared/utils/constants', () => ({
-  ...jest.requireActual('../../bot/shared/utils/constants'),
-  WHATSAPP_TOKEN: 'test-token',
-  PHONE_NUMBER_ID: 'test-phone-id',
-}));
+// The URL-based sends write under TEMP_DIR. Give them a folder of their own:
+// bot/temp is shared with every other suite running in parallel, so another
+// suite's file landing there mid-test would read as something this send left.
+jest.mock('../../bot/shared/utils/constants', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  return {
+    ...jest.requireActual('../../bot/shared/utils/constants'),
+    WHATSAPP_TOKEN: 'test-token',
+    PHONE_NUMBER_ID: 'test-phone-id',
+    TEMP_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'send-temp-collision-driver-')),
+  };
+});
 jest.mock('../../bot/shared/utils/logger', () => ({ logToFile: jest.fn() }));
 jest.mock('../../bot/shared/storage/r2', () => ({
   downloadFromR2: jest.fn(),
@@ -57,8 +66,8 @@ const SOURCE = {
   [B]: 'https://acct.r2.cloudflarestorage.com/bucket/second-recipient.bin',
 };
 const BUTTONS = [{ id: 'opt_1', title: 'One' }, { id: 'opt_2', title: 'Two' }];
-// Where the URL-based sends put their temp files (the driver's default).
-const DRIVER_TEMP = path.join(__dirname, '../../bot/temp');
+// Where the URL-based sends put their temp files (this suite's private TEMP_DIR).
+const { TEMP_DIR: DRIVER_TEMP } = require('../../bot/shared/utils/constants');
 
 const sha12 = (buf) => crypto.createHash('sha256').update(buf || Buffer.alloc(0)).digest('hex').slice(0, 12);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -85,6 +94,7 @@ beforeAll(() => {
 afterAll(() => {
   delete process.env.CHANNEL_DRIVER;
   jest.restoreAllMocks();
+  fs.rmSync(DRIVER_TEMP, { recursive: true, force: true });
 });
 
 beforeEach(() => {

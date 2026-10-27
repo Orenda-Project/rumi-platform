@@ -118,10 +118,8 @@ describe('runDoctor', () => {
     expect(r.ok).toBe(false); // still not ok — REDIS_URL is a required var
   });
 
-  it('exam-checker feature turns on by MISTRAL_API_KEY presence (not AWS Textract)', async () => {
-    const off = await runDoctor({ env: FULL_ENV, probes: allPassProbes });
-    expect(off.featureResults.find((f) => f.name.includes('Exam')).status).toBe('off');
-    const on = await runDoctor({ env: { ...FULL_ENV, MISTRAL_API_KEY: 'k' }, probes: allPassProbes });
+  it('exam-checker feature is on with the core LLM key — it needs no OCR key of its own', async () => {
+    const on = await runDoctor({ env: FULL_ENV, probes: allPassProbes });
     expect(on.featureResults.find((f) => f.name.includes('Exam')).status).toBe('on');
   });
 
