@@ -78,6 +78,13 @@ language rather than by variable name ("where should Rumi keep its memory", not 
 value against the real service as you type it, creates the whole database for you, and saves each answer as
 it goes — so Ctrl+C is safe and running it again picks up where you stopped.
 
+### Or: one click with Pinokio
+
+Prefer not to use a terminal? Paste this repository's URL into [Pinokio](https://pinokio.co) and press
+**Install**. It sets everything up and opens a browser wizard for the same steps — credentials checked as you
+enter them, the database, and the WhatsApp QR as an image. Your fork's URL works too. See
+[pinokio/README.md](pinokio/README.md).
+
 ### Important: you need a second phone number to test from
 
 > ⚠️ By default Rumi links **your own** WhatsApp account, the same way WhatsApp Web does — so Rumi *is* your
@@ -339,6 +346,7 @@ Start at [`CLAUDE.md`](CLAUDE.md) → it points the way.
 rumi-platform/
 ├── bin/rumi.js             # The `rumi` CLI — setup, start, status, doctor, pair, graduate
 ├── install.sh              # One-time bootstrap: tools, dependencies, .env, the rumi command
+├── pinokio/                # 1-click Pinokio launcher + GUI setup wizard
 ├── bot/                    # WhatsApp bot (Node.js + Express)
 │   ├── whatsapp-bot.js     # Entry point — webhook, inbound routing, message dispatch
 │   ├── shared/

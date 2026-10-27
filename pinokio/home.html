@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rumi</title>
+<!--
+  The start screen. pinokio.js makes this the default tab while start.js runs,
+  so opening Rumi shows this page rather than the bot's terminal. It is served
+  by Pinokio as a raw file (href "home.html?raw=true&port=<port>"), and learns
+  the bot's port from that query string -- start.js saves the port before it
+  starts the bot, so the href is the same from the first second to the last
+  and the tab never reloads under the user.
+
+  Readiness is a no-cors fetch of /health: the bot sends no CORS headers, so the
+  response is opaque, but the fetch resolving at all means it is listening.
+-->
+<style>
+:root {
+  --brand: #25d366;
+  --brand-lo: #15803d;
+  --accent: #f5b042;
+  --danger: #ef5350;
+  --surface: #fbfaf8;
+  --surface-raised: #ffffff;
+  --text: #1a1d23;
+  --text-soft: #5b646f;
+  --line: #e2ded7;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #14161a;
+    --surface-raised: #1b1e24;
+    --text: #e8ebef;
+    --text-soft: #9aa5b1;
+    --line: #2a2f37;
+  }
+}
+:root[data-theme="dark"] {
+  --surface: #14161a;
+  --surface-raised: #1b1e24;
+  --text: #e8ebef;
+  --text-soft: #9aa5b1;
+  --line: #2a2f37;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--sans);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 40px 32px 32px;
+  text-align: center;
+}
+.logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  object-fit: cover;
+  margin-bottom: 20px;
+  /* The icon is white; without this it disappears into a light card. */
+  box-shadow: 0 0 0 1px var(--line);
+}
+h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 2rem;
+  margin: 0 0 8px;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  margin: 0 0 28px;
+}
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+[data-state="ready"] .dot { background: var(--brand); animation: none; }
+[data-state="slow"] .dot { background: var(--danger); animation: none; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .dot { animation: none; } }
+
+.button {
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--brand-lo);
+  color: #fff;
+  font: 600 1rem var(--sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+.button:hover { background: #166534; }
+.button:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.button[aria-disabled="true"] {
+  background: var(--line);
+  color: var(--text-soft);
+  pointer-events: none;
+}
+.hint {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 18px 0 0;
+}
+</style>
+</head>
+<body>
+
+<main class="card" id="card" data-state="starting">
+  <img class="logo" src="icon.jpg?raw=true" alt="">
+  <h1>Rumi</h1>
+  <p class="status" role="status"><span class="dot" aria-hidden="true"></span><span id="status">Starting Rumi…</span></p>
+  <a class="button" id="open" aria-disabled="true">Open Console</a>
+  <p class="hint" id="hint">This usually takes a few seconds. Logs are under <b>Terminal</b> in the sidebar.</p>
+</main>
+
+<script>
+(() => {
+  const card = document.getElementById('card');
+  const status = document.getElementById('status');
+  const open = document.getElementById('open');
+  const hint = document.getElementById('hint');
+
+  const port = Number(new URLSearchParams(location.search).get('port'));
+  // Bounded on purpose: anything but a real port would let the query string
+  // point the button at an arbitrary URL.
+  if (!Number.isInteger(port) || port < 1 || port > 65535) return;
+
+  // 127.0.0.1, not localhost: the console's Host guard accepts plain loopback.
+  const base = `http://127.0.0.1:${port}`;
+  const SLOW_AFTER_MS = 3 * 60 * 1000;
+  const started = Date.now();
+
+  const ready = () => {
+    card.dataset.state = 'ready';
+    status.textContent = 'Rumi is running';
+    open.href = `${base}/console`;
+    open.removeAttribute('aria-disabled');
+    hint.textContent = 'Settings, health checks and live activity are all in the console.';
+  };
+
+  const poll = async () => {
+    try {
+      await fetch(`${base}/health`, { mode: 'no-cors', cache: 'no-store' });
+      ready();
+      return;
+    } catch {
+      // Not listening yet.
+    }
+    if (Date.now() - started > SLOW_AFTER_MS && card.dataset.state !== 'slow') {
+      card.dataset.state = 'slow';
+      status.textContent = 'Still starting…';
+      hint.textContent = 'This is taking longer than usual. Open Terminal in the sidebar to see what Rumi is doing.';
+    }
+    setTimeout(poll, 1000);
+  };
+
+  poll();
+})();
+</script>
+</body>
+</html>

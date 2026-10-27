@@ -34,6 +34,8 @@ keys/
 # in .env.template.
 .channel-state/
 credentials*
+# Source, not a secret: the Pinokio setup wizard's route for the credentials step.
+!pinokio/onboarding/routes/credentials.js
 service-account*.json
 .railway-token
 

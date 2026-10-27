@@ -34,6 +34,7 @@ folder with a `SKILL.md` (+ optional reference files).
 | [feature-tracer](skills/feature-tracer/SKILL.md) | Trace any feature end to end — the map of handler/service/worker/table per feature |
 | [curriculum-baked-lesson-plans](skills/curriculum-baked-lesson-plans/SKILL.md) | Turn your own textbooks into a gate-checked lesson-plan corpus — the 7-stage build pipeline (page-truth → segment → enrich → render); runnable tools in [`curriculum/`](../curriculum/) |
 | [morning-brief](skills/morning-brief/SKILL.md) | The recurring programme-health thread (registration → lesson plans → coaching → scores → reading → every school worst-first) delivered every morning on WhatsApp/Slack/Discord with a live dashboard page; runnable code in [`brief/`](../brief/) |
+| [pinokio-launcher](skills/pinokio-launcher/SKILL.md) | The 1-click Pinokio launcher in [`pinokio/`](../pinokio/) — sidebar scripts, the GUI setup wizard, Redis and port handling |
 
 > Skills are loaded **on demand** — an agent reads the one whose description matches the task. The set above
 > is the operational core (run / extend / debug the open bot); internal-ops skills from the production bot
