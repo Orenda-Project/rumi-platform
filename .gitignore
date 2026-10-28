@@ -119,3 +119,6 @@ __pycache__/
 # A matrix-channel-service test writes a bare-named file in the cwd and removes it;
 # an interrupted run can leave one behind.
 matrix-test-bare-*.png
+
+# code map (rumi-agent-home ops/kg): the generated graph and the CLI's cache
+.kg/

@@ -1,0 +1,62 @@
+# kg-check — the CI gate of the map's self-healing loop (rumi-agent-home ops/kg, DESIGN §2.4 step 3).
+#
+# On every PR: rebuild the knowledge graph from this commit, then fail if
+#   - a committed door (generated CLAUDE.md / CLAUDE.index.md) or kg/summaries differs from what the graph renders,
+#   - a door breaks contract C (budget, sections, links, hand-edited generated block, `ev` lines that moved),
+#   - a vendored kg/kg.py, kg/doors.py or kg/heal.py was edited in place (header sha256),
+#   - any map file matches the secret pattern (locations only, never the value).
+# The PR gets one comment (updated in place) with `kg stats` against the base branch and the doors that changed.
+# Doc-only and harmless: it reads the repo, writes nothing back, needs no secret.
+#
+# Source: rumi-agent-home ops/kg/ci/kg-check.yml — copied verbatim into each repo's .github/workflows/ by
+# ops/kg/vendor.py; change it there, never in a copy.
+name: kg-check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: kg-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kg-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: kg check (build, door check, drift, vendored copies, secrets)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ -f kg/heal.py ]; then H=kg/heal.py; elif [ -f ops/kg/heal.py ]; then H=ops/kg/heal.py
+          else echo "no kg/heal.py in this repo: nothing to check"; exit 0; fi
+          base=""
+          if [ -n "$BASE_REF" ]; then git fetch -q origin "$BASE_REF" && base="origin/$BASE_REF"; fi
+          set +e
+          PYTHONDONTWRITEBYTECODE=1 python3 "$H" check --repo-root . ${base:+--base "$base"} --report "$RUNNER_TEMP/kg-report.md"
+          rc=$?
+          cat "$RUNNER_TEMP/kg-report.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null
+          exit $rc
+
+      - name: PR comment (stats delta + doors changed; one comment, updated in place)
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          f="$RUNNER_TEMP/kg-report.md"; [ -s "$f" ] || exit 0
+          { echo '<!-- kg-check -->'; cat "$f"; } > "$RUNNER_TEMP/body.md"
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate -q '.[] | select(.body | startswith("<!-- kg-check -->")) | .id' | tail -1)
+          if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@"$RUNNER_TEMP/body.md" >/dev/null
+          else gh pr comment "$PR" -R "$REPO" --body-file "$RUNNER_TEMP/body.md" >/dev/null; fi
