@@ -4,61 +4,55 @@ Open-source AI teaching companion on WhatsApp: 24/7 coaching, reading assessment
 and PD — in the teacher's own language. This file is the **entry point for AI coding agents**. (Other tools:
 see [AGENTS.md](AGENTS.md), which points here.)
 
-## How to navigate (progressive disclosure)
+## How to navigate
 
-Read top-down, only as deep as the task needs:
-
-```
-CLAUDE.md (this file)  →  <folder>/CLAUDE.md (router)  →  .claude/skills/<skill>/ (deep knowledge)
-```
-
-| Need | Go to |
-|------|-------|
-| The bot codebase (handlers, services, workers) | [bot/CLAUDE.md](bot/CLAUDE.md) |
-| Database schema, RLS, seed, one-command bootstrap | [infrastructure/CLAUDE.md](infrastructure/CLAUDE.md) |
-| Agent/skill config + what skills exist | [.claude/CLAUDE.md](.claude/CLAUDE.md) |
-| Set up a clone from scratch | [SETUP.md](SETUP.md) · `npm run doctor` (preflight) |
-| The operator web console (settings, health, pipeline, activity) | [bot/console/](bot/console/) · [docs/console.md](docs/console.md) |
-| The 1-click Pinokio launcher and its GUI setup wizard | [pinokio/CLAUDE.md](pinokio/CLAUDE.md) |
-| Customize branding / swap a framework / add a feature | [docs/agent-customization.md](docs/agent-customization.md) |
-| Architecture, cost, monitoring | [docs/architecture.md](docs/architecture.md) · [docs/cost-guide.md](docs/cost-guide.md) · [docs/monitoring.md](docs/monitoring.md) |
+Read only as deep as the task needs: this file → the Map below → `<dir>/CLAUDE.md` door → the file (skills: `.claude/skills/`).
+Set up: [SETUP.md](SETUP.md) · `npm run doctor`. Console: [docs/console.md](docs/console.md). Customize: [docs/agent-customization.md](docs/agent-customization.md).
+Architecture, cost, monitoring: [docs/architecture.md](docs/architecture.md) · [docs/cost-guide.md](docs/cost-guide.md) · [docs/monitoring.md](docs/monitoring.md).
 
 ## Architecture facts that change how you write code
 
 1. **Feature gating is presence-based.** A feature is ON iff its env keys are present —
-   `bot/shared/config/feature-availability.js` is the single source of truth (`FEATURES` maps feature →
-   real env key). There is **no `RUMI_TIER`** and no tier system. One operator control sits on top: a
-   `RUMI_FEATURE_<ID>=off` switch (`bot/shared/config/feature-overrides.js`) that can turn an available
-   feature OFF without deleting its key. It only ever subtracts — no switch can turn a feature on.
-2. **The queue backend is pluggable** via `QUEUE_DRIVER` (default `sqs`; `bullmq` runs the whole async
-   pipeline on Redis with no AWS). Producers/consumers require `bot/shared/services/queue/` (the index),
-   never a specific driver. See [bot/CLAUDE.md](bot/CLAUDE.md).
-3. **The messaging channel is pluggable** via `CHANNEL_DRIVER` (`meta` = WhatsApp Cloud API, the only
-   production tier; `baileys` = a linked device, for trying Rumi out). Never require a driver directly —
-   require `bot/shared/services/messaging/` (the index), the same rule as the queue. Meta-only surfaces
-   (Flows, approved templates, carousels) degrade to a text conversation driven by the *same* Flow endpoint;
-   see `messaging/text-flow-definitions.js` and
-   [docs/onboarding/sandbox-production-design.md](docs/onboarding/sandbox-production-design.md).
-4. **All LLM calls go through** `bot/shared/services/llm-client.js` (OpenRouter — one API, many models).
-5. **Region behaviour is config-driven** (`region_features` table, fail-open) — never hardcode a country,
+   `bot/shared/config/feature-availability.js` (`FEATURES` maps feature → env key) is the single source of truth.
+   No `RUMI_TIER`, no tiers. `RUMI_FEATURE_<ID>=off` (`feature-overrides.js`) can only turn a feature OFF.
+2. **Queue and channel are pluggable** — `QUEUE_DRIVER` (`sqs` default, `bullmq` on Redis) and `CHANNEL_DRIVER`
+   (`meta` = WhatsApp Cloud API, production; `baileys` = a linked device, for trying Rumi). Always require the
+   index (`bot/shared/services/queue/`, `bot/shared/services/messaging/`), never a driver. Meta-only surfaces
+   (Flows, templates, carousels) degrade to text via `messaging/text-flow-definitions.js`.
+3. **All LLM calls go through** `bot/shared/services/llm-client.js` (OpenRouter).
+4. **Region behaviour is config-driven** (`region_features` table, fail-open) — never hardcode a country,
    phone-number-id, or region name.
-6. **No credentials in code.** Everything comes from `.env` (copy `.env.template`). The repo is public —
-   no secrets, no internal phone numbers, no internal ticket refs in source (CI enforces all three).
+5. **No credentials in code.** Everything comes from `.env` (copy `.env.template`). The repo is public —
+   no secrets, no internal phone numbers, no internal ticket refs in source or any CLAUDE.md (CI enforces all three).
 
 ## Working rules
 
-- **TDD**: tests live at repo-root `tests/<domain>/` and require bot code via `../../bot/shared/...`.
-  Run `npm test` (Jest via `tests/run.js`). CI runs root `npm test` **before** `bot/ npm ci`, so a test that
-  loads bot code must mock bot-only deps (`aws-sdk`, `bullmq`, `pdfkit`, …) virtually.
-- **Conformance guards** (`tests/setup/`) enforce: every `.from()` table + every `.rpc()` exists in the
-  schema, every insert/select column exists, every schema table is referenced, entry files parse, and no
-  secrets/internal-refs ship. Keep them green.
-- **DB bootstrap**: `npm run bootstrap:db` applies schema → RLS → seed → every `V*.sql` migration, recording each in
-  `schema_versions` (idempotent).
+- **TDD**: tests live at repo-root `tests/<domain>/` and require bot code via `../../bot/shared/...`; `npm test`.
+  Root CI runs before `bot/ npm ci`, so mock bot-only deps virtually (see `tests/CLAUDE.md`).
+- **Conformance guards** (`tests/setup/`): every `.from()` table / `.rpc()` / column exists in the schema, every
+  schema table is referenced, entry files parse, no secrets or internal refs ship. Keep them green.
+- **DB bootstrap**: `npm run bootstrap:db` applies schema → RLS → seed → every `V*.sql` migration (idempotent,
+  recorded in `schema_versions`).
 
-## Repo map
+## Map (generated)
+<!-- kg:map repo=rumi-platform gen=9ce21ef157d0 -->
+| dir | what it is |
+|---|---|
+| `.claude/` | Claude Code config and agent skills for working on this open-source repo → `.claude/CLAUDE.md` |
+| `.cursor/` | (no door; 1 files) |
+| `.github/` | Repo community files and CI workflows (see workflows/ for what each gate checks) → `.github/CLAUDE.md` |
+| `bin/` | (no door; 1 files) |
+| `bot/` | The WhatsApp bot service: web entry point, workers, services, setup CLI and tests → `bot/CLAUDE.md` |
+| `brief/` | Morning Brief: renders the daily/weekly programme-health panels and manifest → `brief/CLAUDE.md` |
+| `curriculum/` | Textbook-to-lesson-plan pipeline (stages A-F): gates, briefs, graph, sample → `curriculum/CLAUDE.md` |
+| `dashboard/` | Operator dashboard (Express + EJS) and teacher-portal API, one deployable → `dashboard/CLAUDE.md` |
+| `docs/` | Public docs: architecture, customization, setup guides, feature pages, Flow JSON → `docs/CLAUDE.md` |
+| `infrastructure/` | Install-time infra: DB schema and migrations, scripts, local stack, Railway → `infrastructure/CLAUDE.md` |
+| `kg/` | (no door; 21 files) |
+| `pinokio/` | One-click Pinokio launcher: install, setup, start, update scripts, GUI wizard → `pinokio/CLAUDE.md` |
+| `portal/` | Open-source teacher portal: React/Vite SPA, also wrapped as an Android app → `portal/CLAUDE.md` |
+| `scripts/` | Standalone sample-report renderers for docs images (no DB, no PII) → `scripts/CLAUDE.md` |
+| `tests/` | Root Jest suite for bot, dashboard and portal; one folder per feature area → `tests/CLAUDE.md` |
+| `tools/` | (no door; 3 files) |
 
-`bot/` WhatsApp bot (Node/Express; entry `bot/whatsapp-bot.js`; 10 handlers, 45 services, 9 workers) ·
-`bot/console/` the operator web console, mounted at `/console` and also runnable alone ·
-`infrastructure/` Supabase schema (76 tables) + deploy configs · `tests/` Jest suites (170 suites / 1996
-tests) · `docs/` architecture & customization · `dashboard/` + `portal/` observability/teacher UIs.
+Deeper: `python3 kg/kg.py find <words>` · `python3 kg/kg.py file <path>`

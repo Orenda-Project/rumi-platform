@@ -1,34 +1,34 @@
-# infrastructure/ — Database & deploy (L1)
+# infrastructure — Install-time infra: DB schema and migrations, scripts, local stack, Railway
 
-**Parent:** [../CLAUDE.md](../CLAUDE.md) · Supabase (Postgres) schema + deployment configs.
+<!-- kg:meta repo=rumi-platform dir=infrastructure kg=21818ce14ecd gen=ba256414c340 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
 
-## Layout
+## Entry points
+- `supabase/00_complete-schema.sql` — full fresh-install schema
+- `scripts/bootstrap-db.js` — applies schema, RLS, seed, migrations
+- `scripts/migrate.js` — applies pending V*.sql to an existing DB
+<!-- read: map-read-platform-portals 2026-10-29 -->
 
-| Path | What's there |
-|------|--------------|
-| `supabase/00_complete-schema.sql` | The single fresh-install artifact — 76 tables, functions, triggers, + an idempotent column-reconcile section at the end |
-| `supabase/01_rls-policies.sql` | Row-level security policies |
-| `supabase/02_seed-data.sql` | Reference data (reading benchmarks) + `region_features` default row (fail-open gating) |
-| `supabase/migrations/V*.sql` | Versioned upgrades, tracked in `schema_versions` |
-| `supabase/verify-schema.sql` | Sanity checks |
-| `scripts/bootstrap-db.js` | **`npm run bootstrap:db`** — applies schema → RLS → seed → every `V*.sql` migration (recorded in `schema_versions`), in order (idempotent, stops on first error) |
-| `scripts/migrate.js` | Applies pending `V*.sql` migrations via the `exec_sql` RPC |
-| `scripts/test-connections.js` | `npm run validate:connections` |
-| `railway/` | Deployment configs |
-| `local/` | Supabase-free local stack: `up.sh` / `down.sh` start Postgres + PostgREST + a `/rest/v1` proxy + Redis on a laptop, no Docker (see `docs/local-stack.md`) |
+## Children (generated)
+| path | purpose |
+|---|---|
+| `local/` | No-Docker local stack (Postgres, PostgREST, proxy, Redis) for development → `local/CLAUDE.md` |
+| `railway/` | → (no door; 2 files) |
+| `scripts/` | Node scripts that create and migrate the database and test connections → `scripts/CLAUDE.md` |
+| `supabase/` | Canonical schema (00), RLS (01), seed (02), verify script and migrations → `supabase/CLAUDE.md` |
+| `sync/` | Maintainer-only config for syncing internal code into this public repo → `sync/CLAUDE.md` |
+| `CLAUDE.md` | (unmapped) |
+| `CLAUDE.index.md` | (unmapped) |
 
-## Rules
+## Who reads this (generated)
+- (none)
 
-- **Fresh install** = `npm run bootstrap:db` (needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` and an
-  `exec_sql` function — see the script header). It is idempotent, so re-running is safe. It ends by applying
-  the migrations and recording them, so a fresh install has every migration and `migrate.js` finds none pending.
-- **A new migration still belongs in `00_complete-schema.sql` too** — bootstrap's migration step is a backstop,
-  not a replacement: the complete schema stays the readable picture of the database.
-- **Schema is the source of truth, and CI enforces it both ways:** every `.from()` table and every `.rpc()`
-  function the bot uses must exist here, every insert/select column must exist, and every table must be
-  referenced somewhere. If you add a `.from('x')` / new column / new `.rpc()`, add it here or the
-  `tests/setup/{schema,column}-completeness` + `table-usage-conformance` guards fail.
-- **Adding a column to an existing table:** put it in the column-reconcile `ALTER … ADD COLUMN IF NOT EXISTS`
-  section at the bottom (keeps fresh-install + re-run both correct), and keep the trailing `NOTIFY pgrst`
-  last so PostgREST reloads the cache.
-- **Region gating** lives in `region_features` (DB, fail-open) — not in code constants.
+## Never (human)
+_None found in code comments, tests or git log for this directory._
+<!-- read: map-read-platform-portals 2026-10-29 -->
+
+## Tests (generated)
+- (none)
+
+## Related (generated)
+- skills: `database-analysis`? · `digital-coach`?
+- docs: `CLAUDE.md`? · `README.md`? · `docs/CLAUDE.index.md`? · `docs/local-stack.md`? · `infrastructure/CLAUDE.index.md`? · `infrastructure/CLAUDE.md`? (+7)

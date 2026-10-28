@@ -1,43 +1,40 @@
-# bot/ — WhatsApp Bot codebase (L1)
+# bot — The WhatsApp bot service: web entry point, workers, services, setup CLI and tests
+Full index: `CLAUDE.index.md`
 
-**Parent:** [../CLAUDE.md](../CLAUDE.md) · Node/Express WhatsApp bot. Entry point: `whatsapp-bot.js`
-(webhook + button/message routing).
+<!-- kg:meta repo=rumi-platform dir=bot kg=5e25bfc6eb3d gen=c43aec6bae13 overflow=24 rendered=2026-10-28 kg.py=1.0.0 -->
 
-## Layout
+## Entry points
+- `whatsapp-bot.js` — Express web entry; mounts /webhook and routes every inbound message
+- `README.md` — folder architecture and the web/worker/dashboard process split
+- `package.json` — start scripts per process; Procfile mirrors them
+<!-- read: map-read-platform-portals 2026-10-29 -->
 
-| Path | What's there |
-|------|--------------|
-| `whatsapp-bot.js` | Express webhook, interactive-button router, message dispatch |
-| `shared/handlers/` | Message handlers (text, voice, image, flow-response, …) — 10 files |
-| `shared/services/` | Domain services (45) — AI, coaching, reading, quiz, pic-to-LP, whatsapp, R2, … |
-| `shared/services/queue/` | **Pluggable queue** — `index.js` selects driver by `QUEUE_DRIVER` (sqs\|bullmq) |
-| `shared/services/messaging/` | **Pluggable channel** — `index.js` selects driver by `CHANNEL_DRIVER` (meta\|baileys); `inbound/` normalizes either into one shape; `text-flow*.js` renders Meta Flows as chat |
-| `shared/routes/` | WhatsApp Flow endpoints (registration, attendance, settings, status, …) |
-| `shared/config/` | `feature-availability.js` (presence gating), `branding.js`, `region-config.js` |
-| `shared/utils/` | logger, structured-logger (correlation IDs), constants, phone-validation |
-| `workers/` | Background job workers (9) — `sqs-worker.js` is the poll loop; one handler per job type |
-| `scripts/` | CLI simulator, validators, and `scripts/setup/` — the `rumi` wizard, doctor, pairing, flow registration |
-| `console/` | **Operator web console** — mounted at `/console` by `whatsapp-bot.js`, and runnable alone via `rumi console`. Self-contained; see [docs/console.md](../docs/console.md) |
+## Children (generated)
+| path | purpose |
+|---|---|
+| 11 sub-dirs, each with `CLAUDE.md` | `06_MMS_Inference_Service/` · `console/` · `dashboard/` · `database/` · `fonts/` · `gateway/` · `scripts/` · `shared/` · `tests/` · `vendor/` · `workers/` |
+| 4 sub-dirs without a door | `.github/` (1) · `assets/` (1) · `marketing/` (1) · `test-assets/` (4) |
+| `CLAUDE.index.md` | (unmapped) |
+| `CLAUDE.md` | (unmapped) |
+| … | 7 more → `CLAUDE.index.md` |
 
-## Things to know before editing
+## Who reads this (generated)
+- table `coaching_sessions` (written by `whatsapp-bot.js`) ← read by `dashboard/database/queries.js:732:5911672a`? · `dashboard/index.js:1518:5911672a`? (+51)
+- column `coaching_sessions.status` (written by `whatsapp-bot.js`) ← read by `dashboard/database/queries.js:734:a69ef692` · `dashboard/routes/portal.routes.js:739:a69ef692` (+27)
+- table `coaching_sessions` whole row (`*`) (written by `whatsapp-bot.js`) ← read by `dashboard/database/queries.js:733:7a0c163a`? · `dashboard/routes/portal.routes.js:960:d2b02c3e`? (+13)
+- … 11 more → `CLAUDE.index.md`
 
-- **Queue:** never import a specific driver. Require `shared/services/queue` (the index); both drivers
-  expose the same surface (`queueJob`/`receiveJobs`/`completeJob`/`extendJobTimeout`/`cancelByGroupId`/…).
-  Adding a job type = add a `case` in `workers/sqs-worker.js`'s `executeJob` switch + a handler.
-- **Feature gating:** check `feature-availability.js`, not env vars directly; a feature is on iff its keys exist.
-- **Shared-service edits are high-blast-radius** — grep consumers, verify imports, run the suite. See the
-  `cross-agent-safety` skill.
-- **LLM:** all model calls go through `shared/services/llm-client.js`.
-- **Console:** nothing under `console/` may require `shared/config/supabase`, `shared/utils/constants`,
-  `shared/services/llm-client` or `shared/services/messaging` at module scope — the first exits the process
-  at require time, the rest freeze env at load, and either breaks `rumi console` on the broken deployment it
-  exists to repair. `tests/console/boot-independence.test.js` enforces it.
-- **Flows:** a new Flow = `shared/routes/<x>-endpoint.js` + mount in `flow-endpoint.routes.js` + `<X>_FLOW_ID`
-  in `shared/utils/constants.js` + `.env.template` + a `/command` trigger in `shared/handlers/text-message.handler.js`
-  + sanitized JSON in `docs/flows/`. See the `whatsapp-flows` skill.
+## Never (human)
+- Do not move the .env lookup: it is anchored to the repo root, not the cwd (bot/whatsapp-bot.js:7)
+- Root `npm test` does not run bot-level tests/; it runs the separate ../tests suite (package.json:10, bot/jest.config.js:23)
+<!-- read: map-read-platform-portals 2026-10-29 -->
 
-## Deep-dive skills
+## Tests (generated)
+- `tests/characterization/differential-verification.test.js` (whatsapp-bot.js)
+- `tests/characterization/legacy-baseline.test.js` (whatsapp-bot.js)
+- … 5 more → `CLAUDE.index.md`
 
-`.claude/skills/` — `coaching`, `reading-assessment`, `registration`, `whatsapp-flows`, `feature-tracer`
-(trace a feature end-to-end), `debugging`, `cross-agent-safety`, `qa-testing`, `video-generation`,
-`pre-merge-checklist`, `database-analysis`, `digital-coach` (full technical KB).
+## Related (generated)
+- skills: `coaching`? · `debugging`? · `digital-coach`? · `feature-tracer`? · `pinokio-launcher`? · `video-generation`? (+1)
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `SECURITY.md`? · `SETUP.md`? · `TEST_READY.md`? (+72)
+- … 1 more → `CLAUDE.index.md`

@@ -1,0 +1,39 @@
+# services — Business logic: auth, RBAC scopes, analytics, BYOF agent, SQS, email, API health
+Full index: `CLAUDE.index.md`
+
+<!-- kg:meta repo=rumi-platform dir=dashboard/services kg=f51717edafdb gen=e64af64e4bfd overflow=80 rendered=2026-10-28 kg.py=1.0.0 -->
+
+## Entry points
+- `materialized-views.service.js` — reads mv_* stats views, applies partner scopes, refreshes them
+- `auth.service.js` — dashboard login and user CRUD on dashboard_users
+- `access-scope.service.js` — partner scopes (country, school, phone list) that RLS enforces
+<!-- read: map-read-platform-portals 2026-10-29 -->
+
+## Children (generated)
+| path | purpose |
+|---|---|
+| `api-health/` | One health probe per vendor feeding the API Health page → `api-health/CLAUDE.md` |
+| `queue/` | → (no door; 1 files) |
+| `CLAUDE.index.md` | (unmapped) |
+| `materialized-views.service.js` | Reads mv_dashboard_stats, mv_users_activity, mv_retention_cohorts and refreshes them; tracks mv_view_refresh_status. |
+| `CLAUDE.md` | (unmapped) |
+| `github-api.service.js` | Fetches files, directories and trees from GitHub repos so the BYOF agent can read code remotely. |
+| … | 26 more → `CLAUDE.index.md` |
+
+## Who reads this (generated)
+- table `users` (written by `password-reset.service.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+54)
+- table `dashboard_users` (written by `auth.service.js` (+2)) ← read by `dashboard/index.js:484:36baffc0`? · `dashboard/middleware/auth.js:76:9a69d293`? (+8)
+- … 33 more → `CLAUDE.index.md`
+
+## Never (human)
+- Do not require the bot's modules here; the dashboard deploys without bot/ (lib/portal-channels.js:13)
+- The R2 client must stay lazy so requiring the service never needs R2 env (services/r2.service.js:12)
+<!-- read: map-read-platform-portals 2026-10-29 -->
+
+## Tests (generated)
+- `dashboard/tests/redis-cache.test.js` (github-api.service.js, redis-cache.service.js)
+- `tests/observe/observe-portal-coach.service.test.js` (coach-observations.service.js, coach-section-b.js)
+- … 21 more → `CLAUDE.index.md`
+
+## Related (generated)
+- docs: `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/services/CLAUDE.index.md`? · `dashboard/services/CLAUDE.md`? · `dashboard/services/api-health/CLAUDE.index.md`? · `dashboard/services/api-health/CLAUDE.md`? (+8)
