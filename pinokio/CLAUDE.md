@@ -31,6 +31,7 @@ Full index: `CLAUDE.index.md`
 
 ## Never (human)
 - Never use npm install; use npm ci: a rewritten lockfile makes git pull in update.js refuse (install.js:9-11)
+- `onboarding/bridge.js` is the only file that requires Rumi's modules; never require them from any other file here (onboarding/bridge.js:4)
 <!-- read: map-read-platform-portals 2026-10-29 -->
 
 ## Tests (generated)
