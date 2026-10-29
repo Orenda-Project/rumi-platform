@@ -29,8 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # the PR's own head, not the merge ref: a base that moved must not turn a PR red with a fix line the author
+      # cannot act on (redteam-map-2 F-1); the merge preview below says "base moved" as a warning instead
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           filter: blob:none
 
@@ -39,6 +42,9 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           if [ -f kg/heal.py ]; then H=kg/heal.py; elif [ -f ops/kg/heal.py ]; then H=ops/kg/heal.py
+          elif [ -f kg/config.json ] || [ -d kg/summaries ]; then
+            echo "kg tool missing: kg/config.json or kg/summaries/ is here but kg/heal.py is not — re-vendor it, never delete it"
+            echo "### kg check — FAIL (kg tool missing)" >> "$GITHUB_STEP_SUMMARY"; exit 1
           else echo "no kg/heal.py in this repo: nothing to check"; exit 0; fi
           base=""
           if [ -n "$BASE_REF" ]; then git fetch -q origin "$BASE_REF" && base="origin/$BASE_REF"; fi
@@ -47,6 +53,20 @@ jobs:
           rc=$?
           cat "$RUNNER_TEMP/kg-report.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null
           exit $rc
+
+      - name: base-moved preview (warning only — merge the base into the head, then check again)
+        if: always() && github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ -f kg/heal.py ]; then H=kg/heal.py; elif [ -f ops/kg/heal.py ]; then H=ops/kg/heal.py; else exit 0; fi
+          git reset -q --hard && git clean -fdq
+          if ! git -c user.name=ci -c user.email=ci@example.com merge -q --no-edit "origin/$BASE_REF" >/dev/null 2>&1; then
+            echo "::warning::base moved: origin/$BASE_REF does not merge cleanly into this branch — merge it, then heal"; exit 0
+          fi
+          if ! PYTHONDONTWRITEBYTECODE=1 python3 "$H" check --repo-root . >/dev/null 2>&1; then
+            echo "::warning::base moved: after merging origin/$BASE_REF the map drifts — merge origin/$BASE_REF into this branch, then run $H heal and commit"
+          fi
 
       - name: PR comment (stats delta + doors changed; one comment, updated in place)
         if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
