@@ -1,0 +1,47 @@
+{
+ "counts": {
+  "assets": 699,
+  "broken_links": 27,
+  "by_predicate": {
+   "contains": 8551,
+   "deployed_as": 8,
+   "documented_in": 546,
+   "imports": 4600,
+   "mentions": 5118,
+   "reads_column": 1482,
+   "reads_env": 718,
+   "reads_table": 366,
+   "tested_by": 1694,
+   "writes_column": 2842,
+   "writes_table": 377
+  },
+  "dirs_missing_door": 0,
+  "dirs_needing_door": 142,
+  "doors": 142,
+  "edges": 26302,
+  "edges_needing_ev": 21899,
+  "edges_with_ev": 21899,
+  "envs": 339,
+  "extract_errors": 0,
+  "files": 2872,
+  "mappable_files": 2173,
+  "misses": 18,
+  "missing_purposes": 0,
+  "nodes": 8994,
+  "overflow_rows": 3511,
+  "purposes": 2173,
+  "secret_skipped": 18,
+  "services": 10,
+  "stale": 1,
+  "stale_doors": 142,
+  "tables": 93,
+  "test_only_no_door": 39,
+  "unparsed_sql": 8
+ },
+ "excluded_dirs": {
+  "curriculum/graph/vendor": 1,
+  "tests/quiz/__snapshots__": 1
+ },
+ "kg_py": "1.1.0",
+ "repo": "rumi-platform"
+}

@@ -1,21 +1,43 @@
-# pinokio/ — Pinokio launcher (L1)
+# pinokio — One-click Pinokio launcher: install, setup, start, update scripts, GUI wizard
+Full index: `CLAUDE.index.md`
 
-**Parent:** [../CLAUDE.md](../CLAUDE.md) · Deep knowledge: [.claude/skills/pinokio-launcher](../.claude/skills/pinokio-launcher/SKILL.md)
+<!-- kg:meta repo=rumi-platform dir=pinokio kg=a40414105004 gen=bba14839b0d7 overflow=10 rendered=2026-10-29 kg.py=1.1.0 -->
 
-The 1-click Pinokio launcher for Rumi. Pinokio finds `pinokio/pinokio.js` when someone pastes this repo's
-URL, clones the whole repository, and runs these scripts from this folder. Rumi's code is the repository
-itself (`..`), so the launcher and the app always move together.
+## Entry points
+- `README.md` — user guide
+- `pinokio.js` — menu definition
+- `start.js` — starts Redis and the bot
+<!-- read: map-read-platform-portals 2026-10-29 -->
 
-| Need | Go to |
-|------|-------|
-| The launcher scripts, the sidebar, and the rules for editing them | [.claude/skills/pinokio-launcher](../.claude/skills/pinokio-launcher/SKILL.md) |
-| The GUI setup wizard | [onboarding/CLAUDE.md](onboarding/CLAUDE.md) |
-| User-facing docs and the HTTP API | [README.md](README.md) |
+## Children (generated)
+| path | purpose |
+|---|---|
+| `onboarding/` | GUI setup wizard server: five steps beside Rumi's console, loopback only → `onboarding/CLAUDE.md` |
+| `scripts/` | Helper scripts the Pinokio launcher scripts call: Redis, ports, console wait → `scripts/CLAUDE.md` |
+| `README.md` | User guide for the Pinokio launcher: sidebar buttons, GUI setup wizard, what it does; current |
+| `pinokio.js` | Pinokio menu definition: which buttons show given install/config/running state (placeholder-aware .env check) |
+| `claude.js` | Pinokio script that installs Claude Code in Pinokio's npm prefix if missing and opens it in the repo |
+| `doctor.js` | Pinokio script: ensures local Redis then runs `node bin/rumi.js doctor` |
+| `install.js` | Pinokio Install button: installs launcher (qrcode) and bot dependencies with npm ci, falling back to install |
+| `onboard.js` | Pinokio daemon that starts the GUI wizard (onboarding/server.js) on its own persisted port |
+| `pair.js` | Pinokio script that runs the interactive `rumi pair` WhatsApp link in the terminal |
+| `reset.js` | Pinokio script removing bot/node_modules to return to fresh-clone dependencies, keeping .env and session |
+| `setup.js` | Pinokio script running the interactive `rumi setup` wizard with QUEUE_DRIVER=bullmq |
+| … | 7 more → `CLAUDE.index.md` |
 
-Rules:
+## Who reads this (generated)
+- (none)
 
-- **Every Rumi command runs with `path: ".."`** (or `"../bot"`), and every path the sidebar checks is `../…`.
-  Scripts run from this folder, not the repository root.
-- **`onboarding/bridge.js` is the only file that requires Rumi's modules.** Keep it that way: it
-  feature-detects each one at boot, so a refactor elsewhere in the repo disables one wizard step instead of
-  taking the wizard down. If you rename or change an export it lists, update `MODULES` there in the same PR.
+## Never (human)
+- Never use npm install; use npm ci: a rewritten lockfile makes git pull in update.js refuse (install.js:9-11)
+- `onboarding/bridge.js` is the only file that requires Rumi's modules; never require them from any other file here (onboarding/bridge.js:4)
+<!-- read: map-read-platform-portals 2026-10-29 -->
+
+## Tests (generated)
+- `bot/tests/setup.js`? (setup.js)
+- `dashboard/tests/setup.js`? (setup.js)
+- … 3 more → `CLAUDE.index.md`
+
+## Related (generated)
+- skills: `pinokio-launcher`?
+- docs: `CLAUDE.md`? · `README.md`? · `pinokio/README.md`? · `pinokio/onboarding/CLAUDE.md`? · `pinokio/onboarding/public/CLAUDE.md`? · `pinokio/scripts/CLAUDE.md`?
