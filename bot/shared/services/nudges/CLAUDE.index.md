@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `address.js` | Picks which channel address a scheduled nudge goes to and when the teacher last wrote, via user_channels |
 | `flags.js` | One shared reading of a nudge on/off env flag, so boot arming and per-tick checks agree |
 | `kinds.js` | Ordered list of nudge kinds shared by the in-process sweep and the one-shot cron worker |
@@ -39,4 +37,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `teacher-nudges.sweeper.js` ← `tests/nudges/teacher-nudges.sweeper.test.js`
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/nudges/CLAUDE.index.md`? · `bot/shared/services/nudges/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/teacher-nudges.md`? · `tests/nudges/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `bot/shared/services/CLAUDE.md`? · `docs/features/teacher-nudges.md`?

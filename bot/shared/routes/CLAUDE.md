@@ -1,7 +1,7 @@
 # routes — HTTP routes: encrypted WhatsApp Flow endpoints and Slack/Discord equivalents
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/routes kg=f78917a63979 gen=0a94af04d08f overflow=93 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/routes kg=81976880dff0 gen=78b5e09f08f7 overflow=92 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `flow-endpoint.routes.js` — POST /api/flows/* router, mounted at whatsapp-bot.js:67
@@ -14,14 +14,13 @@ Full index: `CLAUDE.index.md`
 |---|---|
 | `discord-views/` | Discord screen mappings for Flow-equivalent forms (25-option menu cap) → `discord-views/CLAUDE.md` |
 | `slack-views/` | Slack Block Kit screen mappings for Flow-equivalent modals → `slack-views/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
-| … | 18 more → `CLAUDE.index.md` |
+| `attendance-setup-endpoint.js` | Attendance setup Flow endpoint: class info, add-student loop and done, creating the class and student list |
+| … | 19 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - table `users` (written by `settings-endpoint.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+54)
 - column `users.preferred_language` (written by `settings-endpoint.js`) ← read by `bot/scripts/observe-roster.js:81:44b70a83` · `bot/shared/services/coaching/coaching-session.service.js:141:cd922948` (+18)
-- … 52 more → `CLAUDE.index.md`
+- … 54 more → `CLAUDE.index.md`
 
 ## Never (human)
 - Never return a `version` field in a Flow endpoint response (bot/shared/routes/observe-form-endpoint.js:9)
@@ -34,4 +33,4 @@ Full index: `CLAUDE.index.md`
 - … 23 more → `CLAUDE.index.md`
 
 ## Related (generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/CLAUDE.md`? · `bot/shared/routes/CLAUDE.index.md`? · `bot/shared/routes/CLAUDE.md`? · `bot/shared/routes/discord-views/CLAUDE.index.md`? (+25)
+- docs: `bot/shared/CLAUDE.md`? · `docs/features/observe.md`? · `docs/features/video-quizzes.md`?

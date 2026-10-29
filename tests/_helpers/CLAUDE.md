@@ -1,6 +1,6 @@
 # _helpers — Shared test helpers used across suites
 
-<!-- kg:meta repo=rumi-platform dir=tests/_helpers kg=93df88cb56d3 gen=9346ac315cb6 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/_helpers kg=93df88cb56d3 gen=40aa9a3d0ab4 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `mock-bot-dependency.js` — mock a bot-only npm package under both bare and resolved keys
@@ -10,7 +10,6 @@
 | path | purpose |
 |---|---|
 | `mock-bot-dependency.js` | Helper: jest.doMock a bot-only package (aws-sdk, playwright-core) under bare and resolved keys, ending order flake |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - (none)
@@ -23,4 +22,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `tests/CLAUDE.index.md`? · `tests/CLAUDE.md`? · `tests/_helpers/CLAUDE.md`?
+- docs: `tests/CLAUDE.md`?

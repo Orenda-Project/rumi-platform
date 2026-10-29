@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `fico-framework.js` | FICO observation rubric (5 domains, 21 indicators, scale 1-4) with prompts and LP-fidelity mapping hook |
 | `framework-registry.js` | Lazy registry returning a framework module by key; used by selector and fidelity recompute |
 | `framework-selector.js` | Picks the observation framework from user preference, region default or env default; called by analysis-processor |
@@ -35,4 +33,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `coaching`?
-- docs: `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/frameworks/CLAUDE.index.md`? · `bot/shared/services/coaching/frameworks/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/customization.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/observe/CLAUDE.index.md`?
+- docs: `bot/shared/services/coaching/CLAUDE.md`? · `docs/customization.md`?

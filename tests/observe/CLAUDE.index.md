@@ -7,8 +7,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | path | purpose |
 |---|---|
 | `_helpers/` | Fake Supabase client shared by the observe suites → `_helpers/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `observe-audio-router.test.js` | Pins observe-audio-router: a coach's classroom-length audio never starts teacher self-coaching; parks and asks instead |
 | `observe-binding.test.js` | Pins binding of parked recordings: 6h FIFO, who-is-this picker, scheduled teachers first, right teacher each |
 | `observe-capture.test.js` | Pins observe-capture: a coach recording becomes a leader_observation on the coaching pipeline with OK/Cancel ack |
@@ -60,12 +58,10 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `observe-wiring.test.js` | Drives live handleTextMessage/handleVoiceMessage: /observe works; a coach's recording becomes a leader observation |
 
 ## Who reads this (all, generated)
-- env `OBSERVE_ENABLED` read at `tests/observe/observe-portal-coach.service.test.js:119:a55fb489`
-- env `OBSERVE_FRAMEWORK` read at `tests/observe/observe-form-flow-json.test.js:25:15ea134a` · `tests/observe/observe-framework-pack.test.js:12:4d5e96d5`
-- env `RUMI_FEATURE_OBSERVE` read at `tests/observe/observe-portal-coach.service.test.js:119:a55fb489`
+- (none)
 
 ## Tests (all, generated)
 - (none)
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/scripts/CLAUDE.index.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/setup/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/handlers/CLAUDE.index.md`? · `bot/shared/routes/CLAUDE.index.md`? · `bot/shared/services/cache/CLAUDE.md`? · `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.index.md`? · `bot/shared/services/coaching/frameworks/CLAUDE.index.md`? · `bot/shared/services/coaching/report-v2/score-adapters/CLAUDE.index.md`? · `bot/shared/services/coaching/report-v2/score-adapters/CLAUDE.md`? · `bot/shared/services/observe/CLAUDE.index.md`? · `bot/shared/services/observe/CLAUDE.md`? · `bot/shared/utils/CLAUDE.index.md`? · `bot/workers/CLAUDE.index.md`? · `dashboard/routes/CLAUDE.index.md`? · `dashboard/routes/CLAUDE.md`? · `dashboard/services/CLAUDE.index.md`? · `dashboard/services/CLAUDE.md`? · `tests/CLAUDE.index.md`? · `tests/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/observe/CLAUDE.md`? · `tests/observe/_helpers/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `bot/scripts/CLAUDE.md`? · `bot/shared/services/cache/CLAUDE.md`? · `bot/shared/services/coaching/report-v2/score-adapters/CLAUDE.md`? · `bot/shared/services/observe/CLAUDE.md`? · `dashboard/services/CLAUDE.md`? · `tests/CLAUDE.md`?

@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `backfill-user-channels.js` | One-off re-runnable backfill giving every existing user a primary whatsapp row in user_channels |
 | `bootstrap-db.js` | Fresh-install bootstrap: applies 00 schema, 01 RLS, 02 seed, then versioned migrations via exec_sql |
 | `exec-sql-helper.js` | Holds the one-time exec_sql SECURITY DEFINER SQL (service_role-only) pasted into a new Supabase project |
@@ -37,4 +35,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `sql-statements.js` ← `tests/setup/sql-statements.test.js`
 
 ## Related (all, generated)
-- docs: `docs/CLAUDE.index.md`? · `docs/local-stack.md`? · `infrastructure/CLAUDE.index.md`? · `infrastructure/CLAUDE.md`? · `infrastructure/scripts/CLAUDE.index.md`? · `infrastructure/scripts/CLAUDE.md`? · `infrastructure/sync/CLAUDE.md`? · `infrastructure/sync/README.md`? · `tests/setup/CLAUDE.index.md`?
+- docs: `docs/local-stack.md`? · `infrastructure/CLAUDE.md`? · `infrastructure/sync/README.md`?

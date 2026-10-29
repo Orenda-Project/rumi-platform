@@ -6,9 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `__mocks__/` | → (no door; 1 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `__mocks__/` | → (no door; 1 files: 0 test + 1 support) |
 | `branding.js` | Env-driven brand config: bot name, website/portal/logo URLs (null when unset) and welcome messages per language |
 | `capabilities.config.js` | Lists the bot's user-facing capabilities that capability detection uses to explain what it can do |
 | `coaching-audio.js` | Sets the minimum audio length (COACHING_MIN_AUDIO_SECONDS, default 900s) that makes a recording a coaching lesson |
@@ -102,4 +100,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `digital-coach`? · `setup`?
-- docs: `.github/CLAUDE.md`? · `.github/CONTRIBUTING.md`? · `AGENTS.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/CLAUDE.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.md`? · `bot/tests/video/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/agent-customization.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/customization.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/exam-checker.md`? · `docs/features/lesson-quiz.md`? · `docs/features/test-papers.md`? · `docs/onboarding/CLAUDE.md`? · `docs/onboarding/api-keys.md`? · `docs/onboarding/sandbox-production-design.md`? · `docs/pulling-updates.md`? · `portal/ANDROID.md`? · `portal/CLAUDE.index.md`? · `portal/CLAUDE.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/CLAUDE.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.md`? · `tests/config/CLAUDE.md`? · `tests/console/CLAUDE.md`? · `tests/dashboard/CLAUDE.index.md`? · `tests/dashboard/CLAUDE.md`? · `tests/database/CLAUDE.md`? · `tests/exam-checker/CLAUDE.index.md`? · `tests/exam-checker/CLAUDE.md`? · `tests/language/CLAUDE.md`? · `tests/limits/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/observe/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/quiz/CLAUDE.md`? · `tests/reading/CLAUDE.md`? · `tests/routes/CLAUDE.index.md`? · `tests/routes/CLAUDE.md`? · `tests/settings/CLAUDE.md`? · `tests/setup/CLAUDE.index.md`? · `tests/testpaper/CLAUDE.index.md`? · `tests/testpaper/CLAUDE.md`? · `tests/unit/CLAUDE.md`?
+- docs: `.github/CONTRIBUTING.md`? · `AGENTS.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `bot/shared/CLAUDE.md`? · `docs/agent-customization.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/customization.md`? · `docs/features/exam-checker.md`? · `docs/features/lesson-quiz.md`? · `docs/features/test-papers.md`? · `docs/onboarding/api-keys.md`? · `docs/onboarding/sandbox-production-design.md`? · `docs/pulling-updates.md`? · `portal/ANDROID.md`?

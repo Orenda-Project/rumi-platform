@@ -7,8 +7,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | path | purpose |
 |---|---|
 | `providers/` | /quiz lesson providers for lesson plans and typed topics → `providers/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `child-flow-token.js` | Builds/parses the phone-keyed Student Videos Flow token for anonymous quiz children (no users row) |
 | `meta-window-cache.service.js` | Redis cache of "24h window closed" (Meta error 131047) per recipient so free interactive sends are skipped |
 | `one-attempt-per-child.js` | Dedups quiz_sessions to one counted attempt per child so re-opened links do not inflate scores and reports |
@@ -288,4 +286,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `video-quiz.service.js` ← `tests/quiz/quiz-menu.test.js` · `tests/quiz/transcript-quiz-card-number.test.js` · `tests/quiz/video-quiz-ask-matches-reader.test.js` · `tests/quiz/video-quiz-offer-share.test.js` · `tests/quiz/video-quiz-region-gate.test.js` · `tests/quiz/video-quiz-typed-answer-gate.test.js` (+1: `python3 kg/kg.py who-reads bot/shared/services/quiz/video-quiz.service.js`)
 
 ## Related (all, generated)
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/quiz/CLAUDE.index.md`? · `bot/shared/services/quiz/CLAUDE.md`? · `bot/shared/services/quiz/providers/CLAUDE.index.md`? · `bot/shared/services/quiz/providers/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/quiz.md`? · `docs/features/video-quizzes.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/quiz/helpers/CLAUDE.index.md`? · `tests/quiz/helpers/CLAUDE.md`? · `tests/reports/CLAUDE.md`? · `tests/routes/CLAUDE.index.md`?
+- docs: `bot/shared/services/CLAUDE.md`? · `docs/features/quiz.md`? · `docs/features/video-quizzes.md`?

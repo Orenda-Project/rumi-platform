@@ -1,6 +1,6 @@
 # brief — Morning Brief: renders the daily/weekly programme-health panels and manifest
 
-<!-- kg:meta repo=rumi-platform dir=brief kg=0da6ede57804 gen=9ff4ba5ed95b overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=brief kg=0da6ede57804 gen=e7547b3112e0 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `README.md` — what the brief answers and the metric definitions
@@ -15,7 +15,6 @@
 | `sample/` | → (no door; 22 files) |
 | `tests/` | Offline unittest suite for the brief (fake DB, synthetic sample) → `tests/CLAUDE.md` |
 | `README.md` | Explains the Morning Brief: the five questions, metric definitions, delivery channels and how to run it; current |
-| `CLAUDE.md` | (unmapped) |
 | `cli.py` | Command line for the brief: render, check (what the DB can draw) and sample (synthetic, no database) |
 | `.gitignore` | (unmapped) |
 | `morning_brief_film_poster.png` | (unmapped) |
@@ -32,4 +31,4 @@ _None found in code comments, tests or git log for this directory._
 
 ## Related (generated)
 - skills: `morning-brief`?
-- docs: `.claude/CLAUDE.index.md`? · `.claude/CLAUDE.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `brief/CLAUDE.md`? · `brief/README.md`? (+5)
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `brief/README.md`? · `brief/brief/CLAUDE.md`? · `docs/features/morning-brief.md`?

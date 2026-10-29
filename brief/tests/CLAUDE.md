@@ -1,6 +1,6 @@
 # tests — Offline unittest suite for the brief (fake DB, synthetic sample)
 
-<!-- kg:meta repo=rumi-platform dir=brief/tests kg=6f0f2f757b40 gen=fc38b92f5550 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=brief/tests kg=d7a1ff020db6 gen=f54b29a024a4 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `fakes.py` — FakeConn routes canned rows by each query's /* tag */
@@ -11,7 +11,6 @@
 | path | purpose |
 |---|---|
 | `test_calendar.py` | Pins calendar rules: Monday covers Friday, evening covers same day, weekly window, day guard |
-| `CLAUDE.md` | (unmapped) |
 | `__init__.py` | Empty package marker for brief tests |
 | `test_compose.py` | Pins caption wording and honest deltas (relative above twenty, absolute below) in compose |
 | `test_publish.py` | Pins the manifest contract fields and that the storage mirror is best-effort in publish |
@@ -22,7 +21,7 @@
 | `test_schema.py` | Pins that schema.detect switches panels on from the live schema, never assumed tables |
 
 ## Who reads this (generated)
-- env read here: `BRIEF_TODAY`
+- (none)
 
 ## Never (human)
 - Never rely on an untagged query in tests; unknown tags return empty rows on purpose (fakes.py:4)
@@ -33,4 +32,4 @@
 
 ## Related (generated)
 - skills: `morning-brief`?
-- docs: `brief/CLAUDE.md`? · `brief/brief/CLAUDE.index.md`? · `brief/brief/CLAUDE.md`? · `brief/tests/CLAUDE.md`? · `portal/src/components/ui/CLAUDE.index.md`? · `portal/src/components/ui/CLAUDE.md`?
+- docs: `brief/CLAUDE.md`? · `brief/brief/CLAUDE.md`? · `portal/src/components/ui/CLAUDE.md`?

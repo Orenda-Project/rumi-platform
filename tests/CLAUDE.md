@@ -1,7 +1,7 @@
 # tests — Root Jest suite for bot, dashboard and portal; one folder per feature area
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests kg=931ef7570f05 gen=d53cc1e43acf overflow=2 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests kg=f4e745c63f0b gen=12fd9c21a285 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `jest.config.js` — Jest config: testMatch under tests/, module mappers that stub bot-only packages
@@ -12,16 +12,15 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| 42 sub-dirs, each with `CLAUDE.md` | `_helpers/` · `attendance/` · `cache/` · `characterization/` · `coaching/` · `config/` · `console/` · `dashboard/` · `database/` · `edit-class/` · `exam-checker/` · `flow-id-validator/` · `flow-response/` · `gateway/` · `homework/` · `language/` · `limits/` · `menu/` · `messaging/` · `nudges/` · `observe/` · `pic-to-lp/` · `portal/` · `queue/` · `quiz/` · `reading/` · `region/` · `registration/` · `reports/` · `routes/` · `scripts/` · `services/` · `settings/` · `setup/` · `status/` · `storage/` · `telemetry/` · `testpaper/` · `textbook-lp-v2/` · `unit/` · `video/` · `whatsapp/` |
-| 2 sub-dirs without a door | `__mocks__/` (14 tests) · `fixtures/` (13 tests) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| 9 sub-dirs, each with `CLAUDE.md` | `_helpers/` · `attendance/` · `coaching/` · `dashboard/` · `messaging/` · `observe/` · `quiz/` · `setup/` · `testpaper/` |
+| 35 sub-dirs without a door | `__mocks__/` (14 tests) · `cache/` (2 tests) · `characterization/` (4 tests) · `config/` (3 tests) · `console/` (8 tests) · +30 more → `CLAUDE.index.md` |
 | `student-video-feedback.test.js` | Pins student-video-feedback.service thumbs-up/down survey rows and snapshot, mirroring lp-feedback tests |
 | `jest.config.js` | Jest config for the root suite: forces root node_modules resolution and stubs axios, pino, canvas and similar |
-| … | 2 more → `CLAUDE.index.md` |
+| `setup.js` | Jest global setup: NODE_ENV=test and safe dummy Supabase, OpenRouter, Redis and WhatsApp env values |
+| `run.js` | Test runner wrapper: adds Node 22+ --localstorage-file so Jest runs, then execs jest |
 
 ## Who reads this (generated)
-- env read here: `LLM_PROVIDER` · `NODE_OPTIONS` · `OPENROUTER_API_KEY` · `PORT` · `REDIS_URL` · `SUPABASE_SERVICE_ROLE_KEY` · `SUPABASE_URL` · `WHATSAPP_BOT_NUMBER`
+- (none)
 
 ## Never (human)
 - Do not import bot-only packages by bare name unmocked: the root CI job runs before bot deps install (tests/jest.config.js:15-22)
@@ -32,4 +31,4 @@ Full index: `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `qa-testing`?
-- docs: `AGENTS.md`? · `CLAUDE.md`? · `bot/CLAUDE.index.md`? · `bot/console/views/CLAUDE.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/cache/CLAUDE.md`? (+61)
+- docs: `AGENTS.md`? · `CLAUDE.md`? · `bot/console/views/CLAUDE.md`? · `bot/shared/services/cache/CLAUDE.md`? · `dashboard/CLAUDE.md`?

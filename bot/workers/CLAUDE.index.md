@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `brief.worker.js` | One-shot cron worker that picks daily vs weekly brief for the day and renders it via brief/cli.py |
 | `exam-grading.worker.js` | SQS exam_grading job: OCR the papers, grade, annotate, deliver results to the teacher |
 | `homework-bundle.worker.js` | SQS homework_bundle_generation job: merges chapter PDFs per grade and subject and sends the bundle |
@@ -96,5 +94,5 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `coaching`? · `morning-brief`? · `video-generation`?
-- docs: `CHANGELOG.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/workers/CLAUDE.index.md`? · `bot/workers/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/LP_PATHS.md`? · `docs/agent-customization.md`? · `docs/architecture.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/homework.md`? · `docs/features/pic-to-lp.md`? · `docs/features/public-limits.md`? · `docs/features/quiz.md`? · `docs/features/teacher-nudges.md`? · `docs/features/test-papers.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/exam-checker/CLAUDE.index.md`? · `tests/gateway/CLAUDE.index.md`? · `tests/homework/CLAUDE.md`? · `tests/messaging/CLAUDE.index.md`? · `tests/nudges/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/queue/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/scripts/CLAUDE.md`? · `tests/testpaper/CLAUDE.index.md`? · `tests/testpaper/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `bot/CLAUDE.md`? · `docs/LP_PATHS.md`? · `docs/agent-customization.md`? · `docs/architecture.md`? · `docs/features/homework.md`? · `docs/features/pic-to-lp.md`? · `docs/features/public-limits.md`? · `docs/features/quiz.md`? · `docs/features/teacher-nudges.md`? · `docs/features/test-papers.md`?
 - service: `sqs-worker.railway.toml` · `worker`

@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `api-health-aggregator.service.js` | Fans out to every per-vendor health service and merges results for the API Health page. |
 | `cloudflare-r2.service.js` | Reports Cloudflare R2 storage usage for the API Health page (5-minute cache). |
 | `elevenlabs.service.js` | Reports ElevenLabs character usage and plan limits for the API Health page. |
@@ -55,4 +53,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `dashboard/services/CLAUDE.index.md`? · `dashboard/services/CLAUDE.md`? · `dashboard/services/api-health/CLAUDE.index.md`? · `dashboard/services/api-health/CLAUDE.md`?
+- docs: `dashboard/services/CLAUDE.md`?

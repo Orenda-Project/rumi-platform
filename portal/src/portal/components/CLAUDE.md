@@ -1,7 +1,7 @@
 # components — Building blocks for portal screens: layout, nav, cards, Android listeners
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=portal/src/portal/components kg=a80933dd7a83 gen=9c8530ba8c78 overflow=25 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=portal/src/portal/components kg=a80933dd7a83 gen=2a5ed2030615 overflow=23 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `PortalLayout.tsx` — redirects signed-out users, wraps pages with the nav
@@ -17,7 +17,7 @@ Full index: `CLAUDE.index.md`
 | `EmptyState.tsx` | Generic empty-state block with icon, text and optional action button or link; used by portal list pages |
 | `ObservationRow.tsx` | One coach observation as a list row with report status and its Section B block; used by coach pages |
 | `ScoreIndicator.tsx` | Coloured score badge: Strong at 80+, Good at 60+, else Focus Area; used on coaching pages |
-| … | 14 more → `CLAUDE.index.md` |
+| … | 12 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `LoadingState.tsx` ← imported by `portal/src/portal/pages/CoachObservations.tsx:5:63cbbcf9` · `portal/src/portal/pages/CoachTeacherDetail.tsx:5:63cbbcf9` (+9)
@@ -36,4 +36,4 @@ Full index: `CLAUDE.index.md`
 - … 1 more → `CLAUDE.index.md`
 
 ## Related (generated)
-- docs: `portal/src/portal/CLAUDE.md`? · `portal/src/portal/components/CLAUDE.index.md`? · `portal/src/portal/components/CLAUDE.md`?
+- docs: `portal/src/portal/CLAUDE.md`?

@@ -1,6 +1,6 @@
 # workflows — CI/CD gates: tests, secret scan, graph check, smoke, deploy, Android build
 
-<!-- kg:meta repo=rumi-platform dir=.github/workflows kg=0263c1612940 gen=a57f2492bf39 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=.github/workflows kg=f6ece3f142cd gen=56264a80ec91 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `ci.yml` — Node 22/24 tests, credential grep, Python brief and curriculum tests, lint
@@ -11,7 +11,6 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
 | `portal-android-debug.yml` | Builds a debug Android APK of portal/ on PRs touching it, checks app-mode bundle, uploads artifact |
 | `ci.yml` | CI on push/PR to main: Node 22/24 unit tests, no-hardcoded-credentials check, Python brief+curriculum tests, lint |
 | `deploy.yml` | Deploys the bot to Railway on push to main; step-level gated so forks without RAILWAY_TOKEN stay green |
@@ -32,4 +31,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `.github/CLAUDE.md`? · `.github/workflows/CLAUDE.md`? · `CHANGELOG.md`? · `docs/CLAUDE.index.md`? · `docs/CLAUDE.md`? · `docs/railway-operations.md`? (+3)
+- docs: `.github/CLAUDE.md`? · `CHANGELOG.md`? · `docs/railway-operations.md`? · `portal/ANDROID.md`?

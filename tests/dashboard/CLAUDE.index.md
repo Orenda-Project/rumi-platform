@@ -6,10 +6,8 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `admin-view-escaping/` | jsdom tests that admin EJS views render hostile API values as text, not markup → `admin-view-escaping/CLAUDE.md` |
-| `helpers/` | → (no door; 1 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `admin-view-escaping/` | → (no door; 10 tests) |
+| `helpers/` | → (no door; 1 files: 0 test + 1 support) |
 | `admin-csp.test.js` | Pins dashboard/lib/admin-csp.js: strict per-response nonce CSP, no unsafe-inline, exact pinned script URLs |
 | `admin-views-raw-output.test.js` | Renders admin views with a hostile value each and checks no teacher or user text reaches the page as markup |
 | `ama-routes.test.js` | Mounts ama.routes.js over the real AMA service and fake Supabase; pins the routes no longer answering 500 |
@@ -24,10 +22,10 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `safe-json.test.js` | Pins safeJson escaping <, >, & and U+2028/9 so data in an admin inline script cannot close the tag |
 
 ## Who reads this (all, generated)
-- env `CI` read at `tests/dashboard/admin-csp.test.js:202:dab203a4` · `tests/dashboard/admin-views-raw-output.test.js:25:dab203a4` · `tests/dashboard/ama-routes.test.js:21:dab203a4` · `tests/dashboard/csp-actions.test.js:26:252df85c` · `tests/dashboard/portal-channels.test.js:66:dab203a4`
+- (none)
 
 ## Tests (all, generated)
 - (none)
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/shared/config/CLAUDE.index.md`? · `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/README.md`? · `dashboard/lib/CLAUDE.index.md`? · `dashboard/lib/CLAUDE.md`? · `dashboard/routes/CLAUDE.index.md`? · `dashboard/routes/CLAUDE.md`? · `dashboard/services/CLAUDE.index.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/admin-views-security.md`? · `tests/CLAUDE.index.md`? · `tests/CLAUDE.md`? · `tests/dashboard/CLAUDE.index.md`? · `tests/dashboard/CLAUDE.md`? · `tests/dashboard/admin-view-escaping/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.md`? · `dashboard/README.md`? · `dashboard/lib/CLAUDE.md`? · `dashboard/routes/CLAUDE.md`? · `docs/features/admin-views-security.md`? · `tests/CLAUDE.md`?

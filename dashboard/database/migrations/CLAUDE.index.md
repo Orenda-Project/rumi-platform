@@ -28,8 +28,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `022_create_dashboard_materialized_views.sql` | Creates mv_dashboard_stats, mv_users_activity, mv_retention_cohorts and mv_view_refresh_status. |
 | `023_fix_mv_permissions.sql` | Grants SELECT on the four dashboard materialized views to PUBLIC and postgres to fix permission errors. |
 | `024_add_scope_dimensions_to_mvs.sql` | Rebuilds mv_users_activity with country/school/test columns; adds mv_dashboard_stats_by_country. |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `add_lesson_plan_pdf_url.sql` | Adds lesson_plans.pdf_url (Gamma PDF link) with an index. |
 | `add_portal_authentication.sql` | Adds portal_* password, invite, activation and reset-code columns to users for teacher-portal login. |
 | `test_connection.sql` | One-off SELECT confirming the database connection; not a schema change. |
@@ -153,4 +151,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `dashboard/database/CLAUDE.index.md`? · `dashboard/database/CLAUDE.md`? · `dashboard/database/migrations/CLAUDE.index.md`? · `dashboard/database/migrations/CLAUDE.md`? · `dashboard/docs/CLAUDE.md`? · `dashboard/docs/PARTNER_RBAC_STATUS.md`?
+- docs: `dashboard/database/CLAUDE.md`? · `dashboard/docs/PARTNER_RBAC_STATUS.md`?

@@ -16,8 +16,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `templates/` | Reference scripts and JSON for the /menu carousel templates on the original WABA → `templates/CLAUDE.md` |
 | `testing/` | → (no door; 2 files) |
 | `testpaper/` | → (no door; 1 files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `check-balochi-history.js` | One-off Axiom APL query script for Balochi language-detection history; not wired to anything |
 | `debug-balochi.js` | One-off Axiom APL query script for debugging Balochi voice transcription; not wired to anything |
 | `exam-checker-annotate-demo.js` | Demo script: runs OCR, grading and annotation on a sample and writes an annotated image to scripts/output |
@@ -89,4 +87,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `observe-roster.js` ← `tests/observe/observe-roster-cli.test.js` · `tests/portal/portal-invite-roster.test.js`
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/scripts/CLAUDE.index.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/assets/CLAUDE.md`? · `bot/scripts/deployment/CLAUDE.index.md`? · `bot/scripts/deployment/CLAUDE.md`? · `bot/scripts/docs/CLAUDE.md`? · `bot/scripts/setup/CLAUDE.index.md`? · `bot/scripts/setup/CLAUDE.md`? · `bot/scripts/templates/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/README.md`? · `docs/features/observe.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/observe/CLAUDE.md`? · `tests/portal/CLAUDE.index.md`? · `tests/portal/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `bot/CLAUDE.md`? · `docs/features/README.md`? · `docs/features/observe.md`?

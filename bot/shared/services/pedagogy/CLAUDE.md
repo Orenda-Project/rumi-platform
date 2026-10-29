@@ -1,6 +1,6 @@
 # pedagogy — Grade-band and cultural-context rules injected into lesson-plan prompts
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/pedagogy kg=285435ab57d5 gen=ca387ce38366 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/pedagogy kg=24abb5809b5f gen=278d2a34707b overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `grade-calibration.service.js` — 15-axis grade band rubric rendered as a prompt block (renderCalibrationBlock)
@@ -11,7 +11,6 @@
 | path | purpose |
 |---|---|
 | `lp-localization.service.js` | Single cultural-context table (character cast, classroom, currency, callouts) shared by pic-LP and Gamma LP builders |
-| `CLAUDE.md` | (unmapped) |
 | `grade-calibration.service.js` | Maps a grade to a 15-axis pedagogy band and renders the prompt block that tunes LP density/vocabulary by grade |
 
 ## Who reads this (generated)
@@ -27,4 +26,4 @@
 - `tests/language/indian-languages.test.js` (lp-localization.service.js)
 
 ## Related (generated)
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/pedagogy/CLAUDE.md`? · `tests/language/CLAUDE.md`?
+- docs: `bot/shared/services/CLAUDE.md`?

@@ -1,7 +1,7 @@
 # fidelity — Tests for lesson-plan fidelity: extract moves, grade recording, score, report
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests/coaching/fidelity kg=2dffaeacdfe3 gen=7f0bd70ebc69 overflow=14 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/coaching/fidelity kg=d542f13a24c3 gen=788d92327cc1 overflow=12 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `fidelity-orchestrator.test.js` — plan to moves to verdicts to score; failures come back as statuses
@@ -13,15 +13,15 @@ Full index: `CLAUDE.index.md`
 | path | purpose |
 |---|---|
 | `lp*` | 4 files; most used `lp-step-flow.test.js`: Pins the coaching flow's photo buttons to lesson-plan step, plan picker, upload/paste/none, and fidelity-off Yes/No |
-| `CLAUDE.index.md` | (unmapped) |
 | `review-guards.test.js` | Pins review guards: single voice download, photo limit leads to plan step, enhance cannot invent lp_fidelity |
 | `_fake-db.js` | In-memory supabase-js query-builder fake for the fidelity suites (select/eq/in/or/order/limit, update/insert) |
 | `diarization-contract.test.js` | Pins audio.service's diarized branch writing one [MM:SS] stamp per speaker turn, counted, with Soniox mocked at HTTP |
 | `coaching-without-object-storage.test.js` | Pins classroom coaching working without R2: audio unarchived, voice note sent from memory, no S3 client built |
-| … | 14 more → `CLAUDE.index.md` |
+| `report-sends-fidelity-line.test.js` | Pins generateReport sending one fidelity chat line after the report, its own line per state, none when flag off |
+| … | 22 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- env read here: `COACHING_MIN_AUDIO_SECONDS` · `LP_FIDELITY_BAND_HIGH` · `LP_FIDELITY_BAND_PARTIAL` · `LP_FIDELITY_ENABLED` · `TEMP_DIR`
+- (none)
 
 ## Never (human)
 - Fidelity is non-blocking: any failure returns a distinct status, never a throw (tests/coaching/fidelity/fidelity-orchestrator.test.js)
@@ -33,4 +33,4 @@ Full index: `CLAUDE.index.md`
 - (none)
 
 ## Related (generated)
-- docs: `bot/scripts/setup/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/database/CLAUDE.index.md`? · `bot/shared/database/CLAUDE.md`? · `bot/shared/handlers/CLAUDE.index.md`? · `bot/shared/handlers/CLAUDE.md`? (+16)
+- docs: `bot/shared/database/CLAUDE.md`? · `bot/shared/handlers/CLAUDE.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.md`? · `bot/shared/services/coaching/lp-coaching/CLAUDE.md`? · `bot/shared/services/coaching/report-transformers/CLAUDE.md`? (+1)

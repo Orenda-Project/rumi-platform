@@ -7,8 +7,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | path | purpose |
 |---|---|
 | `assets/` | → (no door; 1 files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `baileys-pair.js` | `rumi pair` CLI: links or re-links the sandbox WhatsApp channel by QR code |
 | `console-password.js` | `rumi console --set-password`: stores the console credential needed when it is exposed beyond loopback |
 | `db-setup.js` | Database half of `rumi setup`: applies the schema through the hand-created exec_sql function |
@@ -91,4 +89,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `setup`?
-- docs: `CHANGELOG.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/scripts/CLAUDE.index.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/setup/CLAUDE.index.md`? · `bot/scripts/setup/CLAUDE.md`? · `bot/scripts/templates/CLAUDE.md`? · `bot/scripts/templates/README.md`? · `docs/CLAUDE.index.md`? · `docs/console.md`? · `docs/onboarding/CLAUDE.md`? · `docs/onboarding/sandbox-production-design.md`? · `pinokio/onboarding/CLAUDE.index.md`? · `pinokio/onboarding/CLAUDE.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/observe/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/quiz/CLAUDE.md`? · `tests/scripts/CLAUDE.md`? · `tests/setup/CLAUDE.index.md`? · `tests/telemetry/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/templates/README.md`? · `docs/console.md`? · `docs/onboarding/sandbox-production-design.md`?

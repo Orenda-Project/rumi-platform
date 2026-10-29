@@ -29,8 +29,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `016_add_indian_languages.sql` | Re-adds users.preferred_language CHECK including six Indian languages; only matters for 011-era databases |
 | `017_add_french_language.sql` | Re-adds users.preferred_language CHECK to include French; only matters for databases that applied 011/016 |
 | `20260119_add_image_analysis_requests.sql` | Creates image_analysis_requests table (status, user lookup indexes) for the multimodal image-analysis feature |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `add-audio-id-column.sql` | Adds coaching_sessions.audio_id (WhatsApp media id needed to re-download audio) with an index |
 | `add-report-gamma-url.sql` | Adds coaching_sessions.report_gamma_url for the interactive Gamma observation report link, with an index |
 | `add_format_language_columns.sql` | Adds conversations input/output format (text/voice) and language columns plus an analytics index |
@@ -149,4 +147,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/database/CLAUDE.index.md`? · `bot/database/CLAUDE.md`? · `bot/database/migrations/CLAUDE.index.md`? · `bot/database/migrations/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/CLAUDE.md`? · `docs/features/attendance.md`?
+- docs: `CHANGELOG.md`? · `bot/database/CLAUDE.md`? · `docs/features/attendance.md`?

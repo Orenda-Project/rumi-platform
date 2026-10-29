@@ -1,7 +1,7 @@
 # pages — One file per /portal route: login, reset, dashboard, coaching, reading, videos, observe
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=portal/src/portal/pages kg=38573cbdd68f gen=a53f5a0ad585 overflow=30 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=portal/src/portal/pages kg=38573cbdd68f gen=709a221fdd32 overflow=28 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `PortalDashboard.tsx` — signed-in home; shows the data-fetch pattern
@@ -18,7 +18,7 @@ Full index: `CLAUDE.index.md`
 | `PortalEmptyStates.channel.test.tsx` | Pins that empty-state copy names WhatsApp and shows a chat button only when useChatChannel allows |
 | `PortalLessonPlans.tsx` | Paged, filterable (lesson plan vs presentation) list from GET /lesson-plans |
 | `PortalLogin.session.test.tsx` | Pins that PortalLogin forwards an existing session to the dashboard and never flashes the form meanwhile |
-| … | 16 more → `CLAUDE.index.md` |
+| … | 14 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `PortalLogin.tsx` ← imported by `portal/src/App.tsx:14:66a7a677` · `portal/src/portal/pages/PortalRoot.tsx:4:1b16e767`
@@ -35,7 +35,7 @@ Full index: `CLAUDE.index.md`
 ## Tests (generated)
 - `portal/src/portal/pages/PortalEmptyStates.channel.test.tsx` (PortalCoaching.tsx, PortalLessonPlans.tsx)
 - `portal/src/portal/pages/PortalPasswordReset.channel.test.tsx` (PortalPasswordReset.tsx, PortalPasswordResetVerify.tsx)
-- … 2 more → `CLAUDE.index.md`
+- … 4 more → `CLAUDE.index.md`
 
 ## Related (generated)
-- docs: `portal/src/portal/CLAUDE.md`? · `portal/src/portal/pages/CLAUDE.index.md`? · `portal/src/portal/pages/CLAUDE.md`?
+- docs: `portal/src/portal/CLAUDE.md`?

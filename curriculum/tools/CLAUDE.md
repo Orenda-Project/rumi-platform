@@ -1,6 +1,6 @@
 # tools — SLO registry, segmentation validator and folder-contract scaffold, with tests
 
-<!-- kg:meta repo=rumi-platform dir=curriculum/tools kg=3ce1fadf7c89 gen=639486d749c4 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=curriculum/tools kg=3ce1fadf7c89 gen=4fa388228c01 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `slo_registry.py` — canonical SLO code pattern and drift validator
@@ -16,7 +16,6 @@
 | `test_curriculum_scaffold.py` | Pins the scaffold's folder contract, lesson_id grammar and 03_enrichment stage validation |
 | `test_segment_validate.py` | Pins segment_validate: never blocks, mismatches go to quarantine, fused codes auto-fixable, clean=clean |
 | `test_slo_registry.py` | Pins slo_registry: canonical code shape, fused-annotation and grade-mismatch drift detection |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - `slo_registry.py` ← imported by `curriculum/tools/segment_validate.py:26:af61502e` · `curriculum/tools/test_slo_registry.py:12:ba3b15b3`
@@ -34,4 +33,4 @@
 
 ## Related (generated)
 - skills: `curriculum-baked-lesson-plans`?
-- docs: `curriculum/CLAUDE.md`? · `curriculum/README.md`? · `curriculum/graph/README.md`? · `curriculum/tools/CLAUDE.md`?
+- docs: `curriculum/CLAUDE.md`? · `curriculum/README.md`? · `curriculum/graph/README.md`?

@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `atom.js` | Diagram type: Bohr shell models and dot-and-cross bonding pictures |
 | `base_ten.js` | Diagram type: place-value picture of thousands, hundreds, tens and ones |
 | `bio_schematic.js` | Diagram type: three parametric biology figures behind one kind |
@@ -46,4 +44,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `word_blank.js` ← `tests/quiz/transcript-quiz-figure-early-years.test.js`
 
 ## Related (all, generated)
-- docs: `bot/vendor/lp-v9/diagrams/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/types/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/types/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `bot/vendor/lp-v9/diagrams/CLAUDE.md`?

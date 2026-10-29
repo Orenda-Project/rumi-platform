@@ -1,6 +1,6 @@
 # 06_MMS_Inference_Service — Separate Python ASR microservice for Balochi, Sindhi and Pashto speech
 
-<!-- kg:meta repo=rumi-platform dir=bot/06_MMS_Inference_Service kg=8058961c8a80 gen=48a1df8379bb overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/06_MMS_Inference_Service kg=0ffa35202b03 gen=d56c22d6c0e4 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `app/main.py` — FastAPI app: /asr, /health, /languages over Meta MMS-1b-all
@@ -12,7 +12,6 @@
 | path | purpose |
 |---|---|
 | `app/` | → (no door; 1 files) |
-| `CLAUDE.md` | (unmapped) |
 | `modal_app.py` | Modal.com serverless T4-GPU variant of the MMS ASR service, API-key gated, with a lock around language adapters |
 | `railway.json` | Railway deploy config for the MMS service: Dockerfile build, python -m app.main, /health check |
 | `Dockerfile` | Builds the FastAPI MMS-ASR container (python 3.11, ffmpeg, libsndfile) for Railway; model downloads at runtime |
@@ -30,4 +29,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `bot/06_MMS_Inference_Service/CLAUDE.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`?
+- docs: `bot/CLAUDE.md`?

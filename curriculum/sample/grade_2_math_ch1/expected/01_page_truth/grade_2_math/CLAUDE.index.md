@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `_book.json` | Sample book metadata (title, grade, offset=5, PDF pages) written during Stage A recon |
 | `_toc.json` | Sample table of contents with the printed-page offset note for the grade 2 maths book |
 | `pg_001.json` | Sample page-truth, printed p.1 (chapter_opener): Explorer's Pathway |
@@ -49,4 +47,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `curriculum/sample/grade_2_math_ch1/expected/01_page_truth/CLAUDE.md`? · `curriculum/sample/grade_2_math_ch1/expected/01_page_truth/grade_2_math/CLAUDE.index.md`? · `curriculum/sample/grade_2_math_ch1/expected/01_page_truth/grade_2_math/CLAUDE.md`?
+- docs: `curriculum/sample/grade_2_math_ch1/expected/01_page_truth/CLAUDE.md`?

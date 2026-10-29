@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `fidelity-analyzer.js` | LLM grader returning per-move verdicts only, via OpenRouter; called by fidelity-orchestrator and calibration script |
 | `fidelity-orchestrator.js` | Plan text to moves to verdicts to score, gated by feature lp_fidelity; never throws; yields analysis_data.lp_fidelity |
 | `fidelity-phases.js` | Single phase vocabulary and labels for lesson-plan fidelity moves, shared by extractor and report |
@@ -65,4 +63,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `upload-extractor-prompt.js` ← `tests/coaching/fidelity/prompt-neutrality.test.js`
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.index.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/lesson-plan-fidelity.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/observe/CLAUDE.index.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `CHANGELOG.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `docs/features/lesson-plan-fidelity.md`?

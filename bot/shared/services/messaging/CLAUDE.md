@@ -1,7 +1,7 @@
 # messaging — Channel drivers (Meta, Baileys, Slack, Discord, Matrix) and their inbound adapters
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/messaging kg=3016c6314c03 gen=b9f82c875f33 overflow=79 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/messaging kg=f3a274669e0e gen=c1d3f867db12 overflow=77 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `index.js` — driver router behind whatsapp.service; picks driver by identifier prefix
@@ -14,12 +14,12 @@ Full index: `CLAUDE.index.md`
 |---|---|
 | `inbound/` | Adapters turning each channel's events into webhook-shaped payloads → `inbound/CLAUDE.md` |
 | `channel*` | 3 files; most used `channel-registry.js`: Static map of channel drivers and which are production-tier; read by feature-availability and setup scripts |
-| … | 16 more → `CLAUDE.index.md` |
+| … | 26 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `channel-registry.js` ← imported by `bot/scripts/setup/doctor.js:31:90458071` · `bot/scripts/setup/graduate.js:45:218140d6` (+20)
 - `matrix-outbound-relay.js` ← imported by `bot/whatsapp-bot.js:1974:40b0ef8b` · `bot/workers/sqs-worker.js:40:a34259b4` (+5)
-- … 23 more → `CLAUDE.index.md`
+- … 40 more → `CLAUDE.index.md`
 
 ## Never (human)
 - Only matrix-connection.js owns the Matrix sync client; workers go through the relay (bot/shared/services/messaging/matrix-connection.js:2, bot/shared/services/messaging/matrix-outbound-relay.js:2)
@@ -33,4 +33,4 @@ Full index: `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `setup`?
-- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? (+15)
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `bot/shared/services/CLAUDE.md`? · `docs/features/attendance.md`? · `docs/features/public-limits.md`? · `docs/onboarding/sandbox-production-design.md`?

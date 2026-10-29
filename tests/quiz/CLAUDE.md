@@ -1,7 +1,7 @@
 # quiz — Jest suites for the lesson quiz, class video quiz, figures and quiz PDFs
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests/quiz kg=1f8fbb9566a6 gen=a04786a545eb overflow=187 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/quiz kg=247d4cb7bc5a gen=7ab60e4b4cca overflow=185 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `transcript-quiz-generate.test.js` — the generate step end to end: author, validate, store, PDF, paced teacher messages
@@ -12,16 +12,17 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `fixtures/` | → (no door; 3 test files) |
+| `fixtures/` | → (no door; 3 files: 0 test + 3 support) |
 | `helpers/` | Shared stubs and fixtures for quiz suites: Supabase fakes, solver, KaTeX, PDF ink readers → `helpers/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
+| `__snapshots__/` | → (not mapped: excluded; 1 files) |
 | `transcript-quiz-typeset-maths.test.js` | Pins maths being typeset on pictures via quiz-notation and the author, never reaching a phone as TeX source |
 | `transcript-quiz-summary-truth.test.js` | Pins that the teacher sheet never presents a mistake made in class as what was taught in the summary lines |
 | `transcript-quiz-teacher-language.test.js` | Pins one stored teacher language deciding everything the teacher reads, with no fallback to transcript language |
-| … | 187 more → `CLAUDE.index.md` |
+| `plan*` | 8 files; most used `plan-quiz-key-check.test.js`: Pins plan-quiz-key-check.service: a key contradicting the lesson plan is rewritten or dropped, never shipped |
+| … | 204 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- env read here: `CHANNEL_DRIVER` · `CLASS_CARD_ENABLED` · `DEFAULT_PHONE_COUNTRY_CODE` · `QUIET_HOURS` · `QUIZ_URDU_SPACING_V2` · `TRANSCRIPT_QUIZ_ENABLED`
+- (none)
 
 ## Never (human)
 - Do not mock the code under test; wiring suites run the real handler and mock only the network boundary (tests/quiz/lesson-quiz-text-wiring.test.js:3)
@@ -33,4 +34,4 @@ Full index: `CLAUDE.index.md`
 - (none)
 
 ## Related (generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/scripts/setup/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/routes/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/cache/CLAUDE.md`? (+23)
+- docs: `bot/shared/services/cache/CLAUDE.md`? · `bot/shared/services/quiz/providers/CLAUDE.md`? · `bot/shared/templates/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/lib/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/types/CLAUDE.md`? (+1)

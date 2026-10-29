@@ -1,10 +1,11 @@
-# heal.py v1.0.0 sha256=be31ae4068ed4eef627d3f9417a5c429f72a137e8d62a8ed30c264c1ada7212d — source: rumi-agent-home ops/kg/heal.py
+# heal.py v1.1.0 sha256=a1330c917121e6359fb1a9a2c5f1fb78fb962cbeb5b6e1b45e2a8f2480322087 — source: rumi-agent-home ops/kg/heal.py
 """heal — keep a repo's map true: rebuild the graph and re-render every door that already exists.
 
 The one implementation behind all four self-healing loops (DESIGN §2.4), so they can never disagree:
 
     python3 heal.py heal      [--repo-root R] [--quiet]      # session Stop hook + nightly keeper
-    python3 heal.py precommit [--repo-root R]                # git pre-commit step: heal, stage the result, warn only
+    python3 heal.py precommit [--repo-root R]                # git pre-commit step: heal, stage the result, warn only;
+                                                             #   gives up after 3 s (LR-5), the nightly heal catches up
     python3 heal.py check     [--repo-root R] [--base REF] [--strict] [--report FILE]   # CI gate (kg-check.yml)
 
 It drives the repo-local `kg/kg.py` (+ `kg/doors.py`), or `ops/kg/kg.py` in the workspace that is their source.
@@ -14,6 +15,8 @@ Stdlib only, vendored as `kg/heal.py` next to the pair; repo-specific settings c
 """
 import argparse
 import hashlib
+import signal
+import time
 import importlib.util
 import json
 import os
@@ -22,11 +25,13 @@ import subprocess
 import sys
 import tempfile
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DOOR, INDEX = "CLAUDE.md", "CLAUDE.index.md"
 META = "<!-- kg:meta "
 MAP_HEAD = "## Map (generated)"
 MAX_PASSES = 5   # a new door or index adds nodes to its own dir; seen needing 4 passes on a new file
+PRECOMMIT_DEADLINE = 3.0   # LR-5: NIETE's full heal takes 21–41 s; a commit never waits for it (KG_PRECOMMIT_DEADLINE)
+LAST_CHECK = os.path.join(".kg", "last_check.json")   # D-27: the banner's local RED
 # the common brief's rule 4 pattern (COS RULING 2), the same one kg.py skips files on
 SECRET_RE = re.compile(
     r"(sk-[A-Za-z0-9_-]{20,}|xox[abp]-|ntn_[A-Za-z0-9]{20,}|gh[pous]_[A-Za-z0-9]{20,}|sbp_[A-Za-z0-9]{20,}"
@@ -34,9 +39,8 @@ SECRET_RE = re.compile(
 
 
 def header_verifies(path):
-    """Line 1 carries `sha256=<hex>` of the file. Two stamp conventions exist today and both are accepted until the
-    lead rules: kg.py's (sha256 of the whole file with that hex zeroed — `kg vendor --stamp`) and doors.py's
-    (sha256 of everything after line 1 — ops/kg/tests/stamp_doors_header.py). Any other edit fails both."""
+    """Line 1 carries `sha256=<hex>` of the whole file with that hex zeroed — ONE convention for kg.py, doors.py and
+    heal.py (`kg vendor --stamp`; lead-review 220836 ⚠1). Any other edit fails."""
     try:
         with open(path, encoding="utf-8") as f:
             text = f.read()
@@ -47,8 +51,7 @@ def header_verifies(path):
     if not m:
         return False
     whole = hashlib.sha256(text.replace(m.group(1), "0" * 64, 1).encode("utf-8")).hexdigest()
-    tail = hashlib.sha256(rest.encode("utf-8")).hexdigest()
-    return m.group(1) in (whole, tail)
+    return m.group(1) == whole
 
 
 def log(quiet, *a):
@@ -114,14 +117,31 @@ def snapshot(root, dirs):
     return snap
 
 
-def build(mod, root, quiet=True, repo_name=None):
+def record_check(root, by, rc, drift):
+    """D-27: what the last check/pre-commit saw, for `health.py --line` (gitignored .kg/; never fatal)."""
+    head = git(root, "rev-parse", "HEAD").stdout.strip()
+    try:
+        os.makedirs(os.path.join(root, ".kg"), exist_ok=True)
+        with open(os.path.join(root, LAST_CHECK), "w") as f:
+            json.dump({"head": head, "by": by, "rc": rc, "drift": sorted(set(drift)),
+                       "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}, f, indent=1, sort_keys=True)
+            f.write("\n")
+    except OSError:
+        pass
+
+
+def build(mod, root, quiet=True, repo_name=None, beads=None):
     argv = ["build", "--repo-root", root, "--quiet"] + (["--repo-name", repo_name] if repo_name else [])
+    if beads:
+        rc = mod.main(["beads", "snapshot", "--from", beads, "--repo-root", root, "--quiet"])
+        if rc:
+            raise RuntimeError("kg beads snapshot exited %s" % rc)
     rc = mod.main(argv)
     if rc:
         raise RuntimeError("kg build exited %s" % rc)
 
 
-def heal(root, quiet=False, tool=None, repo_name=None):
+def heal(root, quiet=False, tool=None, repo_name=None, beads=None):
     """build → re-render existing generated doors (+ the root Map section) → repeat until nothing moves.
     Returns (changed paths, passes). A new CLAUDE.index.md adds a node to its dir, so a second pass may be needed."""
     root = os.path.abspath(root)
@@ -134,7 +154,7 @@ def heal(root, quiet=False, tool=None, repo_name=None):
     dm = mod.doors
     changed, passes = set(), 0
     for passes in range(1, MAX_PASSES + 1):
-        build(mod, root, repo_name=repo_name)
+        build(mod, root, repo_name=repo_name, beads=beads)
         dirs = generated_doors(root, dm)
         before = snapshot(root, dirs)
         g = mod.KG.load(root, None)
@@ -161,18 +181,58 @@ def heal(root, quiet=False, tool=None, repo_name=None):
 
 # ------------------------------------------------------------------------------------------- precommit
 
+class Deadline(Exception):
+    pass
+
+
+def map_file(p):
+    return os.path.basename(p) in (DOOR, INDEX) or p.startswith("kg/")
+
+
+def undo_partial(root, dirty_before, untracked_before):
+    """Put back every map file this run touched (a door half re-rendered when the clock ran out): tracked ones from
+    the index (= what the author staged or HEAD), new ones removed. Files the author had already edited are kept."""
+    for p in git(root, "diff", "--name-only").stdout.splitlines():
+        if p and map_file(p) and p not in dirty_before:
+            git(root, "checkout", "--", p)
+    for p in git(root, "ls-files", "-o", "--exclude-standard").stdout.splitlines():
+        if p and map_file(p) and p not in untracked_before:
+            try:
+                os.remove(os.path.join(root, p))
+            except OSError:
+                pass
+
+
 def cmd_precommit(args):
-    """Warn-only: heal, then stage what heal changed — but never a file that also has the author's unstaged edits."""
+    """Warn-only: heal, then stage what heal changed — but never a file that also has the author's unstaged edits.
+    Over PRECOMMIT_DEADLINE seconds it gives up cleanly (LR-5): nothing staged, nothing half-written left behind."""
     root = os.path.abspath(args.repo_root)
     staged = [p for p in git(root, "diff", "--cached", "--name-only", "--diff-filter=ACMRD").stdout.splitlines() if p]
     if not staged:
         return 0
+    limit = float(os.environ.get("KG_PRECOMMIT_DEADLINE") or PRECOMMIT_DEADLINE)
     dirty_before = set(git(root, "diff", "--name-only").stdout.splitlines())
+    untracked_before = set(git(root, "ls-files", "-o", "--exclude-standard").stdout.splitlines())
+
+    def expire(signum, frame):
+        raise Deadline()
+    old = signal.signal(signal.SIGALRM, expire)
+    signal.setitimer(signal.ITIMER_REAL, limit)
     try:
         changed, _ = heal(root, quiet=True)
+        signal.setitimer(signal.ITIMER_REAL, 0)
+    except Deadline:
+        undo_partial(root, dirty_before, untracked_before)
+        record_check(root, "precommit", None, [])
+        print("kg pre-commit: skipped (over %g s), nightly heal will catch up" % limit)
+        return 0
     except Exception as exc:
+        signal.setitimer(signal.ITIMER_REAL, 0)
         print("kg pre-commit (warn only): map not refreshed — %s" % exc, file=sys.stderr)
         return 0
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, old)
     stage, skipped = [], []
     for p in changed:
         full = os.path.join(root, p)
@@ -188,6 +248,7 @@ def cmd_precommit(args):
     if skipped:
         print("kg pre-commit (warn): %d map file(s) re-rendered but NOT staged because they also hold your unstaged "
               "edits — review and `git add` them: %s" % (len(skipped), ", ".join(skipped)), file=sys.stderr)
+    record_check(root, "precommit", 1 if skipped else 0, skipped)
     return 0
 
 
@@ -229,6 +290,11 @@ def cmd_check(args):
     tool = find_tool(root)
     fails, notes = [], []
     if not tool:
+        if os.path.exists(os.path.join(root, "kg", "config.json")) or os.path.isdir(os.path.join(root, "kg",
+                                                                                                 "summaries")):
+            print("### kg check — FAIL\n\n- kg tool missing: kg/config.json or kg/summaries/ is here but kg/kg.py is "
+                  "not — re-vendor it (python3 ops/kg/vendor.py --apply in rumi-agent-home), never delete it")
+            return 1
         print("kg check: no kg/kg.py in %s — nothing to check" % root)
         return 0
     mod = load_kg_module(tool)
@@ -284,6 +350,7 @@ def cmd_check(args):
     doors_changed = [p for p in git(root, "diff", "--name-only", "%s...HEAD" % args.base).stdout.splitlines()
                      if os.path.basename(p) in (DOOR, INDEX)] if args.base else []
 
+    record_check(root, "check", 1 if fails else 0, drift)
     lines = ["### kg check — %s" % ("FAIL" if fails else "PASS"), ""]
     lines += ["- " + f.replace("\n", "\n  ") for f in fails] or ["- map is in step with the code"]
     lines += ["", "| metric | %shead |" % ("base | " if base else ""), "|---|%s---|" % ("---|" if base else "")]
@@ -312,7 +379,7 @@ def cmd_check(args):
 
 def cmd_heal(args):
     try:
-        heal(args.repo_root, quiet=args.quiet, repo_name=args.repo_name)
+        heal(args.repo_root, quiet=args.quiet, repo_name=args.repo_name, beads=getattr(args, "beads", None))
     except Exception as exc:
         print("kg heal: %s" % exc, file=sys.stderr)
         return 1
@@ -329,6 +396,8 @@ def main(argv=None):
         p.add_argument("--quiet", action="store_true")
         p.add_argument("--repo-name", help="GitHub repo name for node ids (default: kg/config.json, else origin)")
         p.set_defaults(func=fn)
+        if name == "heal":
+            p.add_argument("--beads", help="`bd list --json` output: refresh kg/beads.jsonl from it first (keeper)")
         if name == "check":
             p.add_argument("--base", help="git ref to diff stats against (CI: origin/<base branch>)")
             p.add_argument("--strict", action="store_true", help="unsigned human blocks fail too (kg/config.json "

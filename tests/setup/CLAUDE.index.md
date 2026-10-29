@@ -7,8 +7,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | path | purpose |
 |---|---|
 | `_audit-helpers/` | Shared require-graph builder behind the circular, orphan and unresolved-require guards → `_audit-helpers/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `accepted-advisories.test.js` | Pins that SECURITY.md documents the accepted matrix-bot-sdk request advisory while the lockfile still has it |
 | `asset-references.test.js` | Guards that every code path reading bot/marketing assets handles the file being absent in a fresh clone |
 | `bin-rumi.test.js` | Pins the bin/rumi.js CLI dispatcher routing commands to handlers, by swapping the exported COMMANDS for spies |
@@ -91,18 +89,11 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `worker-boot.test.js` | Forks each web and worker entry point with minimal env and fails if its require chain errors at load time |
 
 ## Who reads this (all, generated)
-- env `ASSET_BASE_URL` read at `tests/setup/register-all-templates.test.js:431:9abcc777`
-- env `HOME` read at `tests/setup/local-stack-state-dir.test.js:39:dc266910`
-- env `INTERNAL_API_KEY` read at `tests/setup/security.test.js:44:d48c04b8`
-- env `MMS_SERVICE_URL` read at `tests/setup/security.test.js:93:fdb6b684`
-- env `NODE_ENV` read at `tests/setup/security.test.js:45:0d319ea4`
-- env `PATH` read at `tests/setup/local-stack-state-dir.test.js:38:633bbb77`
-- env `RUMI_CLI` read at `tests/setup/cli-console.test.js:38:04cf408d`
-- env `SUPABASE_URL` read at `tests/setup/migrate-cli.test.js:64:f97f02c9`
+- (none)
 
 ## Tests (all, generated)
 - (none)
 
 ## Related (all, generated)
 - skills: `qa-testing`?
-- docs: `.claude/CLAUDE.index.md`? · `.claude/CLAUDE.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `TEST_READY.md`? · `bot/marketing/README.md`? · `bot/scripts/setup/CLAUDE.index.md`? · `bot/scripts/setup/CLAUDE.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/services/messaging/CLAUDE.index.md`? · `bot/shared/utils/CLAUDE.index.md`? · `docs/CLAUDE.index.md`? · `docs/customization.md`? · `docs/onboarding/sandbox-production-design.md`? · `infrastructure/local/CLAUDE.md`? · `infrastructure/scripts/CLAUDE.index.md`? · `infrastructure/scripts/CLAUDE.md`? · `pinokio/CLAUDE.index.md`? · `pinokio/CLAUDE.md`? · `tests/CLAUDE.index.md`? · `tests/CLAUDE.md`? · `tests/setup/CLAUDE.index.md`? · `tests/setup/CLAUDE.md`? · `tests/setup/_audit-helpers/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `TEST_READY.md`? · `bot/marketing/README.md`? · `bot/scripts/setup/CLAUDE.md`? · `docs/customization.md`? · `docs/onboarding/sandbox-production-design.md`? · `infrastructure/local/CLAUDE.md`? · `infrastructure/scripts/CLAUDE.md`? · `tests/CLAUDE.md`?

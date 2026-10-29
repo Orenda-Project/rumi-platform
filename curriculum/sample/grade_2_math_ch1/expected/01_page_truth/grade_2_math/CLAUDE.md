@@ -1,7 +1,7 @@
 # grade_2_math — One JSON per printed page (pg_NNN) plus _book and _toc
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=curriculum/sample/grade_2_math_ch1/expected/01_page_truth/grade_2_math kg=a8b7f9a8edd9 gen=83fef07e1044 overflow=18 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=curriculum/sample/grade_2_math_ch1/expected/01_page_truth/grade_2_math kg=a8b7f9a8edd9 gen=06c67cda7649 overflow=15 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `_book.json` — book metadata and page offset
@@ -13,8 +13,6 @@ Full index: `CLAUDE.index.md`
 |---|---|
 | `_book.json` | Sample book metadata (title, grade, offset=5, PDF pages) written during Stage A recon |
 | `pg_001.json` | Sample page-truth, printed p.1 (chapter_opener): Explorer's Pathway |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `_toc.json` | Sample table of contents with the printed-page offset note for the grade 2 maths book |
 | `pg_002.json` | Sample page-truth, printed p.2 (content): Topic 1, Numbers upto 999 |
 | `pg_003.json` | Sample page-truth, printed p.3 (content) |
@@ -28,7 +26,10 @@ Full index: `CLAUDE.index.md`
 | `pg_011.json` | Sample page-truth, printed p.11 (content): Leap and Learn, Practice Questions |
 | `pg_012.json` | Sample page-truth, printed p.12 (content): Practice Questions, Discovery Playground |
 | `pg_013.json` | Sample page-truth, printed p.13 (content): Skill Sharpener |
-| … | 18 more → `CLAUDE.index.md` |
+| `pg_014.json` | Sample page-truth, printed p.14 (content): Topic 3: Rounding Off, Adventure Begins! |
+| `pg_015.json` | Sample page-truth, printed p.15 (content): Leap and Learn |
+| `pg_016.json` | Sample page-truth, printed p.16 (content): Leap and Learn, Practice Questions |
+| … | 15 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)
@@ -41,4 +42,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `curriculum/sample/grade_2_math_ch1/expected/01_page_truth/CLAUDE.md`? · `curriculum/sample/grade_2_math_ch1/expected/01_page_truth/grade_2_math/CLAUDE.index.md`? · `curriculum/sample/grade_2_math_ch1/expected/01_page_truth/grade_2_math/CLAUDE.md`?
+- docs: `curriculum/sample/grade_2_math_ch1/expected/01_page_truth/CLAUDE.md`?

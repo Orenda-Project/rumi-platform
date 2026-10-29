@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `card-image.service.js` | Renders the 600x400 coaching commitment card PNG; called by report-generator |
 | `card-response.service.js` | Stores a teacher's coaching-card button tap in coaching_sessions.prioritized_action; no non-test importer (dead) |
 | `card-template.js` | HTML template for the commitment card screenshot, with RTL-aware text wrapping; used by card-image.service |
@@ -31,4 +29,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `prioritized-action.service.js` ← `tests/coaching/coaching-card.test.js` · `tests/coaching/coaching-flow-integration.test.js`
 
 ## Related (all, generated)
-- docs: `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/coaching-card/CLAUDE.index.md`? · `bot/shared/services/coaching/coaching-card/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/customization.md`? · `tests/coaching/CLAUDE.index.md`?
+- docs: `bot/shared/services/coaching/CLAUDE.md`? · `docs/customization.md`?

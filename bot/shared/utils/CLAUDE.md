@@ -1,7 +1,7 @@
 # utils — Small shared helpers: logging, language, phone, rendering, locks
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/utils kg=78432ca97e8f gen=c06c37fff0d7 overflow=144 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/utils kg=bb1bdd1d7d19 gen=5e59b5c3c947 overflow=142 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `logger.js` — logToFile used across the bot
@@ -12,7 +12,7 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `__mocks__/` | → (no door; 2 test files) |
+| `__mocks__/` | → (no door; 2 files: 0 test + 2 support) |
 | `logger.js` | logToFile: writes bot log lines with correlation id and pushes them to the console event ring |
 | `structured-logger.js` | Pino structured logging with console override, Axiom HTTP batching and correlation-id helpers |
 | `constants.js` | Reads WhatsApp, API and path env vars into module constants at require time (~50 of them), shared bot-wide |
@@ -25,7 +25,7 @@ Full index: `CLAUDE.index.md`
 - `structured-logger.js` ← imported by `bot/console/routes/api.js:105:0b8a1e8e` · `bot/gateway/adapters/whatsapp.js:25:dc0b40e1` (+54)
 - table `users` (written by `language-cache.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+54)
 - `constants.js` ← imported by `bot/console/pipeline-map.js:148:47d4b067` · `bot/gateway/adapters/whatsapp.js:23:b4e4b38e` (+46)
-- … 29 more → `CLAUDE.index.md`
+- … 91 more → `CLAUDE.index.md`
 
 ## Never (human)
 - SDK clients must always be created lazily so a missing optional key cannot crash boot (bot/shared/utils/lazy-client.js:7)
@@ -38,4 +38,4 @@ Full index: `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `debugging`? · `logging`? · `whatsapp-flows`?
-- docs: `CHANGELOG.md`? · `SETUP.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/CLAUDE.md`? · `bot/shared/utils/CLAUDE.index.md`? (+21)
+- docs: `CHANGELOG.md`? · `SETUP.md`? · `bot/shared/CLAUDE.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/features/test-papers.md`?

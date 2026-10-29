@@ -1,7 +1,7 @@
 # docs — Public docs: architecture, customization, setup guides, feature pages, Flow JSON
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=docs kg=47fe97bb9d74 gen=43c5e8a2cc0a overflow=6 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=docs kg=6460685a245d gen=be5fa66d178b overflow=6 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `architecture.md` — system overview
@@ -21,14 +21,12 @@ Full index: `CLAUDE.index.md`
 | `onboarding/` | Setup guides: API keys, WhatsApp connection, sandbox vs production design → `onboarding/CLAUDE.md` |
 | `samples/` | → (no door; 6 files) |
 | `customization.md` | Seam map: where to change each feature, framework or branding, with the conformance test guarding it |
-| `CLAUDE.index.md` | (unmapped) |
 | `agent-customization.md` | Agent-first recipes mapping each customization goal to exact files, change pattern and tests |
 | `LP_PATHS.md` | Answers how an LP request is routed (text paths vs photo) and how to enable each path; current |
 | `architecture.md` | System overview: WhatsApp webhook to Node bot, AI services, queue, workers, Supabase components |
+| `console.md` | Explains the operator web console (rumi start/console): connections, switches, pipeline status, password |
 | `running-in-public.md` | Checklist of limits and settings before opening Rumi to anyone with a link (bot and messenger) |
 | `android-app.md` | Guide to shipping your own Android apps: Rumi Messenger (Matrix) vs the portal app, signing and hosting |
-| `local-stack.md` | Guide to running the local database + Redis stack on a laptop (up.sh/down.sh), dev only |
-| `CLAUDE.md` | (unmapped) |
 | … | 5 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
@@ -43,5 +41,5 @@ _None found in code comments, tests or git log for this directory._
 
 ## Related (generated)
 - skills: `customizing`? · `setup`?
-- docs: `.github/workflows/CLAUDE.md`? · `AGENTS.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `SETUP.md`? (+90)
+- docs: `.github/workflows/CLAUDE.md`? · `AGENTS.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `SETUP.md`? (+54)
 - … 1 more → `CLAUDE.index.md`

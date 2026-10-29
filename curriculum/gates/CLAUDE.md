@@ -1,6 +1,6 @@
 # gates — Quality gates for enriched lessons: QA, v3 rubric, scoring, pass rule
 
-<!-- kg:meta repo=rumi-platform dir=curriculum/gates kg=f53f3d3f0edb gen=46e024515349 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=curriculum/gates kg=7617c18de31f gen=918952522cd0 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `production_gate.py` — the pass rule: hard QA, no check <=2, composite >=92
@@ -11,7 +11,6 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
 | `reviewer_rubric_v3.py` | Data-driven v3 lesson-plan reviewer rubric: criteria 0-9, checks with 1-4 descriptors and standard codes |
 | `qa_checks.py` | Deterministic QA of an enriched lesson body: hard fails (placeholders, unsolved problems) and soft checks |
 | `reviewer_prompt_v3.py` | Builds the v3 LP-reviewer system prompt from the data-driven rubric plus an editable frame |
@@ -33,4 +32,4 @@
 - `curriculum/gates/test_qa_checks.py` (qa_checks.py)
 
 ## Related (generated)
-- docs: `curriculum/CLAUDE.md`? · `curriculum/gates/CLAUDE.md`? · `curriculum/method/CLAUDE.md`? · `curriculum/method/c-enrichment.md`? · `curriculum/research/CLAUDE.md`? · `curriculum/research/INDEX.md`?
+- docs: `curriculum/CLAUDE.md`? · `curriculum/method/c-enrichment.md`? · `curriculum/research/INDEX.md`?

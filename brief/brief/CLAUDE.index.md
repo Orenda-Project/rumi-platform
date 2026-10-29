@@ -8,8 +8,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 |---|---|
 | `assets/` | → (no door; 1 files) |
 | `sample/` | → (no door; 2 files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `__init__.py` | Package header for the Morning Brief; documents the calendar, schema, pull, render, compose, publish pipeline |
 | `calendar.py` | Decides which working day a brief covers and whether it may fire (day guard), daily vs weekly windows |
 | `compose.py` | Templates the captions and delta chips beside each panel from metrics; called by cli.py and tests |
@@ -43,4 +41,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `morning-brief`?
-- docs: `brief/CLAUDE.md`? · `brief/README.md`? · `brief/brief/CLAUDE.index.md`? · `brief/brief/CLAUDE.md`? · `brief/tests/CLAUDE.md`?
+- docs: `brief/CLAUDE.md`? · `brief/README.md`?

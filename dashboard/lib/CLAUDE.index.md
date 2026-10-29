@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `admin-csp.js` | Sets a per-request nonce CSP on rendered admin views (no unsafe-inline); applied from res.render. |
 | `asset-links.js` | Builds the Android assetlinks.json served at /.well-known for the portal app from ANDROID_APP_* env. |
 | `client-ip.js` | Resolves the caller IP from TRUST_PROXY/X-Forwarded-For for per-IP rate limits. |
@@ -39,4 +37,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `safe-json.js` ← `tests/dashboard/admin-views-raw-output.test.js` · `tests/dashboard/ama-routes.test.js` · `tests/dashboard/helpers/render-admin-view.js` · `tests/dashboard/safe-json.test.js`
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/README.md`? · `dashboard/lib/CLAUDE.index.md`? · `dashboard/lib/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/admin-views-security.md`? · `portal/ANDROID.md`? · `portal/CLAUDE.index.md`? · `tests/dashboard/CLAUDE.index.md`? · `tests/dashboard/CLAUDE.md`? · `tests/portal/CLAUDE.index.md`? · `tests/portal/CLAUDE.md`? · `tests/unit/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.md`? · `dashboard/README.md`? · `docs/features/admin-views-security.md`? · `portal/ANDROID.md`?

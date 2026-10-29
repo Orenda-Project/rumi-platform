@@ -7,8 +7,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | path | purpose |
 |---|---|
 | `inbound/` | Adapters turning each channel's events into webhook-shaped payloads → `inbound/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `baileys-channel.service.js` | Sandbox WhatsApp Web channel driver (Baileys) implementing the channel send interface |
 | `baileys-connection.js` | Owns the single persistent Baileys socket shared by the pairing script and channel driver |
 | `baileys-lib.js` | ESM-interop loader for the baileys package so CJS code and tests can import it |
@@ -109,4 +107,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `setup`?
-- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/messaging/CLAUDE.index.md`? · `bot/shared/services/messaging/CLAUDE.md`? · `bot/shared/services/messaging/inbound/CLAUDE.index.md`? · `bot/shared/services/messaging/inbound/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/attendance.md`? · `docs/features/public-limits.md`? · `docs/onboarding/sandbox-production-design.md`? · `tests/attendance/CLAUDE.index.md`? · `tests/database/CLAUDE.md`? · `tests/messaging/CLAUDE.index.md`? · `tests/messaging/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/routes/CLAUDE.index.md`? · `tests/setup/CLAUDE.index.md`?
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `bot/shared/services/CLAUDE.md`? · `docs/features/attendance.md`? · `docs/features/public-limits.md`? · `docs/onboarding/sandbox-production-design.md`?

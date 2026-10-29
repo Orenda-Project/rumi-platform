@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `app-build-guard.cjs` | Fails 'vite build --mode app' unless VITE_API_BASE_URL is an absolute https url; called from vite.config.ts |
 | `app-config.cjs` | Reads app id, name, API url and OTA flag from env, then .env.app, then defaults; shared by capacitor.config.ts |
 | `app-links.cjs` | Decides what a tapped Android App Link means: own-origin /portal/ paths navigate, everything else is ignored |
@@ -43,4 +41,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `greeting.ts` ← `portal/src/lib/greeting.test.ts`
 
 ## Related (all, generated)
-- docs: `portal/ANDROID.md`? · `portal/CLAUDE.index.md`? · `portal/src/CLAUDE.md`? · `portal/src/lib/CLAUDE.index.md`? · `portal/src/lib/CLAUDE.md`? · `tests/portal/CLAUDE.index.md`?
+- docs: `portal/ANDROID.md`? · `portal/src/CLAUDE.md`?

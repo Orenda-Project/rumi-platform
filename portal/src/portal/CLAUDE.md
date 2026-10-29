@@ -1,6 +1,6 @@
 # portal — The signed-in teacher and coach portal: pages, API client, auth hook, types
 
-<!-- kg:meta repo=rumi-platform dir=portal/src/portal kg=21856fbf1ac5 gen=ca3a2cd021df overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=portal/src/portal kg=21856fbf1ac5 gen=3bf1eb0c6bcb overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `services/api.ts` — axios client; endpoints for auth, portal and coach
@@ -17,7 +17,6 @@
 | `pages/` | One file per /portal route: login, reset, dashboard, coaching, reading, videos, observe → `pages/CLAUDE.md` |
 | `services/` | → (no door; 1 files) |
 | `types/` | → (no door; 2 files) |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - (none)
@@ -31,4 +30,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `portal/src/CLAUDE.md`? · `portal/src/portal/components/CLAUDE.index.md`? · `portal/src/portal/components/CLAUDE.md`? · `portal/src/portal/pages/CLAUDE.index.md`? · `portal/src/portal/pages/CLAUDE.md`?
+- docs: `portal/src/CLAUDE.md`?

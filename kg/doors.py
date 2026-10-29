@@ -1,4 +1,4 @@
-# doors v0.1.0 sha256=744a024a5ee434e2adcfbba31ad548e3bdcdec413271812aa1882bb50eebac77 — source: rumi-agent-home ops/kg/doors.py
+# doors.py v0.2.0 sha256=c0b0c337ccc24e577c60e28520136e64c277d637b3ed0cc0f983ce7df3277c9c — source: rumi-agent-home ops/kg/doors.py
 """Doors (directory CLAUDE.md files) and edit-time guard cards, rendered from the knowledge graph.
 
 Contract C (door) is ops/kg/DOOR_FORMAT.md; contract E (card) is ops/kg/CARD_FORMAT.md. kg.py imports this module and
@@ -20,7 +20,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 DOOR = "CLAUDE.md"
 INDEX = "CLAUDE.index.md"
@@ -32,6 +32,7 @@ BIG_DIR = 40          # every subdirectory of a directory with more children tha
 MIN_FILES = 3         # a directory with at least this many files gets a door (D-9)
 PREFIX_MIN, PREFIX_MAX = 3, 15
 COMPACT_SUBDIRS = 8   # more sub-directories than this → one row of links (each sub-door's title is one hop away)
+COMPACT_NAMES = 5     # names shown in the "sub-dirs without a door" row; the index lists every one
 TRIM_ORDER = [("Related (generated)", 2), ("Tests (generated)", 2), ("Who reads this (generated)", 4),
               ("Children (generated)", 1)]   # sibling files sharing a leading token are grouped only in this size range
 
@@ -474,19 +475,25 @@ class Rows:
     def sort(self):
         self.rows.sort(key=lambda r: (-r[0], r[1]))
 
+    def hidden(self):
+        """Rows of the index an agent does not see in the door (F-2): index rows minus door rows. Rows trimmed,
+        grouped or folded into a compact row all count; `cut` alone under-counted 49 of 81 doors."""
+        return max(len(self.full) - len(self.rows), self.cut) if self.full else self.cut
+
     def body(self, door=True):
         if door:
             rows = [t for _, t in self.rows]
             if not rows and not self.cut:
                 return "- (none)"
-            more = [self.more_fmt % self.cut] if self.cut else []
+            more = [self.more_fmt % self.hidden()] if self.cut else []
             return "\n".join(self.head + rows + more)
         rows = self.full or [t for _, t in self.rows]
         return "\n".join(self.head + rows) if rows else "- (none)"
 
 
 def file_kids(kg, d):
-    return [p for p in kg.children(d) if not p.endswith("/")]
+    """Files directly in d, minus the door and its index: they are this page, not something on it (LR-13)."""
+    return [p for p in kg.children(d) if not p.endswith("/") and os.path.basename(p) not in (DOOR, INDEX)]
 
 
 def dir_kids(kg, d):
@@ -533,10 +540,11 @@ def children_rows(kg, d, need, group):
                 len(with_door), DOOR, " · ".join("`%s/`" % rel_to(x, d) for x in with_door))
             sec.add(10 ** 7, row)
         if no_door:
-            row = "| %d sub-dirs without a door | %s |" % (
-                len(no_door), " · ".join("`%s/` (%d%s)" % (rel_to(x, d), file_count(kg, x),
-                                                           " tests" if only_tests(kg, x) else "") for x in no_door))
-            sec.add(10 ** 7 - 1, row)
+            names = ["`%s/` (%d%s)" % (rel_to(x, d), file_count(kg, x), " tests" if only_tests(kg, x) else "")
+                     for x in no_door[:COMPACT_NAMES]]
+            if len(no_door) > COMPACT_NAMES:
+                names.append("+%d more → `%s`" % (len(no_door) - COMPACT_NAMES, INDEX))
+            sec.add(10 ** 7 - 1, "| %d sub-dirs without a door | %s |" % (len(no_door), " · ".join(names)))
         subs_rows_only_in_index = True
     else:
         subs_rows_only_in_index = False
@@ -548,11 +556,16 @@ def children_rows(kg, d, need, group):
             row = "| `%s` | %s → `%s%s` |" % (name, what, name, DOOR)
         else:
             n = file_count(kg, sub)
-            row = "| `%s` | → (no door; %d %s) |" % (name, n, "test files" if only_tests(kg, sub) else "files")
+            row = "| `%s` | → (no door; %s) |" % (name, no_door_count(kg, sub, n))
         if subs_rows_only_in_index:
             sec.full.append(row)
         else:
             sec.add(10 ** 6, row, row)   # sub-directories are hops: keep them before any file
+    # tracked directories the graph excludes (dist/, vendor/ …) still get a row: nothing is silently absent (B7)
+    for x, n in sorted(((kg.manifest or {}).get("excluded_dirs") or {}).items()):
+        if parent(x) == d:
+            row = "| `%s/` | → (not mapped: excluded; %d files) |" % (rel_to(x, d), n)
+            sec.add(10 ** 6 - 1, row, row)
     files = file_kids(kg, d)
     full = {p: "| `%s` | %s |" % (rel_to(p, d), kg.purpose(p) or "(unmapped)") for p in files}
     sec.full.extend(full[p] for p in files)
@@ -567,6 +580,23 @@ def children_rows(kg, d, need, group):
         else:
             sec.add(max(edge_rank(kg, p) for p in fam["members"]), fam["row"])
     return sec
+
+
+TEST_FILE = re.compile(r"^(test_.*\.py|.*_test\.(py|go)|.*\.(test|spec)\.[a-z]+)$")
+
+
+def no_door_count(kg, d, n):
+    """LR-2 row text: 'N tests' when every file under d is a test by name; a tests/ dir that also holds __init__.py
+    or fixtures says 'N files: T test + S support' (VERDICT #349, ported from its branch); otherwise 'N files'."""
+    if not only_tests(kg, d):
+        return "%d files" % n
+    files, stack = [], [d]
+    while stack:
+        cur = stack.pop()
+        for p in kg.children(cur):
+            (stack.append(p[:-1]) if p.endswith("/") else files.append(p))
+    t = sum(1 for p in files if TEST_FILE.match(os.path.basename(p)))
+    return "%d tests" % n if t == n else "%d files: %d test + %d support" % (n, t, n - t)
 
 
 def families(kg, d, files):
@@ -663,6 +693,8 @@ def who_reads_rows(kg, d):
             more = " (+%d)" % (len(evs) - 2) if len(evs) > 2 else ""
             sec.add(len(evs), lead + " · ".join(evs[:2]) + more, lead + index_list(evs, name))
         for e in kg.out_edges(nid, "reads_env"):
+            if e.get("k") == "test" or is_test_path(p):   # a test setting up env is not a reader (F-4)
+                continue
             envs.setdefault(e["o"].split(":", 2)[2], []).append(e)
     for via, ent in sorted(data.items()):
         cs = pick(ent["cs"])
@@ -728,7 +760,7 @@ def test_command(cfg, paths):
     return " ; ".join(cmds) if cmds else None
 
 
-def related_items(kg, ids):
+def related_items(kg, ids, skip_dir=None):
     found = {}
     for nid in ids:
         for e in kg.in_edges(nid) + kg.out_edges(nid):
@@ -736,6 +768,9 @@ def related_items(kg, ids):
                 continue
             other = e["o"] if e["s"] == nid else e["s"]
             n = kg.node(other) or {}
+            op = n.get("path") or ""
+            if os.path.basename(op) == INDEX or op == os.path.join(skip_dir or "", DOOR):
+                continue   # a generated index (anywhere) or this door itself is not a related doc
             kind = "bead" if other.startswith("bead:") else (n.get("kind") or other.split(":")[1])
             label = n.get("name") or other.split(":", 2)[-1]
             if kind in ("doc", "report"):
@@ -753,7 +788,7 @@ def related_rows(kg, d):
     sec = Rows("Related (generated)")
     ids = [kg.file_id(p) for p in file_kids(kg, d)]
     ids = [i for i in ids if i] + ["%s:dir:%s" % (kg.repo, d)]
-    found = related_items(kg, ids)
+    found = related_items(kg, ids, skip_dir=d)
     for i, (kind, label) in enumerate(RELATED_KINDS):
         items = found.get(kind)
         if not items:
@@ -824,8 +859,11 @@ def fit(kg, d, title, human, secs, today, old_meta, force_index):
         gen = {n: secs[n].body() for n in GEN}
         gh = gen_hash_of(gen)
         overflow = sum(s.cut for s in secs.values())
-        keep = old_meta.get("gen") == gh and old_meta.get("kg") == kgh and old_meta.get("rendered")
-        meta = meta_line(kg, d, kgh, gh, old_meta["rendered"] if keep else today, overflow)
+        # F-6: when the generated text is unchanged the door is unchanged — kg= and rendered= stay as they were, so
+        # a graph change elsewhere (a sibling's edge) never re-stamps this file
+        keep = old_meta.get("gen") == gh and old_meta.get("rendered") and old_meta.get("kg")
+        meta = meta_line(kg, d, old_meta["kg"] if keep else kgh, gh, old_meta["rendered"] if keep else today,
+                         overflow)
         return compose(title, force_index or overflow > 0, meta, human, gen), overflow, gen
 
     text, overflow, gen = render()
@@ -855,8 +893,9 @@ def index_text(kg, d, secs):
     return "\n".join(parts).rstrip("\n") + "\n"
 
 
-def render_dir(kg, d, today=None, adopt=False, need=None):
-    """Render <d>/CLAUDE.md (+ CLAUDE.index.md when rows overflow or files were grouped). Returns a result dict."""
+def render_dir(kg, d, today=None, adopt=False, need=None, dry=False):
+    """Render <d>/CLAUDE.md (+ CLAUDE.index.md when rows overflow or files were grouped). Returns a result dict.
+    dry=True writes nothing and returns {"text": <the door it would write>} (door check compares the two)."""
     kg = facade(kg)
     d = d.strip("/") if d not in (".", "") else ""
     if not d:
@@ -885,12 +924,15 @@ def render_dir(kg, d, today=None, adopt=False, need=None):
                 if n in p["sections"]:
                     human[n] = p["sections"][n] or PLACEHOLDER
     secs = build_sections(kg, d, need, group=False)
-    text, overflow, _ = fit(kg, d, title, human, secs, today, old_meta, False)
-    grouped = False
+    # a compact sub-dirs row folds many rows into one: the index then holds them, and the door says so
+    grouped = len(secs["Children (generated)"].rows) < len(secs["Children (generated)"].full)
+    text, overflow, _ = fit(kg, d, title, human, secs, today, old_meta, grouped)
     if nbytes(text) > DOOR_BUDGET or overflow:
         secs = build_sections(kg, d, need, group=True)
         grouped = len(secs["Children (generated)"].rows) < len(secs["Children (generated)"].full)
         text, overflow, _ = fit(kg, d, title, human, secs, today, old_meta, grouped)
+    if dry:
+        return {"dir": d, "text": text}
     write_if_changed(door_path, text)
     idx_path = os.path.join(dabs, INDEX)
     if overflow or grouped or legacy_body:
@@ -972,7 +1014,12 @@ def row_token(row, d=""):
     return None
 
 
-def check_dir(kg, d, use_kg=True, lenient=False):
+def table_rows(section):
+    return [ln for ln in section.split("\n") if ln.startswith("| ") and not ln.startswith("| path |")
+            and not ln.startswith("|---")]
+
+
+def check_dir(kg, d, use_kg=True, lenient=False, need=None):
     """Problems with <d>/CLAUDE.md as a list of strings ([] = clean). `lenient` drops `unsigned` problems."""
     kg = facade(kg) if kg is not None else None
     root = kg.root if kg is not None else None
@@ -1019,6 +1066,16 @@ def check_dir(kg, d, use_kg=True, lenient=False):
                 probs.append("broken link: `%s`" % tok)
     if p["index_line"] and not os.path.exists(os.path.join(dabs, INDEX)):
         probs.append("broken link: `%s`" % INDEX)
+    # F-2: `| … | N more` must equal the index's Children rows minus the door's
+    m = re.search(r"^\| … \| (\d+) more", gen.get("Children (generated)", ""), re.M)
+    itext = read_text(os.path.join(dabs, INDEX)) if m else None
+    if m and itext is not None and "## Children (all, generated)" in itext:
+        isec = itext.split("## Children (all, generated)", 1)[1].split("\n## ", 1)[0]
+        shown = [r for r in table_rows(gen["Children (generated)"]) if not r.startswith("| … |")]
+        want = len(table_rows(isec)) - len(shown)
+        if int(m.group(1)) != want:
+            probs.append("Children `… %s more` count is wrong: the index holds %d rows the door does not show"
+                         % (m.group(1), want))
     # evidence: hash + claimed token
     for ln in gen.get("Who reads this (generated)", "").split("\n"):
         tok = row_token(ln, d)
@@ -1030,7 +1087,12 @@ def check_dir(kg, d, use_kg=True, lenient=False):
             elif res != "ok":
                 probs.append("stale ev (%s): `%s`" % (res, ev))
     if use_kg and kg is not None and not probs:
-        if p["meta"].get("kg") != kg.slice_hash(d):
+        # F-6: stale = a fresh render would write different bytes (kg= alone moves with unrelated sibling edges)
+        try:
+            want = render_dir(kg, d, need=need, dry=True)["text"]
+        except LegacyDoor:
+            want = text
+        if want != text:
             probs.append("stale: the graph moved since this door was rendered (run `door render %s`)" % d)
     return probs
 
@@ -1084,7 +1146,7 @@ def check_all(kg, lenient=False, use_kg=True):
         if excluded_dir(d):
             continue
         text = read_text(os.path.join(kg.root, d, DOOR))
-        probs = check_dir(kg, d, use_kg=use_kg, lenient=lenient)
+        probs = check_dir(kg, d, use_kg=use_kg, lenient=lenient, need=need)
         if lenient:
             probs = [x for x in probs if x != "missing door" and not x.startswith("legacy")]
         meta = parse_door(text)["meta"] if text else {}

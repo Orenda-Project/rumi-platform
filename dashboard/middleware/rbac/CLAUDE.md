@@ -1,6 +1,6 @@
 # rbac — Role checks, feature gating and the per-request RLS database context
 
-<!-- kg:meta repo=rumi-platform dir=dashboard/middleware/rbac kg=b72b9b48b624 gen=ab316a7dc4ba overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=dashboard/middleware/rbac kg=b72b9b48b624 gen=a0ff8d6768b0 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `database-context.js` — checks out a client, SET ROLE portal_app_user, releases on response finish
@@ -15,7 +15,6 @@
 | `database-context.js` | Checks out a pooled client per request, sets the RLS user context, releases on response finish. |
 | `feature-access.js` | Gates routes by feature using the feature_permissions table and the user's dashboard role. |
 | `rbac.js` | requireRole/requireSuperAdmin middleware checking dashboard_users.role (super_admin, partner_admin, viewer...). |
-| `CLAUDE.md` | (unmapped) |
 | `USAGE_EXAMPLES.md` | Examples of using setDatabaseContext, requireRole and requireFeatureAccess in Express routes. |
 
 ## Who reads this (generated)
@@ -32,4 +31,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `dashboard/middleware/CLAUDE.md`? · `dashboard/middleware/rbac/CLAUDE.md`? · `dashboard/middleware/rbac/USAGE_EXAMPLES.md`?
+- docs: `dashboard/middleware/CLAUDE.md`?

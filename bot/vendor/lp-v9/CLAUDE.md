@@ -1,6 +1,6 @@
 # lp-v9 — Diagram engine that draws lesson-quiz figures, plus font and rich-text helpers
 
-<!-- kg:meta repo=rumi-platform dir=bot/vendor/lp-v9 kg=dc56e5fa5681 gen=f76c1da15c86 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/vendor/lp-v9 kg=7bced9853066 gen=c4aa9971f191 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `diagrams/index.js` — renderDiagram(spec) entry
@@ -15,7 +15,6 @@
 | `fonts/` | → (no door; 4 files) |
 | `lib/` | → (no door; 2 files) |
 | `README.md` | Explains lp-v9, the first-party diagram engine used only by the lesson quiz, and its third-party fonts and pictograms |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - (none)
@@ -28,4 +27,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/vendor/CLAUDE.md`? · `bot/vendor/lp-v9/CLAUDE.md`? · `bot/vendor/lp-v9/README.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? (+5)
+- docs: `bot/vendor/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/assets/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/assets/pictograms/ATTRIBUTION.md`? · `bot/vendor/lp-v9/diagrams/assets/pictograms/CLAUDE.md`? · `docs/features/lesson-quiz.md`?

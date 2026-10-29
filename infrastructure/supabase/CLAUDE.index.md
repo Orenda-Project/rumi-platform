@@ -10,8 +10,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `00_complete-schema.sql` | Complete fresh-install schema: extensions, ~80 tables, functions, triggers, indexes; idempotent |
 | `01_rls-policies.sql` | Enables row-level security on all tables and adds service_role policies; run after 00 schema |
 | `02_seed-data.sql` | Seeds reference data: WCPM reading benchmarks and the region_features default; run after 00 and 01 |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `verify-schema.sql` | Post-setup checks that expected tables exist (count >= 55) and each returns PASS/FAIL |
 
 ## Who reads this (all, generated)
@@ -465,4 +463,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `ab-testing`? · `database-analysis`? · `feature-tracer`?
-- docs: `.claude/skills/database-analysis/reference/query-patterns.md`? · `CHANGELOG.md`? · `SECURITY.md`? · `SETUP.md`? · `dashboard/docs/PARTNER_RBAC_STATUS.md`? · `docs/CLAUDE.index.md`? · `docs/agent-customization.md`? · `docs/architecture.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/homework.md`? · `docs/features/lesson-quiz.md`? · `docs/features/quiz.md`? · `docs/features/teacher-nudges.md`? · `docs/features/video-quizzes.md`? · `docs/local-stack.md`? · `infrastructure/CLAUDE.index.md`? · `infrastructure/CLAUDE.md`? · `infrastructure/supabase/CLAUDE.index.md`? · `infrastructure/supabase/CLAUDE.md`? · `infrastructure/supabase/migrations/CLAUDE.index.md`? · `infrastructure/supabase/migrations/CLAUDE.md`?
+- docs: `.claude/skills/database-analysis/reference/query-patterns.md`? · `CHANGELOG.md`? · `SECURITY.md`? · `SETUP.md`? · `dashboard/docs/PARTNER_RBAC_STATUS.md`? · `docs/agent-customization.md`? · `docs/architecture.md`? · `docs/features/homework.md`? · `docs/features/lesson-quiz.md`? · `docs/features/quiz.md`? · `docs/features/teacher-nudges.md`? · `docs/features/video-quizzes.md`? · `docs/local-stack.md`? · `infrastructure/CLAUDE.md`?

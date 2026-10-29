@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `paper-generation.service.js` | Builds the prompt from source text and makes the one model call that returns a test paper's question tree |
 | `paper-json.util.js` | Repairs near-JSON model output (fences, missing commas, raw newlines, truncation) for test paper generation |
 | `paper-renderer.js` | Lays out the printable exam paper and answer key as HTML (marking header, instructions, questions, RTL aware) |
@@ -47,4 +45,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `testpaper-store.service.js` ← `tests/testpaper/testpaper-orchestrator.test.js` · `tests/testpaper/testpaper-store.test.js` · `tests/testpaper/testpaper-worker.test.js`
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/testpaper/CLAUDE.index.md`? · `bot/shared/services/testpaper/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/test-papers.md`? · `tests/testpaper/CLAUDE.index.md`? · `tests/testpaper/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `bot/shared/services/CLAUDE.md`? · `docs/features/test-papers.md`?

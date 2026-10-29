@@ -1,7 +1,7 @@
 # types — One module per diagram kind (clock, graph, circuit, molecule, punnett, ...)
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/vendor/lp-v9/diagrams/types kg=4a9bb6b74233 gen=f6784ee3b2b7 overflow=16 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/vendor/lp-v9/diagrams/types kg=102e5358e548 gen=f1d8a940eb9b overflow=13 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `graph.js` — Cartesian plot, the most general type
@@ -11,9 +11,7 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
 | `word_blank.js` | Diagram type: picture of a thing with its word shown missing a letter |
-| `CLAUDE.index.md` | (unmapped) |
 | `chem_equation.js` | Diagram type: deterministic chemical-equation typesetter in pure SVG text |
 | `atom.js` | Diagram type: Bohr shell models and dot-and-cross bonding pictures |
 | `base_ten.js` | Diagram type: place-value picture of thousands, hundreds, tens and ones |
@@ -26,7 +24,10 @@ Full index: `CLAUDE.index.md`
 | `dna_helix.js` | Diagram type: double-helix ribbon of two strands around a shared axis |
 | `flow.js` | Diagram type: chain of rounded boxes joined by labelled arrows |
 | `fraction_bar.js` | Diagram type: part-whole fraction bars or circle sectors |
-| … | 16 more → `CLAUDE.index.md` |
+| `free_body.js` | Diagram type: free-body force diagrams for grade 8-12 mechanics |
+| `geometry.js` | Diagram type: small declarative geometry canvas for points, lines and shapes |
+| `graph.js` | Diagram type: Cartesian plot with gridlines, axes, ticks and series |
+| … | 13 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `chem_equation.js` ← imported by `bot/vendor/lp-v9/diagrams/types/molecule.js:46:c6bda7db`
@@ -40,4 +41,4 @@ _None found in code comments, tests or git log for this directory._
 - `tests/quiz/transcript-quiz-figure-early-years.test.js` (word_blank.js)
 
 ## Related (generated)
-- docs: `bot/vendor/lp-v9/diagrams/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/types/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/types/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `bot/vendor/lp-v9/diagrams/CLAUDE.md`?

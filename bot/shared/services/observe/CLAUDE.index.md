@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `coach-directory.js` | Stores and reads a coach's work email in coach_directory, resolved once and never fuzzy-matched per invite |
 | `debrief-retry-sweep.js` | Picks debrief rows stuck pending after a transcription outage for re-queue; the pure half run by sqs-worker |
 | `google-calendar.client.js` | Dependency-free Google Calendar REST client signing a service-account JWT; used by observe-calendar |
@@ -158,4 +156,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `observe-who.service.js` ← `tests/observe/observe-who.test.js`
 
 ## Related (all, generated)
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/observe/CLAUDE.index.md`? · `bot/shared/services/observe/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/services/CLAUDE.md`?
+- docs: `bot/shared/services/CLAUDE.md`?

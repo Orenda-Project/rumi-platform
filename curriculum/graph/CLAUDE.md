@@ -1,6 +1,6 @@
 # graph — Curriculum knowledge graph: build from segments, explore offline, semantic layer
 
-<!-- kg:meta repo=rumi-platform dir=curriculum/graph kg=90ce3067117c gen=a296a4f2a40e overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=curriculum/graph kg=691644f0eb33 gen=258f4817bf8e overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `README.md` — commands and what each file builds
@@ -10,10 +10,10 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
+| `vendor/` | → (not mapped: excluded; 1 files) |
 | `README.md` | Explains building and exploring the curriculum knowledge graph (graph.json, explorer.html, optional semantic layer) |
 | `build_graph.py` | Builds the Book/Chapter/Lesson/SLO graph and derived SLO DAG from segmentation JSON; exports json/graphml/cypher |
 | `semantic_slos.py` | Optional layer adding SLO similarity, equivalence and oriented prerequisite edges to the graph |
-| `CLAUDE.md` | (unmapped) |
 | `explorer.py` | Builds a self-contained offline HTML graph viewer from graph.json plus the vendored vis-network |
 | `test_build_graph.py` | Pins build_graph on the shipped sample: lessons teach SLOs, SLOs progress per strand, SLO graph is acyclic |
 
@@ -30,4 +30,4 @@
 
 ## Related (generated)
 - skills: `curriculum-baked-lesson-plans`?
-- docs: `CHANGELOG.md`? · `curriculum/CLAUDE.md`? · `curriculum/README.md`? · `curriculum/graph/CLAUDE.md`? · `curriculum/graph/README.md`? · `curriculum/research/CLAUDE.md`? (+3)
+- docs: `CHANGELOG.md`? · `curriculum/CLAUDE.md`? · `curriculum/README.md`? · `curriculum/graph/README.md`? · `curriculum/research/CLAUDE.md`? · `curriculum/research/INDEX.md`? (+2)

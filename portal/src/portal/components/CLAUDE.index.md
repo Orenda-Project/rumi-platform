@@ -11,8 +11,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `AudioPlayer.tsx` | Audio player with play/seek/time and optional download; used for lesson and feedback recordings |
 | `BackButtonHandler.test.tsx` | Pins Android back-key behaviour: close dialog, minimize from home pages, history back elsewhere |
 | `BackButtonHandler.tsx` | Android only: enables the Capacitor back handler at runtime and applies back-button.cjs; no-op in browsers |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `CoachingSessionCard.tsx` | Card for one coaching session (date, duration, score) linking to its detail; used by PortalCoaching |
 | `EmptyState.tsx` | Generic empty-state block with icon, text and optional action button or link; used by portal list pages |
 | `LessonPlanCard.tsx` | Card for one lesson plan or presentation with date and open/download links; used by PortalLessonPlans |
@@ -47,4 +45,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `ObservationRow.tsx` ← `portal/src/portal/components/ObservationRow.test.tsx`
 
 ## Related (all, generated)
-- docs: `portal/src/portal/CLAUDE.md`? · `portal/src/portal/components/CLAUDE.index.md`? · `portal/src/portal/components/CLAUDE.md`?
+- docs: `portal/src/portal/CLAUDE.md`?

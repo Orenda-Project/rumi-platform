@@ -21,8 +21,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `views/` | EJS pages for the operator dashboard, plus nav and release-feed partials → `views/CLAUDE.md` |
 | `workers/` | → (no door; 1 files) |
 | `.gitignore` | (unmapped) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `README.md` | Explains the optional Phase 2 operator dashboard: what it shows and how to deploy it after the bot. |
 | `cluster.js` | Spawns several worker processes of index.js so one slow GPT request cannot block portal static files. |
 | `entrypoint.js` | Railway start script: runs the portal server or, with WORKER_MODE=sqs, the portal SQS worker. |
@@ -80,5 +78,5 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `tailwind.config.js` ← `tests/dashboard/admin-csp.test.js`
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/README.md`? · `dashboard/database/CLAUDE.index.md`? · `dashboard/database/CLAUDE.md`? · `dashboard/docs/CLAUDE.md`? · `dashboard/lib/CLAUDE.index.md`? · `dashboard/lib/CLAUDE.md`? · `dashboard/middleware/CLAUDE.md`? · `dashboard/routes/CLAUDE.index.md`? · `dashboard/routes/CLAUDE.md`? · `dashboard/scripts/CLAUDE.md`? · `dashboard/services/CLAUDE.index.md`? · `dashboard/services/CLAUDE.md`? · `dashboard/tests/CLAUDE.index.md`? · `dashboard/tests/CLAUDE.md`? · `dashboard/views/CLAUDE.index.md`? · `dashboard/views/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/android-app.md`? · `docs/architecture.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/admin-views-security.md`? · `docs/monitoring.md`? · `docs/running-in-public.md`? · `tests/dashboard/CLAUDE.index.md`? · `tests/dashboard/CLAUDE.md`? · `tests/dashboard/admin-view-escaping/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `dashboard/lib/CLAUDE.md`? · `docs/android-app.md`? · `docs/architecture.md`? · `docs/features/admin-views-security.md`? · `docs/monitoring.md`? · `docs/running-in-public.md`? · `tests/dashboard/CLAUDE.md`?
 - service: `railway.toml`

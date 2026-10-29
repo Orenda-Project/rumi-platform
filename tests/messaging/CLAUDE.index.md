@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `baileys-channel-service.test.js` | Pins baileys-channel.service outbound (text JID send, emotion-tag strip, false on socket error), connection mocked |
 | `baileys-connection.test.js` | Pins baileys-connection lazy connect, getSocket on "open", and auth-state dir, with baileys-lib mocked |
 | `baileys-socket-adapter.test.js` | Pins baileys-socket.adapter mapping a WAMessage to the Meta webhook shape, JID parsing and numeric-reply selection |
@@ -51,11 +49,10 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `text-handler-channel-identity.test.js` | Pins handleTextMessage splitting "mtx:<digits>" at the colon when no user is passed, creating no wrong account |
 
 ## Who reads this (all, generated)
-- env `REDIS_URL` read at `tests/messaging/matrix-group-reply-room.test.js:59:88d1c0ac` · `tests/messaging/matrix-typing.test.js:58:88d1c0ac`
-- env `TRANSCRIPT_QUIZ_ENABLED` read at `tests/messaging/bare-command-routing.test.js:120:64520470`
+- (none)
 
 ## Tests (all, generated)
 - (none)
 
 ## Related (all, generated)
-- docs: `bot/shared/handlers/CLAUDE.index.md`? · `bot/shared/routes/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/cache/CLAUDE.md`? · `bot/shared/services/messaging/CLAUDE.index.md`? · `bot/shared/services/messaging/CLAUDE.md`? · `bot/shared/services/messaging/inbound/CLAUDE.index.md`? · `bot/shared/services/messaging/inbound/CLAUDE.md`? · `bot/shared/utils/CLAUDE.index.md`? · `bot/workers/CLAUDE.index.md`? · `docs/onboarding/sandbox-production-design.md`? · `tests/CLAUDE.index.md`? · `tests/CLAUDE.md`? · `tests/messaging/CLAUDE.index.md`? · `tests/messaging/CLAUDE.md`?
+- docs: `bot/shared/services/cache/CLAUDE.md`? · `bot/shared/services/messaging/CLAUDE.md`? · `bot/shared/services/messaging/inbound/CLAUDE.md`? · `docs/onboarding/sandbox-production-design.md`? · `tests/CLAUDE.md`?

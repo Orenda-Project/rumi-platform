@@ -6,9 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `__mocks__/` | → (no door; 1 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `__mocks__/` | → (no door; 1 files: 0 test + 1 support) |
 | `bot-helpers.js` | Supabase helpers for users, per-channel identities, send targets and chat sessions used by every inbound handler |
 | `queries.js` | Analytics queries for the admin dashboard: user, message, voice-note and active-user counts and conversation lists |
 | `schema.sql` | Base Supabase schema (users, conversations, audio_sessions, lesson_plans, teacher_progress, teacher_facts, videos) |
@@ -66,4 +64,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `bot-helpers.js` ← `bot/tests/unit/bot-helpers-lesson-plan.test.js` · `tests/coaching/fidelity/lp-generation-stores-plan-text.test.js` · `tests/database/get-or-create-user-by-channel.test.js` · `tests/database/get-or-create-user-last-message.test.js` · `tests/exam-checker/exam-question-is-chat.test.js` · `tests/nudges/reply-identifier.test.js` (+3: `python3 kg/kg.py who-reads bot/shared/database/bot-helpers.js`)
 
 ## Related (all, generated)
-- docs: `bot/shared/CLAUDE.md`? · `bot/shared/database/CLAUDE.index.md`? · `bot/shared/database/CLAUDE.md`? · `bot/tests/unit/CLAUDE.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.md`? · `tests/database/CLAUDE.md`? · `tests/exam-checker/CLAUDE.index.md`? · `tests/exam-checker/CLAUDE.md`? · `tests/nudges/CLAUDE.md`?
+- docs: `bot/shared/CLAUDE.md`?

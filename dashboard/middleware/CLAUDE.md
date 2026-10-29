@@ -1,6 +1,6 @@
 # middleware — Express middleware: session auth, request timeouts, latency logging, RBAC
 
-<!-- kg:meta repo=rumi-platform dir=dashboard/middleware kg=68b387c08ea5 gen=eaa971f20e5e overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=dashboard/middleware kg=68b387c08ea5 gen=a0614e782570 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `auth.js` — requireAuth, requireAdmin, addUserToLocals
@@ -12,7 +12,6 @@
 | path | purpose |
 |---|---|
 | `rbac/` | Role checks, feature gating and the per-request RLS database context → `rbac/CLAUDE.md` |
-| `CLAUDE.md` | (unmapped) |
 | `auth.js` | requireAuth/requireAdmin/addUserToLocals: session check, admin-role test and dashboard_users lookup for views. |
 | `latency-logger.js` | Logs request duration and flags requests slower than 5s to console/Axiom. |
 | `timeout.js` | Per-route request timeouts (30s default, 120s for GPT routes, 10s static). |
@@ -30,4 +29,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/middleware/CLAUDE.md`? · `dashboard/middleware/rbac/CLAUDE.md`?
+- docs: `dashboard/CLAUDE.md`?

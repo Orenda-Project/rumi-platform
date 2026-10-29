@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `lp-coaching-linker.service.js` | Links a picked lesson plan to a coaching_sessions row or starts the upload path; called on list selection |
 | `lp-framework-prompt.service.js` | Framework-specific extra instructions for LP generation prompts; no non-test importer found (dead) |
 | `lp-list-selection.handler.js` | Handles lp_select/lp_upload/lp_none taps, tells the teacher, then queues analysis or recomputes fidelity |
@@ -42,4 +40,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `lp-text-paste.service.js` ← `tests/coaching/fidelity/lp-step-flow.test.js`
 
 ## Related (all, generated)
-- docs: `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/lp-coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/lp-coaching/CLAUDE.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.index.md`?
+- docs: `bot/shared/services/coaching/CLAUDE.md`?

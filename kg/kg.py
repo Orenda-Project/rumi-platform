@@ -1,4 +1,4 @@
-# kg.py v1.0.0 sha256=bdbffa0ad4dac2dcc480a7a54c627a342e1354b3d20b59ab14b8bfef47409475 — source: rumi-agent-home ops/kg/kg.py
+# kg.py v1.1.0 sha256=de7509f77a0d69ee923851b013a5667f56878d7aa74cfc837dfa1ce68b91cfba — source: rumi-agent-home ops/kg/kg.py
 """kg — a deterministic knowledge graph of one repository.
 
 Contract: ops/kg/SCHEMA.md (contract D). Stdlib only, one file, vendored into each repo as kg/kg.py
@@ -24,7 +24,7 @@ import sys
 import time
 import urllib.parse
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 HEADER_RE = re.compile(r"^# (?P<name>[\w.]+) v(?P<ver>[\w.\-]+) sha256=(?P<sha>[0-9a-f]{64}) — source: (?P<src>.+)$")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -38,6 +38,7 @@ except ImportError:
 KG_DIR = ".kg"
 SUMMARY_DIR = os.path.join("kg", "summaries")
 CONFIG_PATH = os.path.join("kg", "config.json")
+BEADS_PATH = "kg/beads.jsonl"   # committed bead snapshot (ids, status, dates, paths — no ledger text), keeper-written
 
 DEFAULT_EXCLUDE = [
     "node_modules/**", "**/node_modules/**", ".git/**", ".kg/**", "**/dist/**", "**/build/**",
@@ -68,16 +69,19 @@ KINDS = ["repo", "dir", "file", "symbol", "feature", "service", "table", "column
          "bead", "report", "doc"]
 
 # extractor ids; bump a version when its output changes so caches are invalidated
-X = {"js": "js-imports@1", "sym": "js-symbols@1", "env": "env@1", "sb": "supabase-chain@1", "sql": "sql-ddl@1",
+X = {"js": "js-imports@1", "sym": "js-symbols@1", "env": "env@3", "sb": "supabase-chain@1", "sql": "sql-ddl@1",
      "rpc": "supabase-rpc@1", "q": "sql-literal@1", "test": "tests@1", "dep": "deploy-config@1",
      "deptab": "deploy-table@1", "flow": "flow-json@1", "md": "md-links@1", "ment": "md-mentions@1",
-     "bead": "beads@1", "py": "py-imports@1", "pysym": "py-symbols@1", "fs": "fs@1"}
+     "bead": "beads@2", "py": "py-imports@1", "pysym": "py-symbols@1", "fs": "fs@1"}
 CACHE_KEY = "kgcache-" + VERSION + "-" + ",".join(sorted(X.values()))
 
 
 def line_hash(line):
     """sha1[:8] of the line with ALL whitespace removed (re-indenting never makes an edge stale)."""
     return hashlib.sha1("".join(line.split()).encode("utf-8", "replace")).hexdigest()[:8]
+
+
+EMPTY_HASH = line_hash("")
 
 
 def blob_sha(data):
@@ -100,6 +104,20 @@ def ext_of(path):
 
 def mappable(path):
     return ext_of(path) in MAPPABLE_EXT or os.path.basename(path) in CONF_NAMES
+
+
+RENDERED_NAMES = {"CLAUDE.md", "CLAUDE.index.md"}
+
+
+def is_rendered(path):
+    """A door, its index or the map's own data (LR-13): read for links, never a source file that needs a purpose."""
+    return os.path.basename(path) in RENDERED_NAMES or path == "kg" or path.startswith("kg/")
+
+
+def is_test_name(path):
+    """A test by its file name alone (`a.test.js`, `test_a.py`, `a_test.py`, `a.test.sh`) — not by its directory."""
+    b = os.path.basename(path)
+    return bool(re.search(r"\.(test|spec)\.[a-z]+$", b) or re.match(r"test_.*\.py$", b) or re.search(r"_test\.py$", b))
 
 
 def top_of(path):
@@ -210,6 +228,9 @@ class Text:
         return bisect.bisect_right(self.starts, offset)
 
     def ev(self, lineno):
+        # a multi-line regex can start on the blank line before its match: anchor on the next line with content
+        while lineno < len(self.lines) and not self.lines[lineno - 1].strip():
+            lineno += 1
         return "%s:%d:%s" % (self.path, lineno, line_hash(self.lines[lineno - 1]))
 
     def ev_at(self, offset):
@@ -414,6 +435,32 @@ def x_env(t, facts, py=False):
                 if km.start() > 0 and m.group(1)[km.start() - 1] not in " ,{\n\t":
                     continue
                 facts["env"].append((km.group(1), t.ev_at(body_off + km.start(1))))
+
+
+# shell: `$NAME`, `${NAME}`, `${NAME:-x}`; a name the file assigns is a local unless it is read with a default
+SH_ENV_RE = re.compile(r"\$\{?([A-Z_][A-Z0-9_]*)")
+SH_ASSIGN_RE = re.compile(r"(?:^|[\s;&|(])(?:export\s+|local\s+|readonly\s+|declare\s+(?:-\w+\s+)*)?([A-Z_][A-Z0-9_]*)=")
+SH_LOOP_RE = re.compile(r"\b(?:for|read(?:\s+-\w+)*)\s+([A-Z_][A-Z0-9_]*)\b")
+SH_BUILTIN = {"HOME", "PATH", "PWD", "OLDPWD", "SHELL", "USER", "IFS", "RANDOM", "LINENO", "BASH_SOURCE",
+              "BASH_REMATCH", "FUNCNAME", "PIPESTATUS", "SECONDS", "OPTARG", "OPTIND", "REPLY", "TMPDIR", "EUID",
+              "UID", "PPID", "HOSTNAME", "TERM", "LANG", "LC_ALL", "BASH_VERSION", "OSTYPE", "COLUMNS", "LINES"}
+
+
+def x_env_sh(t, facts):
+    assigned = set(SH_ASSIGN_RE.findall(t.raw)) | set(SH_LOOP_RE.findall(t.raw))
+    defaulted = set(re.findall(r"\$\{([A-Z_][A-Z0-9_]*):?[-=?]", t.raw))
+    for i, ln in enumerate(t.lines, 1):
+        s = ln.lstrip()
+        if s.startswith("#"):
+            continue
+        quoted = [(m.start(), m.end()) for m in re.finditer(r"'[^']*'", ln)]
+        for m in SH_ENV_RE.finditer(ln):
+            name = m.group(1)
+            if len(name) < 2 or name in SH_BUILTIN or (name in assigned and name not in defaulted):
+                continue
+            if any(a < m.start() < b for a, b in quoted):
+                continue
+            facts["env"].append((name, t.ev(i)))
 
 
 SB_FROM = re.compile(r"\.from\(\s*(['\"`])([A-Za-z_][\w.]*)\1\s*\)")
@@ -786,6 +833,8 @@ def extract(path, raw_bytes):
             x_sql_literals(t, facts)
         elif e == ".sql":
             x_sql_file(t, facts)
+        elif e in (".sh", ".bash"):
+            x_env_sh(t, facts)
         elif e in DOC_EXT:
             x_md(t, facts)
             if base.upper() == "CLAUDE.MD":
@@ -866,6 +915,17 @@ class Builder:
             while d:
                 self.dirset.add(d)
                 d = os.path.dirname(d)
+        # B7: the shallowest directory whose every file is excluded (dist/, vendor/ …), with its file count
+        self.excluded_dirs = {}
+        for p in self.src.entries:
+            if p in self.pathset:
+                continue
+            parts = p.split("/")
+            for i in range(1, len(parts)):
+                pre = "/".join(parts[:i])
+                if pre not in self.dirset:
+                    self.excluded_dirs[pre] = self.excluded_dirs.get(pre, 0) + 1
+                    break
         cache = self._load_cache()
         newcache = {}
         texts = [p for p in paths if mappable(p) and self.src.entries[p][1] <= MAX_TEXT]
@@ -1144,25 +1204,27 @@ class Builder:
                 sid = "%s:symbol:%s#%s" % (r, p, name)
                 self.node(sid, "symbol", name, p)
                 self.edge(s, "contains", sid, ev, X["pysym"] if p.endswith(".py") else X["sym"], 1.0)
+            tk = "test" if test else None   # F-4: a test's reads/writes are mocks, not the system's consumers
             for name, ev in f["env"]:
                 eid = self.node("%s:env:%s" % (r, name), "env", name)
-                self.edge(s, "reads_env", eid, ev, X["env"], 1.0)
-                env_readers.setdefault(name, []).append(ev)
+                self.edge(s, "reads_env", eid, ev, X["env"], 1.0, k=tk)
+                if not test:
+                    env_readers.setdefault(name, []).append(ev)
             for pred, tb, col, ev in f["sb"]:
                 tid = self.node("%s:table:%s" % (r, tb), "table", tb)
                 if col is None:
-                    self.edge(s, pred, tid, ev, X["sb"], 1.0)
+                    self.edge(s, pred, tid, ev, X["sb"], 1.0, k=tk)
                 else:
                     cid = self.node("%s:column:%s.%s" % (r, tb, col), "column", "%s.%s" % (tb, col))
                     self.edge(tid, "contains", cid, None, X["sb"], 1.0)
-                    self.edge(s, pred, cid, ev, X["sb"], 1.0)
+                    self.edge(s, pred, cid, ev, X["sb"], 1.0, k=tk)
             for pred, tb, ev in f["sqlq"]:
                 tid = self.node("%s:table:%s" % (r, tb), "table", tb)
-                self.edge(s, pred, tid, ev, X["q"], 0.9, via="sql-literal")
+                self.edge(s, pred, tid, ev, X["q"], 0.9, via="sql-literal", k=tk)
             for fn, ev in f["rpc"]:
                 for tb in sorted(rpc_fns.get(fn, ())):
                     tid = self.node("%s:table:%s" % (r, tb), "table", tb)
-                    self.edge(s, "writes_table", tid, ev, X["rpc"], 0.8, via="rpc:" + fn)
+                    self.edge(s, "writes_table", tid, ev, X["rpc"], 0.8, via="rpc:" + fn, k=tk)
             for pred, tb, col, ev in f["ddl"]:
                 tid = self.node("%s:table:%s" % (r, tb), "table", tb)
                 if pred == "writes_table:dml":
@@ -1262,24 +1324,34 @@ class Builder:
                     break
         return out
 
-    def _beads(self):
-        if not self.beads:
-            return
-        try:
-            with open(self.beads) as f:
-                txt = f.read()
-        except OSError:
-            return
+    def _bead_items(self):
+        """The ledger: --beads <bd list --json | issues.jsonl>, else the committed kg/beads.jsonl snapshot."""
+        if self.beads:
+            try:
+                with open(self.beads) as f:
+                    txt = f.read()
+            except OSError:
+                return []
+        else:
+            raw = self.src.read_optional(BEADS_PATH)
+            if raw is None:
+                return []
+            txt = raw.decode("utf-8", "replace")
         try:
             data = json.loads(txt)
-            items = data if isinstance(data, list) else data.get("issues", [])
+            if isinstance(data, dict):     # a one-line JSONL file parses as one object
+                return [data] if "id" in data else data.get("issues", [])
+            return data
         except ValueError:
-            items = [json.loads(ln) for ln in txt.splitlines() if ln.strip().startswith("{")]
+            return [json.loads(ln) for ln in txt.splitlines() if ln.strip().startswith("{")]
+
+    def bead_links(self, items):
+        """[(bead, implements, named, mentions)] for every bead that names a path in this repo. close_reason →
+        implements (c 0.8), title → implements (c 0.6), description/notes/design/acceptance → mentions (c 0.6).
+        A snapshot row (kg/beads.jsonl) already carries the three lists."""
         prefixes = self.config.get("bead_path_prefixes", [])
-        for b in sorted(items, key=lambda x: str(x.get("id"))):
-            bid = str(b.get("id"))
-            text = " ".join(str(b.get(k) or "") for k in ("title", "description", "notes", "design",
-                                                          "acceptance_criteria", "close_reason"))
+
+        def paths_in(text):
             hits = set()
             for m in re.finditer(r"[\w.@ &/-]*?([\w.-]+/)+[\w.-]+\.\w+", text):
                 tok = m.group(0).strip()
@@ -1291,13 +1363,39 @@ class Builder:
                     for cand in (t2, t2.split(" ")[-1]):
                         if cand in self.pathset:
                             hits.add(cand)
-            if not hits:
-                continue
-            nid = self.node("bead:" + bid, "bead", bid, "", status=b.get("status"),
-                            title=str(b.get("title") or "")[:120])
-            ev = "bead:%s:%s" % (bid, line_hash(str(b.get("title") or "")))
-            for h in sorted(hits):
+            return hits
+
+        out = []
+        for b in sorted(items, key=lambda x: str(x.get("id"))):
+            if any(k in b for k in ("implements", "named", "mentions")):
+                done, named, said = ({p for p in b.get(k) or [] if p in self.pathset}
+                                     for k in ("implements", "named", "mentions"))
+            else:
+                done = paths_in(str(b.get("close_reason") or ""))
+                named = paths_in(str(b.get("title") or "")) - done
+                said = paths_in(" ".join(str(b.get(k) or "") for k in ("description", "notes", "design",
+                                                                        "acceptance_criteria"))) - done - named
+            if done or named or said:
+                out.append((b, done, named, said))
+        return out
+
+    def _beads(self):
+        for b, done, named, said in self.bead_links(self._bead_items()):
+            bid = str(b.get("id"))
+            attrs = {"status": b.get("status")}
+            if b.get("title"):
+                attrs["title"] = str(b["title"])[:120]
+            for k in ("closed_at", "updated_at"):
+                if b.get(k):
+                    attrs[k] = str(b[k])
+            nid = self.node("bead:" + bid, "bead", bid, "", **attrs)
+            ev = "bead:%s:%s" % (bid, line_hash(str(b.get("title") or bid)))
+            for h in sorted(done):
+                self.edge(nid, "implements", self.fid(h), ev, X["bead"], 0.8)
+            for h in sorted(named):
                 self.edge(nid, "implements", self.fid(h), ev, X["bead"], 0.6)
+            for h in sorted(said):
+                self.edge(nid, "mentions", self.fid(h), ev, X["bead"], 0.6)
 
     # -- summaries (purposes)
     def _summaries(self):
@@ -1366,6 +1464,7 @@ class Builder:
                repo=self.repo, no_door=self.no_door, source=self.src)
         counts = g.compute_counts(self.counts)
         manifest = {"kg_py": VERSION, "repo": self.repo, "commit": commit, "ref": self.ref,
+                    "excluded_dirs": dict(sorted(self.excluded_dirs.items())),
                     "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                     "build_seconds": round(time.time() - t0, 2), "counts": counts}
         g.manifest = manifest
@@ -1374,9 +1473,11 @@ class Builder:
             f.write("\n")
         with open(os.path.join(self.out, "graph.marshal"), "wb") as f:
             marshal.dump({"nodes": nodes, "edges": edges, "manifest": manifest, "config": self.config,
-                          "dirs_door": g.dirs_needing_door(), "existing_doors": sorted(g.existing_doors)}, f)
+                          "dirs_door": g.dirs_needing_door(), "existing_doors": sorted(g.existing_doors),
+                          "test_only": sorted(g.test_only)}, f)
         if not self.ref and os.path.isdir(os.path.join(self.root, "kg")):
-            committed = {"kg_py": VERSION, "repo": self.repo, "counts": counts}
+            committed = {"kg_py": VERSION, "repo": self.repo, "counts": counts,
+                         "excluded_dirs": dict(sorted(self.excluded_dirs.items()))}
             with open(os.path.join(self.root, "kg", "manifest.json"), "w") as f:
                 json.dump(committed, f, indent=1, sort_keys=True)
                 f.write("\n")
@@ -1403,7 +1504,7 @@ class KG:
     """Read-only view of a built graph. doors.py receives one of these (see SCHEMA.md §doors seam)."""
 
     def __init__(self, root, kg_dir, nodes, edges, manifest=None, config=None, repo=None, no_door=None,
-                 source=None, dirs_door=None, existing_doors=None):
+                 source=None, dirs_door=None, existing_doors=None, test_only=None):
         self.root = os.path.abspath(root)
         self.kg_dir = kg_dir
         self.nodes = nodes
@@ -1417,6 +1518,7 @@ class KG:
         self._in = None
         self._by_path = None
         self._dirs_door = dirs_door
+        self.test_only = set(test_only or ())
         self.existing_doors = set(existing_doors) if existing_doors is not None else {
             os.path.dirname(n["path"]) for n in nodes.values()
             if n.get("path") and os.path.basename(n["path"]) == "CLAUDE.md"}
@@ -1430,7 +1532,8 @@ class KG:
             with open(gm, "rb") as f:
                 d = marshal.load(f)
             return cls(root, kg_dir, {n["id"]: n for n in d["nodes"]}, d["edges"], d["manifest"], d["config"],
-                       dirs_door=d.get("dirs_door"), existing_doors=d.get("existing_doors"))
+                       dirs_door=d.get("dirs_door"), existing_doors=d.get("existing_doors"),
+                       test_only=d.get("test_only"))
         nodes, edges = {}, []
         with open(os.path.join(kg_dir, "nodes.jsonl")) as f:
             for ln in f:
@@ -1508,7 +1611,7 @@ class KG:
             kids[parent] = kids.get(parent, 0) + 1
             if n["kind"] == "dir":
                 continue
-            if not n["attrs"].get("asset"):
+            if not n["attrs"].get("asset") and not is_rendered(p):
                 files_by_dir[parent] = files_by_dir.get(parent, 0) + 1
             if n["kind"] == "flow":
                 special.add(parent)
@@ -1526,9 +1629,42 @@ class KG:
                 for n in self.nodes.values():
                     if n["kind"] == "dir" and os.path.dirname(n["path"]) == d:
                         need.add(n["path"])
-        need = {d for d in need if d and not glob_match(d, self.no_door)}
+        # LR-2: a directory whose files are all tests gets no door (its parent's row says `(no door; N tests)`)
+        self.test_only = {d for d in need if self._test_only(d, kids.get(d, 0))}
+        need = {d for d in need if d and not glob_match(d, self.no_door) and d not in self.test_only}
+        # every ancestor of a door gets a door, so each door is reachable hop by hop from the repo root
+        for d in list(need):
+            a = os.path.dirname(d)
+            while a:
+                if not glob_match(a, self.no_door) and a not in self.test_only:
+                    need.add(a)
+                a = os.path.dirname(a)
         self._dirs_door = sorted(need)
         return self._dirs_door
+
+    def _test_only(self, d, nkids):
+        """LR-2: every file directly in d is a test, nothing under d is a fixture harness or other code (a code file
+        whose own name is not a test name: `helpers.js`, `conftest.py`, `support/commands.ts`), and d has <= 40
+        children."""
+        if nkids > 40:
+            return False
+        prefix = d + "/"
+        direct = 0
+        for n in self.nodes.values():
+            p = n.get("path") or ""
+            if n["kind"] in ("dir", "symbol", "service") or not p.startswith(prefix) or n["attrs"].get("asset"):
+                continue
+            if is_rendered(p):
+                continue
+            if "/" not in p[len(prefix):]:
+                direct += 1
+                if not is_test_path(p):
+                    return False
+            if ext_of(p) in CODE_EXT and not is_test_name(p):
+                return False
+            if os.path.basename(os.path.dirname(p)) in ("__mocks__", "fixtures") and ext_of(p) in CODE_EXT:
+                return False
+        return direct > 0
 
     def slice_hash(self, dir_path):
         prefix = dir_path.rstrip("/") + "/"
@@ -1573,6 +1709,8 @@ class KG:
         lines = self._read_lines(path)
         if lines is None:
             return "missing"
+        if h8 == EMPTY_HASH:
+            return "changed"   # an ev on a blank line proves nothing
         if 1 <= line <= len(lines) and line_hash(lines[line - 1]) == h8:
             if token and token not in lines[line - 1]:
                 return "changed"
@@ -1583,14 +1721,17 @@ class KG:
         return "changed"
 
     # -- who reads (Rule 10 as a query)
-    def consumers(self, nid):
-        """Every consumer of a file, table, column or env node, including data-mediated ones."""
+    def consumers(self, nid, tests=False):
+        """Every consumer of a file, table, column or env node, including data-mediated ones. A test file's own
+        reads and writes (edges tagged k=test, F-4) are mocks, left out unless tests=True."""
         out = []
         n = self.nodes.get(nid)
         if not n:
             return out
 
         def add(via, e, who_id, c=None):
+            if e.get("k") == "test" and not tests:
+                return
             who = self.nodes.get(who_id) or {}
             live = bool(self.in_edges(who_id, "imports") or self.out_edges(who_id, "deployed_as")
                         or who.get("kind") == "service")
@@ -1621,15 +1762,17 @@ class KG:
             for e in self.out_edges(nid, "deployed_as"):
                 add("deployed as %s" % self.nodes.get(e["o"], {}).get("name", e["o"]), e, e["o"])
             for e in self.out_edges(nid):
+                if e.get("k") == "test" and not tests:
+                    continue
                 if e["p"] == "writes_column":
                     col = self.nodes.get(e["o"], {})
-                    for c in self.consumers(e["o"]):
+                    for c in self.consumers(e["o"], tests):
                         if c["id"] != nid and c["via"].startswith("reads"):
                             c["via"] = "reads %s (written here)" % col.get("name")
                             out.append(c)
                 elif e["p"] == "writes_table" and e.get("k") != "ddl":
                     tb = self.nodes.get(e["o"], {})
-                    for c in self.consumers(e["o"]):
+                    for c in self.consumers(e["o"], tests):
                         if c["id"] != nid and c["via"].startswith("reads"):
                             c["via"] = "reads table %s (written here)" % tb.get("name")
                             c["c"] = min(c["c"], 0.7)
@@ -1669,7 +1812,7 @@ class KG:
     # -- coverage
     def compute_counts(self, extra=None):
         files = [n for n in self.nodes.values() if n["kind"] in ("file", "doc", "report", "flow", "skill", "hook")]
-        mapp = [n for n in files if not n["attrs"].get("asset")]
+        mapp = [n for n in files if not n["attrs"].get("asset") and not is_rendered(n.get("path") or "")]
         purposes = [n for n in mapp if n["attrs"].get("purpose")]
         stale = [n for n in purposes if n["attrs"].get("purpose_stale")]
         need = self.dirs_needing_door()
@@ -1701,6 +1844,7 @@ class KG:
              "assets": len(files) - len(mapp), "purposes": len(purposes), "stale": len(stale),
              "missing_purposes": len(mapp) - len(purposes), "doors": len(doors_have),
              "dirs_needing_door": len(need), "dirs_missing_door": len(need) - len(doors_have),
+             "test_only_no_door": len(self.test_only),
              "edges_with_ev": sum(1 for e in ev_edges if e.get("ev")) + len(sym_edges),
              "edges_needing_ev": len(ev_edges) + len(sym_edges), "overflow_rows": overflow, "misses": misses,
              "tables": sum(1 for n in self.nodes.values() if n["kind"] == "table"),
@@ -1814,9 +1958,28 @@ def cmd_find(args):
         scored.append((-s, n["id"], n))
     scored.sort()
     res = []
+    # I-2: a query naming a table or an env var answers with its readers/writers first (`who-reads`)
+    words = [w for w in re.split(r"\s+", " ".join(args.query).strip()) if w]
+    names = [w for w in words if w.lower() not in ("table", "env", "column", "who", "reads", "writes")]
+    seen_paths = set()
+    for w in names:
+        for tgt in ("%s:table:%s" % (g.repo, w), "%s:env:%s" % (g.repo, w.upper() if w.isupper() else w)):
+            if tgt not in g.nodes:
+                continue
+            for c in g.consumers(tgt):
+                if c["consumer"] in seen_paths:
+                    continue
+                seen_paths.add(c["consumer"])
+                cn = g.nodes.get(c["id"]) or {}
+                res.append({"id": c["id"], "kind": cn.get("kind", "file"), "path": c["consumer"],
+                            "purpose": (cn.get("attrs") or {}).get("purpose"), "door": g.door_for(c["consumer"]),
+                            "score": 100.0, "via": c["via"]})
     for negs, nid, n in scored[:args.limit]:
+        if n.get("path") in seen_paths:
+            continue
         res.append({"id": nid, "kind": n["kind"], "path": n.get("path"), "purpose": n["attrs"].get("purpose"),
                     "door": g.door_for(n.get("path") or ""), "score": round(-negs, 2)})
+    res = res[:max(args.limit, len(seen_paths))]
     text = "\n".join("%-6s %s%s" % (r["kind"], r["path"] or r["id"], ("  — " + r["purpose"]) if r["purpose"] else "")
                      for r in res) or "(no match)"
     emit(args, {"query": " ".join(args.query), "results": res}, text)
@@ -1873,7 +2036,7 @@ def cmd_who_reads(args):
         emit(args, {"error": "not in the graph", "target": args.target, "consumers": []},
              "not in the graph: %s" % args.target)
         return 1
-    cons = g.consumers(nid)
+    cons = g.consumers(nid, tests=args.tests)
     text = "\n".join("%s%s  %s  ← %s" % (c["consumer"], "?" if c["c"] < 0.8 else "", c["via"], c["ev"])
                      for c in cons) or "(no consumers found)"
     emit(args, {"target": nid, "consumers": cons}, text)
@@ -1936,7 +2099,8 @@ def cmd_stale(args):
     g = load_graph(args)
     missing, stale = [], []
     for n in sorted(g.nodes.values(), key=lambda n: n.get("path") or ""):
-        if n["kind"] in ("file", "doc", "report", "flow", "skill", "hook") and not n["attrs"].get("asset"):
+        if n["kind"] in ("file", "doc", "report", "flow", "skill", "hook") and not n["attrs"].get("asset") \
+                and not is_rendered(n.get("path") or ""):
             if not n["attrs"].get("purpose"):
                 missing.append(n["path"])
             elif n["attrs"].get("purpose_stale"):
@@ -2011,12 +2175,13 @@ def cmd_purpose(args):
             return 2
         items.append({"path": args.rest[0], "purpose": " ".join(args.rest[1:])})
     else:
-        with open(args.rest[0]) as f:
-            for ln in f:
-                if ln.strip():
-                    d = json.loads(ln)
-                    items.append({"path": d.get("path") or d["id"].split(":", 2)[-1], "purpose": d["purpose"],
-                                  "by": d.get("by")})
+        for src in args.rest:      # every file named, not only the first (map-read-docs finding 23:06)
+            with open(src) as f:
+                for ln in f:
+                    if ln.strip():
+                        d = json.loads(ln)
+                        items.append({"path": d.get("path") or d["id"].split(":", 2)[-1], "purpose": d["purpose"],
+                                      "by": d.get("by")})
     shards = {}
     bad = 0
     for it in items:
@@ -2061,6 +2226,34 @@ def cmd_purpose(args):
     return 0 if not bad else 1
 
 
+def cmd_beads(args):
+    """`kg beads snapshot --from <bd list --json>`: keep only beads that name a path here, and only ids, status,
+    dates and the paths — the ledger's free text never lands in a repo (some repos are public)."""
+    root = os.path.abspath(args.repo_root)
+    b = Builder(root, args.repo_name or repo_name_for(root), beads=args.source, quiet=True)
+    b.pathset = {p for p in b.src.entries if not glob_match(p, b.exclude)}
+    rows = []
+    for bead, done, named, said in b.bead_links(b._bead_items()):
+        r = {"id": str(bead.get("id")), "status": bead.get("status")}
+        for k in ("closed_at", "updated_at"):
+            if bead.get(k):
+                r[k] = str(bead[k])
+        for k, v in (("implements", done), ("named", named), ("mentions", said)):
+            if v:
+                r[k] = sorted(v)
+        rows.append(r)
+    os.makedirs(os.path.join(root, "kg"), exist_ok=True)
+    text = "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows)
+    p = os.path.join(root, BEADS_PATH)
+    old = open(p).read() if os.path.exists(p) else None
+    if old != text:
+        with open(p, "w") as f:
+            f.write(text)
+    if not args.quiet:
+        print("beads snapshot: %d bead(s) name a path here → %s" % (len(rows), BEADS_PATH))
+    return 0
+
+
 def file_self_hash(path):
     with open(path, "rb") as f:
         lines = f.read().decode("utf-8").split("\n")
@@ -2093,7 +2286,7 @@ def cmd_vendor(args):
     source = os.path.abspath(args.source) if args.source else here
     if args.stamp:
         ok = True
-        for name in ("kg.py", "doors.py"):
+        for name in ("kg.py", "doors.py", "heal.py"):
             p = os.path.join(source, name)
             if os.path.exists(p):
                 ok &= stamp_header(p)
@@ -2102,7 +2295,7 @@ def cmd_vendor(args):
     rc = 0
     rows = []
     for r in roots:
-        for name in ("kg.py", "doors.py"):
+        for name in ("kg.py", "doors.py", "heal.py"):
             src = os.path.join(source, name)
             dst = os.path.join(r, "kg", name)
             if not os.path.exists(src):
@@ -2172,6 +2365,7 @@ def build_parser():
 
     w = sub.add_parser("who-reads", parents=[common], help="every consumer of a path, table.column or env:NAME")
     w.add_argument("target")
+    w.add_argument("--tests", action="store_true", help="also list test files' own reads/writes (mocks)")
     w.set_defaults(func=cmd_who_reads)
 
     fe = sub.add_parser("feature", parents=[common], help="files, tables, services, flows, skills, beads, docs")
@@ -2192,6 +2386,12 @@ def build_parser():
     p.add_argument("--by", help="<lane>/<model>")
     p.add_argument("--repo-name")
     p.set_defaults(func=cmd_purpose)
+
+    bd = sub.add_parser("beads", parents=[common], help="write kg/beads.jsonl from a `bd list --json` export")
+    bd.add_argument("action", choices=["snapshot"])
+    bd.add_argument("--from", dest="source", required=True)
+    bd.add_argument("--repo-name")
+    bd.set_defaults(func=cmd_beads, _nograph=True)
 
     v = sub.add_parser("vendor", parents=[common], help="compare/update the vendored kg.py + doors.py")
     g = v.add_mutually_exclusive_group(required=True)

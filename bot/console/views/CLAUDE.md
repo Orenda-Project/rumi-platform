@@ -1,6 +1,6 @@
 # views — EJS pages for the operator console screens
 
-<!-- kg:meta repo=rumi-platform dir=bot/console/views kg=93dc3f5166ba gen=7a8a5eca34b1 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/console/views kg=93dc3f5166ba gen=edcb14180dcd overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `overview.ejs` — console home and readiness banner
@@ -11,7 +11,6 @@
 | path | purpose |
 |---|---|
 | `partials/` | Shared head, nav, foot and credential-row fragments for console pages → `partials/CLAUDE.md` |
-| `CLAUDE.md` | (unmapped) |
 | `activity.ejs` | Activity page: live feed of events (provider, model, timing, result) with click-to-trace; no phone numbers or content |
 | `features.ejs` | Features page: running / switched-off counts and per-feature on/off switches |
 | `locked.ejs` | Page shown when the console is network-reachable with no password set; explains how to set one |
@@ -34,4 +33,4 @@
 - `tests/setup.js`? (setup.ejs)
 
 ## Related (generated)
-- docs: `bot/console/CLAUDE.index.md`? · `bot/console/CLAUDE.md`? · `bot/console/views/partials/CLAUDE.md`? · `bot/tests/CLAUDE.md`? · `dashboard/tests/CLAUDE.index.md`? · `dashboard/tests/CLAUDE.md`? (+2)
+- docs: `bot/console/CLAUDE.md`?

@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `CoachObservations.tsx` | Coach 'My observations' page: waiting, in-flight and finished observations plus the coach's teachers (GET /coach/*) |
 | `CoachTeacherDetail.tsx` | One teacher on a coach's roster and the observations of them; separate messages for 403, 404 and 500 |
 | `PortalCoaching.tsx` | Paged list of the teacher's coaching sessions from GET /coaching-sessions |
@@ -56,4 +54,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `PortalRoot.tsx` ← `portal/src/portal/pages/PortalRoot.test.tsx`
 
 ## Related (all, generated)
-- docs: `portal/src/portal/CLAUDE.md`? · `portal/src/portal/pages/CLAUDE.index.md`? · `portal/src/portal/pages/CLAUDE.md`?
+- docs: `portal/src/portal/CLAUDE.md`?

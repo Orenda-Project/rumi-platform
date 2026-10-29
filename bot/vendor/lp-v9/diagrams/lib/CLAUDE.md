@@ -1,7 +1,7 @@
 # lib — Shared helpers for diagram types: SVG builder, text measure, tokens, pictograms
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/vendor/lp-v9/diagrams/lib kg=4da4b03962f9 gen=31f96cc97d12 overflow=13 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/vendor/lp-v9/diagrams/lib kg=4da4b03962f9 gen=462f107678cc overflow=11 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `svg.js` — builder every diagram type draws with
@@ -15,10 +15,9 @@ Full index: `CLAUDE.index.md`
 | `pictogram.js` | Loads pictograms by noun for early-years types (count_objects, word_blank, pattern, match) and adds attribution |
 | `tokens.js` | Design tokens (palette as CSS vars with fallbacks) for diagrams, so brand swaps are config edits |
 | `measure.js` | Deterministic text-width measurement from a Helvetica advance table, so layout needs no browser |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `degenerate.js` | checkDegenerate(svg) flags figures that are geometrically right but teach nothing, such as near-flat slivers |
-| … | 2 more → `CLAUDE.index.md` |
+| `imagesize.js` | Reads width, height and MIME type of JPEG/PNG/GIF/WebP buffers without a dependency, for aspect ratios |
+| `tex.js` | Verbatim copy of shared/utils/tex-to-unicode so the vendored tree stays hermetic |
 
 ## Who reads this (generated)
 - `svg.js` ← imported by `bot/shared/services/quiz/transcript-quiz-figure-gates.js:17:1d566be0` · `bot/vendor/lp-v9/diagrams/types/chem_equation.js:25:2648d588` (+28)
@@ -37,4 +36,4 @@ _None found in code comments, tests or git log for this directory._
 - … 8 more → `CLAUDE.index.md`
 
 ## Related (generated)
-- docs: `bot/vendor/lp-v9/diagrams/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/lib/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/lib/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `bot/vendor/lp-v9/diagrams/CLAUDE.md`?

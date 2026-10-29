@@ -1,6 +1,6 @@
 # ScheherazadeNew-4.000 — Upstream Scheherazade New font package with its licence and docs; no bot code uses it
 
-<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000 kg=82dd10efb0a6 gen=b3b8b1f16ff0 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000 kg=82dd10efb0a6 gen=3b5bea84b739 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `OFL.txt` — the SIL Open Font License that governs redistribution
@@ -12,7 +12,6 @@
 |---|---|
 | `documentation/` | Upstream HTML documentation for the Scheherazade New font → `documentation/CLAUDE.md` |
 | `web/` | → (no door; 10 files) |
-| `CLAUDE.md` | (unmapped) |
 | `fontmanifest.json` | Upstream manifest mapping Scheherazade New font files and axes to package paths; unused by bot code |
 | `FONTLOG.txt` | Upstream change log of the Scheherazade New font, per SIL convention; reference only, no code loads it |
 | `OFL-FAQ.txt` | SIL OFL FAQ shipped with the Scheherazade New font; licence reference only |
@@ -34,4 +33,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `bot/fonts/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/CLAUDE.index.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/CLAUDE.md`?
+- docs: `bot/fonts/CLAUDE.md`?

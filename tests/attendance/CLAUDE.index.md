@@ -6,9 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `_helpers/` | → (no door; 1 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `_helpers/` | → (no door; 1 files: 0 test + 1 support) |
 | `attendance-dates.test.js` | Pins school-local "today" (ATTENDANCE_TZ) and month bounds on YYYY-MM-DD strings in attendance-dates |
 | `attendance-entry.test.js` | Pins the chat door into attendance: dated open, future-day refusal, head-teacher staff route, text-form fallback |
 | `class-register-delivery.test.js` | Pins re-marking replacing a day, Leave status, and whole-month register regeneration and delivery |
@@ -31,4 +29,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/shared/handlers/CLAUDE.index.md`? · `bot/shared/routes/CLAUDE.index.md`? · `bot/shared/routes/discord-views/CLAUDE.index.md`? · `bot/shared/routes/discord-views/CLAUDE.md`? · `bot/shared/routes/slack-views/CLAUDE.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/messaging/CLAUDE.index.md`? · `bot/shared/utils/CLAUDE.index.md`? · `tests/CLAUDE.index.md`? · `tests/CLAUDE.md`? · `tests/attendance/CLAUDE.index.md`? · `tests/attendance/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `bot/shared/routes/discord-views/CLAUDE.md`? · `bot/shared/routes/slack-views/CLAUDE.md`? · `bot/shared/services/CLAUDE.md`? · `tests/CLAUDE.md`?

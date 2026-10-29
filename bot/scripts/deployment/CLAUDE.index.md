@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `DEPLOY_NOW.sh` | Example shell script: pushes the current branch to origin main so Railway auto-deploys |
 | `PUSH_TO_PRODUCTION.sh` | Example shell script template that pushes the branch to GitHub for Railway auto-deploy |
 | `README.md` | Warns that deployment scripts are original-WABA reference code with hardcoded ids clones must replace |
@@ -45,11 +43,15 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - column `users.registration_completed` (written by `get-portal-test-tokens.js`) ← read by `bot/shared/database/queries.js:106:fef21f32` · `bot/shared/services/coaching/coaching-session.service.js:43:3e063076` · `bot/shared/services/feature-registration.service.js:166:50676655` · `bot/shared/services/limits/daily-caps.js:175:d8f97c3d` (+5: `python3 kg/kg.py who-reads users.registration_completed`)
 - table `users` whole row (`*`) (written by `get-portal-test-tokens.js`) ← read by `bot/shared/database/bot-helpers.js:18:d2b02c3e`? · `bot/shared/database/queries.js:14:77bc023b`? · `bot/shared/utils/telemetry.js:74:7a0c163a`? · `dashboard/database/queries.js:687:7a0c163a`? (+2: `python3 kg/kg.py who-reads users`)
 - table `users` (written by `get-portal-test-tokens.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? · `bot/scripts/observe-roster.js:80:355943ca`? · `bot/shared/database/bot-helpers.js:17:61dfd735`? (+52: `python3 kg/kg.py who-reads users`)
+- env `AWS_REGION` read at `bot/scripts/deployment/setup-aws-sqs.sh:12:d3d926e2`
 - env `BOT_NAME` read at `bot/scripts/deployment/register-phone-number.js:17:1235cf6f`
 - env `GRAPH_API_VERSION` read at `bot/scripts/deployment/configure-menu-command.js:13:ddcada1f` · `bot/scripts/deployment/resize-and-upload-sticker.js:20:ddcada1f` · `bot/scripts/deployment/upload-listening-animation.js:9:ddcada1f` · `bot/scripts/deployment/upload-loading-sticker.js:18:ddcada1f` · `bot/scripts/deployment/upload-menu-image.js:13:ddcada1f` · `bot/scripts/deployment/upload-pedagogical-animation.js:9:ddcada1f` · `bot/scripts/deployment/upload-registration-success.js:14:ddcada1f`
 - env `MENU_IMAGE_MEDIA_ID` read at `bot/scripts/deployment/upload-menu-image.js:52:2c45e724`
 - env `PHONE_NUMBER_ID` read at `bot/scripts/deployment/change-pin.js:5:c79e4792` · `bot/scripts/deployment/configure-menu-command.js:11:c79e4792` · `bot/scripts/deployment/create-carousel-template.js:13:c79e4792` · `bot/scripts/deployment/get-waba-id.js:5:c79e4792` · `bot/scripts/deployment/register-commands-meta.js:19:c79e4792` · `bot/scripts/deployment/register-phone-number.js:5:c79e4792` · `bot/scripts/deployment/resize-and-upload-sticker.js:19:c79e4792` · `bot/scripts/deployment/send-services-list.js:13:c79e4792` · `bot/scripts/deployment/update-display-name.js:12:c79e4792` · `bot/scripts/deployment/update-whatsapp-profile.js:8:c79e4792` · `bot/scripts/deployment/upload-carousel-images.js:15:c79e4792` · `bot/scripts/deployment/upload-listening-animation.js:8:c79e4792` · `bot/scripts/deployment/upload-loading-sticker.js:17:c79e4792` · `bot/scripts/deployment/upload-menu-image.js:12:35f02dca` · `bot/scripts/deployment/upload-pedagogical-animation.js:8:c79e4792` · `bot/scripts/deployment/upload-registration-success.js:13:c79e4792`
 - env `PORTAL_URL` read at `bot/scripts/deployment/get-portal-test-tokens.js:98:2e403234`
+- env `RAILWAY_SERVICE` read at `bot/scripts/deployment/check-recent-logs.sh:9:1597e566`
+- env `RAILWAY_TOKEN` read at `bot/scripts/deployment/check-recent-logs.sh:8:d9dea95f`
+- env `REDIS_URL` read at `bot/scripts/deployment/SETUP_AND_TEST.sh:47:9d583e6e`
 - env `SUPPORT_EMAIL` read at `bot/scripts/deployment/update-whatsapp-profile.js:102:0e9719ac`
 - env `TEST_PHONE_NUMBER` read at `bot/scripts/deployment/send-services-list.js:14:ce427c5e`
 - env `WABA_ID` read at `bot/scripts/deployment/create-carousel-template.js:12:601afc5a` · `bot/scripts/deployment/update-whatsapp-profile.js:9:a4122f6a`
@@ -61,4 +63,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `SETUP.md`? · `bot/scripts/CLAUDE.index.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/deployment/CLAUDE.index.md`? · `bot/scripts/deployment/CLAUDE.md`? · `bot/scripts/deployment/README.md`?
+- docs: `SETUP.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/deployment/README.md`?

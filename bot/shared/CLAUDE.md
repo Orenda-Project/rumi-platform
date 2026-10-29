@@ -1,6 +1,7 @@
 # shared — Shared bot code: handlers, routes, config, services, templates, utils
+Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared kg=37ad7077e73f gen=b29ad0867764 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared kg=37ad7077e73f gen=0adeb72b59d4 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `handlers/CLAUDE.md` — message routers (text, voice, image, Flow) called from whatsapp-bot.js
@@ -12,8 +13,7 @@
 | path | purpose |
 |---|---|
 | 7 sub-dirs, each with `CLAUDE.md` | `config/` · `database/` · `handlers/` · `routes/` · `services/` · `templates/` · `utils/` |
-| 6 sub-dirs without a door | `assets/` (4) · `constants/` (2) · `fonts/` (8) · `middleware/` (1) · `observability/` (1) · `storage/` (1) |
-| `CLAUDE.md` | (unmapped) |
+| 6 sub-dirs without a door | `assets/` (4) · `constants/` (2) · `fonts/` (8) · `middleware/` (1) · `observability/` (1) · +1 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)
@@ -26,4 +26,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.md`? · `bot/shared/database/CLAUDE.index.md`? · `bot/shared/database/CLAUDE.md`? (+9)
+- docs: `bot/CLAUDE.md`?

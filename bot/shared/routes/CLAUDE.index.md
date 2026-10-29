@@ -8,8 +8,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 |---|---|
 | `discord-views/` | Discord screen mappings for Flow-equivalent forms (25-option menu cap) → `discord-views/CLAUDE.md` |
 | `slack-views/` | Slack Block Kit screen mappings for Flow-equivalent modals → `slack-views/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `attendance-marking-endpoint.js` | Slack/Discord counterpart of the attendance-marking Flow: init and exchange over the Redis roster session |
 | `attendance-setup-endpoint.js` | Attendance setup Flow endpoint: class info, add-student loop and done, creating the class and student list |
 | `discord-flow-registry.js` | Registry mapping a Discord modal-workaround kind to its renderer, lazily registered; builds flow tokens |
@@ -111,4 +109,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `student-videos-endpoint.js` ← `tests/messaging/text-flow-definitions.test.js` · `tests/routes/student-videos-endpoint.test.js`
 
 ## Related (all, generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/CLAUDE.md`? · `bot/shared/routes/CLAUDE.index.md`? · `bot/shared/routes/CLAUDE.md`? · `bot/shared/routes/discord-views/CLAUDE.index.md`? · `bot/shared/routes/discord-views/CLAUDE.md`? · `bot/shared/routes/slack-views/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/observe.md`? · `docs/features/video-quizzes.md`? · `tests/attendance/CLAUDE.index.md`? · `tests/attendance/CLAUDE.md`? · `tests/edit-class/CLAUDE.md`? · `tests/exam-checker/CLAUDE.index.md`? · `tests/exam-checker/CLAUDE.md`? · `tests/gateway/CLAUDE.index.md`? · `tests/gateway/CLAUDE.md`? · `tests/homework/CLAUDE.md`? · `tests/messaging/CLAUDE.index.md`? · `tests/messaging/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/portal/CLAUDE.index.md`? · `tests/portal/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/quiz/CLAUDE.md`? · `tests/registration/CLAUDE.md`? · `tests/routes/CLAUDE.index.md`? · `tests/routes/CLAUDE.md`? · `tests/settings/CLAUDE.md`? · `tests/status/CLAUDE.md`?
+- docs: `bot/shared/CLAUDE.md`? · `docs/features/observe.md`? · `docs/features/video-quizzes.md`?

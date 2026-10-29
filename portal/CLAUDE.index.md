@@ -13,8 +13,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `.env.app.example` | (unmapped) |
 | `.gitignore` | (unmapped) |
 | `ANDROID.md` | Explains building, testing and releasing the Capacitor Android app that wraps the portal (JDK 21, SDK 36, OTA mode) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `GITHUB_ACTIONS_SETUP.md` | Walks through the PAT-and-secret setup for the Lovable-to-backend auto-deploy workflow; older setup note |
 | `README.md` | Introduces the Phase 2 teacher portal: what it shows, prerequisites, npm commands and where deployment is documented |
 | `capacitor.config.ts` | Configures the Capacitor Android shell: app id/name, API host, opt-in OTA server url and offline fallback page |
@@ -37,4 +35,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `.github/workflows/CLAUDE.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `SETUP.md`? · `bot/shared/config/CLAUDE.index.md`? · `dashboard/lib/CLAUDE.index.md`? · `docs/CLAUDE.index.md`? · `docs/android-app.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/android-portal-app.md`? · `docs/features/teacher-portal.md`? · `docs/monitoring.md`? · `portal/ANDROID.md`? · `portal/CLAUDE.index.md`? · `portal/CLAUDE.md`? · `portal/GITHUB_ACTIONS_SETUP.md`? · `portal/README.md`? · `portal/src/CLAUDE.md`? · `portal/src/lib/CLAUDE.index.md`? · `portal/src/lib/CLAUDE.md`? · `tests/portal/CLAUDE.index.md`?
+- docs: `.github/workflows/CLAUDE.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `SETUP.md`? · `dashboard/lib/CLAUDE.md`? · `docs/android-app.md`? · `docs/features/android-portal-app.md`? · `docs/features/teacher-portal.md`? · `docs/monitoring.md`? · `portal/ANDROID.md`? · `portal/GITHUB_ACTIONS_SETUP.md`? · `portal/src/lib/CLAUDE.md`?

@@ -1,7 +1,6 @@
 # reflective-questions — Prompts, guardrails and LLM failover for the 3-question reflective chat
-Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/reflective-questions kg=ec7ec9e713cc gen=b671d50c4eb7 overflow=3 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/reflective-questions kg=ec7ec9e713cc gen=e482527d274e overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `question-prompt.js` — builds one question's prompt from corpus and prior answers
@@ -14,17 +13,16 @@ Full index: `CLAUDE.index.md`
 |---|---|
 | `guardrails.js` | Pure validator for generated reflective questions (timestamps, meta-leaks, transliteration) plus safe fallback |
 | `language-profiles.js` | Per-language data (name, script, register, gender hints) for reflective-question prompts; one entry per language |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `corpus-prompt.js` | Builds the prompt that turns a noisy transcript into a corpus for question generation; used by gpt5-mini |
-| … | 2 more → `CLAUDE.index.md` |
+| `llm-router.service.js` | OpenRouter failover ladder for reflective questions: primary model, one retry, then fallback; used by gpt5-mini |
+| `question-prompt.js` | Builds the system prompt for one reflective question (Q1-Q3 chain) from corpus and prior answers; used by gpt5-mini |
 
 ## Who reads this (generated)
 - `guardrails.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:91:6e560a9c` · `bot/shared/services/gpt5-mini.service.js:710:d5aeeb7e`
 - `language-profiles.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:92:cb1b4a9f` · `bot/shared/services/gpt5-mini.service.js:671:e574b931`
 - `corpus-prompt.js` ← imported by `bot/shared/services/gpt5-mini.service.js:672:86d791bc`
 - `llm-router.service.js` ← imported by `bot/shared/services/gpt5-mini.service.js:673:7c9a8fe1`
-- … 1 more → `CLAUDE.index.md`
+- `question-prompt.js` ← imported by `bot/shared/services/gpt5-mini.service.js:708:ef82afe5`
 
 ## Never (human)
 - A language must be added as one entry in language-profiles.js, with no prompt-logic change (bot/shared/services/coaching/reflective-questions/language-profiles.js:11)
@@ -34,4 +32,4 @@ Full index: `CLAUDE.index.md`
 - `tests/coaching/reflective-v12-question-chain.test.js` (guardrails.js, language-profiles.js)
 
 ## Related (generated)
-- docs: `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/reflective-questions/CLAUDE.index.md`? · `bot/shared/services/coaching/reflective-questions/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/customization.md`? (+1)
+- docs: `bot/shared/services/coaching/CLAUDE.md`? · `docs/customization.md`?

@@ -1,7 +1,6 @@
 # productsite — Markdown variants of the font docs for a product website
-Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000/documentation/source/productsite kg=b52bd6409a5f gen=5caa282a99f4 overflow=4 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000/documentation/source/productsite kg=b52bd6409a5f gen=67a71608652a overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `about.md` — product-site overview page
@@ -11,8 +10,6 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
-| `CLAUDE.index.md` | (unmapped) |
 | `about.md` | Upstream markdown source of the product-site page on about the font and its authors; reference only |
 | `allah.md` | Upstream markdown source of the product-site page on the Allah ligature feature; reference only |
 | `announcement.md` | Upstream markdown source of the product-site page on the release announcement; reference only |
@@ -23,7 +20,10 @@ Full index: `CLAUDE.index.md`
 | `features.md` | Upstream markdown source of the product-site page on the OpenType and Graphite features; reference only |
 | `history.md` | Upstream markdown source of the product-site page on the font's history; reference only |
 | `honorifics.md` | Upstream markdown source of the product-site page on honorific ligature handling; reference only |
-| … | 4 more → `CLAUDE.index.md` |
+| `resources.md` | Upstream markdown source of the product-site page on related resources and links; reference only |
+| `sample.md` | Upstream markdown source of the product-site page on a rendered text sample; reference only |
+| `support.md` | Upstream markdown source of the product-site page on how to get support; reference only |
+| `versions.md` | Upstream markdown source of the product-site page on the version history; reference only |
 
 ## Who reads this (generated)
 - (none)
@@ -36,4 +36,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `bot/fonts/ScheherazadeNew-4.000/documentation/source/CLAUDE.index.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/productsite/CLAUDE.index.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/productsite/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/productsite/about.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/productsite/allah.md`? (+12)
+- docs: `bot/fonts/ScheherazadeNew-4.000/documentation/source/CLAUDE.md`?

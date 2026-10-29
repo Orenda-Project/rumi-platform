@@ -1,6 +1,6 @@
 # samples — Hand-authored hero-report sample data, one JSON per scoring framework
 
-<!-- kg:meta repo=rumi-platform dir=scripts/samples kg=958b289586b4 gen=2c5e6fed05e8 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=scripts/samples kg=958b289586b4 gen=8b30e5641a5f overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `_index.js` — loads and indexes the five samples
@@ -10,7 +10,6 @@
 | path | purpose |
 |---|---|
 | `_index.js` | Index of hand-authored hero-report sample data per framework (no PII); loaded by render-sample-hero-report.js |
-| `CLAUDE.md` | (unmapped) |
 | `hero-sample-fico.json` | Hand-authored FICO sample session and analysis for the hero report renderer; loaded via samples/_index.js |
 | `hero-sample-hots.json` | Hand-authored HOTS sample session and analysis for the hero report renderer; loaded via samples/_index.js |
 | `hero-sample-mewaka.json` | Hand-authored MEWAKA sample session and analysis for the hero report renderer; loaded via samples/_index.js |
@@ -33,4 +32,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `docs/features/CLAUDE.index.md`? · `docs/features/coaching.md`? · `scripts/CLAUDE.md`? · `scripts/samples/CLAUDE.md`?
+- docs: `docs/features/coaching.md`? · `scripts/CLAUDE.md`?

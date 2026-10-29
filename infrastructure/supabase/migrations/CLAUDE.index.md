@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `V1.0.0__baseline.sql` | Baseline marker migration: creates schema_versions; the full schema lives in 00_complete-schema.sql |
 | `V2.11.0__portal_access.sql` | Creates the portal_app_user role and seeds feature_permissions rows the admin dashboard checks |
 | `V2.11.2__portal_reset_attempts.sql` | Adds users.password_reset_attempts to cap wrong portal reset-code tries |
@@ -81,4 +79,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `SETUP.md`? · `docs/CLAUDE.index.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/attendance.md`? · `docs/features/lesson-quiz.md`? · `docs/features/observe.md`? · `docs/features/teacher-nudges.md`? · `docs/features/test-papers.md`? · `docs/pulling-updates.md`? · `infrastructure/supabase/CLAUDE.index.md`? · `infrastructure/supabase/CLAUDE.md`? · `infrastructure/supabase/migrations/CLAUDE.index.md`? · `infrastructure/supabase/migrations/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `SETUP.md`? · `docs/features/attendance.md`? · `docs/features/lesson-quiz.md`? · `docs/features/observe.md`? · `docs/features/teacher-nudges.md`? · `docs/features/test-papers.md`? · `docs/pulling-updates.md`? · `infrastructure/supabase/CLAUDE.md`?

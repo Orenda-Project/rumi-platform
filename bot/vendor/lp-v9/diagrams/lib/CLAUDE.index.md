@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `degenerate.js` | checkDegenerate(svg) flags figures that are geometrically right but teach nothing, such as near-flat slivers |
 | `imagesize.js` | Reads width, height and MIME type of JPEG/PNG/GIF/WebP buffers without a dependency, for aspect ratios |
 | `measure.js` | Deterministic text-width measurement from a Helvetica advance table, so layout needs no browser |
@@ -30,4 +28,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `svg.js` ← `tests/quiz/transcript-quiz-figure-adaptive-scale.test.js` · `tests/quiz/transcript-quiz-figure-colour-injection.test.js` · `tests/quiz/transcript-quiz-figure-part-labels.test.js` · `tests/quiz/transcript-quiz-figure-phone-scale.test.js`
 
 ## Related (all, generated)
-- docs: `bot/vendor/lp-v9/diagrams/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/lib/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/lib/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `bot/vendor/lp-v9/diagrams/CLAUDE.md`?

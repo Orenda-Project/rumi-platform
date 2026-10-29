@@ -1,6 +1,6 @@
 # public — Browser UI of the wizard: step machine, DOM helpers, API client, styles
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public kg=5a4405650860 gen=4903c860b8de overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public kg=5a4405650860 gen=49de5b61cbac overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `app.js` — step machine
@@ -13,7 +13,6 @@
 | `steps/` | One module per wizard step after welcome: credentials, database, whatsapp, done → `steps/CLAUDE.md` |
 | `dom.js` | Browser DOM helpers that build nodes without innerHTML so .env text cannot inject markup |
 | `api.js` | Browser fetch/stream helpers for the wizard; mutating calls carry the X-Rumi-Onboarding header |
-| `CLAUDE.md` | (unmapped) |
 | `app.js` | Browser step machine for the five-step wizard; renders each step lazily on arrival |
 | `favicon.svg` | (unmapped) |
 | `index.html` | Single page shell for the five-step setup wizard |
@@ -31,4 +30,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `pinokio/CLAUDE.index.md`? · `pinokio/README.md`? · `pinokio/onboarding/CLAUDE.index.md`? · `pinokio/onboarding/CLAUDE.md`? · `pinokio/onboarding/public/CLAUDE.md`? · `pinokio/onboarding/public/steps/CLAUDE.md`?
+- docs: `pinokio/README.md`? · `pinokio/onboarding/CLAUDE.md`?

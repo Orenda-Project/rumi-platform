@@ -9,8 +9,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `assets/` | → (no door; 2 files) |
 | `routes/` | → (no door; 2 files) |
 | `views/` | EJS pages for the operator console screens → `views/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `auth.js` | Decides console access: loopback token mode vs network password mode, host guard, bcrypt check, Redis session store |
 | `env-catalog.js` | Groups the .env into labelled rows by joining setup-wizard copy with feature-availability; feeds the Setup page |
 | `features.js` | Builds the Features page data: configured vs switched-off vs effective state per feature |
@@ -40,4 +38,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `redaction.js` ← `tests/console/redaction.test.js`?
 
 ## Related (all, generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/console/CLAUDE.index.md`? · `bot/console/CLAUDE.md`? · `bot/console/views/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/console.md`? · `tests/console/CLAUDE.md`?
+- docs: `bot/CLAUDE.md`? · `docs/console.md`?

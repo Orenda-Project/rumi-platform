@@ -1,6 +1,6 @@
 # locales — Landing-site string catalogs, one JSON per language (en, es, ur, ar)
 
-<!-- kg:meta repo=rumi-platform dir=portal/src/i18n/locales kg=ed1f0ffbca79 gen=db64c8ac2876 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=portal/src/i18n/locales kg=ed1f0ffbca79 gen=d04db645537e overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `en.json` — source copy; keep the other three in step with its structure
@@ -14,7 +14,6 @@
 | `ar.json` | Arabic strings for the landing site (nav, channel, hero, features, CTA, footer); loaded by i18n/config.ts |
 | `es.json` | Spanish strings for the landing site (nav, channel, hero, features, CTA, footer); loaded by i18n/config.ts |
 | `ur.json` | Urdu strings for the landing site (nav, channel, hero, features, CTA, footer); loaded by i18n/config.ts |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - `ar.json` ← imported by `portal/src/i18n/config.ts:8:74018b38`
@@ -30,4 +29,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `portal/src/i18n/CLAUDE.md`? · `portal/src/i18n/locales/CLAUDE.md`?
+- docs: `portal/src/i18n/CLAUDE.md`?

@@ -6,9 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `queue/` | → (no door; 2 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `queue/` | → (no door; 2 tests) |
 | `ama-service.test.js` | Standalone script of AMA schema-validation tests (column checks, retry); targets the removed NL-SQL engine. |
 | `byof-agent.test.js` | Pins the BYOF agent (Anthropic chat) behaviour in byof-agent.service. |
 | `byof-service.test.js` | Pins byof.service: byof_role validation, session CRUD, message storage and permission checks. |
@@ -28,11 +26,10 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `video-observability-view.test.js` | Checks the videos.ejs gallery template renders the expected markup. |
 
 ## Who reads this (all, generated)
-- env `GITHUB_TOKEN` read at `dashboard/tests/github-api.test.js:74:91cbb81f`
-- env `TEST_BASE_URL` read at `dashboard/tests/video-observability-routes.test.js:12:9a65a078`
+- (none)
 
 ## Tests (all, generated)
 - (none)
 
 ## Related (all, generated)
-- docs: `bot/console/views/CLAUDE.md`? · `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/services/CLAUDE.index.md`? · `dashboard/services/CLAUDE.md`? · `dashboard/tests/CLAUDE.index.md`? · `dashboard/tests/CLAUDE.md`? · `pinokio/CLAUDE.index.md`? · `pinokio/CLAUDE.md`?
+- docs: `bot/console/views/CLAUDE.md`? · `dashboard/CLAUDE.md`? · `dashboard/services/CLAUDE.md`? · `pinokio/CLAUDE.md`?

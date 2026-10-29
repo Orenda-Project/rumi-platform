@@ -1,6 +1,6 @@
 # limits — Cost and abuse guards: inbound rate limit, daily caps by tier, model budget breaker
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/limits kg=691d080a1cc1 gen=37e01d6ef149 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/limits kg=c81800d36720 gen=bd417668c693 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `inbound-rate-limit.js` — per-sender limit applied in handleWebhookPost
@@ -14,7 +14,6 @@
 | `daily-caps.js` | Per-tier daily usage caps (registered vs unregistered, env-driven, empty means none) checked by handlers |
 | `model-budget.js` | Circuit breaker for model credit/quota refusals; says busy once and alerts the operator; wraps llm-client calls |
 | `inbound-rate-limit.js` | Per-sender messages-per-minute limit applied in handleWebhookPost before any model call; one polite notice |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - `daily-caps.js` ← imported by `bot/shared/handlers/text-message.handler.js:2:b079cc59` · `bot/shared/handlers/voice-message.handler.js:4:b079cc59` (+6)
@@ -31,4 +30,4 @@
 - `tests/limits/worker-budget.test.js` (model-budget.js)
 
 ## Related (generated)
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/limits/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/public-limits.md`? · `tests/limits/CLAUDE.md`?
+- docs: `bot/shared/services/CLAUDE.md`? · `docs/features/public-limits.md`?

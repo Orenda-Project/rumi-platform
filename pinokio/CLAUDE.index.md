@@ -9,8 +9,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `onboarding/` | GUI setup wizard server: five steps beside Rumi's console, loopback only → `onboarding/CLAUDE.md` |
 | `scripts/` | Helper scripts the Pinokio launcher scripts call: Redis, ports, console wait → `scripts/CLAUDE.md` |
 | `.gitignore` | (unmapped) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `README.md` | User guide for the Pinokio launcher: sidebar buttons, GUI setup wizard, what it does; current |
 | `claude.js` | Pinokio script that installs Claude Code in Pinokio's npm prefix if missing and opens it in the repo |
 | `doctor.js` | Pinokio script: ensures local Redis then runs `node bin/rumi.js doctor` |
@@ -36,7 +34,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `pinokio-launcher`?
-- docs: `.claude/CLAUDE.index.md`? · `.claude/CLAUDE.md`? · `CLAUDE.md`? · `README.md`? · `bot/CLAUDE.index.md`? · `dashboard/tests/CLAUDE.index.md`? · `pinokio/CLAUDE.index.md`? · `pinokio/CLAUDE.md`? · `pinokio/README.md`? · `pinokio/onboarding/CLAUDE.index.md`? · `pinokio/onboarding/CLAUDE.md`? · `pinokio/onboarding/public/CLAUDE.md`? · `pinokio/scripts/CLAUDE.md`? · `tests/CLAUDE.index.md`? · `tests/setup/CLAUDE.index.md`?
+- docs: `CLAUDE.md`? · `README.md`? · `pinokio/README.md`? · `pinokio/onboarding/CLAUDE.md`? · `pinokio/onboarding/public/CLAUDE.md`? · `pinokio/scripts/CLAUDE.md`?
 
 ## Previous notes (human, unverified — moved here from the old CLAUDE.md)
 **Parent:** [../CLAUDE.md](../CLAUDE.md) · Deep knowledge: [.claude/skills/pinokio-launcher](../.claude/skills/pinokio-launcher/SKILL.md)

@@ -1,6 +1,6 @@
 # method — Stage-by-stage method docs agents must read in full before each stage
 
-<!-- kg:meta repo=rumi-platform dir=curriculum/method kg=df9054cad234 gen=fdf0efe7bd2c overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=curriculum/method kg=df9054cad234 gen=62b4e3703b64 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `a-pagetruth.md` — Stage A procedure and failure catalogue
@@ -12,7 +12,6 @@
 | path | purpose |
 |---|---|
 | `c-enrichment.md` | Stage C method: enrichment rules, evidence-based elements, benchmark gate G4 and production playbook |
-| `CLAUDE.md` | (unmapped) |
 | `b-segmentation.md` | Stage B method: chunking a chapter into teaching-day lessons, lp_type/skill_type tags, SLO codes, gates G3 |
 | `a-pagetruth.md` | Stage A method: page-truth capture procedure, offset handling, gates G0-G2b and failure catalogue |
 | `d-render.md` | Stage D method: rendering slide scripts into the official LP format, with the render-quality gate |
@@ -32,4 +31,4 @@ _None found in code comments, tests or git log for this directory._
 
 ## Related (generated)
 - skills: `curriculum-baked-lesson-plans`?
-- docs: `curriculum/CLAUDE.md`? · `curriculum/gates/CLAUDE.md`? · `curriculum/method/CLAUDE.md`? · `curriculum/method/a-pagetruth.md`? · `curriculum/method/b-segmentation.md`? · `curriculum/method/c-enrichment.md`? (+8)
+- docs: `curriculum/CLAUDE.md`? · `curriculum/gates/CLAUDE.md`? · `curriculum/research/CLAUDE.md`? · `curriculum/research/INDEX.md`? · `curriculum/research/enrichment-elements.md`? · `curriculum/research/science_pedagogy_and_taxonomy.md`?

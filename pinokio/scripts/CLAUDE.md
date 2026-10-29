@@ -1,6 +1,6 @@
 # scripts — Helper scripts the Pinokio launcher scripts call: Redis, ports, console wait
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/scripts kg=7a84a9e4c241 gen=cfad0eabd6e3 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/scripts kg=bb26a131f2a8 gen=39a3e465795c overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `pick-port.js` — stable port per server
@@ -12,7 +12,6 @@
 |---|---|
 | `redis.js` | Shared Pinokio step that starts the local Redis for start.js, onboard.js and doctor.js |
 | `local-redis.js` | Runs redis-server only when REDIS_URL points at this machine; otherwise says so and exits |
-| `CLAUDE.md` | (unmapped) |
 | `pick-port.js` | Gives the bot or wizard a stable port across restarts, avoiding Pinokio's colliding {{port}} |
 | `wait-for-console.js` | Waits for /health then prints the console URL alone on a line so Pinokio's 300-char match sees it |
 
@@ -29,4 +28,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `pinokio/CLAUDE.index.md`? · `pinokio/CLAUDE.md`? · `pinokio/README.md`? · `pinokio/scripts/CLAUDE.md`?
+- docs: `pinokio/CLAUDE.md`? · `pinokio/README.md`?

@@ -1,6 +1,6 @@
 # grade_2_math_ch1 — One chapter sample: its expected/ folder holds outputs of each pipeline stage
 
-<!-- kg:meta repo=rumi-platform dir=curriculum/sample/grade_2_math_ch1 kg=72fbf2bf7867 gen=ab534ef662ab overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=curriculum/sample/grade_2_math_ch1 kg=72fbf2bf7867 gen=5f10ed395426 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `expected/curriculum.json` — project manifest for the sample
@@ -12,7 +12,6 @@
 |---|---|
 | `expected/` | Golden outputs of stages A-C plus the graph for the sample chapter → `expected/CLAUDE.md` |
 | `input/` | → (no door; 1 files) |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - (none)
@@ -25,4 +24,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `curriculum/sample/CLAUDE.md`? · `curriculum/sample/grade_2_math_ch1/expected/CLAUDE.md`?
+- docs: `curriculum/sample/CLAUDE.md`?

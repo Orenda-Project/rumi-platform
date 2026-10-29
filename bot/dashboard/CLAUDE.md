@@ -1,6 +1,6 @@
 # dashboard — Legacy Express admin dashboard (login, users, conversations) over Supabase
 
-<!-- kg:meta repo=rumi-platform dir=bot/dashboard kg=3b679dc6d00f gen=e4d6b2c9b837 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/dashboard kg=76f73675bbca gen=c2cec27bb710 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `index.js` — whole app: session, bcrypt login, /dashboard, /users, conversations routes
@@ -10,7 +10,6 @@
 | path | purpose |
 |---|---|
 | `views/` | Tailwind-CDN EJS pages for the legacy admin dashboard → `views/CLAUDE.md` |
-| `CLAUDE.md` | (unmapped) |
 | `index.js` | Express admin dashboard (login, /dashboard, /users, conversations) over Supabase with bcrypt session auth |
 
 ## Who reads this (generated)
@@ -24,5 +23,5 @@
 - (none)
 
 ## Related (generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/dashboard/CLAUDE.md`? · `bot/dashboard/views/CLAUDE.md`?
+- docs: `bot/CLAUDE.md`?
 - service: `dashboard`

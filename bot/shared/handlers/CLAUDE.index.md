@@ -6,9 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `__mocks__/` | → (no door; 1 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `__mocks__/` | → (no door; 1 files: 0 test + 1 support) |
 | `attendance-flow.handler.js` | Processes attendance setup and marking Flow completions: creates classes and students, computes academic year |
 | `edit-class-trigger.js` | Pure keyword detector for the "edit class" intent, split out of text-message.handler for unit tests |
 | `exam-checker.handler.js` | Routes exam-checker text commands, photos, buttons and Flow replies to the ExamCheckerOrchestrator |
@@ -91,4 +89,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `reading-assessment`? · `registration`? · `whatsapp-flows`?
-- docs: `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/CLAUDE.md`? · `bot/shared/handlers/CLAUDE.index.md`? · `bot/shared/handlers/CLAUDE.md`? · `bot/tests/CLAUDE.md`? · `bot/tests/video/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/LP_PATHS.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/exam-checker.md`? · `docs/features/homework.md`? · `docs/features/pic-to-lp.md`? · `docs/features/quiz.md`? · `docs/features/test-papers.md`? · `tests/attendance/CLAUDE.index.md`? · `tests/attendance/CLAUDE.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/CLAUDE.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.md`? · `tests/edit-class/CLAUDE.md`? · `tests/exam-checker/CLAUDE.index.md`? · `tests/exam-checker/CLAUDE.md`? · `tests/flow-response/CLAUDE.md`? · `tests/homework/CLAUDE.md`? · `tests/limits/CLAUDE.md`? · `tests/messaging/CLAUDE.index.md`? · `tests/messaging/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/observe/CLAUDE.md`? · `tests/pic-to-lp/CLAUDE.index.md`? · `tests/pic-to-lp/CLAUDE.md`? · `tests/portal/CLAUDE.index.md`? · `tests/portal/CLAUDE.md`? · `tests/services/CLAUDE.md`? · `tests/testpaper/CLAUDE.index.md`? · `tests/testpaper/CLAUDE.md`? · `tests/textbook-lp-v2/CLAUDE.md`?
+- docs: `bot/shared/CLAUDE.md`? · `docs/LP_PATHS.md`? · `docs/features/exam-checker.md`? · `docs/features/homework.md`? · `docs/features/pic-to-lp.md`? · `docs/features/quiz.md`? · `docs/features/test-papers.md`?

@@ -1,7 +1,6 @@
 # database — SQL layer: analytics queries, migration runner and migration files
-Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=dashboard/database kg=8e126d8eedff gen=89f050374c39 overflow=3 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=dashboard/database kg=d31dda7347a5 gen=1b61d7447989 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `queries.js` — all dashboard analytics queries; take the RLS client (req.dbClient) as first argument
@@ -13,8 +12,6 @@ Full index: `CLAUDE.index.md`
 | path | purpose |
 |---|---|
 | `migrations/` | Numbered SQL migrations for dashboard tables, RLS and materialized views → `migrations/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `queries.js` | Analytics query layer (stats, users, sessions, funnel, retention) taking req.dbClient; falls back to MV views. |
 | `README.md` | Explains how to run and write SQL migrations with run-sql-migration.js. |
 | `apply-user-columns-migration.md` | Manual steps to add four funnel columns to users via the Supabase SQL editor (migration 002). |
@@ -26,7 +23,9 @@ Full index: `CLAUDE.index.md`
 - column `broadcast_messages.broadcast_id` (written by `queries.js`) ← read by `bot/whatsapp-bot.js:148:94ad840a`
 - column `broadcast_messages.sent_at` (written by `queries.js`) ← read by `bot/whatsapp-bot.js:231:dcdfb840`
 - column `broadcast_messages.status` (written by `queries.js`) ← read by `bot/whatsapp-bot.js:148:94ad840a`
-- … 3 more → `CLAUDE.index.md`
+- column `broadcast_messages.user_id` (written by `queries.js`) ← read by `bot/whatsapp-bot.js:228:219f5683`
+- table `broadcast_messages` (written by `queries.js`) ← read by `bot/whatsapp-bot.js:147:5e6ab800`?
+- env read here: `SUPABASE_SERVICE_ROLE_KEY` · `SUPABASE_URL`
 
 ## Never (human)
 - Never query with the service-role client; use the request client (req.dbClient) so RLS applies (queries.js:5)
@@ -36,4 +35,4 @@ Full index: `CLAUDE.index.md`
 - (none)
 
 ## Related (generated)
-- docs: `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/database/CLAUDE.index.md`? · `dashboard/database/CLAUDE.md`? · `dashboard/database/README.md`? · `dashboard/database/apply-user-columns-migration.md`? (+2)
+- docs: `dashboard/CLAUDE.md`?

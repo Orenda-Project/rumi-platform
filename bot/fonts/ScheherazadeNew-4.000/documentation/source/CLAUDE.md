@@ -1,7 +1,7 @@
 # source — Markdown sources the upstream font docs are built from
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000/documentation/source kg=8f69356ab533 gen=10b9ff9281f6 overflow=8 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000/documentation/source kg=cdb889c2fd5a gen=d33470c08c23 overflow=7 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `index.md` — source of the docs index
@@ -15,8 +15,6 @@ Full index: `CLAUDE.index.md`
 | `productsite/` | Markdown variants of the font docs for a product website → `productsite/CLAUDE.md` |
 | `index.md` | Upstream markdown source of the doc page on the documentation index; reference only |
 | `design.md` | Upstream markdown source of the doc page on the design notes and rationale; reference only |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `about.md` | Upstream markdown source of the doc page on about the font and its authors; reference only |
 | `faq.md` | Upstream markdown source of the doc page on frequently asked questions; reference only |
 | `versions.md` | Upstream markdown source of the doc page on the version history; reference only |
@@ -25,7 +23,8 @@ Full index: `CLAUDE.index.md`
 | `sample.md` | Upstream markdown source of the doc page on a rendered text sample; reference only |
 | `support.md` | Upstream markdown source of the doc page on how to get support; reference only |
 | `allah.md` | Upstream markdown source of the doc page on the Allah ligature feature; reference only |
-| … | 8 more → `CLAUDE.index.md` |
+| `announcement.md` | Upstream markdown source of the doc page on the release announcement; reference only |
+| … | 7 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)
@@ -38,4 +37,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `bot/fonts/ScheherazadeNew-4.000/documentation/CLAUDE.index.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/CLAUDE.index.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/about.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/allah.md`? (+15)
+- docs: `bot/fonts/ScheherazadeNew-4.000/documentation/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/about.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/allah.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/announcement.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/charset.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/design.md`? (+10)

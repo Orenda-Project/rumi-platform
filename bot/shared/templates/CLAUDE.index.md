@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `classroom-observation-report.html` | HTML template with {{placeholders}} for the classroom observation report PDF |
 | `latin-runs.js` | Wraps English phrases in left-to-right isolates inside Urdu RTL HTML so mixed text reads correctly |
 | `observation-report.template.js` | Builds branded observation report HTML via generateObservationReport(data) with an embedded Rumi logo |
@@ -41,4 +39,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `reading-assessment`?
-- docs: `bot/shared/CLAUDE.md`? · `bot/shared/templates/CLAUDE.index.md`? · `bot/shared/templates/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/customization.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `bot/shared/CLAUDE.md`? · `docs/customization.md`?

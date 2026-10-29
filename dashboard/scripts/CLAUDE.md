@@ -1,6 +1,6 @@
 # scripts — One-off ops scripts: SQS queue setup, backfills, Railway linking, funnel checks
 
-<!-- kg:meta repo=rumi-platform dir=dashboard/scripts kg=d13fd75bfc0f gen=f1264ad37103 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=dashboard/scripts kg=80f0999644c6 gen=560d3c2b9c4f overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `deployment/setup-portal-sqs.sh` — creates the portal's own FIFO SQS queue
@@ -11,7 +11,6 @@
 | path | purpose |
 |---|---|
 | `deployment/` | → (no door; 2 files) |
-| `CLAUDE.md` | (unmapped) |
 | `backfill-processed-transcripts.js` | Backfills processed coaching transcripts (GPT-4o-mini) into coaching_sessions so viewing is instant. |
 | `check-progress.sh` | Ad hoc shell that tails /tmp logs of re-transcription runs; one-off, stale. |
 | `link-railway.sh` | One-time helper that runs `railway link` for the dashboard project. |
@@ -31,4 +30,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/scripts/CLAUDE.md`?
+- docs: `dashboard/CLAUDE.md`?

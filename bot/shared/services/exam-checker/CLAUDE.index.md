@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `annotation.service.js` | Draws marks, ticks and margin feedback onto exam images with Canvas, including Urdu fonts |
 | `delivery.service.js` | Sends graded exam results and annotated images to the teacher over WhatsApp |
 | `exam-checker.orchestrator.js` | Thin coordinator for exam checking state transitions, delegating to OCR, grading and delivery services |
@@ -53,4 +51,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `question-detector.service.js` ← `tests/exam-checker/exam-conversation-after-reading.test.js`
 
 ## Related (all, generated)
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/exam-checker/CLAUDE.index.md`? · `bot/shared/services/exam-checker/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/exam-checker.md`? · `tests/exam-checker/CLAUDE.index.md`? · `tests/routes/CLAUDE.index.md`?
+- docs: `bot/shared/services/CLAUDE.md`? · `docs/features/exam-checker.md`?

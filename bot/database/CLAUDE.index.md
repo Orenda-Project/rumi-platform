@@ -7,8 +7,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | path | purpose |
 |---|---|
 | `migrations/` | SQL migrations adding bot tables and columns, run manually against Supabase → `migrations/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `SCHEMA_GUIDE.md` | Plain-language tour of the v3.0 table set for non-engineers; a dated Nov 2025 snapshot, not the live schema |
 | `SESSION_MIGRATION_GUIDE.md` | Explains the v3.1.0 chat_sessions change (30-minute timeout) that migration 001 introduced; historical note |
 | `schema.sql` | Original v3.0 base schema (users, conversations, etc.) from Nov 2025; superseded by the canonical infrastructure schema |
@@ -45,4 +43,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/database/CLAUDE.index.md`? · `bot/database/CLAUDE.md`? · `bot/database/SCHEMA_GUIDE.md`? · `bot/database/SESSION_MIGRATION_GUIDE.md`? · `bot/database/migrations/CLAUDE.index.md`? · `bot/database/migrations/CLAUDE.md`?
+- docs: `bot/CLAUDE.md`?

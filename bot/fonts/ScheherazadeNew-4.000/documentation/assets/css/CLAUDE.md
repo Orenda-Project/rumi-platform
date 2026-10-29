@@ -1,6 +1,6 @@
 # css — CSS used only by the upstream font documentation pages
 
-<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000/documentation/assets/css kg=477389c9c587 gen=c4a987612015 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000/documentation/assets/css kg=477389c9c587 gen=1953d26cc7c6 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `theme.css` — main page theme for the docs
@@ -9,7 +9,6 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
 | `theme.css` | Upstream stylesheet for the font's HTML documentation pages (theme); unused by bot code |
 | `themepdf.css` | Upstream stylesheet for the font's HTML documentation pages (themepdf); unused by bot code |
 | `webfonts.css` | Upstream stylesheet for the font's HTML documentation pages (webfonts); unused by bot code |

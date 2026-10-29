@@ -1,7 +1,7 @@
 # templates — HTML and image templates for PDFs, reports and quiz cards
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/templates kg=cd2dede562f6 gen=b7fd992c5428 overflow=34 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/templates kg=81291ededf3a gen=9e8f7aa75660 overflow=31 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `quiz-brand.js` — palette and fonts shared by quiz artefacts
@@ -14,7 +14,8 @@ Full index: `CLAUDE.index.md`
 | `transcript-quiz-teacher.template.js` | Teacher's three-page lesson-quiz PDF: what was taught, questions as the child sees them, how to send |
 | `quiz-brand.js` | Shared palette, font stacks and diamond/lattice motifs for quiz PDFs, reports and scorecards |
 | `video*` | 3 files; most used `video-quiz-report.template.js`: Teacher's video-quiz class report HTML with per-language chrome, RTL and Nastaliq support |
-| … | 7 more → `CLAUDE.index.md` |
+| `latin-runs.js` | Wraps English phrases in left-to-right isolates inside Urdu RTL HTML so mixed text reads correctly |
+| … | 6 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `quiz-brand.js` ← imported by `bot/shared/services/quiz/quiz-picture-chrome.js:19:3235a2e9` · `bot/shared/services/quiz/transcript-quiz-card.js:35:53120112` (+5)
@@ -33,4 +34,4 @@ Full index: `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `reading-assessment`?
-- docs: `bot/shared/CLAUDE.md`? · `bot/shared/templates/CLAUDE.index.md`? · `bot/shared/templates/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/customization.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `bot/shared/CLAUDE.md`? · `docs/customization.md`?

@@ -8,8 +8,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 |---|---|
 | `public/` | Browser UI of the wizard: step machine, DOM helpers, API client, styles → `public/CLAUDE.md` |
 | `routes/` | API routes behind the wizard: credentials, database, whatsapp → `routes/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `async-route.js` | Wraps an async express handler so a rejected promise reaches the error handler |
 | `bridge.js` | The only module that requires Rumi checkout code; each load is defensive so one rename disables one step |
 | `guards.js` | Loopback-only, Host allowlist, no-CORS and custom-header guards for the wizard's routes |
@@ -32,8 +30,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- skills: `pinokio-launcher`?
-- docs: `bot/CLAUDE.index.md`? · `bot/scripts/setup/CLAUDE.index.md`? · `bot/scripts/setup/CLAUDE.md`? · `pinokio/CLAUDE.index.md`? · `pinokio/CLAUDE.md`? · `pinokio/README.md`? · `pinokio/onboarding/CLAUDE.index.md`? · `pinokio/onboarding/CLAUDE.md`? · `pinokio/onboarding/public/CLAUDE.md`? · `pinokio/onboarding/routes/CLAUDE.md`?
+- docs: `pinokio/CLAUDE.md`? · `pinokio/README.md`?
 
 ## Previous notes (human, unverified — moved here from the old CLAUDE.md)
 **Parent:** [../CLAUDE.md](../CLAUDE.md) · Deep knowledge: [.claude/skills/pinokio-launcher](../../.claude/skills/pinokio-launcher/SKILL.md)

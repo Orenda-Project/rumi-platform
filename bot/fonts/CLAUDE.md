@@ -1,6 +1,6 @@
 # fonts — Bundled fonts loaded by file name by PDF, card and image renderers
 
-<!-- kg:meta repo=rumi-platform dir=bot/fonts kg=b69de76f0067 gen=a0775767eeb2 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/fonts kg=b69de76f0067 gen=80ff642ea9e9 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `NotoNastaliqUrdu.ttf` — Urdu Nastaliq font registered by exam-checker annotation and a quiz template
@@ -11,7 +11,6 @@
 | path | purpose |
 |---|---|
 | `ScheherazadeNew-4.000/` | Upstream Scheherazade New font package with its licence and docs; no bot code uses it → `ScheherazadeNew-4.000/CLAUDE.md` |
-| `CLAUDE.md` | (unmapped) |
 | `NotoNastaliqUrdu.ttf` | (unmapped) |
 | `NotoSansArabic-Regular.ttf` | (unmapped) |
 | `NotoSansArabic.ttf` | (unmapped) |
@@ -28,4 +27,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/CLAUDE.md`?
+- docs: `bot/CLAUDE.md`?

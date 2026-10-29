@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `attendance-marking-flow.json` | WhatsApp Flow JSON (v6.2) for marking absent students; served by the attendance marking endpoint |
 | `attendance-setup-flow.json` | WhatsApp Flow JSON for attendance class setup (class info, add student); registered by register-attendance-flows.js |
 | `edit-class-flow.json` | WhatsApp Flow JSON for editing a class roster (add, remove, edit students); in setup flow-configs.js |
@@ -31,5 +29,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/CLAUDE.md`? · `docs/agent-customization.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/attendance.md`? · `docs/features/observe.md`? · `docs/features/registration.md`? · `docs/flows/CLAUDE.index.md`? · `docs/flows/CLAUDE.md`?
-- flows: `attendance-marking-flow.json`? · `attendance-setup-flow.json`? · `edit-class-flow.json`? · `exam-checker-confirm-students-flow.json`? · `homework-request-flow.json`? · `observe-form-flow.json`? · `pic-lp-confirm-flow.json`? · `quiz-flow.json`? · `reading-assessment-flow-v2.json`? · `registration-flow-v3.json`? · `settings-flow.json`? · `status-flow.json`? · `student-join-flow.json`? · `student-videos-flow.json`? · `video-quiz-flow.json`?
+- docs: `CHANGELOG.md`? · `docs/CLAUDE.md`? · `docs/agent-customization.md`? · `docs/features/attendance.md`? · `docs/features/observe.md`? · `docs/features/registration.md`?

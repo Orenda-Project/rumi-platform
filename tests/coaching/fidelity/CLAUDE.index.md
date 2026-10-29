@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `_fake-db.js` | In-memory supabase-js query-builder fake for the fidelity suites (select/eq/in/or/order/limit, update/insert) |
 | `analysis-processor-fidelity.test.js` | Pins the coaching analysis job running LP fidelity as a non-blocking task and persisting analysis_data.lp_fidelity |
 | `classroom-audio-threshold.test.js` | Pins COACHING_MIN_AUDIO_SECONDS: default 900s, overridable, junk or sub-minute values fall back to 900 |
@@ -38,14 +36,10 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `voice-speaks-band.test.js` | Pins the voice debrief speaking the fidelity band in words, with every number removed from its payload |
 
 ## Who reads this (all, generated)
-- env `COACHING_MIN_AUDIO_SECONDS` read at `tests/coaching/fidelity/classroom-audio-threshold.test.js:13:4b657509`
-- env `LP_FIDELITY_BAND_HIGH` read at `tests/coaching/fidelity/fidelity-scorer.test.js:132:5f3cfdcb`
-- env `LP_FIDELITY_BAND_PARTIAL` read at `tests/coaching/fidelity/fidelity-scorer.test.js:132:5f3cfdcb`
-- env `LP_FIDELITY_ENABLED` read at `tests/coaching/fidelity/analysis-processor-fidelity.test.js:82:afb244b3` · `tests/coaching/fidelity/fidelity-feature-entry.test.js:35:afb244b3` · `tests/coaching/fidelity/fidelity-orchestrator.test.js:180:e689cdf6` · `tests/coaching/fidelity/fidelity-recompute.test.js:44:afb244b3` · `tests/coaching/fidelity/lp-extraction-writes-plan-text.test.js:39:afb244b3` · `tests/coaching/fidelity/lp-step-flow.test.js:52:afb244b3` · `tests/coaching/fidelity/review-guards.test.js:50:afb244b3`
-- env `TEMP_DIR` read at `tests/coaching/fidelity/lp-generation-stores-plan-text.test.js:43:95669f01`
+- (none)
 
 ## Tests (all, generated)
 - (none)
 
 ## Related (all, generated)
-- docs: `bot/scripts/setup/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/database/CLAUDE.index.md`? · `bot/shared/database/CLAUDE.md`? · `bot/shared/handlers/CLAUDE.index.md`? · `bot/shared/handlers/CLAUDE.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.index.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.md`? · `bot/shared/services/coaching/frameworks/CLAUDE.index.md`? · `bot/shared/services/coaching/lp-coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/lp-coaching/CLAUDE.md`? · `bot/shared/services/coaching/report-transformers/CLAUDE.index.md`? · `bot/shared/services/coaching/report-transformers/CLAUDE.md`? · `bot/shared/utils/CLAUDE.index.md`? · `bot/workers/CLAUDE.index.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/CLAUDE.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.md`?
+- docs: `bot/shared/database/CLAUDE.md`? · `bot/shared/handlers/CLAUDE.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.md`? · `bot/shared/services/coaching/lp-coaching/CLAUDE.md`? · `bot/shared/services/coaching/report-transformers/CLAUDE.md`? · `tests/coaching/CLAUDE.md`?

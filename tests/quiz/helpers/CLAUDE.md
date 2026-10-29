@@ -1,7 +1,7 @@
 # helpers — Shared stubs and fixtures for quiz suites: Supabase fakes, solver, KaTeX, PDF ink readers
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests/quiz/helpers kg=9da538ffe234 gen=2e7d32d7c758 overflow=9 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/quiz/helpers kg=9da538ffe234 gen=638c1b42c855 overflow=7 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `supabase-chain.js` — the common canned-result Supabase stub, used by about 38 quiz suites
@@ -20,8 +20,8 @@ Full index: `CLAUDE.index.md`
 | `no-picture-repair.js` | Disables the generate step's add-a-picture repair model call so suites do not count it among their LLM calls |
 | `plan-key-check-fixture.js` | Synthetic grade-3 Urdu singular/plural lesson whose quiz keyed the planted misconception as correct |
 | `real-katex.js` | Loads real KaTeX from bot/node_modules, or signals skip, for suites that need true maths rendering over the stub |
-| `CLAUDE.md` | (unmapped) |
-| … | 9 more → `CLAUDE.index.md` |
+| `key-verify-fixture.js` | Urdu letters-lesson quiz with two wrong answer keys, loaded by the transcript-quiz-key-verify suites |
+| … | 7 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)
@@ -35,4 +35,4 @@ Full index: `CLAUDE.index.md`
 - (none)
 
 ## Related (generated)
-- docs: `bot/shared/services/quiz/CLAUDE.index.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/quiz/CLAUDE.md`? · `tests/quiz/helpers/CLAUDE.index.md`? · `tests/quiz/helpers/CLAUDE.md`?
+- docs: `tests/quiz/CLAUDE.md`?

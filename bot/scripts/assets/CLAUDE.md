@@ -1,6 +1,6 @@
 # assets — One-off scripts for Flow JSON and reading-passage background assets
 
-<!-- kg:meta repo=rumi-platform dir=bot/scripts/assets kg=900e21bc6529 gen=94afcd9f561e overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/scripts/assets kg=21b85e47ff51 gen=526c496194e8 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `upload-flow.js` — pushes a Flow JSON to Meta for a flow id
@@ -10,7 +10,6 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
 | `generate-passage-backgrounds.js` | One-off: generates child-friendly reading-passage backgrounds with DALL-E 3 and uploads them to R2 |
 | `get-flow-errors.js` | Dev tool: fetches Meta's detailed validation errors for a WhatsApp Flow id; read-only call |
 | `upload-flow.js` | Dev tool: uploads a Flow JSON file to Meta for an existing flow id (writes to the WABA) |
@@ -26,4 +25,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `bot/scripts/CLAUDE.index.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/assets/CLAUDE.md`?
+- docs: `bot/scripts/CLAUDE.md`?

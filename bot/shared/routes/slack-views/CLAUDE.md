@@ -1,6 +1,6 @@
 # slack-views — Slack Block Kit screen mappings for Flow-equivalent modals
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/routes/slack-views kg=650e3e6ca466 gen=a1e5b2f94400 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/routes/slack-views kg=ac6bcf0d1034 gen=77bf64cd1f3e overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `registration.view.js` — fullest mapping incl. country buckets
@@ -10,7 +10,6 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
 | `attendance-marking.view.js` | Slack Block Kit mapping for tap-to-mark attendance (one checkboxes block for the roster) |
 | `attendance.view.js` | Slack Block Kit mapping for attendance class setup and add-student loop |
 | `registration.view.js` | Slack Block Kit mapping for registration screens (selects, multi-select subjects, country buckets) |
@@ -34,4 +33,4 @@ _None found in code comments, tests or git log for this directory._
 - `tests/attendance/marking-leave-and-staff.test.js` (attendance-marking.view.js)
 
 ## Related (generated)
-- docs: `bot/shared/routes/CLAUDE.index.md`? · `bot/shared/routes/CLAUDE.md`? · `bot/shared/routes/slack-views/CLAUDE.md`? · `tests/attendance/CLAUDE.index.md`? · `tests/attendance/CLAUDE.md`? · `tests/routes/CLAUDE.index.md`? (+1)
+- docs: `bot/shared/routes/CLAUDE.md`?

@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `ama.routes.js` | AMA chat routes under /observability: per-user conversations, SSE answers, super-admin view of all chats. |
 | `api-health.routes.js` | Serves /api/api-health JSON by calling the api-health aggregator for all or one service. |
 | `brief.routes.js` | Factory for the Morning Brief pages (daily/weekly panels) incl. token-authed wall-screen view. |
@@ -51,4 +49,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `morning-brief`?
-- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/routes/CLAUDE.index.md`? · `dashboard/routes/CLAUDE.md`? · `tests/dashboard/CLAUDE.index.md`? · `tests/observe/CLAUDE.index.md`? · `tests/portal/CLAUDE.index.md`? · `tests/portal/CLAUDE.md`? · `tests/routes/CLAUDE.index.md`?
+- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.md`?

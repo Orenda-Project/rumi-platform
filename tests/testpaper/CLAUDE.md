@@ -1,7 +1,7 @@
 # testpaper — Tests for the /testpaper feature: conversation, generation, rendering, worker
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests/testpaper kg=c0f09014403a gen=6c6caf7eeab3 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/testpaper kg=c0f09014403a gen=07af2c2539ae overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `testpaper-orchestrator.test.js` — the conversation on any channel
@@ -12,9 +12,7 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `helpers/` | → (no door; 1 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `helpers/` | → (no door; 1 files: 0 test + 1 support) |
 | `paper*` | 3 files; most used `paper-generation.test.js`: Pins paper-generation: prompt order (safety last), model mocked at llm-client, post-processing into a question tree |
 | `testpaper*` | 8 files; most used `testpaper-worker.test.js`: Runs testpaper.worker end to end in-process: real store, generator, renderer and delivery, boundaries mocked |
 | `live-wiring-text.test.js` | Drives real handleTextMessage so /testpaper reaches the orchestrator (the connecting line in the live handler) |
@@ -35,4 +33,4 @@ Full index: `CLAUDE.index.md`
 - (none)
 
 ## Related (generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/handlers/CLAUDE.index.md`? · `bot/shared/services/testpaper/CLAUDE.index.md`? · `bot/shared/services/testpaper/CLAUDE.md`? · `bot/workers/CLAUDE.index.md`? (+4)
+- docs: `bot/shared/services/testpaper/CLAUDE.md`? · `tests/CLAUDE.md`?

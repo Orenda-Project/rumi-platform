@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `accordion.tsx` | shadcn/ui primitive: Radix accordion wrapper |
 | `alert-dialog.tsx` | shadcn/ui primitive: Radix alert-dialog (confirm modal) wrapper |
 | `alert.tsx` | shadcn/ui primitive: Alert banner with variants |
@@ -82,4 +80,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `calendar.tsx` ← `brief/tests/test_calendar.py`?
 
 ## Related (all, generated)
-- docs: `brief/tests/CLAUDE.md`? · `portal/src/components/CLAUDE.index.md`? · `portal/src/components/CLAUDE.md`? · `portal/src/components/ui/CLAUDE.index.md`? · `portal/src/components/ui/CLAUDE.md`?
+- docs: `portal/src/components/CLAUDE.md`?

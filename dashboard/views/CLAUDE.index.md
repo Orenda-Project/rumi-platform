@@ -7,8 +7,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | path | purpose |
 |---|---|
 | `partials/` | → (no door; 2 files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `ab-testing.ejs` | A/B test page: lists ab_tests with variants and results; rendered by GET /observability/ab-testing in index.js. |
 | `admin-invitations.ejs` | Super-admin page to create, resend, revoke partner invitations with scope preview via /api/admin/invitations. |
 | `admin-users.ejs` | Super-admin user table: edit access scope, deactivate, bulk-deactivate dashboard users via /api/admin/users. |
@@ -58,4 +56,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `users.ejs` ← `tests/dashboard/admin-view-escaping/users.test.js`?
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/views/CLAUDE.index.md`? · `dashboard/views/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/admin-views-security.md`? · `tests/dashboard/admin-view-escaping/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.md`? · `docs/features/admin-views-security.md`?

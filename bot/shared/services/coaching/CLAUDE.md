@@ -1,7 +1,7 @@
 # coaching — Classroom coaching pipeline: session, transcription, analysis, reflection, report
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching kg=a133cc0dcd27 gen=7b0b9213a33a overflow=64 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching kg=c66b772a5726 gen=f86b64aa7c39 overflow=62 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `coaching-session.service.js` — session lifecycle rows in coaching_sessions; start here
@@ -14,8 +14,8 @@ Full index: `CLAUDE.index.md`
 |---|---|
 | 7 sub-dirs, each with `CLAUDE.md` | `coaching-card/` · `fidelity/` · `frameworks/` · `lp-coaching/` · `reflective-questions/` · `report-transformers/` · `report-v2/` |
 | 3 sub-dirs without a door | `classroom-photo/` (2) · `report-renderers/` (1) · `templates/` (1) |
-| `CLAUDE.index.md` | (unmapped) |
-| … | 12 more → `CLAUDE.index.md` |
+| `coaching*` | 5 files; most used `coaching-job-queue.service.js`: Queues transcription, analysis and report jobs to SQS; used by orchestrator and image handler |
+| … | 22 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - table `coaching_sessions` (written by `analysis-processor.service.js` (+5)) ← read by `bot/scripts/generate-coaching-excel.js:27:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+52)
@@ -34,4 +34,4 @@ Full index: `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `coaching`?
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/coaching-card/CLAUDE.index.md`? · `bot/shared/services/coaching/coaching-card/CLAUDE.md`? (+20)
+- docs: `bot/shared/services/CLAUDE.md`? · `docs/agent-customization.md`?

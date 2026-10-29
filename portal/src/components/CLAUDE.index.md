@@ -9,8 +9,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `icons/` | → (no door; 1 files) |
 | `ui/` | shadcn/ui primitives (Radix wrappers) used by landing and portal screens → `ui/CLAUDE.md` |
 | `AlwaysThere.tsx` | Landing section showing three 'moments' of support from i18n alwaysThere.moments, each with an illustration |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `FeatureCard.tsx` | Flip card for one landing feature: front text and bullets, back an animated WhatsAppChat; used by RealSupport |
 | `FinalCTA.tsx` | Closing landing call-to-action; chat link comes from useChatChannel and clicks go to trackCtaClick('footer') |
 | `GlobalTeachers.tsx` | Landing section about the global teacher community, with illustration and i18n text |
@@ -42,4 +40,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `Navigation.tsx` ← `portal/src/components/LandingChannel.test.tsx`
 
 ## Related (all, generated)
-- docs: `portal/src/CLAUDE.md`? · `portal/src/components/CLAUDE.index.md`? · `portal/src/components/CLAUDE.md`? · `portal/src/components/ui/CLAUDE.index.md`? · `portal/src/components/ui/CLAUDE.md`? · `portal/src/i18n/CLAUDE.md`?
+- docs: `portal/src/CLAUDE.md`? · `portal/src/i18n/CLAUDE.md`?

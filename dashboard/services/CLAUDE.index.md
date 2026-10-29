@@ -8,8 +8,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 |---|---|
 | `api-health/` | One health probe per vendor feeding the API Health page → `api-health/CLAUDE.md` |
 | `queue/` | → (no door; 1 files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `access-scope.service.js` | Creates and reads partner access scopes (country, school, phone list) in access_scopes for RLS; reads dashboard_users. |
 | `ama.service.js` | Stores AMA chats (ama_conversations, ama_messages); open-source build answers with a feature-disabled message. |
 | `auth.service.js` | Dashboard login, password hashing and user CRUD on dashboard_users; loads access_scopes, writes dashboard_audit_log. |
@@ -138,4 +136,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `video-observability.service.js` ← `dashboard/tests/video-observability-service.test.js`
 
 ## Related (all, generated)
-- docs: `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/services/CLAUDE.index.md`? · `dashboard/services/CLAUDE.md`? · `dashboard/services/api-health/CLAUDE.index.md`? · `dashboard/services/api-health/CLAUDE.md`? · `dashboard/tests/CLAUDE.index.md`? · `dashboard/tests/CLAUDE.md`? · `tests/dashboard/CLAUDE.index.md`? · `tests/dashboard/admin-view-escaping/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/portal/CLAUDE.index.md`? · `tests/routes/CLAUDE.index.md`? · `tests/storage/CLAUDE.md`?
+- docs: `dashboard/CLAUDE.md`?

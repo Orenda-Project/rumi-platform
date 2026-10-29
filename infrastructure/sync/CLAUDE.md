@@ -1,6 +1,6 @@
 # sync — Maintainer-only config for syncing internal code into this public repo
 
-<!-- kg:meta repo=rumi-platform dir=infrastructure/sync kg=2c6ff4091db3 gen=cc1e74f2d52b overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=infrastructure/sync kg=ec60b6ae04e5 gen=2c97b81aac1b overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `README.md` — what manifest.json and exclude.txt do
@@ -10,7 +10,6 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
 | `README.md` | Maintainer-only note on how manifest.json and exclude.txt drive internal-to-public syncing; ignorable for forks |
 | `manifest.json` | Canonical sync map: internal-to-public path mappings, exclude and publicOnly rules for the sync script |
 | `exclude.txt` | Human-readable list of paths never synced to the public repo; mirrors manifest.json exclude |
@@ -26,4 +25,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `SETUP.md`? · `infrastructure/CLAUDE.index.md`? · `infrastructure/CLAUDE.md`? · `infrastructure/scripts/CLAUDE.index.md`? · `infrastructure/scripts/CLAUDE.md`? · `infrastructure/sync/CLAUDE.md`? (+1)
+- docs: `SETUP.md`? · `infrastructure/CLAUDE.md`? · `infrastructure/scripts/CLAUDE.md`? · `infrastructure/sync/README.md`?

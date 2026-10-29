@@ -1,7 +1,7 @@
 # lib — Small pure helpers: CSP, rate limits, proxy IP, URL redaction, safe JSON
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=dashboard/lib kg=eaaaa6e1e885 gen=5c03272ea087 overflow=18 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=dashboard/lib kg=646c162631df gen=2073c8efbaba overflow=17 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `admin-csp.js` — nonce-based CSP for rendered admin views
@@ -13,11 +13,10 @@ Full index: `CLAUDE.index.md`
 | path | purpose |
 |---|---|
 | `safe-json.js` | Serialises data for inline script tags in EJS views, escaping < > & and U+2028/9 to prevent XSS. |
-| `CLAUDE.index.md` | (unmapped) |
 | `admin-csp.js` | Sets a per-request nonce CSP on rendered admin views (no unsafe-inline); applied from res.render. |
 | `portal*` | 3 files; most used `portal-auth-limits.js`: Redis-backed (memory fallback) per-IP and per-account rate limits for portal login, setup and reset routes. |
-| `CLAUDE.md` | (unmapped) |
-| … | 3 more → `CLAUDE.index.md` |
+| `client-ip.js` | Resolves the caller IP from TRUST_PROXY/X-Forwarded-For for per-IP rate limits. |
+| … | 4 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `client-ip.js` ← imported by `dashboard/index.js:60:3962e0d9` · `dashboard/lib/portal-auth-limits.js:42:0d418631`
@@ -38,4 +37,4 @@ Full index: `CLAUDE.index.md`
 - … 10 more → `CLAUDE.index.md`
 
 ## Related (generated)
-- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.index.md`? · `dashboard/CLAUDE.md`? · `dashboard/README.md`? · `dashboard/lib/CLAUDE.index.md`? · `dashboard/lib/CLAUDE.md`? (+9)
+- docs: `CHANGELOG.md`? · `dashboard/CLAUDE.md`? · `dashboard/README.md`? · `docs/features/admin-views-security.md`? · `portal/ANDROID.md`?

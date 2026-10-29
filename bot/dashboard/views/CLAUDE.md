@@ -1,6 +1,6 @@
 # views — Tailwind-CDN EJS pages for the legacy admin dashboard
 
-<!-- kg:meta repo=rumi-platform dir=bot/dashboard/views kg=5c5fcefd9940 gen=90c9789a49de overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/dashboard/views kg=e353ba0b8e43 gen=7ad13aa861e4 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `layout.ejs` — base wrapper
@@ -10,7 +10,6 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
 | `conversations.ejs` | Admin dashboard conversations list view (Tailwind CDN page) |
 | `dashboard.ejs` | Admin dashboard home view with bot activity statistics |
 | `error.ejs` | Admin dashboard error page |
@@ -29,4 +28,4 @@ _None found in code comments, tests or git log for this directory._
 - `tests/dashboard/admin-view-escaping/users.test.js`? (users.ejs)
 
 ## Related (generated)
-- docs: `bot/dashboard/CLAUDE.md`? · `tests/dashboard/admin-view-escaping/CLAUDE.md`?
+- docs: `bot/dashboard/CLAUDE.md`?

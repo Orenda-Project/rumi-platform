@@ -1,7 +1,6 @@
 # score-adapters — Per-framework adapters turning analysis_data into hero scorecard groups
-Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/report-v2/score-adapters kg=97425df56698 gen=6a4e530d22fa overflow=2 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/report-v2/score-adapters kg=97425df56698 gen=a91076024cae overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `dispatch.js` — routes a framework key to its adapter, empty scorecard if unknown
@@ -11,8 +10,6 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `dispatch.js` | Routes a framework key to its score-adapter, with an empty scorecard for unknown frameworks |
 | `teach-adapter.js` | Builds the 3 Teach areas plus Time on Task groups (scale 1-5) for the hero scorecard |
 | `fico-adapter.js` | Builds the 5 FICO domain groups (scale 1-4) for the hero scorecard |
@@ -25,7 +22,8 @@ Full index: `CLAUDE.index.md`
 - `fico-adapter.js` ← imported by `bot/shared/services/coaching/report-v2/score-adapters/dispatch.js:18:0e2e3e52`
 - `hots-adapter.js` ← imported by `bot/shared/services/coaching/report-v2/score-adapters/dispatch.js:16:e71b22d3`
 - `mewaka-adapter.js` ← imported by `bot/shared/services/coaching/report-v2/score-adapters/dispatch.js:19:c27f8f87`
-- … 2 more → `CLAUDE.index.md`
+- `oecd-adapter.js` ← imported by `bot/shared/services/coaching/report-v2/score-adapters/dispatch.js:15:f32d85b5`
+- `teach-adapter.js` ← imported by `bot/shared/services/coaching/report-v2/score-adapters/dispatch.js:17:3c9fa161`
 
 ## Never (human)
 - A framework adapter must be added as one line in dispatch.js (bot/shared/services/coaching/report-v2/score-adapters/dispatch.js:9)
@@ -36,4 +34,4 @@ Full index: `CLAUDE.index.md`
 - `tests/observe/observe-framework-pack.test.js` (teach-adapter.js)
 
 ## Related (generated)
-- docs: `bot/shared/services/coaching/report-v2/CLAUDE.index.md`? · `bot/shared/services/coaching/report-v2/CLAUDE.md`? · `bot/shared/services/coaching/report-v2/score-adapters/CLAUDE.index.md`? · `bot/shared/services/coaching/report-v2/score-adapters/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/customization.md`? (+4)
+- docs: `bot/shared/services/coaching/report-v2/CLAUDE.md`? · `docs/customization.md`? · `docs/features/coaching.md`?

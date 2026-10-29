@@ -6,10 +6,9 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `fixtures/` | → (no door; 3 test files) |
+| `fixtures/` | → (no door; 3 files: 0 test + 3 support) |
 | `helpers/` | Shared stubs and fixtures for quiz suites: Supabase fakes, solver, KaTeX, PDF ink readers → `helpers/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `__snapshots__/` | → (not mapped: excluded; 1 files) |
 | `base-ten-thousands.test.js` | Pins the base_ten place-value mat's new thousands place: cube/bundle drawing, column order in Urdu, digest guidance |
 | `classic-quiz-recovers-own-sessions.test.js` | Pins that QuizSessionService.getActiveState recovers only roster sessions on a Redis miss, not class-quiz ones |
 | `lesson-quiz-bullmq-poll.test.js` | Pins that sqs-worker polls the BullMQ quiz queue when QUEUE_DRIVER=bullmq without SQS_QUIZ_QUEUE_URL |
@@ -220,15 +219,10 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `video-report-timing.test.js` | Pins the class report landing 12 hours after the first join, shifted out of quiet hours, and its wrong-answer wording |
 
 ## Who reads this (all, generated)
-- env `CHANNEL_DRIVER` read at `tests/quiz/transcript-quiz-figure-frame.test.js:62:937e956c` · `tests/quiz/transcript-quiz-multi.test.js:90:937e956c` · `tests/quiz/transcript-quiz-r4-live-fixes.test.js:26:937e956c` · `tests/quiz/transcript-quiz-typeset-maths.test.js:147:937e956c` · `tests/quiz/video-quiz-binge-channel.test.js:32:82213df7` · `tests/quiz/video-quiz-typed-answer.test.js:101:6753e8e8`
-- env `CLASS_CARD_ENABLED` read at `tests/quiz/quiz-render-untrusted.test.js:112:b8314f31` · `tests/quiz/video-quiz-class-card-names.test.js:44:b9f4f4ee` · `tests/quiz/video-quiz-class-card-window.test.js:52:b9f4f4ee`
-- env `DEFAULT_PHONE_COUNTRY_CODE` read at `tests/quiz/student-identity-key.test.js:36:4e145ba9`
-- env `QUIET_HOURS` read at `tests/quiz/video-quiz-join-invite.test.js:145:94e731c6`
-- env `QUIZ_URDU_SPACING_V2` read at `tests/quiz/multi-question-card.test.js:56:c605dd16` · `tests/quiz/urdu-line-spacing.test.js:50:01417535`
-- env `TRANSCRIPT_QUIZ_ENABLED` read at `tests/quiz/lesson-quiz-text-wiring.test.js:134:f2de6521` · `tests/quiz/video-quiz-typed-answer.test.js:102:91fdaf7d`
+- (none)
 
 ## Tests (all, generated)
 - (none)
 
 ## Related (all, generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/scripts/setup/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/routes/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/cache/CLAUDE.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.index.md`? · `bot/shared/services/messaging/CLAUDE.index.md`? · `bot/shared/services/queue/CLAUDE.index.md`? · `bot/shared/services/quiz/CLAUDE.index.md`? · `bot/shared/services/quiz/CLAUDE.md`? · `bot/shared/services/quiz/providers/CLAUDE.index.md`? · `bot/shared/services/quiz/providers/CLAUDE.md`? · `bot/shared/templates/CLAUDE.index.md`? · `bot/shared/templates/CLAUDE.md`? · `bot/shared/utils/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/lib/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/lib/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/types/CLAUDE.index.md`? · `bot/vendor/lp-v9/diagrams/types/CLAUDE.md`? · `bot/workers/CLAUDE.index.md`? · `tests/CLAUDE.index.md`? · `tests/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/quiz/CLAUDE.md`? · `tests/quiz/helpers/CLAUDE.index.md`? · `tests/quiz/helpers/CLAUDE.md`?
+- docs: `bot/shared/services/cache/CLAUDE.md`? · `bot/shared/services/quiz/providers/CLAUDE.md`? · `bot/shared/templates/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/lib/CLAUDE.md`? · `bot/vendor/lp-v9/diagrams/types/CLAUDE.md`? · `tests/CLAUDE.md`?

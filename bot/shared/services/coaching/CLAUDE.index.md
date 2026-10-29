@@ -16,8 +16,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `report-transformers/` | Per-framework analysis to generic reportData for the PDF renderers → `report-transformers/CLAUDE.md` |
 | `report-v2/` | Hero coaching report image: score view model, narrative, template, PNG → `report-v2/CLAUDE.md` |
 | `templates/` | → (no door; 1 files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `analysis-processor.service.js` | Runs pedagogical analysis on a session and writes results to coaching_sessions; called via the orchestrator |
 | `coaching-flow-buttons.js` | Handles the photo_yes/no/more/done buttons and advances coaching_sessions status; wired in whatsapp-bot.js |
 | `coaching-helpers.service.js` | Coaching utilities: output language, quality metrics into coaching_quality_metrics, cost maths |
@@ -81,4 +79,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `coaching`?
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/CLAUDE.md`? · `bot/shared/services/coaching/coaching-card/CLAUDE.index.md`? · `bot/shared/services/coaching/coaching-card/CLAUDE.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.index.md`? · `bot/shared/services/coaching/fidelity/CLAUDE.md`? · `bot/shared/services/coaching/frameworks/CLAUDE.index.md`? · `bot/shared/services/coaching/frameworks/CLAUDE.md`? · `bot/shared/services/coaching/lp-coaching/CLAUDE.index.md`? · `bot/shared/services/coaching/lp-coaching/CLAUDE.md`? · `bot/shared/services/coaching/reflective-questions/CLAUDE.index.md`? · `bot/shared/services/coaching/reflective-questions/CLAUDE.md`? · `bot/shared/services/coaching/report-transformers/CLAUDE.index.md`? · `bot/shared/services/coaching/report-transformers/CLAUDE.md`? · `bot/shared/services/coaching/report-v2/CLAUDE.index.md`? · `bot/shared/services/coaching/report-v2/CLAUDE.md`? · `bot/tests/services/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/agent-customization.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/limits/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/services/CLAUDE.md`?
+- docs: `bot/shared/services/CLAUDE.md`? · `docs/agent-customization.md`?

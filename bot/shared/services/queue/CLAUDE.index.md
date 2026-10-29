@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `bullmq-queue.service.js` | BullMQ/Redis queue driver with the same method surface as the SQS driver (QUEUE_DRIVER=bullmq, needs only REDIS_URL) |
 | `dedup-variant.js` | Computes the dedup suffix beyond session+jobType (report phase, debrief nonce) shared by SQS and BullMQ drivers |
 | `index.js` | Selects the queue driver from QUEUE_DRIVER (sqs default, bullmq); every producer and worker requires this |
@@ -41,4 +39,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `sqs-queue.service.js` ← `tests/queue/coaching-job-dedup-phase.test.js` · `tests/queue/queue-driver-index.test.js` · `tests/queue/queue-driver-parity.test.js` · `tests/queue/sqs-cancel-by-group.test.js` · `tests/quiz/sqs-queue-quiz.test.js` · `tests/quiz/transcript-quiz-generate.test.js` (+1: `python3 kg/kg.py who-reads bot/shared/services/queue/sqs-queue.service.js`)
 
 ## Related (all, generated)
-- docs: `CLAUDE.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/README.md`? · `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/queue/CLAUDE.index.md`? · `bot/shared/services/queue/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/agent-customization.md`? · `docs/architecture.md`? · `docs/onboarding/sandbox-production-design.md`? · `tests/gateway/CLAUDE.index.md`? · `tests/queue/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `CLAUDE.md`? · `bot/README.md`? · `bot/shared/services/CLAUDE.md`? · `docs/agent-customization.md`? · `docs/architecture.md`? · `docs/onboarding/sandbox-production-design.md`?

@@ -6,9 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `__mocks__/` | → (no door; 2 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `__mocks__/` | → (no door; 2 files: 0 test + 2 support) |
 | `alphabet-grid-generator.js` | Draws the 14-letter alphabet assessment grid image with node-canvas for reading assessments |
 | `canvas-loader.js` | Loads native canvas and chartjs-node-canvas gracefully; reports availability instead of crashing |
 | `constants.js` | Reads WhatsApp, API and path env vars into module constants at require time (~50 of them), shared bot-wide |
@@ -160,4 +158,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `debugging`? · `logging`? · `whatsapp-flows`?
-- docs: `CHANGELOG.md`? · `SETUP.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/shared/CLAUDE.md`? · `bot/shared/utils/CLAUDE.index.md`? · `bot/shared/utils/CLAUDE.md`? · `bot/tests/unit/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/test-papers.md`? · `tests/attendance/CLAUDE.index.md`? · `tests/coaching/CLAUDE.index.md`? · `tests/coaching/fidelity/CLAUDE.index.md`? · `tests/edit-class/CLAUDE.md`? · `tests/gateway/CLAUDE.index.md`? · `tests/language/CLAUDE.md`? · `tests/messaging/CLAUDE.index.md`? · `tests/observe/CLAUDE.index.md`? · `tests/quiz/CLAUDE.index.md`? · `tests/region/CLAUDE.md`? · `tests/registration/CLAUDE.md`? · `tests/setup/CLAUDE.index.md`? · `tests/telemetry/CLAUDE.md`? · `tests/unit/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `SETUP.md`? · `bot/shared/CLAUDE.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/features/test-papers.md`?

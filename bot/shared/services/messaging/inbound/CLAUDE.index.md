@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `baileys-socket.adapter.js` | Converts Baileys message events into Meta-webhook-shaped payloads for handleWebhookPost in whatsapp-bot |
 | `discord-events.adapter.js` | Converts Discord Gateway events into Meta-webhook-shaped payloads dispatched into handleWebhookPost |
 | `matrix-events.adapter.js` | Converts Matrix sync events, media and button replies into webhook-shaped payloads for handleWebhookPost |
@@ -27,4 +25,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `slack-events.adapter.js` ← `tests/gateway/differential.test.js` · `tests/messaging/slack-events-adapter.test.js`
 
 ## Related (all, generated)
-- docs: `bot/shared/services/messaging/CLAUDE.index.md`? · `bot/shared/services/messaging/CLAUDE.md`? · `bot/shared/services/messaging/inbound/CLAUDE.index.md`? · `bot/shared/services/messaging/inbound/CLAUDE.md`? · `tests/gateway/CLAUDE.index.md`? · `tests/gateway/CLAUDE.md`? · `tests/messaging/CLAUDE.index.md`?
+- docs: `bot/shared/services/messaging/CLAUDE.md`?

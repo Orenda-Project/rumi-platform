@@ -1,6 +1,6 @@
 # _audit-helpers — Shared require-graph builder behind the circular, orphan and unresolved-require guards
 
-<!-- kg:meta repo=rumi-platform dir=tests/setup/_audit-helpers kg=543ec77b55ca gen=abdb8517e630 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/setup/_audit-helpers kg=543ec77b55ca gen=7bbb43c21227 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `require-graph.js` — builds reachability from entry points; read it before touching the audit guards
@@ -10,7 +10,6 @@
 | path | purpose |
 |---|---|
 | `require-graph.js` | Builds the static require graph from bot entry points; used by the circular-dep, orphan and unresolved-require guards |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - (none)
@@ -23,4 +22,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `tests/setup/CLAUDE.index.md`? · `tests/setup/CLAUDE.md`? · `tests/setup/_audit-helpers/CLAUDE.md`?
+- docs: `tests/setup/CLAUDE.md`?

@@ -1,7 +1,7 @@
 # observe — Coach observation pipeline: capture, review form, debrief, teacher report
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/observe kg=10ee3cce13c5 gen=cb17bb07762b overflow=136 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/observe kg=97d185cd9336 gen=39bbce35f837 overflow=133 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `observe-capture.service.js` — starts an observation from a recording
@@ -15,11 +15,12 @@ Full index: `CLAUDE.index.md`
 | `observe-strings.js` | All /observe user-facing copy as a language pack with English base and per-key overrides |
 | `observe-state.service.js` | Redis state machine for a coach's capture steps (pick, audio, form, debrief audio) with 2h TTL |
 | `observe-framework.js` | Observe framework pack selecting TEACH, HOTS or MEWAKA rubric by OBSERVE_FRAMEWORK for the pipeline |
-| … | 36 more → `CLAUDE.index.md` |
+| … | 34 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - table `coaching_sessions` (written by `observe-capture.service.js` (+8)) ← read by `bot/scripts/generate-coaching-excel.js:27:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+52)
-- … 58 more → `CLAUDE.index.md`
+- column `coaching_sessions.status` (written by `observe-capture.service.js` (+4)) ← read by `bot/scripts/generate-coaching-excel.js:41:48a3661d` · `bot/shared/handlers/image-message.handler.js:110:bba4595e` (+28)
+- … 73 more → `CLAUDE.index.md`
 
 ## Never (human)
 - The coach never sees a score or rubric internals (bot/shared/services/observe/observe-coach-feedback.js:11)
@@ -33,4 +34,4 @@ Full index: `CLAUDE.index.md`
 - … 42 more → `CLAUDE.index.md`
 
 ## Related (generated)
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/observe/CLAUDE.index.md`? · `bot/shared/services/observe/CLAUDE.md`? · `tests/observe/CLAUDE.index.md`? · `tests/services/CLAUDE.md`?
+- docs: `bot/shared/services/CLAUDE.md`?

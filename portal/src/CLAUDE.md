@@ -1,6 +1,6 @@
 # src — Portal source: entry, routes, landing site, libs, i18n and the /portal app
 
-<!-- kg:meta repo=rumi-platform dir=portal/src kg=e2df0a957289 gen=5b336d4117e2 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=portal/src kg=e2df0a957289 gen=81cebe8a0c40 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `App.tsx` — router; decides landing vs portal at / via isPortalTarget
@@ -18,8 +18,7 @@
 | `lib/` | Pure rules and adapters: app/portal detection, API base url, back key, tracking → `lib/CLAUDE.md` |
 | `pages/` | Public marketing pages: landing, how-it-works and the 404 → `pages/CLAUDE.md` |
 | `portal/` | The signed-in teacher and coach portal: pages, API client, auth hook, types → `portal/CLAUDE.md` |
-| `test/` | → (no door; 1 test files) |
-| `CLAUDE.md` | (unmapped) |
+| `test/` | → (no door; 1 files: 0 test + 1 support) |
 | `App.tsx` | Root component: query client, i18n lang/dir, and the route table for landing, /portal/* and /portal/observe pages |
 | `index.css` | Tailwind layers plus the HSL design tokens (navy primary, coral accent), gradients and dark-mode variables |
 | `main.tsx` | Entry point: imports styles and i18n config, then renders App into #root |
@@ -37,4 +36,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `portal/CLAUDE.index.md`? · `portal/CLAUDE.md`? · `portal/src/CLAUDE.md`? · `portal/src/components/CLAUDE.index.md`? · `portal/src/components/CLAUDE.md`? · `portal/src/hooks/CLAUDE.md`? (+5)
+- docs: `portal/CLAUDE.md`?

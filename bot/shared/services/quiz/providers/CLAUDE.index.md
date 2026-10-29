@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `lp-generated.provider.js` | /quiz lesson provider listing a teacher's recent lesson_plans without a quiz and starting one on tap; writes quizzes |
 | `topic.provider.js` | /quiz on a typed topic: asks for the topic, dedups, and starts a topic-sourced quiz row in quizzes |
 
@@ -30,4 +28,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `topic.provider.js` ← `tests/quiz/quiz-lesson-providers.test.js`
 
 ## Related (all, generated)
-- docs: `bot/shared/services/quiz/CLAUDE.index.md`? · `bot/shared/services/quiz/CLAUDE.md`? · `bot/shared/services/quiz/providers/CLAUDE.index.md`? · `bot/shared/services/quiz/providers/CLAUDE.md`? · `tests/quiz/CLAUDE.index.md`?
+- docs: `bot/shared/services/quiz/CLAUDE.md`?

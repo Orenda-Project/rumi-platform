@@ -1,7 +1,7 @@
 # quiz — Class quizzes: lesson quiz from recording/plan/topic, video quiz, parent quiz, reports
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/quiz kg=5efe6112b6e6 gen=4853db8d8903 overflow=375 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/quiz kg=bc3ad4b2959e gen=109bb9efd29e overflow=372 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `transcript-quiz-generate.service.js` — worker step: digest, author, validate, key-check, store, hand off
@@ -14,12 +14,13 @@ Full index: `CLAUDE.index.md`
 |---|---|
 | `providers/` | /quiz lesson providers for lesson plans and typed topics → `providers/CLAUDE.md` |
 | `transcript-quiz-generate.service.js` | Worker step after "yes": resolve source, digest, author, validate, key-check, blind solve, store rows, PDF, hand off |
-| … | 63 more → `CLAUDE.index.md` |
+| `transcript-quiz-validator.js` | Pure deterministic validator run on every authored quiz before storage (shape, language, figures, key rules) |
+| … | 68 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - table `quizzes` (written by `quiz-delivery.service.js` (+10)) ← read by `bot/shared/routes/quiz-flow-endpoint.js:224:2c6afb51`? · `bot/shared/services/teacher-state.service.js:145:2c6afb51`? (+20)
 - table `lesson_plans` (written by `quiz-scheduler.service.js`) ← read by `bot/shared/database/bot-helpers.js:553:611f2601`? · `bot/shared/routes/quiz-flow-endpoint.js:158:611f2601`? (+19)
-- … 122 more → `CLAUDE.index.md`
+- … 142 more → `CLAUDE.index.md`
 
 ## Never (human)
 - Add quiz_source values only in quiz-sources.js; the quizzes table is shared by several lanes (bot/shared/services/quiz/quiz-sources.js:3)
@@ -31,4 +32,4 @@ Full index: `CLAUDE.index.md`
 - … 190 more → `CLAUDE.index.md`
 
 ## Related (generated)
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/quiz/CLAUDE.index.md`? · `bot/shared/services/quiz/CLAUDE.md`? · `bot/shared/services/quiz/providers/CLAUDE.index.md`? · `bot/shared/services/quiz/providers/CLAUDE.md`? (+9)
+- docs: `bot/shared/services/CLAUDE.md`? · `docs/features/quiz.md`? · `docs/features/video-quizzes.md`?

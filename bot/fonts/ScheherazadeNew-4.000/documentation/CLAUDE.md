@@ -1,7 +1,7 @@
 # documentation — Upstream HTML documentation for the Scheherazade New font
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000/documentation kg=fb00b04451c9 gen=a45d6e4d61ee overflow=7 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/fonts/ScheherazadeNew-4.000/documentation kg=fb00b04451c9 gen=cc0c2ce3520a overflow=4 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `index.html` — documentation entry page
@@ -13,8 +13,6 @@ Full index: `CLAUDE.index.md`
 |---|---|
 | `assets/` | Stylesheets for the upstream font documentation pages → `assets/CLAUDE.md` |
 | `source/` | Markdown sources the upstream font docs are built from → `source/CLAUDE.md` |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `DOCUMENTATION.txt` | Pointer to the font's documentation index.html; upstream file, reference only |
 | `about.html` | Built HTML doc page on about the font and its authors for the Scheherazade New font; reference only |
 | `allah.html` | Built HTML doc page on the Allah ligature feature for the Scheherazade New font; reference only |
@@ -24,7 +22,10 @@ Full index: `CLAUDE.index.md`
 | `developer.html` | Built HTML doc page on developer notes on building and using the font for the Scheherazade New font; reference only |
 | `faq.html` | Built HTML doc page on frequently asked questions for the Scheherazade New font; reference only |
 | `features.html` | Built HTML doc page on the OpenType and Graphite features for the Scheherazade New font; reference only |
-| … | 7 more → `CLAUDE.index.md` |
+| `history.html` | Built HTML doc page on the font's history for the Scheherazade New font; reference only |
+| `honorifics.html` | Built HTML doc page on honorific ligature handling for the Scheherazade New font; reference only |
+| `index.html` | Built HTML doc page on the documentation index for the Scheherazade New font; reference only |
+| … | 4 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)
@@ -37,4 +38,4 @@ _None found in code comments, tests or git log for this directory._
 - (none)
 
 ## Related (generated)
-- docs: `bot/fonts/ScheherazadeNew-4.000/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/CLAUDE.index.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/assets/CLAUDE.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/CLAUDE.index.md`? · `bot/fonts/ScheherazadeNew-4.000/documentation/source/CLAUDE.md`?
+- docs: `bot/fonts/ScheherazadeNew-4.000/CLAUDE.md`?

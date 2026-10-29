@@ -6,8 +6,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `caption-prefill.js` | Regex-extracts grade/subject/topic/language from a photo caption to pre-fill the pic-LP form before the LLM runs |
 | `classifier.service.js` | One vision call deciding if an incoming image is a textbook page (BOOK_PAGE) vs classroom/student work/other |
 | `completion-handler.service.js` | When page collection ends, runs metadata extraction and sends the pic-LP confirmation Flow; reads users |
@@ -60,4 +58,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `pic-lp-wait-message.service.js` ← `tests/pic-to-lp/pic-lp-wait-message.test.js`
 
 ## Related (all, generated)
-- docs: `bot/shared/services/CLAUDE.index.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/pic-to-lp/CLAUDE.index.md`? · `bot/shared/services/pic-to-lp/CLAUDE.md`? · `docs/CLAUDE.index.md`? · `docs/agent-customization.md`? · `docs/customization.md`? · `docs/features/CLAUDE.index.md`? · `docs/features/pic-to-lp.md`? · `tests/pic-to-lp/CLAUDE.index.md`? · `tests/pic-to-lp/CLAUDE.md`? · `tests/reports/CLAUDE.md`?
+- docs: `bot/shared/services/CLAUDE.md`? · `docs/agent-customization.md`? · `docs/customization.md`? · `docs/features/pic-to-lp.md`?

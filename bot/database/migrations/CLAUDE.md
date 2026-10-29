@@ -1,7 +1,7 @@
 # migrations — SQL migrations adding bot tables and columns, run manually against Supabase
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/database/migrations kg=dfa902d5d36e gen=e560a037e212 overflow=119 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/database/migrations kg=dfa902d5d36e gen=01a669366773 overflow=118 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `003_classroom_coaching.sql` — coaching_sessions plus the job-queue functions the workers call
@@ -12,12 +12,11 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| `CLAUDE.md` | (unmapped) |
-| `CLAUDE.index.md` | (unmapped) |
 | `014_attendance_tables.sql` | Creates student_lists, students, attendance_sessions, attendance_records with RLS and summary functions |
 | `015_exam_checker.sql` | Creates exam_check_sessions, exam_submissions, exam_grades, grade_audit_log and exam_templates |
 | `001_add_chat_sessions.sql` | Creates chat_sessions table with 30-minute timeout tracking and links conversations to a session |
-| … | 20 more → `CLAUDE.index.md` |
+| `002_add_registration_fields.sql` | Adds first/last name, school, subjects_taught, turn_count to users and the increment_turn_count() function |
+| … | 28 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - table `users` (written by `002_add_registration_fields.sql` (+4)) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+55)
@@ -34,4 +33,4 @@ Full index: `CLAUDE.index.md`
 - (none)
 
 ## Related (generated)
-- docs: `CHANGELOG.md`? · `bot/database/CLAUDE.index.md`? · `bot/database/CLAUDE.md`? · `bot/database/migrations/CLAUDE.index.md`? · `bot/database/migrations/CLAUDE.md`? · `docs/features/CLAUDE.index.md`? (+2)
+- docs: `CHANGELOG.md`? · `bot/database/CLAUDE.md`? · `docs/features/attendance.md`?

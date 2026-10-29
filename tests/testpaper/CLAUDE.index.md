@@ -6,9 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `helpers/` | → (no door; 1 test files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
+| `helpers/` | → (no door; 1 files: 0 test + 1 support) |
 | `import-curriculum-corpus.test.js` | Pins import-curriculum-corpus script: page-truth into textbooks, textbook_toc and textbook_pages that papers draw on |
 | `live-wiring-text.test.js` | Drives real handleTextMessage so /testpaper reaches the orchestrator (the connecting line in the live handler) |
 | `live-wiring-webhook.test.js` | POSTs Meta-shaped webhooks into real handleWebhookPost to pin /testpaper wiring in whatsapp-bot.js |
@@ -34,4 +32,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `bot/CLAUDE.index.md`? · `bot/shared/config/CLAUDE.index.md`? · `bot/shared/handlers/CLAUDE.index.md`? · `bot/shared/services/testpaper/CLAUDE.index.md`? · `bot/shared/services/testpaper/CLAUDE.md`? · `bot/workers/CLAUDE.index.md`? · `tests/CLAUDE.index.md`? · `tests/CLAUDE.md`? · `tests/testpaper/CLAUDE.index.md`? · `tests/testpaper/CLAUDE.md`?
+- docs: `bot/shared/services/testpaper/CLAUDE.md`? · `tests/CLAUDE.md`?

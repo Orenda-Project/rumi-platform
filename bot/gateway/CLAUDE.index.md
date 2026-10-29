@@ -7,8 +7,6 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | path | purpose |
 |---|---|
 | `adapters/` | → (no door; 2 files) |
-| `CLAUDE.index.md` | (unmapped) |
-| `CLAUDE.md` | (unmapped) |
 | `dashboard.html` | Static page documenting the gateway architecture and its verification results (design artefact, not served) |
 | `envelope.js` | Defines the channel-agnostic inbound envelope and converts a WhatsApp request into it |
 | `index.js` | Gateway hub: composes the WhatsApp and Slack routers; setupGateway(app) mounts /webhook and /api/slack |
@@ -38,4 +36,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `webhook.routes.js` ← `tests/gateway/adversarial-stress.test.js` · `tests/gateway/empirical-adversarial-challenger.test.js` · `tests/gateway/gateway-queue-integration.test.js` · `tests/gateway/iteration2-empirical-adversarial-verification.test.js` · `tests/gateway/webhook-gateway.test.js`
 
 ## Related (all, generated)
-- docs: `TEST_READY.md`? · `bot/CLAUDE.index.md`? · `bot/CLAUDE.md`? · `bot/gateway/CLAUDE.index.md`? · `bot/gateway/CLAUDE.md`? · `docs/intent/webhook-gateway-modernization.md`? · `tests/characterization/CLAUDE.md`? · `tests/gateway/CLAUDE.index.md`? · `tests/gateway/CLAUDE.md`?
+- docs: `TEST_READY.md`? · `bot/CLAUDE.md`? · `docs/intent/webhook-gateway-modernization.md`?

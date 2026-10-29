@@ -1,6 +1,6 @@
 # _helpers — Fake Supabase client shared by the observe suites
 
-<!-- kg:meta repo=rumi-platform dir=tests/observe/_helpers kg=b147813101c5 gen=76d925129203 overflow=0 rendered=2026-10-28 kg.py=1.0.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/observe/_helpers kg=b147813101c5 gen=707f2bb03308 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `fake-supabase.js` — in-memory query builder; usage notes in its header
@@ -10,7 +10,6 @@
 | path | purpose |
 |---|---|
 | `fake-supabase.js` | Helper: in-memory Supabase query-builder (filters, joins, upsert, count) so observe code runs for real in tests |
-| `CLAUDE.md` | (unmapped) |
 
 ## Who reads this (generated)
 - (none)
@@ -23,4 +22,4 @@
 - (none)
 
 ## Related (generated)
-- docs: `tests/observe/CLAUDE.index.md`? · `tests/observe/CLAUDE.md`? · `tests/observe/_helpers/CLAUDE.md`?
+- docs: `tests/observe/CLAUDE.md`?
