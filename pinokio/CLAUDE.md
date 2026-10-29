@@ -1,7 +1,7 @@
 # pinokio — One-click Pinokio launcher: install, setup, start, update scripts, GUI wizard
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=pinokio kg=6311852e1b20 gen=153bafd20d31 overflow=9 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio kg=a40414105004 gen=bba14839b0d7 overflow=10 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `README.md` — user guide
@@ -23,8 +23,7 @@ Full index: `CLAUDE.index.md`
 | `pair.js` | Pinokio script that runs the interactive `rumi pair` WhatsApp link in the terminal |
 | `reset.js` | Pinokio script removing bot/node_modules to return to fresh-clone dependencies, keeping .env and session |
 | `setup.js` | Pinokio script running the interactive `rumi setup` wizard with QUEUE_DRIVER=bullmq |
-| `start.js` | Pinokio Start daemon: starts Redis and the bot, captures its port and prints the console URL |
-| … | 6 more → `CLAUDE.index.md` |
+| … | 7 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)

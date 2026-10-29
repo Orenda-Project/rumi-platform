@@ -1,7 +1,7 @@
 # onboarding — GUI setup wizard server: five steps beside Rumi's console, loopback only
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding kg=5661a3108c68 gen=097d095d40ff overflow=5 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding kg=61e58ad24f1e gen=021f51ee6a9c overflow=5 rendered=2026-10-29 kg.py=1.1.0 -->
 
 ## Entry points
 - `server.js` — mounts the console and the wizard UI
@@ -14,8 +14,8 @@ Full index: `CLAUDE.index.md`
 |---|---|
 | `public/` | Browser UI of the wizard: step machine, DOM helpers, API client, styles → `public/CLAUDE.md` |
 | `routes/` | API routes behind the wizard: credentials, database, whatsapp → `routes/CLAUDE.md` |
-| `async-route.js` | Wraps an async express handler so a rejected promise reaches the error handler |
 | `bridge.js` | The only module that requires Rumi checkout code; each load is defensive so one rename disables one step |
+| `async-route.js` | Wraps an async express handler so a rejected promise reaches the error handler |
 | `local-redis.js` | Starts a local Redis for the wizard only when a check needs one and REDIS_URL points at this machine |
 | `sse.js` | Server-sent-events helper (anti-buffering headers) for streaming schema progress and QR codes |
 | `guards.js` | Loopback-only, Host allowlist, no-CORS and custom-header guards for the wizard's routes |
