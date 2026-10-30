@@ -2312,8 +2312,8 @@ async function handleLessonPlanRequest(from, messageBody, user, sessionId, respo
     const topic = await OpenAIService.extractTopic(messageBody);
     logToFile('Topic extracted', { topic });
 
-    // Detect explicitly requested language (defaults to 'en')
-    const contentLanguage = detectRequestedLanguage(messageBody);
+    // Explicit request > Indian script > Indian saved language > English
+    const contentLanguage = detectRequestedLanguage(messageBody, { preferredLanguage: user?.preferred_language });
     logToFile('Content language detected', { contentLanguage, messageBody: messageBody.substring(0, 100) });
 
     // Queue lesson plan for async processing (survives server restarts)
@@ -2443,8 +2443,8 @@ async function handlePresentationRequest(from, messageBody, user, sessionId, res
     const topic = await OpenAIService.extractTopic(messageBody);
     logToFile('Topic extracted', { topic });
 
-    // Detect explicitly requested language (defaults to 'en')
-    const contentLanguage = detectRequestedLanguage(messageBody);
+    // Explicit request > Indian script > Indian saved language > English
+    const contentLanguage = detectRequestedLanguage(messageBody, { preferredLanguage: user?.preferred_language });
     logToFile('Content language detected for presentation', { contentLanguage });
 
     // Queue presentation for async processing (survives server restarts)
