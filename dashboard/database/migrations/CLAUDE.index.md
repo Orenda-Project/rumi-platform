@@ -103,16 +103,16 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - column `release_notes.id` (written by `014_create_release_notes_table.sql`) ← read by `dashboard/database/queries.js:1392:5084f150`
 - column `release_notes.title` (written by `014_create_release_notes_table.sql`) ← read by `dashboard/database/queries.js:1392:5084f150`
 - column `release_notes.version` (written by `014_create_release_notes_table.sql`) ← read by `dashboard/database/queries.js:1392:5084f150`
-- column `users.first_message_at` (written by `001_create_funnel_tables.sql`, `002_add_user_funnel_columns.sql`) ← read by `dashboard/database/verify-funnel-migration.js:50:680bf0db`
+- column `users.first_message_at` (written by `001_create_funnel_tables.sql`, `002_add_user_funnel_columns.sql`) ← read by `dashboard/database/verify-funnel-migration.js:46:680bf0db`
 - column `users.password_reset_code` (written by `add_portal_authentication.sql`) ← read by `dashboard/services/password-reset.service.js:244:b7d38e8a`
 - column `users.password_reset_expires_at` (written by `add_portal_authentication.sql`) ← read by `dashboard/services/password-reset.service.js:244:b7d38e8a`
 - column `users.portal_activated` (written by `add_portal_authentication.sql`) ← read by `bot/scripts/observe-roster.js:81:44b70a83` · `bot/shared/services/portal-invite.service.js:293:7575bd4a` · `dashboard/routes/portal.routes.js:254:7575bd4a` · `dashboard/services/password-reset.service.js:91:0bba03e7` (+1: `python3 kg/kg.py who-reads users.portal_activated`)
 - column `users.portal_invite_expires_at` (written by `add_portal_authentication.sql`) ← read by `bot/shared/services/portal-invite.service.js:293:7575bd4a` · `dashboard/routes/portal.routes.js:254:7575bd4a`
 - column `users.portal_invite_token` (written by `add_portal_authentication.sql`) ← read by `bot/shared/services/portal-invite.service.js:294:53285ac9` · `dashboard/routes/portal.routes.js:255:53285ac9`
 - column `users.portal_password_hash` (written by `add_portal_authentication.sql`) ← read by `dashboard/routes/portal.routes.js:442:90501a4d`
-- column `users.registered_at` (written by `001_create_funnel_tables.sql`, `002_add_user_funnel_columns.sql`) ← read by `dashboard/database/verify-funnel-migration.js:50:680bf0db`
-- column `users.session_id` (written by `001_create_funnel_tables.sql`, `002_add_user_funnel_columns.sql`) ← read by `dashboard/database/verify-funnel-migration.js:50:680bf0db`
-- column `users.source` (written by `001_create_funnel_tables.sql`, `002_add_user_funnel_columns.sql`) ← read by `dashboard/database/verify-funnel-migration.js:50:680bf0db`
+- column `users.registered_at` (written by `001_create_funnel_tables.sql`, `002_add_user_funnel_columns.sql`) ← read by `dashboard/database/verify-funnel-migration.js:46:680bf0db`
+- column `users.session_id` (written by `001_create_funnel_tables.sql`, `002_add_user_funnel_columns.sql`) ← read by `dashboard/database/verify-funnel-migration.js:46:680bf0db`
+- column `users.source` (written by `001_create_funnel_tables.sql`, `002_add_user_funnel_columns.sql`) ← read by `dashboard/database/verify-funnel-migration.js:46:680bf0db`
 - column `video_requests.completed_at` (written by `013_create_video_requests_table.sql`) ← read by `dashboard/routes/portal.routes.js:1871:0b0b6afb`
 - column `video_requests.created_at` (written by `013_create_video_requests_table.sql`) ← read by `bot/shared/services/context.service.js:185:e8356999` · `dashboard/database/queries.js:743:06c5e28d` · `dashboard/routes/portal.routes.js:1871:0b0b6afb`
 - column `video_requests.current_step` (written by `013_create_video_requests_table.sql`) ← read by `bot/workers/video-generation.worker.js:74:790c0376`

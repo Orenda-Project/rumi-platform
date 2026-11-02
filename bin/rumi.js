@@ -149,53 +149,93 @@ async function waitForHealth(url, { timeoutMs = 30000, intervalMs = 400, fetchIm
   return false;
 }
 
+/**
+ * With the built-in database (DB_DRIVER=bundled, the default when no other
+ * database is configured), start it before the bot — creating its password,
+ * data folder and tables the first time, applying new migrations after a
+ * `git pull` — and stop it after. Any other driver: nothing to do here.
+ *
+ * Reuses a database already running (e.g. from `npm run db:start`), and then
+ * leaves it running on the way out.
+ *
+ * @returns {Promise<{stop: () => Promise<void>}>}
+ */
+async function startDatabaseIfBundled({ env = settingsEnv(), log = console.log } = {}) {
+  const none = { stop: async () => {} };
+  const { resolveDbDriver } = require(path.join(BOT_DIR, 'shared', 'services', 'db', 'pg-adapter', 'drivers'));
+  let driver;
+  try {
+    driver = resolveDbDriver(env);
+  } catch {
+    return none; // an unknown DB_DRIVER — the bot's own boot check explains it
+  }
+  if (driver !== 'bundled') return none;
+  const { startBundledDatabase } = require(path.join(REPO_ROOT, 'infrastructure', 'db', 'start'));
+  return startBundledDatabase(env, { log });
+}
+
+/**
+ * Runs the bot in the foreground until it exits.
+ * @returns {Promise<void>}
+ */
+function runBot() {
+  return new Promise((resolve) => {
+    // Runs from the repo root so .env and the WhatsApp session resolve the
+    // same way whatever directory you called `rumi` from — the reason this
+    // command exists rather than `cd bot && npm start`.
+    const child = require('child_process').spawn(
+      process.execPath, [path.join(BOT_DIR, 'whatsapp-bot.js')],
+      {
+        cwd: REPO_ROOT,
+        stdio: 'inherit',
+        // The bot is a server and wants its structured JSON logging; RUMI_CLI
+        // is this launcher's business, not the child's.
+        env: Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'RUMI_CLI')),
+      },
+    );
+    // Forward signals to the bot. `stdio: 'inherit'` means an interactive
+    // Ctrl+C reaches the whole process group anyway, but `kill <rumi-pid>`
+    // — from a script, a supervisor, or a stop command — only signals this
+    // launcher, which would leave the bot orphaned and still holding the
+    // WhatsApp session lock. The next `rumi start` then refuses to attach,
+    // correctly but confusingly, blaming a pid nobody can see.
+    // Once the bot is actually serving, put the console in front of the
+    // operator. Entirely best-effort: it cannot fail the start, and the
+    // banner prints the URL regardless.
+    const decision = shouldOpenConsole({ argv: process.argv.slice(3) });
+    if (decision.open) {
+      const port = process.env.PORT || 3000;
+      waitForHealth(`http://127.0.0.1:${port}/health`)
+        .then((healthy) => { if (healthy && child.exitCode === null) openUrl(`http://localhost:${port}/console`); })
+        .catch(() => {});
+    }
+
+    const forward = (signal) => () => { if (child.exitCode === null) child.kill(signal); };
+    const onInt = forward('SIGINT');
+    const onTerm = forward('SIGTERM');
+    process.on('SIGINT', onInt);
+    process.on('SIGTERM', onTerm);
+
+    child.on('exit', (code, signal) => {
+      process.off('SIGINT', onInt);
+      process.off('SIGTERM', onTerm);
+      process.exitCode = signal ? 1 : (code || 0);
+      resolve();
+    });
+  });
+}
+
 const COMMANDS = {
   start: {
-    summary: 'Start Rumi (the bot itself)',
-    run: () => new Promise((resolve) => {
-      // Runs from the repo root so .env and the WhatsApp session resolve the
-      // same way whatever directory you called `rumi` from — the reason this
-      // command exists rather than `cd bot && npm start`.
-      const child = require('child_process').spawn(
-        process.execPath, [path.join(BOT_DIR, 'whatsapp-bot.js')],
-        {
-          cwd: REPO_ROOT,
-          stdio: 'inherit',
-          // The bot is a server and wants its structured JSON logging; RUMI_CLI
-          // is this launcher's business, not the child's.
-          env: Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'RUMI_CLI')),
-        },
-      );
-      // Forward signals to the bot. `stdio: 'inherit'` means an interactive
-      // Ctrl+C reaches the whole process group anyway, but `kill <rumi-pid>`
-      // — from a script, a supervisor, or a stop command — only signals this
-      // launcher, which would leave the bot orphaned and still holding the
-      // WhatsApp session lock. The next `rumi start` then refuses to attach,
-      // correctly but confusingly, blaming a pid nobody can see.
-      // Once the bot is actually serving, put the console in front of the
-      // operator. Entirely best-effort: it cannot fail the start, and the
-      // banner prints the URL regardless.
-      const decision = shouldOpenConsole({ argv: process.argv.slice(3) });
-      if (decision.open) {
-        const port = process.env.PORT || 3000;
-        waitForHealth(`http://127.0.0.1:${port}/health`)
-          .then((healthy) => { if (healthy && child.exitCode === null) openUrl(`http://localhost:${port}/console`); })
-          .catch(() => {});
+    summary: 'Start Rumi (the bot itself, and its built-in database)',
+    run: async () => {
+      const database = await startDatabaseIfBundled();
+      try {
+        await runBot();
+      } finally {
+        await database.stop();
       }
-
-      const forward = (signal) => () => { if (child.exitCode === null) child.kill(signal); };
-      const onInt = forward('SIGINT');
-      const onTerm = forward('SIGTERM');
-      process.on('SIGINT', onInt);
-      process.on('SIGTERM', onTerm);
-
-      child.on('exit', (code, signal) => {
-        process.off('SIGINT', onInt);
-        process.off('SIGTERM', onTerm);
-        process.exitCode = signal ? 1 : (code || 0);
-        resolve();
-      });
-    }),
+    },
   },
   setup: {
     summary: 'Connect Rumi to your accounts — start here',
@@ -379,4 +419,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, COMMANDS, printUsage, parseBriefFlags, runBrief, shouldOpenConsole, settingsEnv, openCommand, openUrl, waitForHealth };
+module.exports = { main, COMMANDS, printUsage, parseBriefFlags, runBrief, shouldOpenConsole, settingsEnv, openCommand, openUrl, waitForHealth, startDatabaseIfBundled };

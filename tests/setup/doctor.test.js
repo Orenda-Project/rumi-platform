@@ -9,8 +9,9 @@
  */
 
 const {
-  analyzeEnv, analyzeFlows, runDoctor, formatReport, keySource, REQUIRED_VARS, CHANNEL_REQUIRED_VARS, requiredVarsFor,
+  analyzeEnv, analyzeFlows, runDoctor, formatReport, keySource, CORE_REQUIRED_VARS, CHANNEL_REQUIRED_VARS, requiredVarsFor,
 } = require('../../bot/scripts/setup/doctor');
+const { DRIVERS: DB_DRIVERS } = require('../../bot/shared/services/db/pg-adapter/drivers');
 
 const FULL_ENV = {
   SUPABASE_URL: 'https://x.supabase.co',
@@ -84,10 +85,10 @@ describe('runDoctor', () => {
 
   it('is ok=false when a required var is missing (even if probes would pass)', async () => {
     const env = { ...FULL_ENV };
-    delete env.SUPABASE_URL;
+    delete env.SUPABASE_SERVICE_ROLE_KEY;
     const r = await runDoctor({ env, probes: allPassProbes });
     expect(r.ok).toBe(false);
-    expect(r.missingRequired).toContain('SUPABASE_URL');
+    expect(r.missingRequired).toContain('SUPABASE_SERVICE_ROLE_KEY');
   });
 
   it('reports fail (never silent green) when a probe THROWS', async () => {
@@ -202,8 +203,12 @@ describe('key sourcing ("get it here" guidance)', () => {
     expect(keySource('NOT_A_REAL_VAR')).toBe('');
   });
 
-  it('every REQUIRED var (core + every channel driver) has a documented "get it here" source', () => {
-    const allVars = [...REQUIRED_VARS, ...Object.values(CHANNEL_REQUIRED_VARS).flat()];
+  it('every REQUIRED var (every database driver + core + every channel driver) has a documented "get it here" source', () => {
+    const allVars = [
+      ...Object.values(DB_DRIVERS).flatMap((d) => d.requiredEnv),
+      ...CORE_REQUIRED_VARS,
+      ...Object.values(CHANNEL_REQUIRED_VARS).flat(),
+    ];
     const undocumented = allVars.filter((v) => !keySource(v));
     expect(undocumented).toEqual([]);
   });
@@ -571,5 +576,54 @@ describe('doctor on a WhatsApp-free deployment (CHANNEL_DRIVER=none)', () => {
     const r = await runDoctor({ env: { ...CORE, CHANNEL_DRIVER: 'none' }, probes, setupState: null });
     expect(r.ok).toBe(false);
     expect(formatReport(r)).toMatch(/no channel is configured/i);
+  });
+});
+
+describe('doctor — the database check follows DB_DRIVER', () => {
+  const probes = {
+    supabase: jest.fn(async () => ({ ok: true, detail: 'HTTP 200' })),
+    database: jest.fn(async () => ({ ok: false, detail: 'the built-in database is not running — `rumi start` starts it' })),
+    tables: jest.fn(async () => ({ ok: true, detail: 'ok' })),
+    openrouter: async () => ({ ok: true, detail: 'ok' }),
+    redis: async () => ({ ok: true, detail: 'ok' }),
+  };
+  const CORE = { OPENROUTER_API_KEY: 'k', REDIS_URL: 'redis://localhost:6379', CHANNEL_DRIVER: 'baileys' };
+
+  it('built-in database: no Supabase keys required, the Database probe runs, Supabase is not listed', async () => {
+    const result = await runDoctor({ env: { ...CORE, RUMI_DB_PASSWORD: 'p' }, probes, setupState: null });
+    expect(result.missingRequired).toEqual([]);
+    const names = result.probeResults.map((p) => p.name);
+    expect(names).toContain('Database');
+    expect(names).not.toContain('Supabase');
+    expect(result.probeResults.find((p) => p.name === 'Database')).toMatchObject({ status: 'fail' });
+    expect(result.ok).toBe(false);
+  });
+
+  it('built-in database not created yet: asks for the password that setup creates', async () => {
+    const result = await runDoctor({ env: CORE, probes, setupState: null });
+    expect(result.missingRequired).toEqual(['RUMI_DB_PASSWORD']);
+    expect(keySource('RUMI_DB_PASSWORD')).toMatch(/rumi setup/);
+  });
+
+  it('Supabase install: unchanged — Supabase probe, no Database probe', async () => {
+    const env = { ...CORE, SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'k' };
+    const result = await runDoctor({ env, probes, setupState: null });
+    const names = result.probeResults.map((p) => p.name);
+    expect(names).toContain('Supabase');
+    expect(names).not.toContain('Database');
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe('doctor — the built-in database while Rumi is stopped', () => {
+  const BUNDLED_MODULE = require('path').resolve(__dirname, '../../infrastructure/db/bundled.js');
+  afterEach(() => jest.resetModules());
+
+  it('is not a failure: stopped is the normal state, `rumi start` brings it up', async () => {
+    jest.doMock(BUNDLED_MODULE, () => ({ probe: async () => ({ ok: false, detail: 'ECONNREFUSED' }) }));
+    const { defaultProbes } = require('../../bot/scripts/setup/doctor');
+    const env = { RUMI_DB_PASSWORD: 'p' };
+    expect(await defaultProbes.database(env)).toMatchObject({ ok: true, detail: expect.stringMatching(/rumi start/) });
+    expect(await defaultProbes.tables(env)).toMatchObject({ ok: true, detail: expect.stringMatching(/rumi start/) });
   });
 });

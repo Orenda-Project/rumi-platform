@@ -25,6 +25,12 @@ const CONNECTION_CONFIGS = [
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   }] : []),
+  // The Supabase ways in, only when this is a Supabase project.
+  ...(extractProjectRef() ? supabaseConfigs() : []),
+];
+
+function supabaseConfigs() {
+  return [
   {
     name: `Session Pooler (Port 5432)`,
     connectionString: `postgresql://postgres.${extractProjectRef()}:${process.env.SUPABASE_DB_PASSWORD}@${SUPABASE_POOLER_HOST}:5432/postgres`,
@@ -40,12 +46,13 @@ const CONNECTION_CONFIGS = [
     connectionString: `postgresql://postgres:${process.env.SUPABASE_DB_PASSWORD}@db.${extractProjectRef()}.supabase.co:5432/postgres`,
     ssl: { rejectUnauthorized: false }
   }
-];
+  ];
+}
 
 function extractProjectRef() {
   // Extract project ref from SUPABASE_URL
   // e.g., https://your-project-ref.supabase.co -> your-project-ref
-  const match = process.env.SUPABASE_URL.match(/https:\/\/([^.]+)\.supabase\.co/);
+  const match = String(process.env.SUPABASE_URL || '').match(/https:\/\/([^.]+)\.supabase\.co/);
   return match ? match[1] : null;
 }
 

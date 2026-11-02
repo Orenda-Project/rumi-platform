@@ -59,6 +59,7 @@
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "pdfkit": "^0.17.2",
+    "pg": "^8.23.1",
     "pino": "^10.1.0",
     "playwright-core": "^1.60.0",
     "qrcode-terminal": "^0.12.0",

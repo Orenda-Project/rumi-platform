@@ -29,8 +29,11 @@ const CORE_ENV = {
 };
 
 describe('feature-availability (presence-based gating)', () => {
-  it('exposes the 4 core required vars (channel vars are gated separately) and a feature list', () => {
-    expect(fa.REQUIRED_VARS).toHaveLength(4);
+  it('exposes the core required vars, database vars per DB_DRIVER (channel vars are gated separately) and a feature list', () => {
+    expect(fa.CORE_REQUIRED_VARS).toEqual(['OPENROUTER_API_KEY', 'REDIS_URL']);
+    expect(fa.databaseRequiredVars({ SUPABASE_URL: 'x' })).toEqual(['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']);
+    expect(fa.databaseRequiredVars({ DATABASE_URL: 'postgres://x' })).toEqual(['DATABASE_URL']);
+    expect(fa.databaseRequiredVars({})).toEqual(['RUMI_DB_PASSWORD']);
     expect(Array.isArray(fa.FEATURES)).toBe(true);
     expect(fa.FEATURES.length).toBeGreaterThan(0);
   });
@@ -136,7 +139,7 @@ describe('feature-availability (presence-based gating)', () => {
   });
 
   it('there is NO tier system left', () => {
-    expect(fa.REQUIRED_VARS).not.toContain('RUMI_TIER');
+    expect(fa.requiredVarsFor({})).not.toContain('RUMI_TIER');
     expect(fs_existsTierModule()).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 # observe — Coach observation pipeline: capture, review form, debrief, teacher report
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/observe kg=97d185cd9336 gen=39bbce35f837 overflow=133 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/observe kg=703e0acf2fac gen=eade703b6d34 overflow=133 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `observe-capture.service.js` — starts an observation from a recording
@@ -18,8 +18,8 @@ Full index: `CLAUDE.index.md`
 | … | 34 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `coaching_sessions` (written by `observe-capture.service.js` (+8)) ← read by `bot/scripts/generate-coaching-excel.js:27:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+52)
-- column `coaching_sessions.status` (written by `observe-capture.service.js` (+4)) ← read by `bot/scripts/generate-coaching-excel.js:41:48a3661d` · `bot/shared/handlers/image-message.handler.js:110:bba4595e` (+28)
+- table `coaching_sessions` (written by `observe-capture.service.js` (+8)) ← read by `bot/scripts/generate-coaching-excel.js:23:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+52)
+- column `coaching_sessions.status` (written by `observe-capture.service.js` (+4)) ← read by `bot/scripts/generate-coaching-excel.js:37:48a3661d` · `bot/shared/handlers/image-message.handler.js:110:bba4595e` (+28)
 - … 73 more → `CLAUDE.index.md`
 
 ## Never (human)

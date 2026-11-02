@@ -15,6 +15,7 @@ import { el, clear, mount, verdict, whereLink, slot } from '../dom.js';
 const PROBE_FOR = {
   SUPABASE_URL: 'supabase',
   SUPABASE_SERVICE_ROLE_KEY: 'supabase',
+  DATABASE_URL: 'database',
   OPENROUTER_API_KEY: 'openrouter',
   REDIS_URL: 'redis',
 };

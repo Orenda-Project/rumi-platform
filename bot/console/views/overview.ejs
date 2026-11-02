@@ -51,7 +51,7 @@
 <div class="panel">
   <div class="panel-body flush">
     <div id="probes" data-probes='<%= JSON.stringify([
-        { id: "supabase",   label: "Database",  what: "Where teachers, lessons and assessments are stored", keys: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"] },
+        { id: "database",   label: "Database",  what: "Where teachers, lessons and assessments are stored", keys: databaseKeys },
         { id: "tables",     label: "Tables",    what: "Whether the schema has been applied to that database", keys: [] },
         { id: "openrouter", label: "AI",        what: "Every word Rumi writes", keys: ["OPENROUTER_API_KEY"] },
         { id: "redis",      label: "Redis",     what: "Conversation state and the job queue", keys: ["REDIS_URL"] }

@@ -39,7 +39,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Who reads this (all, generated)
 - `access-scope.service.js` ← imported by `dashboard/index.js:78:1e0a6ccd` · `dashboard/services/invitation.service.js:15:cfcf45a5`
-- `ama.service.js` ← imported by `dashboard/routes/ama.routes.js:21:cc7134d2` · `dashboard/workers/portal-sqs-worker.js:214:cc7134d2`
+- `ama.service.js` ← imported by `dashboard/routes/ama.routes.js:21:cc7134d2` · `dashboard/workers/portal-sqs-worker.js:210:cc7134d2`
 - `auth.service.js` ← imported by `dashboard/index.js:28:8ef35abd` · `dashboard/routes/settings.js:8:fffb4120`
 - `brief.service.js` ← imported by `dashboard/routes/brief.routes.js:22:daa0bedd`
 - `byof-agent.service.js` ← imported by `dashboard/routes/byof.routes.js:11:16a032fb`
@@ -57,7 +57,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `redis-cache.service.js` ← imported by `dashboard/services/byof-agent.service.js:15:1bd19dde`
 - `resend-email.service.js` ← imported by `dashboard/index.js:87:812c3951` · `dashboard/routes/settings.js:9:72f2cdfb`
 - `retention.service.js` ← imported by `dashboard/index.js:72:18ebac15`
-- `transcript-processor.service.js` ← imported by `dashboard/index.js:94:fce50392` · `dashboard/workers/portal-sqs-worker.js:55:ff7cdd25` · `dashboard/scripts/backfill-processed-transcripts.js:17:4befdff3`
+- `transcript-processor.service.js` ← imported by `dashboard/index.js:94:fce50392` · `dashboard/workers/portal-sqs-worker.js:51:ff7cdd25` · `dashboard/scripts/backfill-processed-transcripts.js:16:4befdff3`
 - `transcript-ux-helpers.service.js` ← imported by `dashboard/index.js:55:e8dd245d`
 - `video-observability.service.js` ← imported by `dashboard/index.js:63:eafba43c`
 - `whatsapp-broadcast.service.js` ← imported by `dashboard/index.js:2711:c1295629`
@@ -71,7 +71,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - table `access_scopes` (written by `access-scope.service.js`) ← read by `dashboard/services/auth.service.js:43:2be8f4d7`?
 - table `dashboard_users` (written by `auth.service.js`, `byof.service.js`, `invitation.service.js`) ← read by `dashboard/index.js:484:36baffc0`? · `dashboard/middleware/auth.js:76:9a69d293`? · `dashboard/middleware/rbac/feature-access.js:53:9a69d293`? · `dashboard/middleware/rbac/rbac.js:49:9a69d293`? (+6: `python3 kg/kg.py who-reads dashboard_users`)
 - table `invitations` (written by `invitation.service.js`) ← read by `dashboard/index.js:1982:535a79c0`?
-- table `users` (written by `password-reset.service.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? · `bot/scripts/observe-roster.js:80:355943ca`? · `bot/shared/database/bot-helpers.js:17:61dfd735`? (+52: `python3 kg/kg.py who-reads users`)
+- table `users` (written by `password-reset.service.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? · `bot/scripts/observe-roster.js:80:355943ca`? · `bot/shared/database/bot-helpers.js:17:61dfd735`? (+52: `python3 kg/kg.py who-reads users`)
 - env `ANTHROPIC_API_KEY` read at `dashboard/services/byof-agent.service.js:22:4eda5959`
 - env `BOT_DOMAIN` read at `dashboard/services/whatsapp-broadcast.service.js:21:ba0a0ce3`
 - env `DASHBOARD_URL` read at `dashboard/services/email.service.js:33:05b8d0f2` · `dashboard/services/resend-email.service.js:15:05b8d0f2`

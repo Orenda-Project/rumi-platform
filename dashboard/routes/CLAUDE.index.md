@@ -34,7 +34,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - column `users.portal_invite_token` (written by `portal.routes.js`) ← read by `bot/shared/services/portal-invite.service.js:294:53285ac9`
 - table `users` whole row (`*`) (written by `portal.routes.js`) ← read by `bot/shared/database/bot-helpers.js:18:d2b02c3e`? · `bot/shared/database/queries.js:14:77bc023b`? · `bot/shared/utils/telemetry.js:74:7a0c163a`? · `dashboard/database/queries.js:687:7a0c163a`? (+1: `python3 kg/kg.py who-reads users`)
 - table `cta_clicks` (written by `funnel-tracking.routes.js`) ← read by `dashboard/database/queries.js:963:523a1987`?
-- table `users` (written by `portal.routes.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? · `bot/scripts/observe-roster.js:80:355943ca`? · `bot/shared/database/bot-helpers.js:17:61dfd735`? (+52: `python3 kg/kg.py who-reads users`)
+- table `users` (written by `portal.routes.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? · `bot/scripts/observe-roster.js:80:355943ca`? · `bot/shared/database/bot-helpers.js:17:61dfd735`? (+52: `python3 kg/kg.py who-reads users`)
 - table `website_visits` (written by `funnel-tracking.routes.js`) ← read by `dashboard/database/queries.js:962:340a8e70`?
 - env `NODE_ENV` read at `dashboard/routes/byof.routes.js:122:a008d457` · `dashboard/routes/portal.routes.js:142:85c61416`
 - env `R2_ACCESS_KEY_ID` read at `dashboard/routes/portal.routes.js:53:d6f2a7a2`

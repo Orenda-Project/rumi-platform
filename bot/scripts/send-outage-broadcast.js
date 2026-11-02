@@ -6,12 +6,8 @@
  */
 
 require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = require('../shared/config/supabase');
 
 // WhatsApp API configuration
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;

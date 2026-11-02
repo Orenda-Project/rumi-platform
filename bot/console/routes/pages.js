@@ -58,7 +58,7 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
   // ── Overview ───────────────────────────────────────────────────────────────
   router.get('/', async (req, res) => {
     const env = { ...process.env, ...readEnvFile(runtime.envPath) };
-    const { missingRequired, resolveChannelDriver, resolveActiveChannels } =
+    const { missingRequired, resolveChannelDriver, resolveActiveChannels, databaseRequiredVars } =
       require('../../shared/config/feature-availability');
     const features = require('../features').snapshot(env);
 
@@ -77,6 +77,8 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
       ...chrome(req),
       pageTitle: 'Overview',
       missing: missingRequired(env),
+      // The database probe's keys depend on DB_DRIVER (built-in, Postgres, Supabase).
+      databaseKeys: databaseRequiredVars(env),
       channel: resolveChannelDriver(env),
       activeChannels: resolveActiveChannels(env),
       answeringOn: answeringOn(resolveChannelDriver(env), resolveActiveChannels(env)),

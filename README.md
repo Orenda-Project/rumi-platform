@@ -49,7 +49,7 @@ you have a teaching assistant for your schools — no commissioning, no vendor, 
 <tr><td><b>Speaks their language</b></td><td>15 languages for chat, voice-note transcription and spoken replies — including a full Indian-language suite and Pakistan's regional languages.</td></tr>
 <tr><td><b>Try it without Meta</b></td><td>Link your own WhatsApp with a QR code and start chatting in about fifteen minutes. No Business account, no app review, no waiting.</td></tr>
 <tr><td><b>Set up by talking to it</b></td><td>The repo is agent-native: open it in Claude Code, Cursor or Codex and say "set me up". Or run one guided wizard that asks in plain language and checks every answer for you.</td></tr>
-<tr><td><b>Your keys, your data</b></td><td>Your Supabase, your WhatsApp number, your model provider. Nothing routes through us. Apache-2.0.</td></tr>
+<tr><td><b>Your keys, your data</b></td><td>Your database, your WhatsApp number, your model provider. Nothing routes through us. Apache-2.0.</td></tr>
 </table>
 
 ---
@@ -73,7 +73,7 @@ rumi start
 
 Then message the number Rumi linked and send **`Hi`**.
 
-**About fifteen minutes**, most of it waiting for a Supabase project to start. `rumi setup` asks in plain
+**About fifteen minutes.** `rumi setup` asks in plain
 language rather than by variable name ("where should Rumi keep its memory", not `SUPABASE_URL`), checks every
 value against the real service as you type it, creates the whole database for you, and saves each answer as
 it goes — so Ctrl+C is safe and running it again picks up where you stopped.
@@ -102,7 +102,7 @@ enter them, the database, and the WhatsApp QR as an image. Your fork's URL works
 | | Where to get it | What it's for | Cost |
 |---|---|---|---|
 | **Node.js 22+** and **git** | [nodejs.org](https://nodejs.org) | Running Rumi | free |
-| **A Supabase project** | [supabase.com](https://supabase.com) | Where Rumi remembers teachers, lessons and assessments | free tier is plenty |
+| **A database** | built in — or [Supabase](https://supabase.com) / any Postgres | Where Rumi remembers teachers, lessons and assessments | free |
 | **An OpenRouter key** | [openrouter.ai/keys](https://openrouter.ai/keys) | How Rumi thinks — one key, 500+ models | a few dollars goes a long way |
 | **A Redis address** | [Upstash](https://upstash.com) · [Railway](https://railway.app) · or local Docker | Conversations in progress, and background jobs | free tier is plenty |
 | **WhatsApp on your phone** | — | The number Rumi answers as | free |
@@ -424,7 +424,7 @@ Guide](docs/agent-customization.md) maps each goal to exact files:
 | Web | Express.js | Webhook + API routes |
 | Messaging | WhatsApp (official API or a linked-device QR code), plus Slack, Discord and Matrix | Messages, media, interactive forms |
 | AI / LLM | OpenRouter (500+ models) | Chat, analysis, content |
-| Database | Supabase (PostgreSQL) | 76 tables with Row-Level Security |
+| Database | PostgreSQL — built in, any Postgres, or Supabase (`DB_DRIVER`) | 76 tables with Row-Level Security |
 | Queue | Redis or AWS SQS (pluggable via `QUEUE_DRIVER`) | Transcription, reports, video, exams |
 | Speech-to-Text | Soniox, Whisper, Modal MMS-ASR | Multilingual transcription |
 | Text-to-Speech | ElevenLabs (+ Uplift for Urdu/regional) | Voice replies, reflective questions |

@@ -1,7 +1,7 @@
 # database — Supabase helpers, dashboard analytics queries and base schema
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/database kg=c398a28efff5 gen=66e610811357 overflow=49 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/database kg=6c9d50656312 gen=8bcac06249fd overflow=49 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `bot-helpers.js` — users, channel identities, send targets and sessions
@@ -17,9 +17,9 @@ Full index: `CLAUDE.index.md`
 | `schema.sql` | Base Supabase schema (users, conversations, audio_sessions, lesson_plans, teacher_progress, teacher_facts, videos) |
 
 ## Who reads this (generated)
-- table `users` (written by `bot-helpers.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+54)
-- column `users.id` (written by `schema.sql`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10` · `bot/scripts/generate-coaching-excel.js:57:8bbdcecd` (+51)
-- column `users.phone_number` (written by `bot-helpers.js` (+1)) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10` · `bot/scripts/generate-coaching-excel.js:57:8bbdcecd` (+34)
+- table `users` (written by `bot-helpers.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? (+54)
+- column `users.id` (written by `schema.sql`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10` · `bot/scripts/generate-coaching-excel.js:53:8bbdcecd` (+51)
+- column `users.phone_number` (written by `bot-helpers.js` (+1)) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10` · `bot/scripts/generate-coaching-excel.js:53:8bbdcecd` (+34)
 - table `lesson_plans` (written by `bot-helpers.js`) ← read by `bot/shared/routes/quiz-flow-endpoint.js:158:611f2601`? · `bot/shared/services/coaching/fidelity/fidelity-session.js:56:58e633e9`? (+19)
 - column `lesson_plans.id` (written by `schema.sql`) ← read by `bot/shared/routes/quiz-flow-endpoint.js:159:d69ad1fa` · `bot/shared/services/coaching/fidelity/fidelity-session.js:56:58e633e9` (+15)
 - … 42 more → `CLAUDE.index.md`

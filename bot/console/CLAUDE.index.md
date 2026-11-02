@@ -10,7 +10,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `routes/` | → (no door; 2 files) |
 | `views/` | EJS pages for the operator console screens → `views/CLAUDE.md` |
 | `auth.js` | Decides console access: loopback token mode vs network password mode, host guard, bcrypt check, Redis session store |
-| `env-catalog.js` | Groups the .env into labelled rows by joining setup-wizard copy with feature-availability; feeds the Setup page |
+| `env-catalog.js` | Groups the .env into labelled rows per DB_DRIVER and feature-availability, with cards for other databases; feeds Setup |
 | `features.js` | Builds the Features page data: configured vs switched-off vs effective state per feature |
 | `index.js` | mountConsole(app): mounts the operator console at /console with host guard, static assets, pages and /api routers |
 | `pipeline-map.js` | Derives the listening/thinking/speaking provider chains from the real service tables for the Pipeline page |
@@ -25,7 +25,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `features.js` ← imported by `bot/console/routes/api.js:129:51a85b5e` · `bot/console/routes/pages.js:63:ef3851db`
 - `index.js` ← imported by `bot/whatsapp-bot.js:84:5945be51` · `bot/console/server.js:37:d5d102af`
 - `pipeline-map.js` ← imported by `bot/console/routes/pages.js:17:d1379d95`
-- `redaction.js` ← imported by `bot/console/env-catalog.js:33:20c75a3e` · `bot/console/routes/api.js:18:734b49d2`
+- `redaction.js` ← imported by `bot/console/routes/api.js:18:734b49d2`
 - `runtime.js` ← imported by `bot/console/index.js:30:cbd97f14`
 - `view.js` ← imported by `bot/console/routes/pages.js:15:d6d0dfdb`
 - env `CONSOLE_BIND` read at `bot/console/server.js:29:5ca1f3b6`

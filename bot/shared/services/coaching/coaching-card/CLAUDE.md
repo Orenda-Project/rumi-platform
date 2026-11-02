@@ -1,7 +1,7 @@
 # coaching-card — Builds the post-reflection commitment card image and its action text
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/coaching-card kg=1d3539b4de21 gen=eefa09e0477d overflow=6 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/coaching-card kg=c7ba4b3386b1 gen=c71c900e5083 overflow=6 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `commitment-card.service.js` — fuses the teacher's own commitment with one lesson-rooted action
@@ -16,7 +16,7 @@ Full index: `CLAUDE.index.md`
 | `prioritized-action.service.js` | Picks one improvement tip from the analysis indicators; feeds commitment-card.service |
 
 ## Who reads this (generated)
-- table `coaching_sessions` (written by `card-response.service.js`) ← read by `bot/scripts/generate-coaching-excel.js:27:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+51)
+- table `coaching_sessions` (written by `card-response.service.js`) ← read by `bot/scripts/generate-coaching-excel.js:23:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+51)
 - table `coaching_sessions` whole row (`*`) (written by `card-response.service.js`) ← read by `bot/shared/handlers/text-message.handler.js:1262:d2b02c3e`? · `bot/shared/handlers/voice-message.handler.js:701:d2b02c3e`? (+12)
 - column `coaching_sessions.prioritized_action` (written by `card-response.service.js`) ← read by `bot/shared/services/coaching/report-generator.service.js:231:cfc5016d` · `bot/shared/services/coaching/transcription-processor.service.js:222:cfc5016d`
 - `card-image.service.js` ← imported by `bot/shared/services/coaching/report-generator.service.js:219:bca040f7`

@@ -33,8 +33,15 @@ const { logToFile } = require('../utils/logger');
 const flowRegistry = require('./slack-flow-registry');
 const slackWebClient = require('./../services/messaging/slack-web-client');
 const { decodeMetadata } = require('../services/messaging/slack-modal-flow');
+const { missingDbEnv, resolveDbDriver } = require('../services/db/pg-adapter/drivers');
+
+/** Is the selected database (built-in, Postgres or Supabase) configured? */
 function hasDatabaseCredentials() {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  try {
+    return missingDbEnv(resolveDbDriver()).length === 0;
+  } catch {
+    return false; // an unknown DB_DRIVER — the bot's boot check reports it
+  }
 }
 
 let botHelpers = null;

@@ -35,4 +35,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - (none)
 
 ## Related (all, generated)
-- docs: `.github/workflows/CLAUDE.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `SETUP.md`? · `dashboard/lib/CLAUDE.md`? · `docs/android-app.md`? · `docs/features/android-portal-app.md`? · `docs/features/teacher-portal.md`? · `docs/monitoring.md`? · `portal/ANDROID.md`? · `portal/GITHUB_ACTIONS_SETUP.md`? · `portal/src/lib/CLAUDE.md`?
+- docs: `.github/workflows/CLAUDE.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `dashboard/lib/CLAUDE.md`? · `docs/android-app.md`? · `docs/features/android-portal-app.md`? · `docs/features/teacher-portal.md`? · `docs/monitoring.md`? · `portal/ANDROID.md`? · `portal/GITHUB_ACTIONS_SETUP.md`? · `portal/src/lib/CLAUDE.md`?

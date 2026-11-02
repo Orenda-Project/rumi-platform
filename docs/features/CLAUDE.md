@@ -1,7 +1,7 @@
 # features — One page per feature: what it is, how it works, and which keys switch it on
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=docs/features kg=0648dc0d1f1d gen=1aa1767922ce overflow=12 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=docs/features kg=f986340cec5e gen=318795b579b2 overflow=12 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `README.md` — index with the keys that enable each feature
@@ -36,5 +36,5 @@ _None found in code comments, tests or git log for this directory._
 
 ## Related (generated)
 - skills: `ab-testing`? · `feature-tracer`? · `morning-brief`? · `video-generation`? · `whatsapp-flows`?
-- docs: `CHANGELOG.md`? · `README.md`? · `SETUP.md`? · `bot/database/migrations/CLAUDE.md`? · `bot/scripts/CLAUDE.md`? · `bot/shared/handlers/CLAUDE.md`? (+58)
+- docs: `CHANGELOG.md`? · `README.md`? · `bot/database/migrations/CLAUDE.md`? · `bot/scripts/CLAUDE.md`? · `bot/shared/handlers/CLAUDE.md`? · `bot/shared/routes/CLAUDE.md`? (+57)
 - … 1 more → `CLAUDE.index.md`

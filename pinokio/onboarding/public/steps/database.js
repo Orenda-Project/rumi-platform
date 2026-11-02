@@ -1,5 +1,8 @@
 /**
- * database -- paste one thing, then watch seventy tables appear.
+ * database -- make sure Rumi's tables exist.
+ *
+ * The built-in database (the default) needs nothing here: Start creates it.
+ * Supabase: paste one thing, then watch seventy tables appear.
  *
  * @module steps/database
  */
@@ -9,6 +12,7 @@ import { el, clear, verdict, slot } from '../dom.js';
 
 /** What `inspectDatabase` can tell us, and what to show for each answer. */
 const VIEWS = {
+  stopped: builtInView,
   unreachable: unreachableView,
   'needs-helper': helperView,
   'needs-schema': schemaView,
@@ -43,16 +47,29 @@ export async function render(host, context) {
     const info = await get('/api/db/state');
     clear(host);
     host.append(VIEWS[info.state](info, host, context));
+    if (info.state === 'stopped' || info.state === 'ready') context.markDone('database');
   } catch (error) {
     clear(host);
     host.append(verdict('bad', error.message));
   }
 }
 
+/**
+ * The built-in database, before its first Start. There is nothing to do: the
+ * database, its data folder and its tables are created when Rumi starts.
+ */
+function builtInView() {
+  return el('div', { class: 'notice notice--ok' }, [
+    el('b', { text: 'Rumi keeps its data on this computer.' }),
+    el('p', { text: 'It runs its own database, so there is no account to create. The database and its tables are made the first time you press Start — nothing to do here.' }),
+    el('p', { text: 'Everything teachers do is stored in the .rumi-db folder inside Rumi. Back it up like any other important folder.' }),
+  ]);
+}
+
 function unreachableView(info) {
   return el('div', { class: 'notice notice--bad' }, [
     el('b', { text: 'Cannot reach the database yet.' }),
-    el('p', { text: info.detail || 'Check the Supabase values on the previous step.' }),
+    el('p', { text: info.detail || 'Check the database values on the previous step.' }),
   ]);
 }
 

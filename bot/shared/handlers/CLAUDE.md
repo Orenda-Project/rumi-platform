@@ -1,7 +1,7 @@
 # handlers — Inbound message routers: text, voice, image, Flow replies, /observe, /portal
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/handlers kg=e72e303860fb gen=6720d8640293 overflow=86 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/handlers kg=0cb3ff3a0280 gen=9dacff584409 overflow=86 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `text-message.handler.js` — main text router, called at whatsapp-bot.js:523
@@ -19,9 +19,9 @@ Full index: `CLAUDE.index.md`
 | … | 10 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `users` (written by `flow-response.handler.js` (+1)) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+55)
-- table `coaching_sessions` (written by `image-message.handler.js` (+1)) ← read by `bot/scripts/generate-coaching-excel.js:27:5911672a`? · `bot/shared/routes/observe-form-endpoint.js:126:5911672a`? (+52)
-- column `coaching_sessions.status` (written by `text-message.handler.js`) ← read by `bot/scripts/generate-coaching-excel.js:41:48a3661d` · `bot/shared/services/coaching/coaching-flow-buttons.js:30:d2932917` (+27)
+- table `users` (written by `flow-response.handler.js` (+1)) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? (+55)
+- table `coaching_sessions` (written by `image-message.handler.js` (+1)) ← read by `bot/scripts/generate-coaching-excel.js:23:5911672a`? · `bot/shared/routes/observe-form-endpoint.js:126:5911672a`? (+52)
+- column `coaching_sessions.status` (written by `text-message.handler.js`) ← read by `bot/scripts/generate-coaching-excel.js:37:48a3661d` · `bot/shared/services/coaching/coaching-flow-buttons.js:30:d2932917` (+27)
 - … 46 more → `CLAUDE.index.md`
 
 ## Never (human)

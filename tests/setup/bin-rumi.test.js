@@ -349,3 +349,38 @@ describe('`rumi start` opening the console in a browser', () => {
     ).resolves.toBe(false);
   });
 });
+
+describe('`rumi start` and the built-in database', () => {
+  const START_MODULE = path.resolve(__dirname, '../../infrastructure/db/start.js');
+
+  function load(startBundledDatabase) {
+    let rumi;
+    jest.isolateModules(() => {
+      jest.doMock(START_MODULE, () => ({ startBundledDatabase }));
+      rumi = require('../../bin/rumi.js');
+    });
+    return rumi;
+  }
+
+  it('starts the built-in database first when DB_DRIVER resolves to bundled', async () => {
+    const stop = jest.fn(async () => {});
+    const startBundledDatabase = jest.fn(async () => ({ started: true, stop }));
+    const { startDatabaseIfBundled } = load(startBundledDatabase);
+    const env = { OPENROUTER_API_KEY: 'k' };
+    const db = await startDatabaseIfBundled({ env, log: () => {} });
+    expect(startBundledDatabase).toHaveBeenCalledWith(env, expect.objectContaining({ log: expect.any(Function) }));
+    await db.stop();
+    expect(stop).toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ SUPABASE_URL: 'https://p.supabase.co' }],
+    [{ DATABASE_URL: 'postgres://x' }],
+    [{ DB_DRIVER: 'not-a-driver' }],
+  ])('leaves the database alone for %j', async (env) => {
+    const startBundledDatabase = jest.fn();
+    const { startDatabaseIfBundled } = load(startBundledDatabase);
+    await (await startDatabaseIfBundled({ env, log: () => {} })).stop();
+    expect(startBundledDatabase).not.toHaveBeenCalled();
+  });
+});

@@ -2,7 +2,7 @@
  * Connection Test Script
  *
  * Tests connectivity to all required services:
- * - Supabase (database)
+ * - the database (built-in, Postgres or Supabase — see DB_DRIVER)
  * - Redis (job queue)
  * - OpenRouter/OpenAI (LLM)
  *
@@ -14,6 +14,28 @@ const path = require('path');
 try {
   require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 } catch (e) {}
+
+/** The database, whichever DB_DRIVER selects (built-in, Postgres or Supabase). */
+async function testDatabase() {
+  const { databaseUrlFor, missingDbEnv, resolveDbDriver } = require('../../bot/shared/services/db/pg-adapter/drivers');
+  let driver;
+  try {
+    driver = resolveDbDriver(process.env);
+  } catch (err) {
+    return { service: 'Database', status: 'FAIL', message: err.message };
+  }
+  if (driver === 'supabase') return testSupabase();
+  if (missingDbEnv(driver, process.env).length > 0) return { service: 'Database', status: 'SKIP', message: 'Not configured' };
+
+  const { inspectSchema } = require('../db/schema');
+  const status = await inspectSchema(databaseUrlFor(process.env));
+  const name = driver === 'bundled' ? 'Database (built-in)' : 'Database (Postgres)';
+  if (status.state === 'unreachable') {
+    const hint = driver === 'bundled' ? ' — it runs while `rumi start` (or `npm run db:start`) is running' : '';
+    return { service: name, status: 'FAIL', message: `${status.detail}${hint}` };
+  }
+  return { service: name, status: 'OK', message: status.state === 'ready' ? 'Connected, tables present' : 'Connected, no tables yet' };
+}
 
 async function testSupabase() {
   const url = process.env.SUPABASE_URL;
@@ -81,7 +103,7 @@ async function runTests() {
   console.log('\n  Connection Tests\n');
 
   const results = await Promise.all([
-    testSupabase(),
+    testDatabase(),
     testRedis(),
     testLLM(),
   ]);
@@ -110,7 +132,7 @@ async function runTests() {
   return results;
 }
 
-module.exports = { testSupabase, testRedis, testLLM, runTests };
+module.exports = { testDatabase, testSupabase, testRedis, testLLM, runTests };
 
 if (require.main === module) {
   runTests().then(results => {

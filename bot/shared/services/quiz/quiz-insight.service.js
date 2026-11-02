@@ -199,7 +199,7 @@ async function loadStragglerNames(quizId) {
   try {
     const { data: rows } = await supabase
       .from('quiz_sessions')
-      .select('mastery_percentage, students(student_name)')
+      .select('mastery_percentage, students!student_id(student_name)')
       .eq('quiz_id', quizId)
       .eq('status', 'completed')
       .lt('mastery_percentage', 60);

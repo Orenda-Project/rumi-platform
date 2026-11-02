@@ -1,7 +1,7 @@
 # services — Business logic: auth, RBAC scopes, analytics, BYOF agent, SQS, email, API health
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=dashboard/services kg=7c9c19bb3f6c gen=0faa28ad95b4 overflow=78 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=dashboard/services kg=5f21e5d3dc29 gen=be8b978c9875 overflow=78 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `materialized-views.service.js` — reads mv_* stats views, applies partner scopes, refreshes them
@@ -20,7 +20,7 @@ Full index: `CLAUDE.index.md`
 | … | 25 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `users` (written by `password-reset.service.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+54)
+- table `users` (written by `password-reset.service.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? (+54)
 - table `dashboard_users` (written by `auth.service.js` (+2)) ← read by `dashboard/index.js:484:36baffc0`? · `dashboard/middleware/auth.js:76:9a69d293`? (+8)
 - table `users` whole row (`*`) (written by `password-reset.service.js`) ← read by `bot/shared/database/bot-helpers.js:18:d2b02c3e`? · `bot/shared/database/queries.js:14:77bc023b`? (+4)
 - … 73 more → `CLAUDE.index.md`

@@ -13,12 +13,8 @@
 const http = require('http');
 const PortalSQSService = require('../services/queue/portal-sqs.service');
 
-// Supabase client for persisting results
-const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Database client for persisting results (DB_DRIVER=postgres | supabase)
+const supabase = require('../config/supabase');
 
 // Supported job types for routing
 const SUPPORTED_JOB_TYPES = [

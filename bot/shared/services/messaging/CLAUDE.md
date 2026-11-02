@@ -1,7 +1,7 @@
 # messaging — Channel drivers (Meta, Baileys, Slack, Discord, Matrix) and their inbound adapters
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/messaging kg=f3a274669e0e gen=c1d3f867db12 overflow=77 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/messaging kg=473fd9798e79 gen=de525600b548 overflow=77 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `index.js` — driver router behind whatsapp.service; picks driver by identifier prefix
@@ -17,7 +17,7 @@ Full index: `CLAUDE.index.md`
 | … | 26 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- `channel-registry.js` ← imported by `bot/scripts/setup/doctor.js:31:90458071` · `bot/scripts/setup/graduate.js:45:218140d6` (+20)
+- `channel-registry.js` ← imported by `bot/scripts/setup/doctor.js:41:90458071` · `bot/scripts/setup/graduate.js:45:218140d6` (+20)
 - `matrix-outbound-relay.js` ← imported by `bot/whatsapp-bot.js:1974:40b0ef8b` · `bot/workers/sqs-worker.js:40:a34259b4` (+5)
 - … 40 more → `CLAUDE.index.md`
 

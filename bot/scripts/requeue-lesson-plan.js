@@ -9,13 +9,9 @@
 
 require('dotenv').config();
 const AWS = require('aws-sdk');
-const { createClient } = require('@supabase/supabase-js');
 
 // Configuration
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = require('../shared/config/supabase');
 
 // Configure AWS
 AWS.config.update({

@@ -51,7 +51,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `language-detector.js` ← imported by `bot/shared/handlers/text-message.handler.js:32:26938c7e` · `bot/shared/handlers/voice-message.handler.js:917:26938c7e` · `bot/shared/services/coaching/transcription-processor.service.js:26:c4974a5b`
 - `lazy-client.js` ← imported by `bot/shared/services/aws-textract.service.js:3:cefd900d` · `bot/shared/services/coaching/reflective-questions/llm-router.service.js:45:ce0c2ed9` · `bot/shared/services/reading/vocabulary-image.service.js:20:0f3248c3` · `bot/shared/storage/r2.js:10:cefd900d`
 - `letter-name-mapping.js` ← imported by `bot/shared/services/reading/fluency.service.js:26:8cdbddc5`
-- `logger.js` ← imported by `bot/gateway/adapters/slack.js:21:fb807dd5` · `bot/gateway/adapters/whatsapp.js:24:fb807dd5` · `bot/gateway/ingress-dispatcher.js:11:ec72845d` · `bot/gateway/webhook.routes.js:22:ec72845d` (+274: `python3 kg/kg.py who-reads logger.js`)
+- `logger.js` ← imported by `bot/gateway/adapters/slack.js:21:fb807dd5` · `bot/gateway/adapters/whatsapp.js:24:fb807dd5` · `bot/gateway/ingress-dispatcher.js:11:ec72845d` · `bot/gateway/webhook.routes.js:22:ec72845d` (+275: `python3 kg/kg.py who-reads logger.js`)
 - `phone-validation.js` ← imported by `bot/shared/routes/edit-class-endpoint.js:20:75960717`
 - `private-temp.js` ← imported by `bot/shared/handlers/voice-message.handler.js:17:18ed7c80` · `bot/shared/services/attendance-register-delivery.service.js:18:18ed7c80` · `bot/shared/services/audio.service.js:17:18ed7c80` · `bot/shared/services/coaching/report-generator.service.js:33:43fd1c80` (+14: `python3 kg/kg.py who-reads private-temp.js`)
 - `redact-url.js` ← imported by `bot/shared/handlers/exam-checker.handler.js:14:8f6a3ee5` · `bot/shared/handlers/image-message.handler.js:27:8f6a3ee5` · `bot/shared/handlers/voice-message.handler.js:16:8f6a3ee5` · `bot/shared/routes/student-videos-endpoint.js:22:8f6a3ee5` (+25: `python3 kg/kg.py who-reads redact-url.js`)
@@ -65,12 +65,12 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `upload-digest.js` ← imported by `bot/shared/services/attendance-register-delivery.service.js:19:3c2e8d7f` · `bot/shared/services/messaging/baileys-channel.service.js:36:599175bb` · `bot/shared/services/messaging/discord-channel.service.js:65:599175bb` · `bot/shared/services/messaging/matrix-channel.service.js:46:599175bb` (+2: `python3 kg/kg.py who-reads upload-digest.js`)
 - `validators.js` ← imported by `bot/gateway/adapters/whatsapp.js:22:630238f1` · `bot/gateway/envelope.js:77:bcbb07a1` · `bot/whatsapp-bot.js:31:d625b49d`
 - `version-check.js` ← imported by `bot/whatsapp-bot.js:2135:7e4b5ef2`
-- `version.js` ← imported by `bot/console/routes/pages.js:146:af1dd056` · `bot/whatsapp-bot.js:1892:02c3f8b7`
+- `version.js` ← imported by `bot/console/routes/pages.js:148:af1dd056` · `bot/whatsapp-bot.js:1892:02c3f8b7`
 - `webhook-instructions.js` ← imported by `bot/whatsapp-bot.js:2091:468ce402`
 - `word-grid-generator.js` ← imported by `bot/shared/services/reading/passage-generation.service.js:29:ab676e5c`
 - column `users.preferred_language` (written by `language-cache.js`) ← read by `bot/scripts/observe-roster.js:81:44b70a83` · `bot/shared/routes/quiz-flow-endpoint.js:380:2f976336` · `bot/shared/routes/settings-endpoint.js:46:f26864bf` · `bot/shared/routes/student-videos-endpoint.js:303:cd922948` (+16: `python3 kg/kg.py who-reads users.preferred_language`)
 - table `users` whole row (`*`) (written by `language-cache.js`) ← read by `bot/shared/database/bot-helpers.js:18:d2b02c3e`? · `bot/shared/database/queries.js:14:77bc023b`? · `dashboard/database/queries.js:687:7a0c163a`? · `dashboard/routes/portal.routes.js:160:d2b02c3e`? (+2: `python3 kg/kg.py who-reads users`)
-- table `users` (written by `language-cache.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? · `bot/scripts/observe-roster.js:80:355943ca`? · `bot/shared/database/bot-helpers.js:17:61dfd735`? (+52: `python3 kg/kg.py who-reads users`)
+- table `users` (written by `language-cache.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? · `bot/scripts/observe-roster.js:80:355943ca`? · `bot/shared/database/bot-helpers.js:17:61dfd735`? (+52: `python3 kg/kg.py who-reads users`)
 - env `ATTENDANCE_MARKING_FLOW_ID` read at `bot/shared/utils/constants.js:25:e080b7be` · `bot/shared/utils/setup-validator.js:34:a4121013`
 - env `ATTENDANCE_SETUP_FLOW_ID` read at `bot/shared/utils/constants.js:24:84baca7c` · `bot/shared/utils/setup-validator.js:33:87532897`
 - env `AXIOM_DATASET` read at `bot/shared/utils/structured-logger.js:41:5bf82b5f`
@@ -158,4 +158,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `debugging`? · `logging`? · `whatsapp-flows`?
-- docs: `CHANGELOG.md`? · `SETUP.md`? · `bot/shared/CLAUDE.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/features/test-papers.md`?
+- docs: `CHANGELOG.md`? · `bot/shared/CLAUDE.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/features/test-papers.md`?

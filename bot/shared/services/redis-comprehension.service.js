@@ -13,13 +13,8 @@
  * - Updated: Database-based (fix for Redis state loss)
  */
 
-const { createClient } = require('@supabase/supabase-js');
+const supabase = require('../config/supabase');
 const { logToFile } = require('../utils/logger');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 class RedisComprehensionService {
   /**

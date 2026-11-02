@@ -1,6 +1,6 @@
 # public — Browser UI of the wizard: step machine, DOM helpers, API client, styles
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public kg=5a4405650860 gen=49de5b61cbac overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public kg=79e6d96f88fe gen=468100309ffa overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `app.js` — step machine
@@ -19,8 +19,8 @@
 | `styles.css` | Stylesheet for the setup wizard page |
 
 ## Who reads this (generated)
-- `api.js` ← imported by `pinokio/onboarding/public/steps/credentials.js:11:8bc78e33` · `pinokio/onboarding/public/steps/database.js:7:0a179878` (+3)
-- `dom.js` ← imported by `pinokio/onboarding/public/steps/credentials.js:12:bc430a56` · `pinokio/onboarding/public/steps/database.js:8:b14b2888` (+3)
+- `api.js` ← imported by `pinokio/onboarding/public/steps/credentials.js:11:8bc78e33` · `pinokio/onboarding/public/steps/database.js:10:0a179878` (+3)
+- `dom.js` ← imported by `pinokio/onboarding/public/steps/credentials.js:12:bc430a56` · `pinokio/onboarding/public/steps/database.js:11:b14b2888` (+3)
 
 ## Never (human)
 - Never assign innerHTML from .env or catalogue values (dom.js:4)

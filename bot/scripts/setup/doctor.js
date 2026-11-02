@@ -25,9 +25,19 @@
 const fs = require('fs');
 const path = require('path');
 const {
-  REQUIRED_VARS, CHANNEL_REQUIRED_VARS, FEATURES, isSet, requiredVarsFor, resolveChannelDriver,
-  resolveActiveChannels,
+  CORE_REQUIRED_VARS, databaseRequiredVars, CHANNEL_REQUIRED_VARS, FEATURES, isSet, requiredVarsFor,
+  resolveChannelDriver, resolveActiveChannels,
 } = require('../../shared/config/feature-availability');
+const { databaseUrlFor, resolveDbDriver } = require('../../shared/services/db/pg-adapter/drivers');
+
+/** DB_DRIVER, or null for a typo (the bot's boot check reports that). */
+function dbDriverOf(env) {
+  try {
+    return resolveDbDriver(env);
+  } catch {
+    return null;
+  }
+}
 const { DRIVERS, isProductionTier } = require('../../shared/services/messaging/channel-registry');
 const { FLOW_CONFIGS } = require('./flow-configs');
 
@@ -37,6 +47,8 @@ const { FLOW_CONFIGS } = require('./flow-configs');
 // docs/onboarding/whatsapp.md. Gating stays in feature-availability.js; this is
 // human guidance only.
 const KEY_SOURCES = {
+  RUMI_DB_PASSWORD: 'created for you by `rumi setup` or the first `rumi start` (built-in database)',
+  DATABASE_URL: 'your Postgres provider (Railway, Neon, AWS RDS, your own server)',
   SUPABASE_URL: 'supabase.com → Settings → API',
   SUPABASE_SERVICE_ROLE_KEY: 'supabase.com → Settings → API (service_role)',
   OPENROUTER_API_KEY: 'openrouter.ai/keys',
@@ -141,6 +153,26 @@ function analyzeEnv(env) {
 // throw — they translate any failure into { ok:false }.
 
 const defaultProbes = {
+  /**
+   * The database, whichever DB_DRIVER selects: Supabase's REST endpoint, the
+   * built-in Postgres, or the Postgres at DATABASE_URL.
+   */
+  async database(env) {
+    const driver = dbDriverOf(env);
+    if (driver === 'supabase') return defaultProbes.supabase(env);
+    if (driver === 'bundled') {
+      // Stopped is the normal state while Rumi is stopped: `rumi start` brings
+      // it up first. So it is not a failure — only reported.
+      const running = await require('../../../infrastructure/db/bundled').probe(env);
+      return running.ok
+        ? { ok: true, detail: 'built-in database running' }
+        : { ok: true, detail: 'built in — not running now; `rumi start` starts it' };
+    }
+    const status = await require('../../../infrastructure/db/schema').inspectSchema(databaseUrlFor(env));
+    return status.state === 'unreachable'
+      ? { ok: false, detail: status.detail }
+      : { ok: true, detail: 'connected' };
+  },
   async supabase(env) {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/`, {
       headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
@@ -155,6 +187,11 @@ const defaultProbes = {
     const db = require('./db-setup');
     const status = await db.inspectDatabase(env);
     if (status.state === 'ready') return { ok: true, detail: status.detail };
+    // The built-in database, stopped: its tables are created or brought up to
+    // date by the next `rumi start`, so there is nothing to fix here.
+    if (status.state === 'stopped' && env.RUMI_DB_PASSWORD) {
+      return { ok: true, detail: 'checked and brought up to date each time `rumi start` runs' };
+    }
     if (status.state === 'needs-helper') {
       return {
         ok: false,
@@ -164,7 +201,9 @@ const defaultProbes = {
     if (status.state === 'needs-schema') {
       return {
         ok: false,
-        detail: 'helper is there but the tables are not — run `npm run bootstrap:db` or `rumi setup`',
+        detail: dbDriverOf(env) === 'supabase'
+          ? 'helper is there but the tables are not — run `npm run bootstrap:db` or `rumi setup`'
+          : 'no tables yet — run `rumi setup`, `rumi start` or `npm run bootstrap:db`',
       };
     }
     return { ok: false, detail: status.detail };
@@ -375,9 +414,11 @@ const defaultProbes = {
 };
 
 // Which probe backs each REQUIRED service, and the env vars it needs to run.
+// `needs` may be a function of env: the database's vars depend on DB_DRIVER.
 const REQUIRED_PROBES = [
-  { name: 'Supabase', probe: 'supabase', needs: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] },
-  { name: 'Rumi tables', probe: 'tables', needs: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] },
+  { name: 'Supabase', probe: 'supabase', needs: databaseRequiredVars, dbDrivers: ['supabase'] },
+  { name: 'Database', probe: 'database', needs: databaseRequiredVars, dbDrivers: ['bundled', 'postgres'] },
+  { name: 'Rumi tables', probe: 'tables', needs: databaseRequiredVars },
   { name: 'OpenRouter (LLM)', probe: 'openrouter', needs: ['OPENROUTER_API_KEY'] },
   // Not required, and not listed, when CHANNEL_DRIVER=none: there is no WhatsApp.
   { name: 'WhatsApp Cloud API', probe: 'whatsapp', needs: ['PHONE_NUMBER_ID', 'WHATSAPP_TOKEN'], skipOn: ['none'] },
@@ -411,11 +452,14 @@ async function runDoctor({
 
   // Run REQUIRED probes only for services whose vars are present.
   const probeResults = [];
-  for (const { name, probe, needs = [], skipOn = [] } of REQUIRED_PROBES) {
+  const dbDriver = dbDriverOf(env);
+  for (const { name, probe, needs = [], skipOn = [], dbDrivers } of REQUIRED_PROBES) {
     if (skipOn.includes(analysis.channel)) continue;
+    if (dbDrivers && !dbDrivers.includes(dbDriver)) continue;
     const impl = probes[probe];
     if (!impl) { probeResults.push({ name, status: 'skip', detail: 'no probe' }); continue; }
-    if (needs.some((k) => !isSet(env[k]))) {
+    const neededVars = typeof needs === 'function' ? needs(env) : needs;
+    if (neededVars.some((k) => !isSet(env[k]))) {
       probeResults.push({ name, status: 'skip', detail: 'not configured (see missing required vars)' });
       continue;
     }
@@ -569,7 +613,8 @@ module.exports = {
   formatReport,
   keySource,
   KEY_SOURCES,
-  REQUIRED_VARS,
+  CORE_REQUIRED_VARS,
+  databaseRequiredVars,
   CHANNEL_REQUIRED_VARS,
   requiredVarsFor,
   resolveChannelDriver,

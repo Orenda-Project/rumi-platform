@@ -154,6 +154,27 @@ function redisUrl(input) {
   return no('That should look like redis://host:6379 — or redis://default:password@host:6379 for a hosted one.');
 }
 
+// ── Postgres ─────────────────────────────────────────────────────────────────
+
+/** @returns {Verdict} */
+function databaseUrl(input) {
+  const value = clean(input);
+  if (!value) return no("The database address can't be empty.");
+  if (/^https?:\/\//.test(value)) {
+    return no('That is a web address. A Postgres connection string starts with postgres:// — look for "connection string" or "URI" in your provider\'s dashboard.');
+  }
+  if (!/^postgres(ql)?:\/\//.test(value)) {
+    return no('That should look like postgres://user:password@host:5432/dbname.');
+  }
+  try {
+    const url = new URL(value);
+    if (!url.hostname) return no('That connection string has no host in it.');
+  } catch {
+    return no('That connection string is not valid — check for a stray space or an unescaped @ in the password.');
+  }
+  return ok(value);
+}
+
 // ── Meta / WhatsApp Cloud API ────────────────────────────────────────────────
 
 /** @returns {Verdict} */
@@ -206,6 +227,7 @@ function webhookVerifyToken(input) {
 const BY_ENV_VAR = {
   SUPABASE_URL: supabaseUrl,
   SUPABASE_SERVICE_ROLE_KEY: supabaseServiceKey,
+  DATABASE_URL: databaseUrl,
   OPENROUTER_API_KEY: openrouterKey,
   REDIS_URL: redisUrl,
   WHATSAPP_TOKEN: whatsappToken,
@@ -221,7 +243,7 @@ function validatorFor(envVar) {
 
 module.exports = {
   clean, required, jwtRole, identifyForeignKey,
-  supabaseUrl, supabaseServiceKey, openrouterKey, redisUrl,
+  supabaseUrl, supabaseServiceKey, databaseUrl, openrouterKey, redisUrl,
   whatsappToken, phoneNumberId, wabaId, webhookVerifyToken,
   validatorFor, BY_ENV_VAR,
 };

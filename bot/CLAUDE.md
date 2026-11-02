@@ -1,7 +1,7 @@
 # bot — The WhatsApp bot service: web entry point, workers, services, setup CLI and tests
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot kg=df163ed856c1 gen=74d9bb2fd717 overflow=23 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot kg=ddcf53766586 gen=36f50eaec4c4 overflow=24 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `whatsapp-bot.js` — Express web entry; mounts /webhook and routes every inbound message
@@ -20,8 +20,7 @@ Full index: `CLAUDE.index.md`
 ## Who reads this (generated)
 - table `coaching_sessions` (written by `whatsapp-bot.js`) ← read by `dashboard/database/queries.js:732:5911672a`? · `dashboard/index.js:1518:5911672a`? (+51)
 - column `coaching_sessions.status` (written by `whatsapp-bot.js`) ← read by `dashboard/database/queries.js:734:a69ef692` · `dashboard/routes/portal.routes.js:739:a69ef692` (+27)
-- table `coaching_sessions` whole row (`*`) (written by `whatsapp-bot.js`) ← read by `dashboard/database/queries.js:733:7a0c163a`? · `dashboard/routes/portal.routes.js:960:d2b02c3e`? (+13)
-- … 14 more → `CLAUDE.index.md`
+- … 15 more → `CLAUDE.index.md`
 
 ## Never (human)
 - Do not move the .env lookup: it is anchored to the repo root, not the cwd (bot/whatsapp-bot.js:7)
@@ -35,5 +34,5 @@ Full index: `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `pinokio-launcher`? · `video-generation`? · `whatsapp-flows`?
-- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `SECURITY.md`? · `SETUP.md`? · `TEST_READY.md`? · `bot/shared/services/CLAUDE.md`? (+15)
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `SECURITY.md`? · `TEST_READY.md`? · `bot/shared/services/CLAUDE.md`? · `bot/shared/services/queue/CLAUDE.md`? (+14)
 - … 1 more → `CLAUDE.index.md`

@@ -1,6 +1,6 @@
 # steps — One module per wizard step after welcome: credentials, database, whatsapp, done
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public/steps kg=d8a5fc2a2093 gen=51841474febd overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public/steps kg=c5d37c0d71d6 gen=e4fd3a196f40 overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `credentials.js` — the .env form
@@ -11,7 +11,7 @@
 | path | purpose |
 |---|---|
 | `credentials.js` | Wizard step rendering the .env credential form from the checkout's catalogue with live tests |
-| `database.js` | Wizard step showing the exec_sql SQL to paste, polling for it, then streaming schema application |
+| `database.js` | Wizard step: built-in DB needs nothing; Supabase shows the exec_sql paste, polls for it, then streams schema application |
 | `done.js` | Wizard closing step showing the same pass/fail/skip report as `rumi doctor` |
 | `whatsapp.js` | Wizard step showing the WhatsApp pairing QR as a self-refreshing image |
 

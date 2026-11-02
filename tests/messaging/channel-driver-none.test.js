@@ -23,7 +23,8 @@ describe('CHANNEL_DRIVER=none', () => {
     expect(fa.resolveChannelDriver({ CHANNEL_DRIVER: 'none' })).toBe('none');
     // Even with leftover Meta values in the env, "none" means none.
     expect(fa.resolveChannelDriver({ CHANNEL_DRIVER: 'none', WHATSAPP_TOKEN: 'x' })).toBe('none');
-    expect(fa.requiredVarsFor({ CHANNEL_DRIVER: 'none' })).toEqual(fa.REQUIRED_VARS);
+    expect(fa.requiredVarsFor({ CHANNEL_DRIVER: 'none' }))
+      .toEqual([...fa.databaseRequiredVars({}), ...fa.CORE_REQUIRED_VARS]);
   });
 
   it('routes Matrix identifiers to Matrix, and refuses a bare phone number loudly', async () => {

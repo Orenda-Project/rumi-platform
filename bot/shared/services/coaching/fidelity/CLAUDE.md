@@ -1,7 +1,7 @@
 # fidelity — Lesson-plan fidelity: extract planned moves, grade the recording, score in code
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/fidelity kg=5ba0102c82f0 gen=2050259fcf1a overflow=37 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/fidelity kg=065b75ff4669 gen=97c84bc911ea overflow=37 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `fidelity-orchestrator.js` — entry; gated by feature lp_fidelity, returns the lp_fidelity blob
@@ -17,7 +17,7 @@ Full index: `CLAUDE.index.md`
 | … | 10 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `coaching_sessions` (written by `fidelity-recompute.service.js`) ← read by `bot/scripts/generate-coaching-excel.js:27:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+51)
+- table `coaching_sessions` (written by `fidelity-recompute.service.js`) ← read by `bot/scripts/generate-coaching-excel.js:23:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+51)
 - table `lesson_plans` (written by `fidelity-session.js`) ← read by `bot/shared/database/bot-helpers.js:553:611f2601`? · `bot/shared/routes/quiz-flow-endpoint.js:158:611f2601`? (+19)
 - … 25 more → `CLAUDE.index.md`
 

@@ -1,7 +1,7 @@
 # console — Operator web console: setup, feature switches, pipeline and live activity
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/console kg=17516a1d6ea9 gen=fef83a5fd784 overflow=12 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/console kg=4487ffa5bdb1 gen=21b3b72e4513 overflow=11 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `index.js` — mountConsole(app) wires host guard, assets, pages and api routers at /console
@@ -15,16 +15,17 @@ Full index: `CLAUDE.index.md`
 | `assets/` | → (no door; 2 files) |
 | `routes/` | → (no door; 2 files) |
 | `views/` | EJS pages for the operator console screens → `views/CLAUDE.md` |
-| `env-catalog.js` | Groups the .env into labelled rows by joining setup-wizard copy with feature-availability; feeds the Setup page |
+| `env-catalog.js` | Groups the .env into labelled rows per DB_DRIVER and feature-availability, with cards for other databases; feeds Setup |
 | `features.js` | Builds the Features page data: configured vs switched-off vs effective state per feature |
 | `auth.js` | Decides console access: loopback token mode vs network password mode, host guard, bcrypt check, Redis session store |
-| … | 6 more → `CLAUDE.index.md` |
+| `index.js` | mountConsole(app): mounts the operator console at /console with host guard, static assets, pages and /api routers |
+| … | 5 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `env-catalog.js` ← imported by `bot/console/routes/api.js:17:3983811d` · `bot/console/routes/pages.js:16:66a578cf`
 - `features.js` ← imported by `bot/console/routes/api.js:129:51a85b5e` · `bot/console/routes/pages.js:63:ef3851db`
 - `index.js` ← imported by `bot/whatsapp-bot.js:84:5945be51` · `bot/console/server.js:37:d5d102af`
-- `redaction.js` ← imported by `bot/console/env-catalog.js:33:20c75a3e` · `bot/console/routes/api.js:18:734b49d2`
+- `auth.js` ← imported by `bot/console/index.js:31:b9ea4add`
 - … 6 more → `CLAUDE.index.md`
 
 ## Never (human)

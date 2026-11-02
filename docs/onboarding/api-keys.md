@@ -2,18 +2,21 @@
 
 Rumi turns features on by **presence**: set a feature's key(s) and it switches on; leave them blank and it stays off (the bot never crashes over a missing optional key). So you only need a handful to start, then add more as you go.
 
-**You need 8 keys to boot.** Everything else is optional. Run `npm run doctor` any time to see what's on, what's off, and which key unlocks each off feature.
+**A few keys are needed to boot** (six with the built-in database and an official WhatsApp number; just OpenRouter and Redis with a linked phone). Everything else is optional. Run `npm run doctor` any time to see what's on, what's off, and which key unlocks each off feature.
 
 > Steps were verified against each provider's signup as of May 2026; provider dashboards change, so the exact menu labels may drift. Env-var names match `bot/shared/config/feature-availability.js` and `.env.template`.
 
 ---
 
-## Tier 0 — required to start (8 keys)
+## Tier 0 — required to start
 
 Without all of these the bot won't start.
 
-### Supabase → `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-The database. **Free tier: yes (no card).**
+### The database → nothing, `DATABASE_URL`, or `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
+**Built in by default — no key needed.** Rumi runs its own Postgres on the same machine; `rumi setup` (or the
+first `rumi start`) creates its password and tables. To use a Postgres you already have instead, set
+`DB_DRIVER=postgres` and `DATABASE_URL`. To use Supabase (**free tier: yes, no card**), follow the steps below
+and set `DB_DRIVER=supabase` — see SETUP.md Step 2.
 1. Go to **supabase.com** → **Start your project** → sign in with GitHub.
 2. **New project** → name it, set a DB password + region → **Create** (~2 min to provision).
 3. **Settings** (gear, bottom-left) → **API**: copy the **Project URL** → `SUPABASE_URL`.

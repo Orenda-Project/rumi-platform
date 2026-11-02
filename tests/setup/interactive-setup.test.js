@@ -40,6 +40,7 @@ function loadWizard(mocks = {}) {
 
 const allPass = {
   supabase: async () => ({ ok: true, detail: 'HTTP 200' }),
+  database: async () => ({ ok: true, detail: 'connected' }),
   openrouter: async () => ({ ok: true, detail: 'HTTP 200 · $5.00 credit remaining' }),
   redis: async () => ({ ok: true, detail: 'PONG' }),
   whatsapp: async () => ({ ok: true, detail: 'HTTP 200' }),
@@ -189,7 +190,7 @@ describe('re-running the wizard', () => {
       probes: allPass,
       dbSetup: { inspectDatabase: async () => ({ state: 'ready', detail: 'ok' }) },
     });
-    const io = fakeIo({ ask: ['https://new.supabase.co', `eyJ${Buffer.from('{"role":"service_role"}').toString('base64')}.x`] });
+    const io = fakeIo({ select: ['supabase'], ask: ['https://new.supabase.co', `eyJ${Buffer.from('{"role":"service_role"}').toString('base64')}.x`] });
 
     await stepDatabase(io, { SUPABASE_URL: 'https://old.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'eyJold' }, () => {}, { reconfigure: true });
 
@@ -201,11 +202,77 @@ describe('re-running the wizard', () => {
       probes: { ...allPass, supabase: (() => { let call = 0; return async () => { call += 1; return call === 1 ? { ok: false, detail: 'HTTP 401' } : { ok: true, detail: 'HTTP 200' }; }; })() },
       dbSetup: { inspectDatabase: async () => ({ state: 'ready', detail: 'ok' }) },
     });
-    const io = fakeIo({ ask: ['https://new.supabase.co', 'sb_secret_abc'] });
+    const io = fakeIo({ select: ['supabase'], ask: ['https://new.supabase.co', 'sb_secret_abc'] });
 
     await stepDatabase(io, { SUPABASE_URL: 'https://old.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'eyJold' }, () => {});
 
     expect(io.asked.ask).toHaveLength(2);
+  });
+});
+
+describe('choosing where the data lives', () => {
+  it('offers the built-in database first, as the default', async () => {
+    const { chooseDatabase } = loadWizard();
+    const io = fakeIo();
+    expect(await chooseDatabase(io)).toBe('bundled');
+    expect(io.asked.select[0].options.map((o) => o.value)).toEqual(['bundled', 'supabase', 'postgres']);
+  });
+
+  it('built-in: saves DB_DRIVER=bundled and a generated password, creates the tables, asks nothing else', async () => {
+    const applySchema = jest.fn(async () => ({ ok: true, applied: [], migrations: [], errors: [] }));
+    const { stepDatabase } = loadWizard({ probes: allPass, dbSetup: { applySchema } });
+    const io = fakeIo();
+    const env = {};
+    const saved = {};
+    const save = (vars) => { Object.assign(saved, vars); Object.assign(env, vars); };
+
+    await stepDatabase(io, env, save);
+
+    expect(saved.DB_DRIVER).toBe('bundled');
+    expect(saved.RUMI_DB_PASSWORD).toMatch(/^[0-9a-f]{48}$/);
+    expect(applySchema).toHaveBeenCalledWith(env);
+    expect(io.asked.ask).toHaveLength(0);
+    expect(log.text).toMatch(/Database ready/);
+  });
+
+  it('built-in: keeps an existing password and does not ask where the data lives again', async () => {
+    const applySchema = jest.fn(async () => ({ ok: true, applied: [], migrations: [], errors: [] }));
+    const { stepDatabase } = loadWizard({ probes: allPass, dbSetup: { applySchema } });
+    const io = fakeIo();
+
+    await stepDatabase(io, { DB_DRIVER: 'bundled', RUMI_DB_PASSWORD: 'existing' }, () => {});
+
+    expect(io.asked.select).toHaveLength(0);
+    expect(applySchema).toHaveBeenCalled();
+  });
+
+  it('built-in: a failure stops setup with the reason', async () => {
+    const applySchema = async () => ({ ok: false, errors: [{ file: 'database', error: 'port in use' }] });
+    const { stepDatabase } = loadWizard({ probes: allPass, dbSetup: { applySchema } });
+    await expect(stepDatabase(fakeIo(), {}, () => {})).rejects.toThrow(/built-in database is not ready/);
+    expect(log.text).toMatch(/port in use/);
+  });
+
+  it('own Postgres: asks for the connection string (hidden), checks it, then makes the tables', async () => {
+    const applySchema = jest.fn(async () => ({ ok: true, applied: [], migrations: [], errors: [] }));
+    const { stepDatabase } = loadWizard({
+      probes: allPass,
+      dbSetup: { inspectDatabase: async () => ({ state: 'needs-schema', detail: 'empty' }), applySchema },
+    });
+    const io = fakeIo({ select: ['postgres'], ask: ['postgres://u:p@db.example.com:5432/rumi'] });
+    const saved = {};
+
+    await stepDatabase(io, {}, (vars) => Object.assign(saved, vars));
+
+    expect(io.asked.ask.map((a) => [a.label, a.secret])).toEqual([['Connection string', true]]);
+    expect(saved).toMatchObject({ DB_DRIVER: 'postgres', DATABASE_URL: 'postgres://u:p@db.example.com:5432/rumi' });
+    expect(applySchema).toHaveBeenCalled();
+  });
+
+  it('never mentions Supabase on the welcome screen as something you need', () => {
+    const { welcome } = loadWizard();
+    welcome({});
+    expect(log.text).not.toMatch(/Supabase account/);
   });
 });
 
@@ -898,7 +965,7 @@ describe('the template is a set of suggestions, not answers', () => {
       probes: allPass,
       dbSetup: { inspectDatabase: async () => ({ state: 'ready', detail: 'ok' }) },
     });
-    const io = fakeIo({ ask: ['https://real.supabase.co', 'sb_secret_real'] });
+    const io = fakeIo({ select: ['supabase'], ask: ['https://real.supabase.co', 'sb_secret_real'] });
 
     await stepDatabase(io, { ...FRESH_ENV }, () => {});
 

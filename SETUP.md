@@ -15,7 +15,7 @@ working is not asked about twice.
 
 | For | Where to get it | Cost |
 |-----|-----------------|------|
-| **A database** — where Rumi remembers teachers, lessons and assessments | [supabase.com](https://supabase.com) | free tier is plenty |
+| **A database** — where Rumi remembers teachers, lessons and assessments | built in — Rumi runs its own; or [Supabase](https://supabase.com) / any Postgres | free |
 | **The AI** — one key, many models | [openrouter.ai/keys](https://openrouter.ai/keys) | a few dollars goes a long way |
 | **WhatsApp** | your own phone | — |
 
@@ -65,9 +65,15 @@ It collects and live-checks your database, AI and Redis credentials; creates all
 security policies and the seed data; switches on any optional abilities you give it keys for; and links
 WhatsApp.
 
-One step it cannot do for you: Supabase offers no API for running arbitrary SQL, so the tiny `exec_sql`
-helper that the schema is applied through has to be pasted into the SQL editor once, by hand. The wizard
-detects this, prints the helper SQL (including GRANT and NOTIFY), and links straight to the right page of your project. It will not continue until the `users` table exists.
+Where the data lives is the first question it asks. The default is **on this computer**: Rumi runs its own
+Postgres (installed by `npm install` for Windows, macOS and Linux), creates its tables, and starts it every
+time you run `rumi start`. Its data is in the `.rumi-db/` folder — back that folder up. You can choose
+Supabase or any Postgres you already have instead.
+
+With Supabase there is one step it cannot do for you: Supabase offers no API for running arbitrary SQL, so
+the tiny `exec_sql` helper that the schema is applied through has to be pasted into the SQL editor once, by
+hand. The wizard detects this, prints the helper SQL (including GRANT and NOTIFY), and links straight to the
+right page of your project. Whichever database you choose, it will not continue until the `users` table exists.
 
 For a **production** deployment there is more to do than the wizard covers — hosting, the Meta webhook,
 registering WhatsApp Flows, and the background worker. That's what the rest of this guide is for.
@@ -85,14 +91,14 @@ Flows, workers) are needed for a real deployment either way.
 |------------|----------------|
 | Node.js 22+ | [nodejs.org](https://nodejs.org) |
 | GitHub account | [github.com](https://github.com) (to fork the repo) |
-| Supabase account | [supabase.com](https://supabase.com) (free tier works) |
+| A database | built in (nothing to sign up for), or [Supabase](https://supabase.com) / any Postgres — see Step 2 |
 | Railway account | [railway.app](https://railway.app) (for hosting + Redis) |
 | OpenRouter API key | [openrouter.ai/keys](https://openrouter.ai/keys) (for LLM access) |
 | WhatsApp Business credentials | [Meta Business Manager](https://business.facebook.com) — production only |
 
 > **New to any of these?** Two step-by-step guides walk you through the slow parts:
 > - **[docs/onboarding/whatsapp.md](docs/onboarding/whatsapp.md)** — get a working WhatsApp connection in ~10 minutes (free test number), then go to production.
-> - **[docs/onboarding/api-keys.md](docs/onboarding/api-keys.md)** — how to get every API key, what each unlocks, and which 8 you actually need to start.
+> - **[docs/onboarding/api-keys.md](docs/onboarding/api-keys.md)** — how to get every API key, what each unlocks, and which few you actually need to start.
 
 ## Step 1: Fork, Clone, and Install
 
@@ -113,12 +119,36 @@ cd bot && npm install && cd ..
 
 > **Important:** Do NOT clone directly from `Orenda-Project/rumi-platform`. Each deployment needs its own fork so you can push changes independently.
 
-## Step 2: Create Supabase Database
+## Step 2: Choose a Database
 
-> **No Supabase account?** For a laptop, demo or test setup you can skip this step and Step 3:
-> `bash infrastructure/local/up.sh` starts a private Postgres, PostgREST and Redis (no Docker), applies
-> the schema, and prints the `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `REDIS_URL` lines for `.env`.
-> Not for production. See [docs/local-stack.md](docs/local-stack.md).
+`DB_DRIVER` in `.env` picks one of three. Left blank, Rumi uses Supabase if `SUPABASE_URL` is set, your
+Postgres if `DATABASE_URL` is set, and otherwise the built-in database.
+
+### Option A: The built-in database (default)
+
+Nothing to sign up for: a real Postgres ships with Rumi and runs on the same machine.
+
+```bash
+npm run db:start      # first run: creates the password (saved to .env), the .rumi-db/ folder and every table
+```
+
+`rumi start` does the same automatically before it starts the bot, and applies new migrations after you pull
+an update — so on a single machine you never need to run it yourself. Back up the `.rumi-db/` folder.
+Postgres will not run as the root user; inside a container that runs as root, set `RUMI_DB_RUN_AS_ROOT=1`.
+
+### Option B: A Postgres you already have
+
+Railway's Postgres plugin, Neon, AWS RDS or your own server:
+
+```bash
+# .env
+DB_DRIVER=postgres
+DATABASE_URL=postgres://user:password@host:5432/dbname?sslmode=require
+```
+
+Then `npm run bootstrap:db` creates the tables over that connection — no helper to paste.
+
+### Option C: Supabase
 
 1. **Create account** at [supabase.com](https://supabase.com) (free tier is sufficient)
 2. **Create a new project** — choose a region closest to your users
@@ -270,7 +300,10 @@ Fill in the required values:
 NODE_ENV=production
 PORT=3000
 
-# Database (from Step 2)
+# Database (from Step 2) — one of:
+#   built in:  nothing to fill in (RUMI_DB_PASSWORD is created for you)
+#   Postgres:  DB_DRIVER=postgres and DATABASE_URL=postgres://…
+#   Supabase:
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
@@ -303,6 +336,10 @@ npm run validate:env
 3. Add a new service from your GitHub fork
 4. Set the **Root Directory** to `bot`
 5. Add all environment variables from your `.env` file to the Railway service
+
+Railway runs the bot, the worker and the dashboard as separate services, so give them one shared
+database: add Railway's **Postgres** plugin (Option B — `DB_DRIVER=postgres`, `DATABASE_URL` from the
+plugin) or use Supabase (Option C). The built-in database is for running everything on one machine.
 
 ### 7b: Add Redis Plugin
 

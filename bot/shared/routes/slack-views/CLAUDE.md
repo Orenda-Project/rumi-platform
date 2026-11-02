@@ -1,6 +1,6 @@
 # slack-views — Slack Block Kit screen mappings for Flow-equivalent modals
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/routes/slack-views kg=ac6bcf0d1034 gen=77bf64cd1f3e overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/routes/slack-views kg=92786645ddc3 gen=80ea7bda9fb9 overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `registration.view.js` — fullest mapping incl. country buckets
@@ -17,8 +17,8 @@
 | `settings.view.js` | Slack Block Kit mapping for the settings screen (language and framework selects) |
 
 ## Who reads this (generated)
-- `attendance.view.js` ← imported by `bot/shared/routes/slack-flow-registry.js:79:91b684ce` · `bot/shared/routes/slack-modal-interactions.handler.js:197:91b684ce`
-- `registration.view.js` ← imported by `bot/shared/routes/slack-flow-registry.js:30:7de8fef8` · `bot/shared/routes/slack-modal-interactions.handler.js:50:7de8fef8`
+- `attendance.view.js` ← imported by `bot/shared/routes/slack-flow-registry.js:79:91b684ce` · `bot/shared/routes/slack-modal-interactions.handler.js:204:91b684ce`
+- `registration.view.js` ← imported by `bot/shared/routes/slack-flow-registry.js:30:7de8fef8` · `bot/shared/routes/slack-modal-interactions.handler.js:57:7de8fef8`
 - `attendance-marking.view.js` ← imported by `bot/shared/routes/slack-flow-registry.js:126:66e7f1bc`
 - `exam-confirm.view.js` ← imported by `bot/shared/routes/slack-flow-registry.js:170:919eba44`
 - `settings.view.js` ← imported by `bot/shared/routes/slack-flow-registry.js:48:b1673d6d`

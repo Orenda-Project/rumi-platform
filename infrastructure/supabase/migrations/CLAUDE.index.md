@@ -42,7 +42,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - column `quizzes.coaching_session_id` (written by `V2.9.0__lesson_quiz.sql`) ← read by `bot/shared/services/quiz/transcript-lesson-provider.js:161:77be8067` · `bot/shared/services/quiz/transcript-quiz-generate.service.js:1606:8753b523` · `bot/shared/services/quiz/transcript-quiz-handoff.service.js:55:71d5e195` · `bot/shared/services/quiz/transcript-quiz-list.service.js:294:b040fb66` (+1: `python3 kg/kg.py who-reads quizzes.coaching_session_id`)
 - column `quizzes.language` (written by `V2.9.0__lesson_quiz.sql`) ← read by `bot/shared/services/quiz/transcript-lesson-provider.js:161:77be8067` · `bot/shared/services/quiz/transcript-quiz-generate.service.js:1606:8753b523` · `bot/shared/services/quiz/transcript-quiz-handoff.service.js:55:71d5e195` · `bot/shared/services/quiz/transcript-quiz-list.service.js:526:33377960` (+3: `python3 kg/kg.py who-reads quizzes.language`)
 - column `quizzes.meta` (written by `V2.9.0__lesson_quiz.sql`) ← read by `bot/shared/services/quiz/transcript-lesson-provider.js:161:77be8067` · `bot/shared/services/quiz/transcript-quiz-generate.service.js:1578:f43d3314` · `bot/shared/services/quiz/transcript-quiz-handoff.service.js:55:71d5e195` · `bot/shared/services/quiz/transcript-quiz-list.service.js:294:b040fb66` (+3: `python3 kg/kg.py who-reads quizzes.meta`)
-- column `schema_versions.version` (written by `V1.0.0__baseline.sql`) ← read by `infrastructure/scripts/migrate.js:87:9e9cfc5f`
+- column `schema_versions.version` (written by `V1.0.0__baseline.sql`) ← read by `infrastructure/scripts/migrate.js:117:9e9cfc5f`
 - column `schools.ext_id` (written by `V2.5.0__attendance_register.sql`, `V2.6.0__observe_coach_assistant.sql`) ← read by `bot/scripts/attendance/link-school.js:77:3c40a8fa` · `bot/scripts/observe-roster.js:108:5cc6b2b5` · `bot/shared/services/staff-attendance.service.js:57:87e081e3`
 - column `schools.id` (written by `V2.5.0__attendance_register.sql`, `V2.6.0__observe_coach_assistant.sql`) ← read by `bot/scripts/attendance/link-school.js:77:3c40a8fa` · `bot/scripts/observe-roster.js:108:5cc6b2b5` · `bot/shared/services/staff-attendance.service.js:57:87e081e3`
 - column `schools.name` (written by `V2.5.0__attendance_register.sql`, `V2.6.0__observe_coach_assistant.sql`) ← read by `bot/scripts/attendance/link-school.js:77:3c40a8fa` · `bot/scripts/observe-roster.js:108:5cc6b2b5` · `bot/shared/services/staff-attendance.service.js:57:87e081e3`
@@ -73,10 +73,10 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - table `exam_check_sessions` whole row (`*`) (written by `V2.11.7__exam_session_columns.sql`) ← read by `bot/shared/services/exam-checker/exam-session.service.js:37:d2b02c3e`?
 - table `users` whole row (`*`) (written by `V2.11.2__portal_reset_attempts.sql`, `V2.5.0__attendance_register.sql`, `V2.6.0__observe_coach_assistant.sql`) ← read by `bot/shared/database/bot-helpers.js:18:d2b02c3e`? · `bot/shared/database/queries.js:14:77bc023b`? · `bot/shared/utils/telemetry.js:74:7a0c163a`? · `dashboard/database/queries.js:687:7a0c163a`? (+2: `python3 kg/kg.py who-reads users`)
 - table `attendance_sessions` (written by `V2.5.0__attendance_register.sql`) ← read by `bot/shared/services/attendance-delivery.service.js:115:2a982732`?
-- table `schema_versions` (written by `V1.0.0__baseline.sql`, `V2.4.0__test_papers.sql`, `V2.7.0__exec_sql_service_role_only.sql`) ← read by `infrastructure/scripts/migrate.js:86:b151663b`?
+- table `schema_versions` (written by `V1.0.0__baseline.sql`, `V2.4.0__test_papers.sql`, `V2.7.0__exec_sql_service_role_only.sql`) ← read by `infrastructure/scripts/migrate.js:116:b151663b`?
 
 ## Tests (all, generated)
 - (none)
 
 ## Related (all, generated)
-- docs: `CHANGELOG.md`? · `SETUP.md`? · `docs/features/attendance.md`? · `docs/features/lesson-quiz.md`? · `docs/features/observe.md`? · `docs/features/teacher-nudges.md`? · `docs/features/test-papers.md`? · `docs/pulling-updates.md`? · `infrastructure/supabase/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `docs/features/attendance.md`? · `docs/features/lesson-quiz.md`? · `docs/features/observe.md`? · `docs/features/teacher-nudges.md`? · `docs/features/test-papers.md`? · `docs/pulling-updates.md`? · `infrastructure/supabase/CLAUDE.md`?
