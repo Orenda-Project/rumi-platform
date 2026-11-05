@@ -42,7 +42,7 @@ class QuizReportService {
     // Fetch completed sessions
     const { data: sessions } = await supabase
       .from('quiz_sessions')
-      .select('id, student_id, status, total_questions_answered, correct_answers, mastery_percentage, mastery_level, completed_at, students(student_name)')
+      .select('id, student_id, status, total_questions_answered, correct_answers, mastery_percentage, mastery_level, completed_at, students!student_id(student_name)')
       .eq('quiz_id', quizId);
 
     const completed = (sessions || []).filter(s => s.status === 'completed');

@@ -13,14 +13,10 @@
  */
 
 require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
 const { processTranscriptWithFallback, fallbackParse } = require('../services/transcript-processor.service');
 
 // Initialize Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = require('../config/supabase');
 
 /**
  * Parse command line arguments
@@ -191,8 +187,8 @@ async function main() {
   console.log(`\nStarted: ${new Date().toISOString()}`);
 
   // Verify environment
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('ERROR: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabase) {
+    console.error('ERROR: No database configured (DATABASE_URL, or SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY)');
     process.exit(1);
   }
 

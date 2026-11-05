@@ -30,14 +30,31 @@ const { DRIVERS, DEFAULT_DRIVER } = require('../services/messaging/channel-regis
 // file on machines with no database and no bot/node_modules.
 const overrides = require('./feature-overrides');
 
-// Hard requirements, independent of messaging channel: the bot will not start
-// without all of these.
-const REQUIRED_VARS = [
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
+// Dependency-free too: which database driver is in use decides which of the
+// database's env vars are required (see DB_DRIVER in .env.template).
+// isSet lives there too: the database driver choice needs the same
+// placeholder rule (a freshly copied template is not a Supabase project).
+const { DRIVERS: DB_DRIVERS, isSet, resolveDbDriver } = require('../services/db/pg-adapter/drivers');
+
+// Hard requirements besides the database and the messaging channel: the bot
+// will not start without these.
+const CORE_REQUIRED_VARS = [
   'OPENROUTER_API_KEY',
   'REDIS_URL',
 ];
+
+/**
+ * The database's required env vars for the selected DB_DRIVER: the built-in
+ * database's generated password, DATABASE_URL, or the two Supabase keys.
+ * Empty for an unknown DB_DRIVER — the bot's boot check names that typo.
+ */
+function databaseRequiredVars(env = process.env) {
+  try {
+    return [...DB_DRIVERS[resolveDbDriver(env)].requiredEnv];
+  } catch {
+    return [];
+  }
+}
 
 // Additional vars required per messaging channel driver. Adding a new channel
 // (e.g. Slack) is a one-line addition here — no restructuring.
@@ -105,7 +122,7 @@ const FEATURES = [
     id: 'morning_brief',
     name: 'Morning Brief (programme-health briefs to your team)',
     keys: ['BRIEF_RECIPIENTS'],
-    notes: 'Needs BRIEF_DATABASE_URL or DATABASE_URL and python3 with matplotlib; schedule bot/workers/brief.worker.js daily.',
+    notes: 'Reads the database (BRIEF_DATABASE_URL, DATABASE_URL or the built-in one) and needs python3 with matplotlib; schedule bot/workers/brief.worker.js daily.',
   },
   {
     id: 'teacher_nudges',
@@ -182,12 +199,11 @@ const FEATURES = [
   },
 ];
 
-// A var counts as "set" only if it holds a real value — not a template placeholder.
-// Placeholders the template ships: CHANGEME-*, your-project / your_ / YOUR_, and <…> angle stubs.
-// (REDIS_URL=redis://localhost:6379 is a legitimate local default and is intentionally NOT a placeholder.)
-const PLACEHOLDER_RE = /^CHANGEME|your-project|your_|^YOUR_|^<.*>$/i;
+// A var counts as "set" only if it holds a real value — not a template placeholder
+// (isSet, from pg-adapter/drivers.js). Placeholders the template ships: CHANGEME-*,
+// your-project / your_ / YOUR_, and <…> angle stubs. (REDIS_URL=redis://localhost:6379
+// is a legitimate local default and is intentionally NOT a placeholder.)
 const FLAG_ON_RE = /^(true|1|yes)$/i;
-const isSet = (v) => typeof v === 'string' && v.trim() !== '' && !PLACEHOLDER_RE.test(v.trim());
 
 /**
  * Which messaging channel driver applies for this env. Explicit CHANNEL_DRIVER
@@ -212,7 +228,7 @@ function resolveChannelDriver(env = process.env) {
 /** The full required-vars list for this env: the channel-independent core plus whichever channel is resolved. */
 function requiredVarsFor(env = process.env) {
   const channel = resolveChannelDriver(env);
-  return [...REQUIRED_VARS, ...(CHANNEL_REQUIRED_VARS[channel] || [])];
+  return [...databaseRequiredVars(env), ...CORE_REQUIRED_VARS, ...(CHANNEL_REQUIRED_VARS[channel] || [])];
 }
 
 /** Required vars (core + resolved channel) that are NOT set (empty array = ready to boot). */
@@ -323,7 +339,8 @@ function resolveActiveChannels(env = process.env) {
 }
 
 module.exports = {
-  REQUIRED_VARS,
+  CORE_REQUIRED_VARS,
+  databaseRequiredVars,
   CHANNEL_REQUIRED_VARS,
   ADDITIVE_CHANNEL_REQUIRED_VARS,
   FEATURES,

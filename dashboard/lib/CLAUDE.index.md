@@ -6,6 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
+| `pg-adapter/` | Byte-identical copy of bot/shared/services/db/pg-adapter for the dashboard → `pg-adapter/CLAUDE.md` |
 | `admin-csp.js` | Sets a per-request nonce CSP on rendered admin views (no unsafe-inline); applied from res.render. |
 | `asset-links.js` | Builds the Android assetlinks.json served at /.well-known for the portal app from ANDROID_APP_* env. |
 | `client-ip.js` | Resolves the caller IP from TRUST_PROXY/X-Forwarded-For for per-IP rate limits. |
@@ -13,6 +14,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `portal-auth-limits.js` | Redis-backed (memory fallback) per-IP and per-account rate limits for portal login, setup and reset routes. |
 | `portal-channels.js` | Decides whether the deployment runs WhatsApp and which chat link the portal shows; served at /api/portal/channels. |
 | `redact-url.js` | Reduces a file URL to host + path hash + extension so logs never hold openable signed URLs. |
+| `root-env.js` | Copies the built-in database's RUMI_DB_* settings from the repo-root .env when the dashboard runs from dashboard/ |
 | `safe-json.js` | Serialises data for inline script tags in EJS views, escaping < > & and U+2028/9 to prevent XSS. |
 
 ## Who reads this (all, generated)
@@ -23,6 +25,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `portal-auth-limits.js` ← imported by `dashboard/index.js:59:ff15cd53` · `dashboard/routes/portal.routes.js:37:9af46cb0`
 - `portal-channels.js` ← imported by `dashboard/routes/portal.routes.js:38:b2d16800`
 - `redact-url.js` ← imported by `dashboard/routes/portal.routes.js:39:746bd98f` · `dashboard/services/r2.service.js:9:746bd98f`
+- `root-env.js` ← imported by `dashboard/config/database.js:14:1257a0f2` · `dashboard/config/supabase.js:12:1257a0f2`
 - `safe-json.js` ← imported by `dashboard/index.js:30:57997be3`
 - env `SESSION_SECRET` read at `dashboard/lib/portal-auth-limits.js:103:e5da8385`
 
@@ -34,6 +37,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `portal-auth-limits.js` ← `tests/portal/portal-auth-limits.test.js` · `tests/portal/portal-client-ip.test.js`
 - `portal-channels.js` ← `tests/dashboard/portal-channels.test.js`
 - `redact-url.js` ← `tests/unit/redact-url.test.js`
+- `root-env.js` ← `tests/dashboard/database-ssl.test.js`
 - `safe-json.js` ← `tests/dashboard/admin-views-raw-output.test.js` · `tests/dashboard/ama-routes.test.js` · `tests/dashboard/helpers/render-admin-view.js` · `tests/dashboard/safe-json.test.js`
 
 ## Related (all, generated)

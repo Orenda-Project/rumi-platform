@@ -3,7 +3,17 @@ the database URL, and that is only ever read from the environment."""
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
+
+
+# Same rule as the app's isSet (bot/shared/services/db/pg-adapter/drivers.js):
+# the values .env.template ships are not configuration.
+_PLACEHOLDER = re.compile(r"^CHANGEME|your-project|your_|^YOUR_|^<.*>$", re.IGNORECASE)
+
+
+def _real(value: str | None) -> str | None:
+    return None if value is None or _PLACEHOLDER.search(value) else value
 
 
 def _dows(raw: str | None, default):
@@ -51,8 +61,10 @@ class Config:
             out_dir=g("BRIEF_OUT_DIR", "brief/out"),
             live_url=g("BRIEF_LIVE_URL"),
             db_url=g("BRIEF_DATABASE_URL") or g("DATABASE_URL"),
-            supabase_url=g("SUPABASE_URL"),
-            supabase_key=g("SUPABASE_SERVICE_ROLE_KEY"),
+            # The template ships placeholders for these; only a real project
+            # turns on the storage mirror.
+            supabase_url=_real(g("SUPABASE_URL")),
+            supabase_key=_real(g("SUPABASE_SERVICE_ROLE_KEY")),
         )
 
     @property

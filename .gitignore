@@ -115,6 +115,9 @@ __pycache__/
 # Local stack state (infrastructure/local/up.sh): Postgres data, logs, the
 # local JWT secret. See docs/local-stack.md.
 .local-stack/
+# The built-in database's data (DB_DRIVER=bundled, `npm run db:start`). It is
+# every teacher's data — back it up, never commit it.
+.rumi-db/
 
 # A matrix-channel-service test writes a bare-named file in the cwd and removes it;
 # an interrupted run can leave one behind.

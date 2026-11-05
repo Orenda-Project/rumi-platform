@@ -33,6 +33,7 @@ describeIf('console overview: data-probes', () => {
       featureTally: null,
       pageTitle: 'Overview',
       missing: [],
+      databaseKeys: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
       channel: 'none',
       activeChannels: ['matrix'],
       answeringOn: 'Answering on Rumi Messenger (Matrix).',
@@ -45,7 +46,7 @@ describeIf('console overview: data-probes', () => {
     });
     const box = new JSDOM(html).window.document.getElementById('probes');
     const probes = JSON.parse(box.getAttribute('data-probes'));
-    expect(probes.map((p) => p.id)).toEqual(['supabase', 'tables', 'openrouter', 'redis']);
+    expect(probes.map((p) => p.id)).toEqual(['database', 'tables', 'openrouter', 'redis']);
     expect(probes[0].keys).toEqual(['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']);
   });
 });

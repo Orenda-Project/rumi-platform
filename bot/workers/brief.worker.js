@@ -91,10 +91,26 @@ function defaultRunner(cmd, args, opts) {
   });
 }
 
+/**
+ * The renderer reads BRIEF_DATABASE_URL or DATABASE_URL. With the built-in
+ * database neither is set — its address is built from RUMI_DB_* — so hand it
+ * over as DATABASE_URL. An explicit BRIEF_DATABASE_URL / DATABASE_URL wins.
+ */
+function rendererEnv(env = process.env) {
+  if (env.BRIEF_DATABASE_URL || env.DATABASE_URL) return env;
+  const { databaseUrlFor, resolveDbDriver } = require('../shared/services/db/pg-adapter/drivers');
+  try {
+    if (resolveDbDriver(env) !== 'bundled') return env;
+  } catch {
+    return env;
+  }
+  return { ...env, DATABASE_URL: databaseUrlFor(env) };
+}
+
 async function renderBrief(kind, { env = process.env, runner = defaultRunner, log = console.log } = {}) {
   const { cmd, args, cwd } = renderCommand(kind, env);
   log(`Rendering the ${kind} brief: ${cmd} ${args.join(' ')}`);
-  return runner(cmd, args, { cwd, env });
+  return runner(cmd, args, { cwd, env: rendererEnv(env) });
 }
 
 /**
@@ -152,6 +168,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  rendererEnv,
   REPO_ROOT,
   weekdayIn,
   parseDows,

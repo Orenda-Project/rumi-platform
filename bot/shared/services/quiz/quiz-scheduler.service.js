@@ -183,7 +183,7 @@ class QuizSchedulerService {
       // Find active sessions with no recent activity
       const { data: sessions, error } = await supabase
         .from('quiz_sessions')
-        .select('id, parent_phone, student_id, students(student_name)')
+        .select('id, parent_phone, student_id, students!student_id(student_name)')
         .in('status', ['active', 'in_progress'])
         .lt('updated_at', thirtyMinAgo)
         .eq('idle_reminder_sent', false)

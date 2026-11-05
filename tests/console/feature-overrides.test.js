@@ -124,7 +124,7 @@ describe('required services have no switch; additive channels do', () => {
   it('does not change missingRequired', () => {
     overrides.load({ RUMI_FEATURE_STT_SONIOX: 'off' });
     expect(fa.missingRequired({})).toEqual(
-      expect.arrayContaining(['SUPABASE_URL', 'OPENROUTER_API_KEY']),
+      expect.arrayContaining(['RUMI_DB_PASSWORD', 'OPENROUTER_API_KEY']),
     );
   });
 });

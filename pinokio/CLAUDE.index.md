@@ -14,7 +14,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `doctor.js` | Pinokio script: ensures local Redis then runs `node bin/rumi.js doctor` |
 | `home.html` | Start-screen page shown while the bot runs; learns the bot port from the query string and links the console |
 | `icon.jpg` | (unmapped) |
-| `install.js` | Pinokio Install button: installs launcher (qrcode) and bot dependencies with npm ci, falling back to install |
+| `install.js` | Pinokio Install button: npm ci for launcher, root and bot, copies .env, prepares the built-in database's password |
 | `onboard.js` | Pinokio daemon that starts the GUI wizard (onboarding/server.js) on its own persisted port |
 | `package.json` | Manifest for the launcher: depends only on qrcode, which draws the WhatsApp QR |
 | `pair.js` | Pinokio script that runs the interactive `rumi pair` WhatsApp link in the terminal |

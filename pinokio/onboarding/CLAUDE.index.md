@@ -18,12 +18,12 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `sse.js` | Server-sent-events helper (anti-buffering headers) for streaming schema progress and QR codes |
 
 ## Who reads this (all, generated)
-- `async-route.js` ← imported by `pinokio/onboarding/routes/credentials.js:17:b351fbaa` · `pinokio/onboarding/routes/database.js:14:b351fbaa` · `pinokio/onboarding/routes/whatsapp.js:20:b351fbaa`
+- `async-route.js` ← imported by `pinokio/onboarding/routes/credentials.js:17:b351fbaa` · `pinokio/onboarding/routes/database.js:21:b351fbaa` · `pinokio/onboarding/routes/whatsapp.js:20:b351fbaa`
 - `bridge.js` ← imported by `pinokio/onboarding/server.js:19:ad911989`
 - `guards.js` ← imported by `pinokio/onboarding/server.js:20:616552d5`
 - `local-redis.js` ← imported by `pinokio/onboarding/routes/credentials.js:18:4207b702` · `pinokio/onboarding/server.js:21:fa45a93c`
 - `probes.js` ← imported by `pinokio/onboarding/routes/credentials.js:19:3bba1de9`
-- `sse.js` ← imported by `pinokio/onboarding/routes/database.js:15:ee8d22b0` · `pinokio/onboarding/routes/whatsapp.js:21:ee8d22b0`
+- `sse.js` ← imported by `pinokio/onboarding/routes/database.js:22:ee8d22b0` · `pinokio/onboarding/routes/whatsapp.js:21:ee8d22b0`
 - env `RUMI_APP_ROOT` read at `pinokio/onboarding/pair-worker.js:28:1a4be075`
 
 ## Tests (all, generated)

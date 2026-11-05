@@ -1,7 +1,7 @@
 # scripts — Operator and maintainer scripts: setup CLI, Meta registration, one-offs, demos
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/scripts kg=352dd3f79384 gen=29ad75ae4640 overflow=33 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/scripts kg=91479111ab57 gen=9a73c8b3287d overflow=33 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `setup/` — the `rumi setup`, doctor, pair, graduate CLI code
@@ -23,7 +23,7 @@ Full index: `CLAUDE.index.md`
 - table `users` (written by `observe-roster.js`) ← read by `bot/shared/database/bot-helpers.js:17:61dfd735`? · `bot/shared/database/queries.js:13:61dfd735`? (+54)
 - column `users.phone_number` (written by `observe-roster.js`) ← read by `bot/shared/database/bot-helpers.js:19:6b9ae1f2` · `bot/shared/database/queries.js:106:fef21f32` (+33)
 - column `users.name` (written by `observe-roster.js`) ← read by `bot/shared/database/queries.js:106:fef21f32` · `bot/shared/services/coaching/coaching-session.service.js:43:3e063076` (+14)
-- … 42 more → `CLAUDE.index.md`
+- … 40 more → `CLAUDE.index.md`
 
 ## Never (human)
 - Scripts with a Supabase service-role client touch real data; run only against the intended project (bot/scripts/send-outage-broadcast.js:11-14, bot/scripts/requeue-lesson-plan.js:15-18)

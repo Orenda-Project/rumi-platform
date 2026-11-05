@@ -1,7 +1,7 @@
 # migrations — SQL migrations adding bot tables and columns, run manually against Supabase
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/database/migrations kg=dfa902d5d36e gen=01a669366773 overflow=118 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/database/migrations kg=164d6a297b40 gen=2a0fd1b50602 overflow=118 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `003_classroom_coaching.sql` — coaching_sessions plus the job-queue functions the workers call
@@ -19,9 +19,9 @@ Full index: `CLAUDE.index.md`
 | … | 28 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `users` (written by `002_add_registration_fields.sql` (+4)) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+55)
-- column `coaching_sessions.id` (written by `003_classroom_coaching.sql`) ← read by `bot/scripts/generate-coaching-excel.js:29:094f71c7` · `bot/shared/handlers/image-message.handler.js:108:d4e5cc64` (+45)
-- column `coaching_sessions.status` (written by `003_classroom_coaching.sql`) ← read by `bot/scripts/generate-coaching-excel.js:41:48a3661d` · `bot/shared/handlers/image-message.handler.js:110:bba4595e` (+28)
+- table `users` (written by `002_add_registration_fields.sql` (+4)) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? (+55)
+- column `coaching_sessions.id` (written by `003_classroom_coaching.sql`) ← read by `bot/scripts/generate-coaching-excel.js:25:094f71c7` · `bot/shared/handlers/image-message.handler.js:108:d4e5cc64` (+45)
+- column `coaching_sessions.status` (written by `003_classroom_coaching.sql`) ← read by `bot/scripts/generate-coaching-excel.js:37:48a3661d` · `bot/shared/handlers/image-message.handler.js:110:bba4595e` (+28)
 - … 99 more → `CLAUDE.index.md`
 
 ## Never (human)

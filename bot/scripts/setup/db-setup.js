@@ -11,11 +11,50 @@
  * is in — already set up, missing the helper, or ready to receive the schema —
  * and let the wizard say the one true sentence for that state.
  *
+ * None of that applies to a direct Postgres (DB_DRIVER=bundled — the built-in
+ * database — or postgres): SQL goes straight over a connection, so there is
+ * no helper to paste, and the states are just ready / needs-schema /
+ * unreachable (plus `stopped` for a built-in database that is not running).
+ *
  * @module db-setup
  */
 
 const path = require('path');
 const { EXEC_SQL_DEFINITION } = require('../../../infrastructure/scripts/exec-sql-helper');
+const {
+  databaseUrlFor, isDirectPostgres, resolveDbDriver,
+} = require('../../shared/services/db/pg-adapter/drivers');
+
+// Required lazily: they load `pg`, and the Supabase path never needs it.
+const bundledDb = () => require('../../../infrastructure/db/bundled');
+const schemaTools = () => require('../../../infrastructure/db/schema');
+const bundledStart = () => require('../../../infrastructure/db/start');
+
+/** The driver, or null for a DB_DRIVER typo (reported elsewhere). */
+function driverOf(env) {
+  try {
+    return resolveDbDriver(env);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Direct-Postgres version of inspectDatabase().
+ * @returns {Promise<{state: 'ready'|'needs-schema'|'stopped'|'unreachable', detail: string}>}
+ */
+async function inspectDirectDatabase(env, driver) {
+  if (driver === 'bundled') {
+    if (!env.RUMI_DB_PASSWORD) {
+      return { state: 'stopped', detail: 'the built-in database has not been created yet — `rumi setup` or `rumi start` creates it' };
+    }
+    const running = await bundledDb().probe(env);
+    if (!running.ok) {
+      return { state: 'stopped', detail: 'the built-in database is not running — `rumi start` starts it' };
+    }
+  }
+  return schemaTools().inspectSchema(databaseUrlFor(env));
+}
 
 const SCHEMA_DIR = path.resolve(__dirname, '../../../infrastructure/supabase');
 
@@ -42,6 +81,9 @@ function headersFor(env) {
  * @returns {Promise<{state: 'ready'|'needs-helper'|'needs-schema'|'unreachable', detail: string}>}
  */
 async function inspectDatabase(env, fetchImpl = fetch) {
+  const driver = driverOf(env);
+  if (isDirectPostgres(driver)) return inspectDirectDatabase(env, driver);
+
   let schemaApplied;
   try {
     const res = await fetchImpl(
@@ -135,6 +177,9 @@ async function waitForExecSql(env, fetchImpl = fetch, opts = {}) {
  * @returns {Promise<{ok: boolean, applied: string[], errors: Array<{file: string, error: string}>}>}
  */
 async function applySchema(env) {
+  const driver = driverOf(env);
+  if (isDirectPostgres(driver)) return applyDirectSchema(env, driver);
+
   const { DatabaseBootstrapper } = require('../../../infrastructure/scripts/bootstrap-db');
   const bootstrapper = new DatabaseBootstrapper({
     supabaseUrl: env.SUPABASE_URL,
@@ -158,7 +203,26 @@ async function applySchema(env) {
   return { ok: true, ...result };
 }
 
+/**
+ * Direct-Postgres version of applySchema(): create the tables (or apply new
+ * migrations) over a pg connection. The built-in database is started for the
+ * run — and stopped again, unless it was already running.
+ */
+async function applyDirectSchema(env, driver) {
+  try {
+    if (driver === 'bundled') {
+      const db = await bundledStart().startBundledDatabase(env, { log: () => {} });
+      await db.stop();
+      return { ok: true, applied: [], migrations: [], errors: [] };
+    }
+    const result = await schemaTools().ensureSchema(databaseUrlFor(env));
+    return { ok: result.ok, applied: result.applied, migrations: [], errors: result.errors };
+  } catch (err) {
+    return { ok: false, applied: [], migrations: [], errors: [{ file: 'database', error: err.message }] };
+  }
+}
+
 module.exports = {
   EXEC_SQL_DEFINITION, SENTINEL_TABLE, SCHEMA_DIR,
-  inspectDatabase, hasExecSql, waitForExecSql, sqlEditorUrl, applySchema,
+  driverOf, inspectDatabase, hasExecSql, waitForExecSql, sqlEditorUrl, applySchema,
 };

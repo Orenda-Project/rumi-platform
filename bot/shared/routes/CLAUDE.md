@@ -1,7 +1,7 @@
 # routes — HTTP routes: encrypted WhatsApp Flow endpoints and Slack/Discord equivalents
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/routes kg=81976880dff0 gen=78b5e09f08f7 overflow=92 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/routes kg=274307d396da gen=3c173b36ad57 overflow=92 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `flow-endpoint.routes.js` — POST /api/flows/* router, mounted at whatsapp-bot.js:67
@@ -18,9 +18,9 @@ Full index: `CLAUDE.index.md`
 | … | 19 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `users` (written by `settings-endpoint.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+54)
+- table `users` (written by `settings-endpoint.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? (+54)
 - column `users.preferred_language` (written by `settings-endpoint.js`) ← read by `bot/scripts/observe-roster.js:81:44b70a83` · `bot/shared/services/coaching/coaching-session.service.js:141:cd922948` (+18)
-- … 54 more → `CLAUDE.index.md`
+- … 52 more → `CLAUDE.index.md`
 
 ## Never (human)
 - Never return a `version` field in a Flow endpoint response (bot/shared/routes/observe-form-endpoint.js:9)

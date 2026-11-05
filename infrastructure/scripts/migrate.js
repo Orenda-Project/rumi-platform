@@ -15,7 +15,6 @@ function loadSupabase() {
     return createRequire(path.resolve(__dirname, '../../bot/package.json'))('@supabase/supabase-js');
   }
 }
-const { createClient } = loadSupabase();
 
 /**
  * MigrationRunner - Applies SQL migrations from files to a Supabase database.
@@ -37,12 +36,43 @@ class MigrationRunner {
    * @param {string} config.supabaseUrl - Supabase project URL
    * @param {string} config.supabaseKey - Supabase service role key
    * @param {string} config.migrationsDir - Path to directory containing V*.sql files
+   * @param {object} [config.client] - a supabase-js-shaped client for schema_versions
+   *   (the pg adapter, for a direct Postgres); default: supabase-js on supabaseUrl
+   * @param {Function} [config.execSql] - async (sql, filename) => void; default:
+   *   the exec_sql RPC on supabaseUrl
    */
-  constructor({ supabaseUrl, supabaseKey, migrationsDir }) {
+  constructor({ supabaseUrl, supabaseKey, migrationsDir, client, execSql }) {
     this.supabaseUrl = supabaseUrl;
     this.supabaseKey = supabaseKey;
     this.migrationsDir = migrationsDir;
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    // supabase-js is only loaded when it is used: a direct-Postgres install
+    // passes the pg adapter instead and may not have it at all.
+    this.supabase = client || loadSupabase().createClient(supabaseUrl, supabaseKey);
+    this.execSql = execSql || this.restExecSql.bind(this);
+  }
+
+  /** Runs SQL through the Supabase exec_sql RPC. */
+  async restExecSql(sql, filename) {
+    const response = await fetch(
+      `${this.supabaseUrl}/rest/v1/rpc/exec_sql`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: this.supabaseKey,
+          Authorization: `Bearer ${this.supabaseKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({ query: sql }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to execute migration ${filename}: ${response.status} - ${errorText}`
+      );
+    }
   }
 
   /**
@@ -143,27 +173,7 @@ class MigrationRunner {
 
     console.log(`[migrate] Applying ${filename} (${version})...`);
 
-    // Execute SQL via the exec_sql RPC endpoint
-    const response = await fetch(
-      `${this.supabaseUrl}/rest/v1/rpc/exec_sql`,
-      {
-        method: 'POST',
-        headers: {
-          apikey: this.supabaseKey,
-          Authorization: `Bearer ${this.supabaseKey}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({ query: sql }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Failed to execute migration ${filename}: ${response.status} - ${errorText}`
-      );
-    }
+    await this.execSql(sql, filename);
 
     // Record the applied migration. Only version, description and applied_at exist in every
     // schema_versions (00_complete-schema.sql has no filename or checksum column, and the REST
@@ -260,6 +270,25 @@ module.exports = { MigrationRunner };
 if (require.main === module) {
   // The repo's .env, as bootstrap-db.js reads it; a variable set in the shell wins.
   loadRepoEnv();
+  const { isDirectPostgres, resolveDbDriver } = require('../../bot/shared/services/db/pg-adapter/drivers');
+  const driver = resolveDbDriver(process.env);
+  if (isDirectPostgres(driver)) runDirectPostgres();
+  else runSupabase();
+}
+
+/**
+ * CLI for DB_DRIVER=bundled|postgres: no exec_sql helper, the SQL goes straight
+ * over a pg connection. Run as a separate process — infrastructure/db reuses
+ * this file's code, so requiring it back would make a cycle.
+ */
+function runDirectPostgres() {
+  const { spawnSync } = require('child_process');
+  const result = spawnSync(process.execPath, [path.resolve(__dirname, '../db/apply.js')], { stdio: 'inherit' });
+  process.exit(result.status === null ? 1 : result.status);
+}
+
+/** CLI for DB_DRIVER=supabase: through the exec_sql RPC. */
+function runSupabase() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

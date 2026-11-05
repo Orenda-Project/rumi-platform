@@ -1,7 +1,7 @@
 # portal — Open-source teacher portal: React/Vite SPA, also wrapped as an Android app
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=portal kg=054f01e103de gen=05740bc4ceed overflow=7 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=portal kg=774238487362 gen=4b0416f8fe9a overflow=7 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `src/App.tsx` — route table: landing pages plus every /portal/* screen
@@ -38,4 +38,4 @@ Full index: `CLAUDE.index.md`
 - (none)
 
 ## Related (generated)
-- docs: `.github/workflows/CLAUDE.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `SETUP.md`? · `dashboard/lib/CLAUDE.md`? (+7)
+- docs: `.github/workflows/CLAUDE.md`? · `CHANGELOG.md`? · `CLAUDE.md`? · `README.md`? · `dashboard/lib/CLAUDE.md`? · `docs/android-app.md`? (+6)

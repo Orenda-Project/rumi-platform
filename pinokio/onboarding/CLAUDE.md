@@ -1,7 +1,7 @@
 # onboarding — GUI setup wizard server: five steps beside Rumi's console, loopback only
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding kg=61e58ad24f1e gen=021f51ee6a9c overflow=5 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding kg=794502dc7293 gen=24020c9b4890 overflow=5 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `server.js` — mounts the console and the wizard UI
@@ -23,9 +23,9 @@ Full index: `CLAUDE.index.md`
 | … | 2 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- `async-route.js` ← imported by `pinokio/onboarding/routes/credentials.js:17:b351fbaa` · `pinokio/onboarding/routes/database.js:14:b351fbaa` (+1)
+- `async-route.js` ← imported by `pinokio/onboarding/routes/credentials.js:17:b351fbaa` · `pinokio/onboarding/routes/database.js:21:b351fbaa` (+1)
 - `local-redis.js` ← imported by `pinokio/onboarding/routes/credentials.js:18:4207b702` · `pinokio/onboarding/server.js:21:fa45a93c`
-- `sse.js` ← imported by `pinokio/onboarding/routes/database.js:15:ee8d22b0` · `pinokio/onboarding/routes/whatsapp.js:21:ee8d22b0`
+- `sse.js` ← imported by `pinokio/onboarding/routes/database.js:22:ee8d22b0` · `pinokio/onboarding/routes/whatsapp.js:21:ee8d22b0`
 - `bridge.js` ← imported by `pinokio/onboarding/server.js:19:ad911989`
 - … 3 more → `CLAUDE.index.md`
 

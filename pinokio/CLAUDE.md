@@ -1,7 +1,7 @@
 # pinokio — One-click Pinokio launcher: install, setup, start, update scripts, GUI wizard
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=pinokio kg=a40414105004 gen=bba14839b0d7 overflow=10 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio kg=ba2286c6c67c gen=76cb414ca807 overflow=10 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `README.md` — user guide
@@ -18,7 +18,7 @@ Full index: `CLAUDE.index.md`
 | `pinokio.js` | Pinokio menu definition: which buttons show given install/config/running state (placeholder-aware .env check) |
 | `claude.js` | Pinokio script that installs Claude Code in Pinokio's npm prefix if missing and opens it in the repo |
 | `doctor.js` | Pinokio script: ensures local Redis then runs `node bin/rumi.js doctor` |
-| `install.js` | Pinokio Install button: installs launcher (qrcode) and bot dependencies with npm ci, falling back to install |
+| `install.js` | Pinokio Install button: npm ci for launcher, root and bot, copies .env, prepares the built-in database's password |
 | `onboard.js` | Pinokio daemon that starts the GUI wizard (onboarding/server.js) on its own persisted port |
 | `pair.js` | Pinokio script that runs the interactive `rumi pair` WhatsApp link in the terminal |
 | `reset.js` | Pinokio script removing bot/node_modules to return to fresh-clone dependencies, keeping .env and session |

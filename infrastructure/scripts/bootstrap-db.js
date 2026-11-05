@@ -180,6 +180,26 @@ module.exports = { DatabaseBootstrapper };
 if (require.main === module) {
   // Manually load .env since dotenv isn't in this package's dependencies
   require('./repo-env').loadRepoEnv();
+  const { isDirectPostgres, resolveDbDriver } = require('../../bot/shared/services/db/pg-adapter/drivers');
+  const driver = resolveDbDriver(process.env);
+
+  if (isDirectPostgres(driver)) runDirectPostgres();
+  else runSupabase();
+}
+
+/**
+ * CLI for DB_DRIVER=bundled|postgres: no exec_sql helper, the SQL goes straight
+ * over a pg connection. Run as a separate process — infrastructure/db reuses
+ * this file's code, so requiring it back would make a cycle.
+ */
+function runDirectPostgres() {
+  const { spawnSync } = require('child_process');
+  const result = spawnSync(process.execPath, [path.resolve(__dirname, '../db/apply.js')], { stdio: 'inherit' });
+  process.exit(result.status === null ? 1 : result.status);
+}
+
+/** CLI for DB_DRIVER=supabase: through the exec_sql RPC. */
+function runSupabase() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

@@ -11,17 +11,36 @@
  */
 
 require('dotenv').config();
+require('../lib/root-env').loadBundledDbEnv();
 const { Pool } = require('pg');
+const { databaseUrlFor, isDirectPostgres, resolveDbDriver } = require('../lib/pg-adapter/drivers');
+
+// With DB_DRIVER=bundled or postgres, the connection is the one the driver
+// names (the bundled Postgres, or DATABASE_URL) and SSL follows its sslmode. With the supabase driver the SUPABASE_DB_*
+// pieces are used as before — an existing install may also have DATABASE_URL
+// set (the materialized-view scheduler), which must not redirect this pool.
+let isPostgresDriver = false;
+try {
+  isPostgresDriver = isDirectPostgres(resolveDbDriver());
+} catch (err) {
+  console.warn(`[DB Pool] ${err.message}`);
+}
+
+const connection = isPostgresDriver
+  ? { connectionString: databaseUrlFor() }
+  : {
+    host: process.env.SUPABASE_DB_HOST,
+    port: process.env.SUPABASE_DB_PORT || 6543,
+    user: process.env.SUPABASE_DB_USER,
+    password: process.env.SUPABASE_DB_PASSWORD,
+    database: process.env.SUPABASE_DB_NAME || 'postgres',
+    // Hosted Supabase needs SSL. SUPABASE_DB_SSL=off is for a plain Postgres
+    // without it, such as the laptop-local stack (infrastructure/local/).
+    ssl: String(process.env.SUPABASE_DB_SSL || '').trim().toLowerCase() === 'off' ? false : { rejectUnauthorized: false },
+  };
 
 const poolConfig = {
-  host: process.env.SUPABASE_DB_HOST,
-  port: process.env.SUPABASE_DB_PORT || 6543,
-  user: process.env.SUPABASE_DB_USER,
-  password: process.env.SUPABASE_DB_PASSWORD,
-  database: process.env.SUPABASE_DB_NAME || 'postgres',
-  // Hosted Supabase needs SSL. SUPABASE_DB_SSL=off is for a plain Postgres
-  // without it, such as the laptop-local stack (infrastructure/local/).
-  ssl: String(process.env.SUPABASE_DB_SSL || '').trim().toLowerCase() === 'off' ? false : { rejectUnauthorized: false },
+  ...connection,
 
   // Pool settings
   max: parseInt(process.env.DB_POOL_SIZE || '20', 10),

@@ -17,6 +17,7 @@
     "validate:env": "node bot/scripts/validate-env.js",
     "validate:connections": "node infrastructure/scripts/test-connections.js",
     "bootstrap:db": "node infrastructure/scripts/bootstrap-db.js",
+    "db:start": "node infrastructure/db/start.js",
     "backfill:user-channels": "node infrastructure/scripts/backfill-user-channels.js",
     "doctor": "node bot/scripts/setup/doctor.js",
     "setup:flows": "node bot/scripts/setup/run-full-setup.js",
@@ -58,8 +59,10 @@
   },
   "dependencies": {
     "discord.js": "^14.27.0",
+    "embedded-postgres": "17.11.0-beta.19",
     "express": "^5.2.1",
     "ioredis": "^5.9.2",
-    "openai": "^6.16.0"
+    "openai": "^6.16.0",
+    "pg": "^8.23.1"
   }
 }

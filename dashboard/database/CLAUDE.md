@@ -1,6 +1,6 @@
 # database — SQL layer: analytics queries, migration runner and migration files
 
-<!-- kg:meta repo=rumi-platform dir=dashboard/database kg=d31dda7347a5 gen=1b61d7447989 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=dashboard/database kg=7c06b6dcf179 gen=0c800b903375 overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `queries.js` — all dashboard analytics queries; take the RLS client (req.dbClient) as first argument
@@ -25,7 +25,6 @@
 - column `broadcast_messages.status` (written by `queries.js`) ← read by `bot/whatsapp-bot.js:148:94ad840a`
 - column `broadcast_messages.user_id` (written by `queries.js`) ← read by `bot/whatsapp-bot.js:228:219f5683`
 - table `broadcast_messages` (written by `queries.js`) ← read by `bot/whatsapp-bot.js:147:5e6ab800`?
-- env read here: `SUPABASE_SERVICE_ROLE_KEY` · `SUPABASE_URL`
 
 ## Never (human)
 - Never query with the service-role client; use the request client (req.dbClient) so RLS applies (queries.js:5)

@@ -1,7 +1,7 @@
 # nudges — Scheduled teacher nudges: kinds, sweeper, store and the local-time rules
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/nudges kg=0d01fb62e4ac gen=ba9599eb0b87 overflow=9 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/nudges kg=4f757cb40a12 gen=d6538bff0a63 overflow=9 rendered=2026-11-05 kg.py=1.1.0 -->
 
 ## Entry points
 - `teacher-nudges.sweeper.js` — the tick: reclaim, claim due rows, hand to kinds
@@ -21,9 +21,9 @@ Full index: `CLAUDE.index.md`
 | … | 1 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- `kinds.js` ← imported by `bot/workers/sqs-worker.js:1182:63477196` · `bot/workers/teacher-nudges.worker.js:20:63477196`
+- `kinds.js` ← imported by `bot/workers/sqs-worker.js:1191:63477196` · `bot/workers/teacher-nudges.worker.js:20:63477196`
 - `teacher-nudges.store.js` ← imported by `bot/shared/services/nudges/re-engage.kind.js:40:a96e1f66` · `bot/shared/services/nudges/teacher-nudges.sweeper.js:41:a96e1f66`
-- `teacher-nudges.sweeper.js` ← imported by `bot/workers/sqs-worker.js:1176:8ceabada` · `bot/workers/teacher-nudges.worker.js:19:8ceabada`
+- `teacher-nudges.sweeper.js` ← imported by `bot/workers/sqs-worker.js:1185:8ceabada` · `bot/workers/teacher-nudges.worker.js:19:8ceabada`
 - `address.js` ← imported by `bot/shared/services/nudges/re-engage.kind.js:41:90e77a99`
 - … 9 more → `CLAUDE.index.md`
 

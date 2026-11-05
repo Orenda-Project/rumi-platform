@@ -8,7 +8,18 @@ const fs = require('fs')
 const PLACEHOLDER = /^CHANGEME|your-project|your_|^YOUR_|^<.*>$/i
 
 /** The values without which the bot refuses to start (what `rumi doctor` calls required). */
-const ESSENTIAL = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "OPENROUTER_API_KEY"]
+const ESSENTIAL = ["OPENROUTER_API_KEY"]
+
+/**
+ * The database's values, by which database it is (DB_DRIVER in .env.template):
+ * the built-in one (its password, made at install), any Postgres, or Supabase.
+ * One of these being complete is enough.
+ */
+const DATABASE_OPTIONS = [
+  ["RUMI_DB_PASSWORD"],
+  ["DATABASE_URL"],
+  ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
+]
 
 const isSet = (value) => Boolean(value) && !PLACEHOLDER.test(value)
 
@@ -27,6 +38,7 @@ const isConfigured = (info) => {
         .map((match) => [match[1].trim(), match[2].trim()])
     )
     return ESSENTIAL.every((key) => isSet(values[key]))
+      && DATABASE_OPTIONS.some((keys) => keys.every((key) => isSet(values[key])))
   } catch (e) {
     return false
   }

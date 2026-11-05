@@ -1,7 +1,7 @@
 # coaching — Classroom coaching pipeline: session, transcription, analysis, reflection, report
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching kg=c66b772a5726 gen=f86b64aa7c39 overflow=62 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching kg=83379f3c5c2b gen=e874ce7d6856 overflow=62 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `coaching-session.service.js` — session lifecycle rows in coaching_sessions; start here
@@ -18,8 +18,8 @@ Full index: `CLAUDE.index.md`
 | … | 22 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `coaching_sessions` (written by `analysis-processor.service.js` (+5)) ← read by `bot/scripts/generate-coaching-excel.js:27:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+52)
-- column `coaching_sessions.status` (written by `analysis-processor.service.js` (+1)) ← read by `bot/scripts/generate-coaching-excel.js:41:48a3661d` · `bot/shared/handlers/image-message.handler.js:110:bba4595e` (+28)
+- table `coaching_sessions` (written by `analysis-processor.service.js` (+5)) ← read by `bot/scripts/generate-coaching-excel.js:23:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+52)
+- column `coaching_sessions.status` (written by `analysis-processor.service.js` (+1)) ← read by `bot/scripts/generate-coaching-excel.js:37:48a3661d` · `bot/shared/handlers/image-message.handler.js:110:bba4595e` (+28)
 - … 28 more → `CLAUDE.index.md`
 
 ## Never (human)

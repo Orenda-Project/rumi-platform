@@ -3413,8 +3413,18 @@ app.listen(PORT, '0.0.0.0', () => {
   // Start materialized view refresh scheduler
   const mvScheduler = require('./services/mv-refresh-scheduler.service');
   mvScheduler.start({
-    connectionString: process.env.DATABASE_URL,
+    // The built-in database has no DATABASE_URL: its address comes from RUMI_DB_*.
+    connectionString: mvRefreshConnectionString(),
     intervalMs: 5 * 60 * 1000 // 5 minutes
   });
   console.log('📊 Materialized view refresh scheduler started (5-minute interval)');
 });
+
+/** The database the materialized-view refresher connects to, whichever DB_DRIVER. */
+function mvRefreshConnectionString() {
+  const { databaseUrlFor, isDirectPostgres, resolveDbDriver } = require('./lib/pg-adapter/drivers');
+  try {
+    if (isDirectPostgres(resolveDbDriver())) return databaseUrlFor();
+  } catch { /* an unknown DB_DRIVER: fall back to DATABASE_URL */ }
+  return process.env.DATABASE_URL;
+}

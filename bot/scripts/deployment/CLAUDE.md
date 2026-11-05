@@ -1,7 +1,7 @@
 # deployment — Reference scripts for registering and branding a WhatsApp number; ids are WABA-specific
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/scripts/deployment kg=1399e953c1d2 gen=5cb1bac1e9a4 overflow=22 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/scripts/deployment kg=c12ba70caf7d gen=d0b8ed0c6eda overflow=22 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `README.md` — warns which ids are tied to the original account and must be replaced
@@ -20,8 +20,8 @@ Full index: `CLAUDE.index.md`
 | … | 18 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `users` (written by `get-portal-test-tokens.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+54)
-- column `users.phone_number` (written by `get-portal-test-tokens.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10` · `bot/scripts/generate-coaching-excel.js:57:8bbdcecd` (+33)
+- table `users` (written by `get-portal-test-tokens.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? (+54)
+- column `users.phone_number` (written by `get-portal-test-tokens.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10` · `bot/scripts/generate-coaching-excel.js:53:8bbdcecd` (+33)
 - column `users.preferred_language` (written by `get-portal-test-tokens.js`) ← read by `bot/scripts/observe-roster.js:81:44b70a83` · `bot/shared/routes/quiz-flow-endpoint.js:380:2f976336` (+19)
 - … 23 more → `CLAUDE.index.md`
 

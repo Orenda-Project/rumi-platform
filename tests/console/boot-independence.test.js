@@ -20,7 +20,8 @@ const CONSOLE_DIR = path.join(__dirname, '../../bot/console');
 
 /** Modules that either exit the process or capture env at require time. */
 const FORBIDDEN = [
-  ['shared/config/supabase', 'calls process.exit(78) at require time when SUPABASE_* is unset'],
+  ['shared/config/supabase', 'calls process.exit(78) at require time when database env vars are unset'],
+  ['shared/services/db', 'calls process.exit(78) at require time when database env vars are unset'],
   ['shared/utils/constants', 'destructures ~50 env vars into module constants at require time'],
   ['shared/services/llm-client', 'captures LLM_PROVIDER/LLM_MODEL at load and caches a client'],
   ['shared/services/messaging', 'resolves and requires a channel driver at module scope'],

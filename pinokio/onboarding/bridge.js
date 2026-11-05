@@ -57,7 +57,7 @@ const MODULES = {
   },
   database: {
     file: 'bot/scripts/setup/db-setup.js',
-    needs: ['inspectDatabase', 'waitForExecSql', 'sqlEditorUrl', 'EXEC_SQL_DEFINITION'],
+    needs: ['inspectDatabase', 'waitForExecSql', 'sqlEditorUrl', 'EXEC_SQL_DEFINITION', 'applySchema', 'driverOf'],
   },
   bootstrap: {
     file: 'infrastructure/scripts/bootstrap-db.js',

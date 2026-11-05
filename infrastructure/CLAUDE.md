@@ -1,6 +1,6 @@
 # infrastructure — Install-time infra: DB schema and migrations, scripts, local stack, Railway
 
-<!-- kg:meta repo=rumi-platform dir=infrastructure kg=21818ce14ecd gen=fe3c8d4c4e1e overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=infrastructure kg=d648fa3cec81 gen=5fbe7a6eac34 overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `supabase/00_complete-schema.sql` — full fresh-install schema
@@ -11,6 +11,7 @@
 ## Children (generated)
 | path | purpose |
 |---|---|
+| `db/` | The built-in database: run it, create its tables, apply migrations without Supabase → `db/CLAUDE.md` |
 | `local/` | No-Docker local stack (Postgres, PostgREST, proxy, Redis) for development → `local/CLAUDE.md` |
 | `railway/` | → (no door; 2 files) |
 | `scripts/` | Node scripts that create and migrate the database and test connections → `scripts/CLAUDE.md` |

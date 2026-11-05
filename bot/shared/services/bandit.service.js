@@ -102,13 +102,16 @@ class BanditService {
   static async recordImpression(testId, variantName, userId = null, phoneNumber = null, eventData = {}) {
     try {
       // Increment impressions on variant
-      await supabase.rpc('increment_variant_impressions', {
+      // A query never rejects — a failure comes back as { error } — so the
+      // fallback keys off that, not a .catch (which the builder does not have).
+      const { error: rpcError } = await supabase.rpc('increment_variant_impressions', {
         p_test_id: testId,
         p_variant_name: variantName
-      }).catch(() => {
-        // Fallback if RPC doesn't exist - manual update
-        return this._incrementField(testId, variantName, 'impressions');
       });
+      if (rpcError) {
+        // Fallback if RPC doesn't exist - manual update
+        await this._incrementField(testId, variantName, 'impressions');
+      }
 
       // Log event
       await supabase.from('ab_test_events').insert({

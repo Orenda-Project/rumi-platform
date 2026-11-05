@@ -6,17 +6,13 @@
  */
 
 require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
 const ExcelJS = require('exceljs');
 const path = require('path');
 const { getPresignedUrl } = require('../shared/storage/r2');
 const { ownCoaching } = require('../shared/services/coaching/own-coaching');
 
 // Initialize Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = require('../shared/config/supabase');
 
 async function generateCoachingExcel() {
   await require('../shared/services/coaching/own-coaching').probe();

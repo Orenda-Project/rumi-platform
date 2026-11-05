@@ -1,6 +1,6 @@
 # curriculum — Textbook-to-lesson-plan pipeline (stages A-F): gates, briefs, graph, sample
 
-<!-- kg:meta repo=rumi-platform dir=curriculum kg=38985b5a3689 gen=2d4af6099cda overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=curriculum kg=039091e56d44 gen=901a380ef5f2 overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `README.md` — pipeline overview and sample walkthrough
@@ -37,4 +37,4 @@ _None found in code comments, tests or git log for this directory._
 
 ## Related (generated)
 - skills: `curriculum-baked-lesson-plans`?
-- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `SETUP.md`? · `bot/shared/services/CLAUDE.md`? · `brief/CLAUDE.md`? · `curriculum/README.md`? (+5)
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `bot/shared/services/CLAUDE.md`? · `brief/CLAUDE.md`? · `curriculum/README.md`? · `curriculum/graph/CLAUDE.md`? (+4)

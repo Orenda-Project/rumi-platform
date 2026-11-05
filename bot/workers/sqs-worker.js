@@ -37,7 +37,11 @@ require('dotenv').config();
 // this worker sends to Matrix teachers through it rather than opening a second
 // one -- see shared/services/messaging/matrix-outbound-relay.js. Must run before
 // any job can reach the messaging layer. A no-op for deployments without Matrix.
-require('../shared/services/messaging/matrix-outbound-relay').useRelayForThisProcess();
+// Only as its own process: inside the bot (Baileys, see inline-worker.js) the bot
+// owns that connection, and relay mode is already the default everywhere else.
+if (require.main === module) {
+  require('../shared/services/messaging/matrix-outbound-relay').useRelayForThisProcess();
+}
 
 // The operator's RUMI_FEATURE_* switches, as the bot loads them: a job for a
 // feature switched off after it was queued is not run (see testpaper.worker).
@@ -726,37 +730,42 @@ class SQSCoachingWorker {
 // Create worker instance
 const worker = new SQSCoachingWorker(WORKER_ID);
 
-// Graceful shutdown handlers
-process.on('SIGTERM', async () => {
-  logToFile('Received SIGTERM signal');
-  await worker.shutdown();
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  logToFile('Received SIGINT signal');
-  await worker.shutdown();
-  process.exit(0);
-});
-
-// Uncaught exception handler
-process.on('uncaughtException', (error) => {
-  logToFile('❌ UNCAUGHT EXCEPTION', {
-    error: error.message,
-    stack: error.stack
+/**
+ * Process-level shutdown and crash handlers -- only when the worker is its own
+ * process. Inside the bot (Baileys, see shared/config/inline-worker.js) they
+ * would process.exit() before the bot flushed its WhatsApp session; the bot's
+ * own shutdown calls worker.shutdown() instead.
+ */
+function installProcessHandlers() {
+  process.on('SIGTERM', async () => {
+    logToFile('Received SIGTERM signal');
+    await worker.shutdown();
+    process.exit(0);
   });
-  worker.shutdown().then(() => {
-    process.exit(1);
-  });
-});
 
-// Unhandled rejection handler
-process.on('unhandledRejection', (reason, promise) => {
-  logToFile('❌ UNHANDLED REJECTION', {
-    reason: reason,
-    promise: promise
+  process.on('SIGINT', async () => {
+    logToFile('Received SIGINT signal');
+    await worker.shutdown();
+    process.exit(0);
   });
-});
+
+  process.on('uncaughtException', (error) => {
+    logToFile('❌ UNCAUGHT EXCEPTION', {
+      error: error.message,
+      stack: error.stack
+    });
+    worker.shutdown().then(() => {
+      process.exit(1);
+    });
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    logToFile('❌ UNHANDLED REJECTION', {
+      reason: reason,
+      promise: promise
+    });
+  });
+}
 
 // ============================================================================
 // HEALTH CHECK ENDPOINT
@@ -1210,8 +1219,13 @@ function armTeacherNudges() {
 // Recover stale requests before starting worker. Gated behind
 // require.main === module so the file can be required as a library without
 // firing the recovery sweep + worker start.
-function startWorker() {
-  startHealthEndpoint();
+/**
+ * @param {{inProcess?: boolean}} [opts] inProcess: running inside the bot
+ *   (Baileys) -- the bot already serves /health, and a fatal worker error must
+ *   not take the bot (and its WhatsApp session) down with it.
+ */
+function startWorker({ inProcess = false } = {}) {
+  if (!inProcess) startHealthEndpoint();
   return Promise.all([
     // Teachers' own coaching reads depend on coaching_sessions.observation_type (own-coaching.js).
     require('../shared/services/coaching/own-coaching').probe(),
@@ -1224,7 +1238,7 @@ function startWorker() {
         error: error.message,
         stack: error.stack,
       });
-      process.exit(1);
+      if (!inProcess) process.exit(1);
     });
 
     // Periodic stale job recovery - runs every 5 minutes
@@ -1262,11 +1276,20 @@ function startWorker() {
 }
 
 if (require.main === module) {
+  if (require('../shared/config/inline-worker').shouldRunWorkerInBot(process.env)) {
+    // Linked WhatsApp (Baileys): the bot runs this worker in-process, because
+    // only the bot can send on that session. A second consumer here would take
+    // jobs and then fail to deliver them, so stand down.
+    logToFile('CHANNEL_DRIVER=baileys: the bot runs the worker itself -- this standalone worker is not needed and is exiting. '
+      + 'Set RUMI_INLINE_WORKER=off to run it separately.');
+    process.exit(0);
+  }
+  installProcessHandlers();
   startWorker();
 }
 
 // Export for testing
 module.exports = {
-  SQSCoachingWorker, WORKER_ID, startWorker, recoverStaleVideoRequests, runDebriefRetrySweep, worker,
+  SQSCoachingWorker, WORKER_ID, startWorker, installProcessHandlers, recoverStaleVideoRequests, runDebriefRetrySweep, worker,
   teacherNudgesSweepMs,
 };

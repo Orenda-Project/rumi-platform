@@ -1,9 +1,5 @@
 [
   {
-    "file": "bot/shared/services/bandit.service.js",
-    "reason": "Thompson-sampling multi-armed bandit. Documented in .claude/skills/ab-testing as an opt-in customization pattern; no live caller in OSS. A cloner enabling A/B testing wires it themselves."
-  },
-  {
     "file": "bot/shared/config/system-messages.js",
     "reason": "Customization seam — referenced in docs/agent-customization.md as the file an adopter translates to add a new language. No live caller until the adopter wires it; kept as the documented opt-in extension point."
   }

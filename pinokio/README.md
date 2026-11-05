@@ -35,8 +35,9 @@ come from the same commit.
    **Open Console** button takes you to the console. The terminal is still one click away under
    **Terminal** in the sidebar.
 
-The sidebar opens on **Set up Rumi** until `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
-`OPENROUTER_API_KEY` are all set in `.env`, and on **Start** after that.
+The sidebar opens on **Set up Rumi** until `OPENROUTER_API_KEY` and a database are set in `.env`, and on
+**Start** after that. The database is Rumi's built-in one unless you configure another: Install saves its
+password, and the first Start creates it.
 
 `Doctor`, `Re-pair WhatsApp`, `Update` and `Reset` are there when you need them. `Terminal setup` runs
 Rumi's own `rumi setup` wizard, and is the fallback if any part of the GUI is unavailable.
@@ -44,7 +45,6 @@ Rumi's own `rumi setup` wizard, and is the fallback if any part of the GUI is un
 
 ### What you will need
 
-- **A Supabase project** — <https://supabase.com>, free tier is plenty
 - **An OpenRouter key** — <https://openrouter.ai/keys>
 - **A second phone** — Rumi answers *as* the number you link, so it cannot reply to that same number
 
@@ -56,19 +56,26 @@ Uplift, Azure Speech (key and region), Gamma, Mistral, Kie.ai (it shows your rem
 (token and dataset). Slack, Discord and Matrix are tested by Rumi's own check. A pass means the service
 accepted the key; it cannot tell whether your plan includes the feature or has credit left.
 
-### Two steps that stay manual
+### The database
 
-Neither of these is a gap in the launcher; both are properties of the services involved.
+Rumi keeps its data in its own Postgres, which Install downloads for your system (Windows, macOS or
+Linux) — there is no account to create, and Start runs it alongside the bot. Its data is in the `.rumi-db`
+folder at the repository root: back that folder up.
 
-1. **One SQL paste.** Supabase offers no API for running arbitrary SQL, so the small `exec_sql` helper that
-   the schema is applied through has to be pasted into the SQL editor once. The wizard shows the exact SQL,
-   copies it to your clipboard, links straight to your project's editor, and then polls until it appears.
-2. **Scanning the QR.** Linking WhatsApp means scanning a code from another phone.
+To use Supabase instead, set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` on the credentials step. Then
+one step stays manual: Supabase offers no API for running arbitrary SQL, so the small `exec_sql` helper the
+schema is applied through has to be pasted into the SQL editor once. The wizard shows the exact SQL, copies
+it to your clipboard, links straight to your project's editor, and then polls until it appears.
+
+### One step that stays manual
+
+**Scanning the QR.** Linking WhatsApp means scanning a code from another phone.
 
 ### Notes and limits
 
-- **Where things live.** Your credentials are in `.env` at the repository root, and the linked WhatsApp
-  session in `.channel-state/`. Both are git-ignored and never committed.
+- **Where things live.** Your credentials are in `.env` at the repository root, the linked WhatsApp
+  session in `.channel-state/`, and the built-in database's data in `.rumi-db/`. All three are git-ignored
+  and never committed.
 - **The bot listens on all interfaces.** Rumi calls `app.listen(PORT)` with no host and exposes no setting
   for it, and this launcher does not patch the app, so the bot's port is reachable from your network. The
   operator console on that port still refuses any non-loopback client.

@@ -9,7 +9,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `assets/` | → (no door; 1 files) |
 | `baileys-pair.js` | `rumi pair` CLI: links or re-links the sandbox WhatsApp channel by QR code |
 | `console-password.js` | `rumi console --set-password`: stores the console credential needed when it is exposed beyond loopback |
-| `db-setup.js` | Database half of `rumi setup`: applies the schema through the hand-created exec_sql function |
+| `db-setup.js` | Database half of `rumi setup`: inspects and creates the tables — over pg for bundled/postgres, via exec_sql for Supabase |
 | `discord-register-commands.js` | Registers Discord slash commands with one REST PUT (global or guild scope) |
 | `doctor.js` | `npm run doctor`: preflight diagnostics, static env checks plus live connectivity checks per service |
 | `env-file.js` | Patches individual keys in .env in place, preserving other lines; used by setup and graduate |
@@ -34,11 +34,11 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `validators.js` | Field-shape checks for setup inputs, catching wrongly pasted values (e.g. phone number vs phone number ID) |
 
 ## Who reads this (all, generated)
-- `db-setup.js` ← imported by `bot/scripts/setup/doctor.js:155:d4fecce8`
-- `doctor.js` ← imported by `bot/console/env-catalog.js:31:20906285` · `bot/console/features.js:21:20906285` · `bot/console/routes/api.js:113:a7bf3a46` · `bot/scripts/setup/graduate.js:105:bec54bc2` (+1: `python3 kg/kg.py who-reads doctor.js`)
-- `env-file.js` ← imported by `bot/console/routes/api.js:15:49d2b5a3` · `bot/console/routes/pages.js:18:49d2b5a3` · `bot/console/runtime.js:24:4764eaed` · `bot/scripts/setup/graduate.js:43:0a702b01` (+2: `python3 kg/kg.py who-reads env-file.js`)
-- `fields.js` ← imported by `bot/console/env-catalog.js:32:b2e28dd8` · `bot/console/features.js:22:75643a55` · `bot/scripts/setup/discord-register-commands.js:20:55a36a96` · `bot/scripts/setup/graduate.js:44:0377019c`
-- `flow-configs.js` ← imported by `bot/scripts/setup/doctor.js:32:e92fd19a` · `bot/scripts/setup/register-all-flows.js:29:e92fd19a` · `bot/scripts/setup/setup-state.js:15:e7a2a00f` · `bot/scripts/setup/validate-flows.js:20:e7a2a00f`
+- `db-setup.js` ← imported by `bot/scripts/setup/doctor.js:187:d4fecce8`
+- `doctor.js` ← imported by `bot/console/features.js:21:20906285` · `bot/console/routes/api.js:113:a7bf3a46` · `bot/scripts/setup/graduate.js:105:bec54bc2` · `bot/scripts/setup/status.js:112:bec54bc2`
+- `env-file.js` ← imported by `bot/console/routes/api.js:15:49d2b5a3` · `bot/console/routes/pages.js:18:49d2b5a3` · `bot/console/runtime.js:24:4764eaed` · `infrastructure/db/bundled.js:15:4f7ef185` (+3: `python3 kg/kg.py who-reads env-file.js`)
+- `fields.js` ← imported by `bot/console/features.js:22:75643a55` · `bot/scripts/setup/discord-register-commands.js:20:55a36a96` · `bot/scripts/setup/graduate.js:44:0377019c`
+- `flow-configs.js` ← imported by `bot/scripts/setup/doctor.js:42:e92fd19a` · `bot/scripts/setup/register-all-flows.js:29:e92fd19a` · `bot/scripts/setup/setup-state.js:15:e7a2a00f` · `bot/scripts/setup/validate-flows.js:20:e7a2a00f`
 - `link-whatsapp.js` ← imported by `bot/scripts/setup/baileys-pair.js:33:aff6c371`
 - `meta-api.js` ← imported by `bot/scripts/setup/register-all-flows.js:20:178f6770` · `bot/scripts/setup/register-all-templates.js:21:178f6770` · `bot/scripts/setup/setup-encryption.js:18:178f6770` · `bot/scripts/setup/validate-flows.js:13:178f6770`
 - `prompt.js` ← imported by `bot/scripts/setup/graduate.js:42:2a0abcc1` · `bot/scripts/setup/console-password.js:23:39ff7290`
@@ -69,7 +69,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `db-setup.js` ← `tests/setup/db-setup.test.js`
 - `discord-register-commands.js` ← `tests/scripts/discord-register-commands.test.js`
 - `doctor.js` ← `tests/coaching/fidelity/diarization-contract.test.js`
-- `env-file.js` ← `tests/setup/env-file.test.js`
+- `env-file.js` ← `tests/db/bundled-database.test.js` · `tests/setup/env-file.test.js`
 - `fields.js` ← `tests/scripts/discord-register-commands.test.js` · `tests/setup/fields.test.js`
 - `flow-configs.js` ← `tests/observe/observe-form-flow-json.test.js` · `tests/quiz/quiz-flow-endpoint.test.js` · `tests/setup/flow-config-conformance.test.js` · `tests/setup/flow-key-consistency.test.js` · `tests/setup/setup-state.test.js`
 - `graduate.js` ← `tests/setup/graduate.test.js`

@@ -51,6 +51,10 @@ module.exports = {
           // "SQS Queue not configured". Injected rather than written into .env
           // because dotenv never overrides a variable that is already set.
           "QUEUE_DRIVER": "bullmq",
+          // Timestamps are stored without a zone and read back by `new Date()`,
+          // which assumes local time. Off UTC (e.g. PKT, +5h) every chat session
+          // looked hours old and timed out on each message. Servers run in UTC.
+          "TZ": "UTC",
           // Stop `rumi start` opening a system browser behind Pinokio's back.
           "RUMI_NO_OPEN": "1"
         },
@@ -62,6 +66,27 @@ module.exports = {
           // writes its boot logs in bursts larger than that. The next step
           // waits for the bot instead.
           "event": "/bin\\/rumi\\.js start/",
+          "done": true
+        }]
+      }
+    },
+    // The background worker: lesson plans, coaching/quiz reports, video and exam
+    // grading are queued by the bot but only ever processed here. Without it every
+    // such job waits in Redis forever. Same env as the bot; runs from the repo root
+    // so its dotenv finds .env. With a linked WhatsApp (CHANNEL_DRIVER=baileys) the
+    // bot runs the worker in-process instead and this one exits at once
+    // (bot/shared/config/inline-worker.js) -- only the bot can send on that session.
+    {
+      method: "shell.run",
+      params: {
+        path: "..",
+        env: {
+          "QUEUE_DRIVER": "bullmq",
+          "TZ": "UTC"
+        },
+        message: "node bot/workers/sqs-worker.js",
+        on: [{
+          "event": "/sqs-worker\\.js/",
           "done": true
         }]
       }

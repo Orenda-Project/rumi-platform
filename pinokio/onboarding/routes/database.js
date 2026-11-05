@@ -1,5 +1,12 @@
 /**
- * database -- the one step in Rumi's setup that cannot be fully automated.
+ * database -- making sure Rumi's tables exist.
+ *
+ * With the built-in database (the default) or any Postgres given by
+ * DATABASE_URL there is nothing to paste: the tables are created over a direct
+ * connection -- the built-in database's by the first Start. Everything below
+ * about the SQL helper is for Supabase.
+ *
+ * With Supabase it is the one step in Rumi's setup that cannot be fully automated.
  *
  * Supabase exposes no API for running arbitrary SQL, so the `exec_sql` helper the
  * schema is applied through has to be pasted into the SQL editor by hand, once.
@@ -33,12 +40,18 @@ function databaseRoutes({ express, bridge, runtime }) {
    */
   let running = false;
 
+  /**
+   * The env as it stands. Whole, not just the Supabase keys: which database
+   * this is (DB_DRIVER, the built-in password, DATABASE_URL) decides how it is
+   * inspected and set up.
+   */
   function credentials() {
-    const env = { ...process.env, ...(runtime ? runtime.fileEnv() : {}) };
-    return {
-      SUPABASE_URL: env.SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
-    };
+    return { ...process.env, ...(runtime ? runtime.fileEnv() : {}) };
+  }
+
+  /** Supabase needs the helper and the per-statement bootstrapper; a direct Postgres does not. */
+  function isSupabase(env) {
+    return modules.database.driverOf(env) === 'supabase';
   }
 
   function unavailable(res) {
@@ -52,6 +65,7 @@ function databaseRoutes({ express, bridge, runtime }) {
     const inspection = await modules.database.inspectDatabase(env);
     res.json({
       ...inspection,
+      driver: modules.database.driverOf(env),
       helperSql: modules.database.EXEC_SQL_DEFINITION.join('\n'),
       sqlEditorUrl: modules.database.sqlEditorUrl(env.SUPABASE_URL),
     });
@@ -76,7 +90,9 @@ function databaseRoutes({ express, bridge, runtime }) {
     }
 
     running = true;
-    runBootstrap({ modules, APP_ROOT, env: credentials(), stream })
+    const env = credentials();
+    const run = isSupabase(env) ? runBootstrap : runDirectSchema;
+    run({ modules, APP_ROOT, env, stream })
       .catch((error) => stream.send('failed', { error: error.message }))
       .finally(() => {
         running = false;
@@ -135,6 +151,22 @@ async function runBootstrap({ modules, APP_ROOT, env, stream }) {
 
   // The bootstrapper reports on the SQL it sent; inspect again so success means
   // the tables are actually visible, which is what the operator cares about.
+  const inspection = await modules.database.inspectDatabase(env);
+  stream.send('done', { ...result, state: inspection.state, detail: inspection.detail });
+}
+
+/**
+ * A direct Postgres (built-in or DATABASE_URL): the checkout's applySchema
+ * creates the tables over a pg connection -- starting the built-in database
+ * for the run if it is not up. It reports once, at the end.
+ */
+async function runDirectSchema({ modules, env, stream }) {
+  stream.send('started', { files: [], total: null });
+  const result = await modules.database.applySchema(env);
+  if (!result.ok) {
+    stream.send('failed', { ...result, error: (result.errors[0] || {}).error || 'The tables were not created.' });
+    return;
+  }
   const inspection = await modules.database.inspectDatabase(env);
   stream.send('done', { ...result, state: inspection.state, detail: inspection.detail });
 }

@@ -1,6 +1,6 @@
 # routes — API routes behind the wizard: credentials, database, whatsapp
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/routes kg=857d10e3f174 gen=c5e7d812b473 overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/routes kg=8f0975b5b6d0 gen=0f227d24ce9b overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `credentials.js` — reads and writes .env via console runtime
@@ -11,7 +11,7 @@
 | path | purpose |
 |---|---|
 | `credentials.js` | API routes reading/writing .env via the console runtime and testing each credential |
-| `database.js` | API routes inspecting the database, serving the exec_sql SQL and streaming schema application |
+| `database.js` | API routes inspecting the database and creating tables: over pg for bundled/postgres, via exec_sql for Supabase |
 | `whatsapp.js` | API routes that run pairing in a forked child and stream QR payloads over SSE |
 
 ## Who reads this (generated)

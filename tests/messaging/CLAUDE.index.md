@@ -8,6 +8,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 |---|---|
 | `baileys-channel-service.test.js` | Pins baileys-channel.service outbound (text JID send, emotion-tag strip, false on socket error), connection mocked |
 | `baileys-connection.test.js` | Pins baileys-connection lazy connect, getSocket on "open", and auth-state dir, with baileys-lib mocked |
+| `baileys-inline-worker.test.js` | (unmapped) |
 | `baileys-socket-adapter.test.js` | Pins baileys-socket.adapter mapping a WAMessage to the Meta webhook shape, JID parsing and numeric-reply selection |
 | `bare-command-routing.test.js` | Pins every command-words.js command working as a bare word, reaching the same handler as the slash form |
 | `channel-capabilities.test.js` | Pins flowSurfaceFor deciding native vs text Flows per channel and driver, so Matrix/Baileys never hit a dead end |

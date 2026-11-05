@@ -30,3 +30,26 @@ describe('dashboard Postgres pool SSL', () => {
     expect(poolConfig({ SUPABASE_DB_SSL: 'off' }).ssl).toBe(false);
   });
 });
+
+describe('dashboard picks up the built-in database settings from the repo-root .env', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { loadBundledDbEnv } = require('../../dashboard/lib/root-env');
+
+  it('copies only RUMI_DB_*, and never over a value already set', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rumi-rootenv-'));
+    const file = path.join(dir, '.env');
+    fs.writeFileSync(file, 'RUMI_DB_PASSWORD="abc"\nRUMI_DB_PORT=6000\nSUPABASE_URL=https://x.supabase.co\nDB_DRIVER=bundled\n');
+    const env = { RUMI_DB_PORT: '7000' };
+    loadBundledDbEnv(env, file);
+    fs.rmSync(dir, { recursive: true, force: true });
+    expect(env).toEqual({ RUMI_DB_PASSWORD: 'abc', RUMI_DB_PORT: '7000' });
+  });
+
+  it('does nothing without a repo-root .env (a standalone dashboard)', () => {
+    const env = {};
+    loadBundledDbEnv(env, '/nonexistent/.env');
+    expect(env).toEqual({});
+  });
+});

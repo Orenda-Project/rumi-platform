@@ -191,22 +191,122 @@ const SUPABASE_WALKTHROUGH = [
   'Open Project settings → Data API → Copy the API URL (without /rest/v1) and service_role key',
 ];
 
+/** DB_DRIVER, or null for a typo. */
+function dbDriverOf(env) {
+  try {
+    return require('../../shared/services/db/pg-adapter/drivers').resolveDbDriver(env);
+  } catch {
+    return null;
+  }
+}
+
+/** Where Rumi keeps its data: built-in (the default), Supabase, or another Postgres. */
+async function chooseDatabase(io) {
+  return io.select('Where should Rumi keep its data?', [
+    {
+      value: 'bundled',
+      label: 'On this computer — Rumi runs its own database',
+      hint: 'Nothing to sign up for. Starts and stops with Rumi. Back up the .rumi-db folder.',
+    },
+    {
+      value: 'supabase',
+      label: 'Supabase — a hosted database with a free plan',
+      hint: 'Needs a Supabase account and one copy-paste in their SQL editor.',
+    },
+    {
+      value: 'postgres',
+      label: 'A Postgres database I already have',
+      hint: 'Railway, Neon, AWS RDS or your own server — you paste its connection string.',
+    },
+  ], 'bundled');
+}
+
 /**
- * Collects and verifies the Supabase connection, then makes sure Rumi's tables
- * exist. Writes through the caller's saver as it goes rather than returning
- * anything — every step is durable the moment its answer is accepted.
+ * Collects and verifies the database connection, then makes sure Rumi's
+ * tables exist. Writes through the caller's saver as it goes rather than
+ * returning anything — every step is durable the moment its answer is accepted.
  */
 async function stepDatabase(io, env, save, opts = {}) {
   beginStep(1, 'Where Rumi keeps its memory');
-  console.log(ui.say('Every teacher, lesson plan and reading score Rumi produces is stored in a database that belongs to you — not to us. Supabase gives you one free.'));
+  console.log(ui.say('Every teacher, lesson plan and reading score Rumi produces is stored in a database that belongs to you — not to us.'));
 
-  const configured = hasAll(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']);
-  if (configured && !opts.reconfigure) {
-    const check = await checkLive('Checking the database you already have…', 'supabase', env, () => 'Database already connected');
-    if (check.ok) return ensureTables(io, env);
-    console.log(ui.say('Let us set that up again.'));
+  if (!opts.reconfigure) {
+    const kept = await keepWorkingDatabase(io, env);
+    if (kept) return undefined;
   }
 
+  const choice = await chooseDatabase(io);
+  if (choice === 'bundled') return setupBundledDatabase(io, env, save);
+  if (choice === 'postgres') return setupOwnPostgres(io, env, save);
+  return setupSupabase(io, env, save);
+}
+
+/**
+ * A database that is already configured and answering is kept, not asked
+ * about again. Returns true when it was kept.
+ */
+async function keepWorkingDatabase(io, env) {
+  const driver = dbDriverOf(env);
+  if (driver === 'supabase' && hasAll(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'])) {
+    const check = await checkLive('Checking the database you already have…', 'supabase', env, () => 'Database already connected');
+    if (check.ok) { await ensureTables(io, env); return true; }
+  } else if (driver === 'postgres' && isProvided(env, 'DATABASE_URL')) {
+    const check = await checkLive('Checking the database you already have…', 'database', env, () => 'Database already connected');
+    if (check.ok) { await ensureTables(io, env); return true; }
+  } else if (driver === 'bundled' && env.RUMI_DB_PASSWORD) {
+    await setupBundledDatabase(io, env, () => {});
+    return true;
+  } else {
+    return false;
+  }
+  console.log(ui.say('Let us set that up again.'));
+  return false;
+}
+
+/**
+ * The built-in database: a real Postgres that ships with Rumi (installed by
+ * npm, for Windows, macOS and Linux). Generates its password, then starts it
+ * once to create the tables — `rumi start` starts it every time after that.
+ */
+async function setupBundledDatabase(io, env, save) {
+  save({ DB_DRIVER: 'bundled' });
+  if (!env.RUMI_DB_PASSWORD) {
+    save({ RUMI_DB_PASSWORD: require('crypto').randomBytes(24).toString('hex') });
+  }
+  const spin = ui.spinner('Starting the built-in database and creating Rumi\'s tables… (the first time takes about a minute)');
+  const result = await dbSetup.applySchema(env);
+  if (!result.ok) {
+    spin.fail('Could not set up the built-in database');
+    for (const failure of result.errors) console.log(ui.aside(`${failure.file}: ${failure.error}`));
+    throw new Error(
+      'The built-in database is not ready, so setup stopped here. '
+      + 'Fix the error above, then run `rumi setup` again (or `npm run db:start` to see the database\'s own output).'
+    );
+  }
+  spin.succeed(`Database ready ${ui.dim('(built in — it starts with `rumi start`; its data is in the .rumi-db folder)')}`);
+  return undefined;
+}
+
+/** Any other Postgres, by connection string. */
+async function setupOwnPostgres(io, env, save) {
+  console.log(ui.aside('Your provider shows this as a "connection string" or "URI". It starts with postgres://.'));
+  for (;;) {
+    const url = await io.ask('Connection string', {
+      secret: true,
+      fallback: prefill(env, 'DATABASE_URL'),
+      validate: validators.databaseUrl,
+      hint: 'postgres://user:password@host:5432/dbname — it contains the password, so it is hidden as you type.',
+    });
+    save({ DB_DRIVER: 'postgres', DATABASE_URL: url });
+    const check = await checkLive('Talking to your database…', 'database', env, () => 'Connected to your Postgres');
+    if (check.ok) break;
+    console.log(ui.aside('That did not connect. Check the address, the password, and that this computer is allowed to reach it.'));
+  }
+  return ensureTables(io, env);
+}
+
+/** Hosted Supabase. */
+async function setupSupabase(io, env, save) {
   console.log('');
   console.log(ui.steps(SUPABASE_WALKTHROUGH));
 
@@ -223,7 +323,7 @@ async function stepDatabase(io, env, save, opts = {}) {
       hint: 'Go to Settings → API Keys → Legacy anon, service_role API keys. Copy the "service_role" key (click Reveal first). It is hidden as you type.',
     });
 
-    save({ SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key });
+    save({ DB_DRIVER: 'supabase', SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key });
     const check = await checkLive('Talking to your database…', 'supabase', env, (d) => `Connected to Supabase ${ui.dim(d)}`);
     if (check.ok) break;
     console.log(ui.aside('That did not connect. Check the project has finished starting up, then try again.'));
@@ -1021,10 +1121,9 @@ async function stepMatrixChannel(io, env, save, opts = {}) {
 
 function welcome(env) {
   console.log(ui.logo('An AI teaching companion that lives in WhatsApp'));
-  console.log(ui.say('This sets Rumi up on your own accounts, start to finish. It takes about fifteen minutes, most of which is waiting for a database to start.'));
+  console.log(ui.say('This sets Rumi up on your own accounts, start to finish. It takes about fifteen minutes.'));
   console.log('');
   console.log(ui.bold('  You will need'));
-  console.log(ui.bullet('A free Supabase account — where Rumi remembers things'));
   console.log(ui.bullet('An OpenRouter account with a few dollars of credit — how Rumi thinks'));
   console.log(ui.bullet('WhatsApp on your phone'));
   console.log('');
@@ -1032,7 +1131,8 @@ function welcome(env) {
   console.log(ui.bullet('Each answer is saved as you go. Press Ctrl+C to stop and run `rumi setup` again to carry on.'));
   console.log(ui.bullet('Keys are hidden while you type, and stay on this machine in a file called .env.'));
 
-  const done = ['SUPABASE_URL', 'OPENROUTER_API_KEY', 'REDIS_URL'].filter((key) => isProvided(env, key));
+  const hasDatabase = Boolean(env.RUMI_DB_PASSWORD) || isProvided(env, 'DATABASE_URL') || isProvided(env, 'SUPABASE_URL');
+  const done = [hasDatabase, ...['OPENROUTER_API_KEY', 'REDIS_URL'].map((key) => isProvided(env, key))].filter(Boolean);
   if (done.length) {
     console.log('');
     console.log(ui.say(`Picking up from last time — ${done.length} of 3 core services are already configured, so this will be quick.`));
@@ -1139,7 +1239,7 @@ if (require.main === module) {
 
 module.exports = {
   main, welcome, finish,
-  stepDatabase, stepBrain, stepMemory, stepExtras, stepChannel, stepMessagingChannels, stepDiscordChannel, stepMatrixChannel,
+  stepDatabase, chooseDatabase, setupBundledDatabase, setupOwnPostgres, setupSupabase, stepBrain, stepMemory, stepExtras, stepChannel, stepMessagingChannels, stepDiscordChannel, stepMatrixChannel,
   stepTelemetry,
   ensureTables, chooseChannelDriver, collectMetaCredentials, linkSandbox, channelAlreadyWorking,
   createSaver, hasAll, isProvided, prefill, isTemplateSuggestion, startLocalRedis, dockerAvailable, probe,

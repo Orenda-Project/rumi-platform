@@ -42,6 +42,17 @@ module.exports = {
         dest: "../.env"
       }
     },
+    // Rumi keeps its data in a built-in Postgres (installed by the npm ci above,
+    // for Windows, macOS and Linux) unless another database is configured. This
+    // only saves its password to .env; the first Start creates the database.
+    // Leaves an install that already uses Supabase or DATABASE_URL alone.
+    {
+      method: "shell.run",
+      params: {
+        path: "..",
+        message: "node infrastructure/db/init.js"
+      }
+    },
     // Rumi's queue and session state want a Redis. conda-forge has no Windows
     // build, so Windows users paste a hosted address into the setup wizard instead.
     {

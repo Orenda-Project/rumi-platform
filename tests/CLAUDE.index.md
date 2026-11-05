@@ -16,6 +16,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `console/` | → (no door; 8 tests) |
 | `dashboard/` | Tests for the Express dashboard's CSP, HTML escaping, AMA routes and boot deps → `dashboard/CLAUDE.md` |
 | `database/` | → (no door; 2 tests) |
+| `db/` | Tests for the database layer: pg adapter parity, real schema, drivers, built-in DB → `db/CLAUDE.md` |
 | `edit-class/` | → (no door; 1 tests) |
 | `exam-checker/` | → (no door; 14 tests) |
 | `fixtures/` | → (no door; 13 files: 0 test + 13 support) |

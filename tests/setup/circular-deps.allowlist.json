@@ -27,5 +27,13 @@
       "bot/shared/services/messaging/matrix-channel.service.js"
     ],
     "reason": "Reply-to-the-room-you-were-messaged-in fix: matrix-channel.service.js#resolveDmRoomId lazy-requires the adapter inside the function body to read its last-inbound-room map; the adapter already lazy-required the channel service the same way (mapAttachmentToMetaShape, sendWelcomeDm) before this change. Both edges resolve at call time, after both modules have finished their own top-level evaluation, so module load order never deadlocks."
+  },
+  {
+    "cycle": [
+      "bot/whatsapp-bot.js",
+      "bot/workers/sqs-worker.js",
+      "bot/workers/inbound-message.worker.js"
+    ],
+    "reason": "With a linked WhatsApp session (CHANNEL_DRIVER=baileys) the bot runs the worker in-process (shared/config/inline-worker.js): whatsapp-bot.js lazy-requires sqs-worker.js inside startInProcessWorkerIfSelected(), and inbound-message.worker.js lazy-requires whatsapp-bot.js inside getHandler(). Both edges resolve at call time, after every module has finished loading, and Node caches the main module, so the bot is never loaded twice."
   }
 ]

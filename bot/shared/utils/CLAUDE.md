@@ -1,7 +1,7 @@
 # utils — Small shared helpers: logging, language, phone, rendering, locks
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/utils kg=bb1bdd1d7d19 gen=5e59b5c3c947 overflow=142 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/utils kg=cc925d29c33f gen=8107ddc46a03 overflow=142 rendered=2026-11-02 kg.py=1.1.0 -->
 
 ## Entry points
 - `logger.js` — logToFile used across the bot
@@ -21,9 +21,9 @@ Full index: `CLAUDE.index.md`
 | … | 25 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- `logger.js` ← imported by `bot/gateway/adapters/slack.js:21:fb807dd5` · `bot/gateway/adapters/whatsapp.js:24:fb807dd5` (+276)
+- `logger.js` ← imported by `bot/gateway/adapters/slack.js:21:fb807dd5` · `bot/gateway/adapters/whatsapp.js:24:fb807dd5` (+277)
 - `structured-logger.js` ← imported by `bot/console/routes/api.js:105:0b8a1e8e` · `bot/gateway/adapters/whatsapp.js:25:dc0b40e1` (+54)
-- table `users` (written by `language-cache.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:56:61dfd735`? (+54)
+- table `users` (written by `language-cache.js`) ← read by `bot/scripts/attendance/link-school.js:50:a67cfd10`? · `bot/scripts/generate-coaching-excel.js:52:61dfd735`? (+54)
 - `constants.js` ← imported by `bot/console/pipeline-map.js:148:47d4b067` · `bot/gateway/adapters/whatsapp.js:23:b4e4b38e` (+46)
 - … 91 more → `CLAUDE.index.md`
 
@@ -38,4 +38,4 @@ Full index: `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `debugging`? · `logging`? · `whatsapp-flows`?
-- docs: `CHANGELOG.md`? · `SETUP.md`? · `bot/shared/CLAUDE.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/features/test-papers.md`?
+- docs: `CHANGELOG.md`? · `bot/shared/CLAUDE.md`? · `docs/architecture.md`? · `docs/console.md`? · `docs/features/test-papers.md`?
