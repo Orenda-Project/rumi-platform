@@ -17,11 +17,11 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Who reads this (all, generated)
 - `address.js` ← imported by `bot/shared/services/nudges/re-engage.kind.js:41:90e77a99`
 - `flags.js` ← imported by `bot/shared/services/nudges/teacher-nudges.sweeper.js:42:f40e7404`
-- `kinds.js` ← imported by `bot/workers/sqs-worker.js:1182:63477196` · `bot/workers/teacher-nudges.worker.js:20:63477196`
+- `kinds.js` ← imported by `bot/workers/sqs-worker.js:1191:63477196` · `bot/workers/teacher-nudges.worker.js:20:63477196`
 - `local-time.js` ← imported by `bot/shared/services/nudges/re-engage.kind.js:42:b70d9014`
 - `re-engage.kind.js` ← imported by `bot/shared/services/nudges/kinds.js:13:17cf28ff`
 - `teacher-nudges.store.js` ← imported by `bot/shared/services/nudges/re-engage.kind.js:40:a96e1f66` · `bot/shared/services/nudges/teacher-nudges.sweeper.js:41:a96e1f66`
-- `teacher-nudges.sweeper.js` ← imported by `bot/workers/sqs-worker.js:1176:8ceabada` · `bot/workers/teacher-nudges.worker.js:19:8ceabada`
+- `teacher-nudges.sweeper.js` ← imported by `bot/workers/sqs-worker.js:1185:8ceabada` · `bot/workers/teacher-nudges.worker.js:19:8ceabada`
 - env `ATTENDANCE_TZ` read at `bot/shared/services/nudges/local-time.js:40:87de7122`
 - env `TEACHER_NUDGES_LOOKBACK_DAYS` read at `bot/shared/services/nudges/re-engage.kind.js:64:993a96ca`
 - env `TEACHER_NUDGES_MAX_PER_TICK` read at `bot/shared/services/nudges/teacher-nudges.sweeper.js:73:42a92770`

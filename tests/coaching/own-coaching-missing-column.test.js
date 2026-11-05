@@ -80,7 +80,7 @@ describe('every process that reads a teacher\'s own coaching probes the column a
   const src = (rel) => fs.readFileSync(path.join(__dirname, '..', '..', rel), 'utf8');
   test.each([
     ['bot/whatsapp-bot.js', /function startServer\(\) \{[\s\S]{0,400}own-coaching'\)\.probe\(\)/],
-    ['bot/workers/sqs-worker.js', /function startWorker\(\) \{[\s\S]{0,400}own-coaching'\)\.probe\(\)/],
+    ['bot/workers/sqs-worker.js', /function startWorker\([^)]*\) \{[\s\S]{0,400}own-coaching'\)\.probe\(\)/],
     ['bot/workers/stale-session.worker.js', /async function main\(\) \{[\s\S]{0,600}await require\('[^']*own-coaching'\)\.probe\(\)/],
     ['bot/scripts/generate-coaching-excel.js', /async function generateCoachingExcel\(\) \{\s*await require\('[^']*own-coaching'\)\.probe\(\)/],
   ])('%s', (file, re) => {

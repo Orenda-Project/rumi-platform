@@ -48,12 +48,12 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `discord-modal-flow.js` ← imported by `bot/shared/routes/discord-flow-registry.js:19:0d65d71d` · `bot/shared/routes/discord-modal-interactions.handler.js:39:f6efbf6e`
 - `endpoint-text-flow.js` ← imported by `bot/shared/services/messaging/text-flow-definitions.js:28:9b309331`
 - `index.js` ← imported by `bot/scripts/brief/send-brief.js:162:efb25df6` · `bot/shared/services/whatsapp.service.js:12:ee9372b6`
-- `job-typing.js` ← imported by `bot/workers/sqs-worker.js:54:d31ac490`
+- `job-typing.js` ← imported by `bot/workers/sqs-worker.js:58:d31ac490`
 - `matrix-channel.service.js` ← imported by `bot/scripts/matrix-smoke.js:40:8513837d` · `bot/shared/services/messaging/inbound/matrix-events.adapter.js:114:cd6a1df7`
 - `matrix-connection.js` ← imported by `bot/whatsapp-bot.js:1987:3dcf8d32` · `bot/scripts/matrix-smoke.js:39:14e39621` · `bot/shared/services/messaging/channel-health.js:77:9b97ca19` · `bot/shared/services/messaging/inbound/matrix-events.adapter.js:1076:2a8951cf` (+1: `python3 kg/kg.py who-reads matrix-connection.js`)
 - `matrix-crypto-module.js` ← imported by `bot/scripts/setup/doctor.js:331:9880c03e` · `bot/shared/services/messaging/matrix-connection.js:164:ab09bf4f`
 - `matrix-identity.js` ← imported by `bot/shared/services/messaging/inbound/matrix-events.adapter.js:50:55d6cf82` · `bot/shared/services/messaging/matrix-channel.service.js:50:c738a1ef` · `bot/shared/services/messaging/matrix-connection.js:114:c738a1ef`
-- `matrix-outbound-relay.js` ← imported by `bot/whatsapp-bot.js:1974:40b0ef8b` · `bot/workers/sqs-worker.js:40:a34259b4` · `bot/scripts/matrix-smoke.js:38:a8b73e9c` · `bot/shared/services/messaging/inbound/matrix-events.adapter.js:1229:0adcf037` (+3: `python3 kg/kg.py who-reads matrix-outbound-relay.js`)
+- `matrix-outbound-relay.js` ← imported by `bot/whatsapp-bot.js:1974:40b0ef8b` · `bot/workers/sqs-worker.js:43:a34259b4` · `bot/scripts/matrix-smoke.js:38:a8b73e9c` · `bot/shared/services/messaging/inbound/matrix-events.adapter.js:1229:0adcf037` (+3: `python3 kg/kg.py who-reads matrix-outbound-relay.js`)
 - `pending-options.js` ← imported by `bot/shared/services/quiz/transcript-quiz-offer.service.js:41:7210e963` · `bot/shared/services/messaging/baileys-channel.service.js:40:789e5ae1` · `bot/shared/services/messaging/inbound/baileys-socket.adapter.js:24:eaca5893` · `bot/shared/services/messaging/inbound/matrix-events.adapter.js:51:eaca5893` (+2: `python3 kg/kg.py who-reads pending-options.js`)
 - `slack-modal-flow.js` ← imported by `bot/shared/routes/slack-flow-registry.js:15:a94be41e` · `bot/shared/routes/slack-modal-interactions.handler.js:35:6aeabc42`
 - `slack-web-client.js` ← imported by `bot/shared/routes/slack-flow-registry.js:16:4058ddcb` · `bot/shared/routes/slack-modal-interactions.handler.js:34:04d8ab87` · `bot/shared/services/messaging/slack-modal-flow.js:94:54f3a360`

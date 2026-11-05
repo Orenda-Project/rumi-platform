@@ -1,7 +1,7 @@
 # messaging — Tests for channel drivers and adapters: Baileys, Matrix, Slack, Discord, text flows
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests/messaging kg=3e846592c73f gen=cbfe220c0770 overflow=5 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/messaging kg=a44ad35d0a0e gen=26132a23444f overflow=5 rendered=2026-11-05 kg.py=1.1.0 -->
 
 ## Entry points
 - `channel-driver-parity.test.js` — every driver exposes the same method surface
@@ -15,10 +15,10 @@ Full index: `CLAUDE.index.md`
 | `text*` | 3 files; most used `text-flow-definitions.test.js`: Pins the five sandbox text flows, incl. reading-assessment synthesising a routable nfm_reply for flow-response.handler |
 | `channel*` | 8 files; most used `channel-driver-parity.test.js`: Pins every channel driver exposing the same method surface so WhatsAppService calls never hit "not a function" |
 | `matrix*` | 14 files; most used `matrix-channel-service.test.js`: Pins matrix-channel.service identity stripping, DM room caching and outbound sends, with matrix-connection mocked |
-| `baileys*` | 3 files; most used `baileys-socket-adapter.test.js`: Pins baileys-socket.adapter mapping a WAMessage to the Meta webhook shape, JID parsing and numeric-reply selection |
+| `baileys*` | 4 files; most used `baileys-socket-adapter.test.js`: Pins baileys-socket.adapter mapping a WAMessage to the Meta webhook shape, JID parsing and numeric-reply selection |
 | `discord*` | 4 files; most used `discord-events-adapter.test.js`: Pins discord-events.adapter mapping messageCreate/interactionCreate to the Meta webhook shape with discord: ids |
 | `bare-command-routing.test.js` | Pins every command-words.js command working as a bare word, reaching the same handler as the slash form |
-| … | 35 more → `CLAUDE.index.md` |
+| … | 36 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)

@@ -1,7 +1,7 @@
 # workers — Background workers: SQS job consumer, cron sweeps, per-job-type handlers
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/workers kg=9babaa7ab722 gen=5d14d0a1aeab overflow=77 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/workers kg=166503bccc8b gen=da2cb3312b01 overflow=78 rendered=2026-11-05 kg.py=1.1.0 -->
 
 ## Entry points
 - `sqs-worker.js` — consumer; executeJob switch at line 300 routes every jobType
@@ -21,7 +21,7 @@ Full index: `CLAUDE.index.md`
 ## Who reads this (generated)
 - table `coaching_sessions` (written by `lesson-plan-extraction.worker.js` (+2)) ← read by `bot/scripts/generate-coaching-excel.js:23:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+52)
 - column `coaching_sessions.status` (written by `sqs-worker.js` (+1)) ← read by `bot/scripts/generate-coaching-excel.js:37:48a3661d` · `bot/shared/handlers/image-message.handler.js:110:bba4595e` (+28)
-- … 54 more → `CLAUDE.index.md`
+- … 55 more → `CLAUDE.index.md`
 
 ## Never (human)
 - Every new job type must be routed in the executeJob switch (bot/workers/sqs-worker.js:300); unrouted types are not run

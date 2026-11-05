@@ -18,6 +18,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `feature-overrides.js` | Operator OFF switch per feature via env, layered over key-presence gating; can never turn a feature on |
 | `gamma-languages.config.js` | Language parameters (RTL/font notes) passed to the Gamma presentation API for en, ur, ar, es |
 | `gender-neutral-address.js` | Shared Urdu address rule so prompts speaking to teachers never assume gender |
+| `inline-worker.js` | (unmapped) |
 | `language-config.js` | Per-language settings for reflective-question generation and cultural adaptation |
 | `language-prompts.js` | Dialect-specific, code-switching-aware prompt text per language; buildLanguagePrompt(code, name) |
 | `model-registry.js` | Resolves which LLM model a job uses at call time (per-job env override, else LLM_MODEL platform default) |
@@ -42,10 +43,11 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `coaching-debrief.config.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:23:50bb8b0b` · `bot/shared/services/gpt5-mini.service.js:1383:425e6f0a`
 - `coaching-messages.js` ← imported by `bot/shared/services/coaching/analysis-processor.service.js:22:b8fde5d4` · `bot/shared/services/coaching/coaching-flow-buttons.js:9:b8fde5d4` · `bot/shared/services/coaching/coaching-session.service.js:17:b8fde5d4` · `bot/shared/services/coaching/fidelity/fidelity-report.js:13:9c9510f6` (+6: `python3 kg/kg.py who-reads coaching-messages.js`)
 - `discord-country-regions.js` ← imported by `bot/shared/routes/discord-views/registration.view.js:22:f72f4330` · `bot/shared/routes/slack-views/registration.view.js:34:f72f4330`
-- `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/pipeline-map.js:16:32a14f1b` · `bot/console/routes/api.js:128:d45d9207` · `bot/console/routes/pages.js:62:f097f31a` (+22: `python3 kg/kg.py who-reads feature-availability.js`)
+- `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/pipeline-map.js:16:32a14f1b` · `bot/console/routes/api.js:128:d45d9207` · `bot/console/routes/pages.js:62:f097f31a` (+23: `python3 kg/kg.py who-reads feature-availability.js`)
 - `feature-overrides.js` ← imported by `bot/shared/services/coaching/fidelity/fidelity-orchestrator.js:66:75ac4cad` · `bot/shared/services/nudges/teacher-nudges.sweeper.js:44:aaed6883` · `bot/shared/services/observe/observe-gate.js:16:aaed6883` · `bot/shared/services/quiz/transcript-quiz-offer.service.js:75:0358a17e` (+1: `python3 kg/kg.py who-reads feature-overrides.js`)
 - `gamma-languages.config.js` ← imported by `bot/shared/services/content.service.js:5:488031ea`
 - `gender-neutral-address.js` ← imported by `bot/shared/services/quiz/video-quiz-report.service.js:37:5976149f`
+- `inline-worker.js` ← imported by `bot/whatsapp-bot.js:2096:99708102` · `bot/workers/sqs-worker.js:1279:f88a55e0`
 - `language-config.js` ← imported by `bot/shared/services/gpt5-mini.service.js:1373:3cb050f1`
 - `language-prompts.js` ← imported by `bot/shared/services/openai.service.js:3:52971b2a` · `bot/shared/services/video/video-script.service.js:10:ebbe105c`
 - `model-registry.js` ← imported by `bot/shared/services/llm-client.js:108:fd844b66` · `bot/shared/services/quiz/transcript-quiz-key-verify.service.js:71:e1598755` · `bot/shared/services/quiz/transcript-quiz-llm.js:23:e1598755` · `bot/shared/services/quiz/transcript-quiz-summary-truth.js:33:e1598755` (+2: `python3 kg/kg.py who-reads model-registry.js`)
@@ -82,6 +84,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `feature-availability.js` ← `tests/coaching/fidelity/fidelity-feature-entry.test.js` · `tests/console/channel-cards.test.js` · `tests/console/feature-overrides.test.js` · `tests/dashboard/portal-channels.test.js` · `tests/limits/expensive-job-caps.test.js` · `tests/limits/lesson-plan-availability.test.js` (+16: `python3 kg/kg.py who-reads bot/shared/config/feature-availability.js`)
 - `feature-overrides.js` ← `tests/coaching/fidelity/fidelity-feature-entry.test.js` · `tests/console/feature-overrides.test.js` · `tests/observe/observe-gate.test.js` · `tests/observe/observe-portal-coach.service.test.js` · `tests/quiz/video-quiz-typed-answer-gate.test.js`
 - `gamma-languages.config.js` ← `tests/language/french-language.test.js` · `tests/language/indian-languages.test.js`
+- `inline-worker.js` ← `tests/messaging/baileys-inline-worker.test.js`
 - `language-config.js` ← `tests/coaching/coaching-debrief-config.test.js`
 - `language-prompts.js` ← `tests/language/french-language.test.js` · `tests/language/indian-languages.test.js`
 - `model-registry.js` ← `tests/exam-checker/exam-vision-engine.test.js` · `tests/testpaper/model-registry.test.js` · `tests/unit/llm-client-for-model.test.js`

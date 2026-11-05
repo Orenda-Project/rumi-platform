@@ -1,7 +1,7 @@
 # config — Env-driven config, language data and feature gating
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/config kg=7208b6e9f59d gen=78f75bb08c87 overflow=155 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/config kg=94548cbe3074 gen=e6e04ab0a728 overflow=158 rendered=2026-11-05 kg.py=1.1.0 -->
 
 ## Entry points
 - `feature-availability.js` — which features are live, by env key presence
@@ -16,13 +16,13 @@ Full index: `CLAUDE.index.md`
 | `supabase.js` | The bot's database client, kept at this path for its ~150 importers; re-exports services/db (exits 78 on missing DB env) |
 | `feature-availability.js` | Single source of which features are live: presence of env keys, channel driver resolution, operator switch overlay |
 | `ux-strings.js` | Quiz fixed-copy catalogue (en/ur) plus the language clamp; resolveUx(key, {user, language, params}) renders it |
-| … | 23 more → `CLAUDE.index.md` |
+| … | 24 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `supabase.js` ← imported by `bot/scripts/attendance/link-school.js:25:50ccc192` · `bot/scripts/generate-coaching-excel.js:15:bdc9e340` (+141)
-- `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/pipeline-map.js:16:32a14f1b` (+24)
+- `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/pipeline-map.js:16:32a14f1b` (+25)
 - `ux-strings.js` ← imported by `bot/shared/services/lesson-plan-availability.js:16:90174631` · `bot/shared/services/quiz/providers/lp-generated.provider.js:27:25374c99` (+24)
-- … 34 more → `CLAUDE.index.md`
+- … 35 more → `CLAUDE.index.md`
 
 ## Never (human)
 - Missing Supabase credentials must always exit with code 78 at require time (bot/shared/config/supabase.js:48)
@@ -32,7 +32,7 @@ Full index: `CLAUDE.index.md`
 ## Tests (generated)
 - `tests/language/french-language.test.js` (gamma-languages.config.js, language-prompts.js, supported-languages.js, tts-voices.js)
 - `tests/language/indian-languages.test.js` (gamma-languages.config.js, language-prompts.js, supported-languages.js, tts-voices.js)
-- … 112 more → `CLAUDE.index.md`
+- … 113 more → `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `digital-coach`? · `setup`?
