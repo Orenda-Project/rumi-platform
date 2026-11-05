@@ -2057,6 +2057,15 @@ function registerChannelShutdownHandlers() {
     if (shuttingDown) return; // a second signal must not cut the flush short
     shuttingDown = true;
     logToFile(`Received ${signal} — closing active channel connections before exit`, {});
+    // Jobs in flight on the in-process worker still need the connection to
+    // deliver, so they finish (bounded by GRACEFUL_SHUTDOWN_TIMEOUT) first.
+    if (inProcessWorker) {
+      try {
+        await inProcessWorker.worker.shutdown();
+      } catch (error) {
+        logToFile('❌ In-process worker shutdown failed', { error: error.message });
+      }
+    }
     await Promise.all(
       activeDrivers.map(async (driver) => {
         try {
@@ -2074,6 +2083,30 @@ function registerChannelShutdownHandlers() {
 }
 
 /**
+ * The background worker, when it runs inside this process (null otherwise).
+ *
+ * With a linked WhatsApp session (CHANNEL_DRIVER=baileys) only this process may
+ * send, so lesson plans, reports and exam results -- all delivered from the
+ * worker -- are processed here, over this process's one connection. See
+ * shared/config/inline-worker.js; RUMI_INLINE_WORKER=off opts out.
+ */
+let inProcessWorker = null;
+
+function startInProcessWorkerIfSelected() {
+  if (!require('./shared/config/inline-worker').shouldRunWorkerInBot(process.env)) return;
+  try {
+    inProcessWorker = require('./workers/sqs-worker');
+    inProcessWorker.startWorker({ inProcess: true }).catch((error) => {
+      logToFile('❌ In-process worker did not start', { error: error.message, stack: error.stack });
+    });
+    logToFile('🧵 Background worker running inside the bot (linked WhatsApp session)', {});
+  } catch (error) {
+    // Background jobs being down must never take chat replies down with them.
+    logToFile('❌ In-process worker did not start', { error: error.message, stack: error.stack });
+  }
+}
+
+/**
  * Start server. Gated behind `require.main === module` so requiring this
  * file as a library (e.g. from a test harness or a downstream that wants the
  * Express `app` without its listener) does NOT bind to a port.
@@ -2083,6 +2116,7 @@ function startServer() {
   // reads depend on it (see own-coaching.js); a missing migration is logged.
   require('./shared/services/coaching/own-coaching').probe();
   wireBaileysInboundIfSelected();
+  startInProcessWorkerIfSelected();
   registerChannelShutdownHandlers();
   exitOnChannelLogout();
   return app.listen(constants.PORT, () => {
