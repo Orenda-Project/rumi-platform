@@ -53,6 +53,48 @@ const MESSAGES = {
     successWithoutPdf: (topic, gammaUrl) => `✅ ¡Tu plan de lección sobre "${topic}" está listo!\n\nMíralo aquí: ${gammaUrl}`,
     apology: "Lo siento, hubo un problema al crear tu plan de lección. Por favor intenta de nuevo enviando tu solicitud una vez más.",
     error: "Lo siento, hubo un error al crear el plan de lección. Por favor intenta de nuevo."
+  },
+  hi: {
+    successWithPdf: (topic) => `✅ आपका lesson plan तैयार है!\n\nविषय: ${topic}\n\nयह पाँच चरणों वाला lesson plan आपकी कक्षा में इस्तेमाल के लिए तैयार है।`,
+    successWithoutPdf: (topic, gammaUrl) => `✅ "${topic}" पर आपका lesson plan तैयार है!\n\nयहाँ देखें: ${gammaUrl}`,
+    apology: "माफ़ कीजिए, आपका lesson plan बनाने में समस्या आई। कृपया अपना अनुरोध एक बार फिर भेजें।",
+    error: "माफ़ कीजिए, lesson plan बनाने में गड़बड़ी हुई। कृपया फिर से कोशिश करें।"
+  },
+  bn: {
+    successWithPdf: (topic) => `✅ আপনার lesson plan তৈরি!\n\nবিষয়: ${topic}\n\nএই পাঁচ ধাপের lesson plan আপনার ক্লাসে ব্যবহারের জন্য তৈরি।`,
+    successWithoutPdf: (topic, gammaUrl) => `✅ "${topic}" নিয়ে আপনার lesson plan তৈরি!\n\nএখানে দেখুন: ${gammaUrl}`,
+    apology: "দুঃখিত, আপনার lesson plan তৈরি করতে সমস্যা হয়েছে। অনুগ্রহ করে আপনার অনুরোধটি আরেকবার পাঠান।",
+    error: "দুঃখিত, lesson plan তৈরি করতে ত্রুটি হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
+  },
+  mr: {
+    successWithPdf: (topic) => `✅ तुमचा lesson plan तयार आहे!\n\nविषय: ${topic}\n\nहा पाच टप्प्यांचा lesson plan तुमच्या वर्गात वापरण्यासाठी तयार आहे.`,
+    successWithoutPdf: (topic, gammaUrl) => `✅ "${topic}" वरील तुमचा lesson plan तयार आहे!\n\nइथे पाहा: ${gammaUrl}`,
+    apology: "माफ करा, तुमचा lesson plan तयार करताना अडचण आली. कृपया तुमची विनंती पुन्हा एकदा पाठवा.",
+    error: "माफ करा, lesson plan तयार करताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा."
+  },
+  te: {
+    successWithPdf: (topic) => `✅ మీ lesson plan సిద్ధంగా ఉంది!\n\nఅంశం: ${topic}\n\nఈ ఐదు దశల lesson plan మీ తరగతిలో ఉపయోగించడానికి సిద్ధంగా ఉంది.`,
+    successWithoutPdf: (topic, gammaUrl) => `✅ "${topic}" పై మీ lesson plan సిద్ధంగా ఉంది!\n\nఇక్కడ చూడండి: ${gammaUrl}`,
+    apology: "క్షమించండి, మీ lesson plan తయారు చేయడంలో సమస్య వచ్చింది. దయచేసి మీ అభ్యర్థనను మరోసారి పంపండి.",
+    error: "క్షమించండి, lesson plan తయారు చేయడంలో లోపం జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి."
+  },
+  'ta-IN': {
+    successWithPdf: (topic) => `✅ உங்கள் lesson plan தயார்!\n\nதலைப்பு: ${topic}\n\nஇந்த ஐந்து படி lesson plan உங்கள் வகுப்பறையில் பயன்படுத்த தயாராக உள்ளது.`,
+    successWithoutPdf: (topic, gammaUrl) => `✅ "${topic}" பற்றிய உங்கள் lesson plan தயார்!\n\nஇங்கே பாருங்கள்: ${gammaUrl}`,
+    apology: "மன்னிக்கவும், உங்கள் lesson plan-ஐ உருவாக்குவதில் சிக்கல் ஏற்பட்டது. உங்கள் கோரிக்கையை மீண்டும் ஒருமுறை அனுப்புங்கள்.",
+    error: "மன்னிக்கவும், lesson plan உருவாக்குவதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்."
+  },
+  kn: {
+    successWithPdf: (topic) => `✅ ನಿಮ್ಮ lesson plan ಸಿದ್ಧವಾಗಿದೆ!\n\nವಿಷಯ: ${topic}\n\nಈ ಐದು ಹಂತಗಳ lesson plan ನಿಮ್ಮ ತರಗತಿಯಲ್ಲಿ ಬಳಸಲು ಸಿದ್ಧವಾಗಿದೆ.`,
+    successWithoutPdf: (topic, gammaUrl) => `✅ "${topic}" ಕುರಿತ ನಿಮ್ಮ lesson plan ಸಿದ್ಧವಾಗಿದೆ!\n\nಇಲ್ಲಿ ನೋಡಿ: ${gammaUrl}`,
+    apology: "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ lesson plan ರಚಿಸುವಲ್ಲಿ ಸಮಸ್ಯೆಯಾಯಿತು. ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಇನ್ನೊಮ್ಮೆ ಕಳುಹಿಸಿ.",
+    error: "ಕ್ಷಮಿಸಿ, lesson plan ರಚಿಸುವಲ್ಲಿ ದೋಷ ಉಂಟಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  fr: {
+    successWithPdf: (topic) => `✅ Votre plan de leçon est prêt !\n\nSujet : ${topic}\n\nCe plan de leçon en cinq étapes est prêt à être utilisé en classe.`,
+    successWithoutPdf: (topic, gammaUrl) => `✅ Votre plan de leçon sur « ${topic} » est prêt !\n\nConsultez-le ici : ${gammaUrl}`,
+    apology: "Désolé, un problème est survenu lors de la création de votre plan de leçon. Veuillez renvoyer votre demande.",
+    error: "Désolé, une erreur est survenue lors de la création du plan de leçon. Veuillez réessayer."
   }
 };
 
