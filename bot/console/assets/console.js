@@ -228,17 +228,48 @@
       };
     }
 
-    var source = new EventSource(MOUNT + '/api/activity/stream');
-    source.onmessage = function (ev) {
-      if (paused) return;
-      var entry;
-      try { entry = JSON.parse(ev.data); } catch (err) { return; }
-      addRow(entry);
-    };
+    // First-run banner: only LIVE entries count, so an old feed can't turn it green.
+    var firstRun = document.getElementById('first-run');
+    var frReplyRe = null;
+    var frArrived = false;
+    var frDone = false;
+    if (firstRun) {
+      try { frReplyRe = new RegExp(firstRun.getAttribute('data-reply-pattern') || ''); } catch (err) { frReplyRe = null; }
+    }
+    function frShow(id) {
+      ['fr-hello', 'fr-ok', 'fr-wait'].forEach(function (b) {
+        var node = document.getElementById(b);
+        if (node) node.hidden = b !== id;
+      });
+      firstRun.className = 'banner first' + (id === 'fr-ok' ? ' ok' : id === 'fr-wait' ? ' waiting' : '');
+    }
+    function frSeeLive(entry) {
+      if (!firstRun) return;
+      frArrived = true;
+      if (!frDone && frReplyRe && typeof entry.msg === 'string' && frReplyRe.test(entry.msg)) {
+        frDone = true;
+        frShow('fr-ok');
+      }
+    }
+
+    function startLive() {
+      var source = new EventSource(MOUNT + '/api/activity/stream');
+      source.onmessage = function (ev) {
+        if (paused) return;
+        var entry;
+        try { entry = JSON.parse(ev.data); } catch (err) { return; }
+        addRow(entry);
+        frSeeLive(entry);
+      };
+      if (firstRun) {
+        var wait = parseInt(firstRun.getAttribute('data-no-arrival-ms'), 10) || 90000;
+        setTimeout(function () { if (!frArrived && !frDone) frShow('fr-wait'); }, wait);
+      }
+    }
 
     api('/activity?limit=60').then(function (res) {
       res.records.slice().reverse().forEach(addRow);
-    }).catch(function () { /* an empty feed is a fine starting state */ });
+    }).catch(function () { /* an empty feed is a fine starting state */ }).then(startLive);
 
     function addRow(entry) {
       var placeholder = feed.querySelector('.empty-state');

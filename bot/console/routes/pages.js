@@ -14,6 +14,7 @@ const express = require('express');
 
 const { render } = require('../view');
 const { buildCatalog, answeringOn } = require('../env-catalog');
+const { firstRunModel, REPLY_SENT_SOURCE } = require('../first-run');
 const { buildPipeline } = require('../pipeline-map');
 const { readEnvFile } = require('../../scripts/setup/env-file');
 
@@ -119,7 +120,9 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
       traces = ring.traceList(40);
       stats = ring.stats();
     } catch { /* optional */ }
-    await render(res, 'activity', { ...chrome(req), pageTitle: 'Activity', traces, stats });
+    const env = { ...process.env, ...readEnvFile(runtime.envPath) };
+    const firstRun = firstRunModel(req.query, buildCatalog(env, { liveEnv: runtime.standalone ? null : process.env }));
+    await render(res, 'activity', { ...chrome(req), pageTitle: 'Activity', traces, stats, firstRun, REPLY_SENT_SOURCE });
   });
 
   // ── System ─────────────────────────────────────────────────────────────────

@@ -287,6 +287,10 @@ input.mono { font-family: var(--mono); font-size: 12.5px; }
 }
 .banner.warn { background: var(--warn-soft); border-color: #f0dcb4; color: #6b4700; }
 .banner.bad  { background: var(--bad-soft);  border-color: #f3c8c3; color: #8d271b; }
+.banner.first { background: var(--coral-soft); border-color: #f6cdbd; color: var(--coral-dark); }
+.banner.first.ok { background: var(--ok-soft); border-color: #bfe3ce; color: var(--ok); }
+.banner.first.waiting { background: var(--warn-soft); border-color: #f0dcb4; color: #6b4700; }
+.banner.first a { color: inherit; text-decoration: underline; margin-right: 6px; }
 .banner.info { background: var(--navy-100);  border-color: #ccd4ef; color: var(--navy-800); }
 /* Only the LEADING <b> is the banner's heading. Applying this to every <b>
    made bold words inside the body text break onto their own lines. */
