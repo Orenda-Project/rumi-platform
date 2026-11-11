@@ -9,117 +9,109 @@
 </head>
 <body>
 
-<div class="shell">
+<header class="topbar">
+  <span class="topbar__brand">
+    <span class="topbar__mark" aria-hidden="true"></span>
+    <span class="topbar__name">Rumi</span>
+  </span>
+  <a class="link" href="/console" target="_blank" rel="noreferrer">Advanced settings &rarr;</a>
+</header>
 
-  <nav class="rail" aria-label="Setup progress">
-    <div class="rail__brand">
-      <span class="rail__mark" aria-hidden="true"></span>
-      <span class="rail__name">Rumi</span>
+<main class="content" id="content" tabindex="-1">
+
+  <!-- Asleep -->
+  <section class="panel panel--center" data-panel="asleep" hidden>
+    <h1>Rumi is asleep.</h1>
+    <p class="lede">
+      An AI teaching companion that lives in WhatsApp. Plug in three things to wake it up.
+      It takes about fifteen minutes.
+    </p>
+
+    <ul class="needs">
+      <li><b>Somewhere to remember</b><span>Rumi keeps teachers, lessons and assessments in a database on this computer. Nothing to sign up for.</span></li>
+      <li><b>An OpenRouter key</b><span>One key, many models. A few dollars goes a long way.</span></li>
+      <li><b>A second phone</b><span>Rumi links your WhatsApp the way WhatsApp Web does, so you cannot message yourself.</span></li>
+    </ul>
+
+    <div class="notice" id="welcome-problems" hidden>
+      <b>Some steps are unavailable.</b>
+      <ul id="welcome-problems-list"></ul>
+      <p>Everything else still works, and each of those steps will point you at the terminal instead.</p>
     </div>
 
-    <ol class="steps" id="steps">
-      <li class="step" data-step="welcome"><span class="step__dot"></span><span class="step__label">Welcome</span></li>
-      <li class="step" data-step="credentials"><span class="step__dot"></span><span class="step__label">Credentials</span></li>
-      <li class="step" data-step="database"><span class="step__dot"></span><span class="step__label">Database</span></li>
-      <li class="step" data-step="whatsapp"><span class="step__dot"></span><span class="step__label">WhatsApp</span></li>
-      <li class="step" data-step="done"><span class="step__dot"></span><span class="step__label">Done</span></li>
-    </ol>
-
-    <div class="rail__foot">
-      <a class="link" href="/console" target="_blank" rel="noreferrer">Advanced settings &rarr;</a>
+    <div class="actions actions--center">
+      <button class="btn btn--act btn--big" data-go="plug">Wake Rumi</button>
     </div>
-  </nav>
+  </section>
 
-  <main class="content" id="content" tabindex="-1">
+  <!-- Plug in -->
+  <section class="panel" data-panel="plug" hidden>
+    <h1 class="center">Plug in three things.<br>Rumi wakes up.</h1>
 
-    <!-- Welcome -->
-    <section class="panel" data-panel="welcome" hidden>
-      <p class="eyebrow">Step 1 of 5</p>
-      <h1>An AI teaching companion<br>that lives in WhatsApp</h1>
-      <p class="lede">
-        This sets Rumi up on your own machine. It takes about fifteen minutes, and
-        explains each step as it goes.
+    <div class="jacks">
+      <article class="jack" id="jack-memory" data-state="off">
+        <div class="jack__head">
+          <div class="jack__id">
+            <span class="jack-icon" id="icon-memory" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.6"/><path d="M5 5.5v12.6c0 1.45 3.13 2.6 7 2.6s7-1.15 7-2.6V5.5"/><path d="M5 11.8c0 1.45 3.13 2.6 7 2.6s7-1.15 7-2.6"/><path d="M15.5 9.6v.01M15.5 15.9v.01" stroke-width="2.4"/></svg></span>
+            <div><b class="jack__title">Memory</b><small class="jack__sub">Database</small></div>
+          </div>
+          <span class="jack__status" id="status-memory">OFF</span>
+        </div>
+        <div class="jack__body" id="memory-body" aria-live="polite"></div>
+      </article>
+
+      <article class="jack" id="jack-brain" data-state="off">
+        <div class="jack__head">
+          <div class="jack__id">
+            <span class="jack-icon" id="icon-brain" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5.5a2.6 2.6 0 0 0-4.9-1A3 3 0 0 0 4.6 8.3a3.1 3.1 0 0 0 .2 5.2 3 3 0 0 0 2.4 4.6A2.7 2.7 0 0 0 12 19.2z"/><path d="M12 5.5a2.6 2.6 0 0 1 4.9-1 3 3 0 0 1 2.5 3.8 3.1 3.1 0 0 1-.2 5.2 3 3 0 0 1-2.4 4.6 2.7 2.7 0 0 1-4.8 1.1"/><path d="M8.3 9.2c1 .1 1.9.8 2.1 1.8M15.7 9.2c-1 .1-1.9.8-2.1 1.8M8.6 14.6c.9-.5 2-.4 2.7.3M15.4 14.6c-.9-.5-2-.4-2.7.3"/></svg></span>
+            <div><b class="jack__title">Brain</b><small class="jack__sub">OpenRouter</small></div>
+          </div>
+          <span class="jack__status" id="status-brain">OFF</span>
+        </div>
+        <div class="jack__body" id="brain-body" aria-live="polite"></div>
+      </article>
+
+      <article class="jack" id="jack-voice" data-state="locked">
+        <div class="jack__head">
+          <div class="jack__id">
+            <span class="jack-icon jack-icon--locked" id="icon-voice" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 4h11A2.5 2.5 0 0 1 20 6.5v7.5a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3.6v-3.6A2.5 2.5 0 0 1 4 14V6.5A2.5 2.5 0 0 1 6.5 4z"/><path d="M9 8.8v2.7M12 7.4v5.5M15 8.8v2.7"/></svg></span>
+            <div><b class="jack__title">Voice</b><small class="jack__sub">WhatsApp</small></div>
+          </div>
+          <span class="jack__status" id="status-voice">LOCKED</span>
+        </div>
+        <div class="jack__body" id="voice-body" aria-live="polite"></div>
+      </article>
+    </div>
+
+    <section class="extras" aria-labelledby="extras-title">
+      <div class="extras__head">
+        <b id="extras-title">Optional abilities</b>
+        <span class="extras__count" id="extras-count"></span>
+      </div>
+      <p class="extras__blurb">
+        Not needed to wake Rumi up. Each one switches on the moment its key is added.
+        Tap one to paste its key, or add it any time later from the console's Setup page.
       </p>
-
-      <h2 class="section-title">What you'll need</h2>
-      <ul class="needs">
-        <li><b>An OpenRouter key</b><span>One key, many models. A few dollars goes a long way.</span></li>
-        <li><b>A second phone</b><span>Rumi links your WhatsApp the way WhatsApp Web does, so you cannot message yourself.</span></li>
-      </ul>
-
-      <div class="notice" id="welcome-problems" hidden>
-        <b>Some steps are unavailable.</b>
-        <ul id="welcome-problems-list"></ul>
-        <p>Everything else still works, and each of those steps will point you at the terminal instead.</p>
-      </div>
-
-      <div class="actions">
-        <button class="btn btn--act" data-go="credentials">Get started &rarr;</button>
-      </div>
+      <div id="abilities-body"></div>
     </section>
 
-    <!-- Credentials -->
-    <section class="panel" data-panel="credentials" hidden>
-      <p class="eyebrow">Step 2 of 5</p>
-      <h1>Connect Rumi<br>to your accounts</h1>
-      <p class="lede">
-        Each value is checked against the real service as you save it. Nothing leaves
-        this machine except the request that tests it.
-      </p>
-      <div id="credential-groups" class="groups" aria-live="polite"></div>
-      <div class="actions">
-        <button class="btn" data-go="welcome">&larr; Back</button>
-        <button class="btn btn--act" data-go="database">Continue &rarr;</button>
-      </div>
-    </section>
+    <div class="launchbar">
+      <p>Launch unlocks when all three jacks are lit. Optional abilities never block it.</p>
+      <button class="btn btn--act btn--big" id="launch" type="button" disabled>Launch Rumi</button>
+    </div>
 
-    <!-- Database -->
-    <section class="panel" data-panel="database" hidden>
-      <p class="eyebrow">Step 3 of 5</p>
-      <h1>Where Rumi keeps its data</h1>
-      <p class="lede">
-        Rumi keeps teachers, lessons and assessments in a database on this computer
-        unless you chose Supabase or your own Postgres on the previous step.
-      </p>
-      <div id="database-body" aria-live="polite"></div>
-      <div class="actions">
-        <button class="btn" data-go="credentials">&larr; Back</button>
-        <button class="btn btn--act" data-go="whatsapp">Continue &rarr;</button>
-      </div>
-    </section>
+    <div class="check">
+      <button class="linkbutton" id="check-toggle" type="button" aria-expanded="false" aria-controls="check-body">Check everything</button>
+      <div id="check-body" aria-live="polite" hidden></div>
+    </div>
+  </section>
 
-    <!-- WhatsApp -->
-    <section class="panel" data-panel="whatsapp" hidden>
-      <p class="eyebrow">Step 4 of 5</p>
-      <h1>Link WhatsApp</h1>
-      <p class="lede">
-        On your phone, open WhatsApp &rarr; Settings &rarr; Linked devices &rarr;
-        Link a device, and point it at this code.
-      </p>
-      <div id="whatsapp-body" aria-live="polite"></div>
-      <div class="actions">
-        <button class="btn" data-go="database">&larr; Back</button>
-        <button class="btn btn--act" data-go="done">Continue &rarr;</button>
-      </div>
-    </section>
+  <!-- Launching (its behaviour is wired by the launch step) -->
+  <section class="panel panel--center" data-panel="launching" id="panel-launching" hidden>
+    <div id="launching-body" aria-live="polite"></div>
+  </section>
 
-    <!-- Done -->
-    <section class="panel" data-panel="done" hidden>
-      <p class="eyebrow">Step 5 of 5</p>
-      <h1>Ready when you are</h1>
-      <p class="lede">
-        Close this tab and press <b>Start</b> in the Pinokio sidebar. Then message
-        Rumi from your second phone and try <b>Hi</b>, or <b>/menu</b>.
-      </p>
-      <div id="done-body" aria-live="polite"></div>
-      <div class="actions">
-        <button class="btn" data-go="whatsapp">&larr; Back</button>
-        <a class="btn btn--act" href="/console" target="_blank" rel="noreferrer">Open the console &rarr;</a>
-      </div>
-    </section>
-
-  </main>
-</div>
+</main>
 
 <script type="module" src="app.js"></script>
 </body>

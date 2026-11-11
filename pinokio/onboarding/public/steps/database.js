@@ -8,7 +8,11 @@
  */
 
 import { get, post, stream } from '../api.js';
-import { el, clear, verdict, slot } from '../dom.js';
+import { el, clear, verdict, slot, whereLink } from '../dom.js';
+import { field, databaseAbilities, databaseRows } from './credentials.js';
+
+/** The database Rumi runs itself (the same name jacks.js checks). */
+const BUILT_IN_DRIVER = 'bundled';
 
 /** What `inspectDatabase` can tell us, and what to show for each answer. */
 const VIEWS = {
@@ -52,6 +56,70 @@ export async function render(host, context) {
     clear(host);
     host.append(verdict('bad', error.message));
   }
+}
+
+/**
+ * Memory: the database jack.
+ *
+ * The built-in database is the default and needs nothing typed. A link reveals
+ * the catalogue's other database cards (Supabase, your own Postgres). Once one
+ * of those is chosen, its fields stay visible and today's database step --
+ * helper paste, tables, ready -- is shown under them.
+ *
+ * @param {HTMLElement} host
+ * @param {(event?: object) => void} onChange any save, or the step reaching ready
+ * @param {{capabilities: object, db: object|null}} options
+ */
+export async function renderMemory(host, onChange, { capabilities, db }) {
+  clear(host);
+  stop();
+  const context = { capabilities, markDone: () => onChange({ db: true }) };
+
+  if (!capabilities.database) {
+    host.append(fallback());
+    return;
+  }
+  if (!db) {
+    host.append(verdict('bad', 'Could not check the database.'));
+    return;
+  }
+
+  if (db.driver === BUILT_IN_DRIVER) {
+    host.append(builtInView());
+    const more = alternatives(onChange);
+    if (more) host.append(more);
+    return;
+  }
+
+  // Supabase or Postgres: its own fields first, then what the database needs next.
+  for (const row of databaseRows()) host.append(field(row, { hideWhere: false, onChange }));
+  const step = el('div', { class: 'memory__step' });
+  host.append(step);
+  await render(step, context);
+}
+
+/** "Use Supabase or another Postgres instead": the database cards, behind a link. */
+function alternatives(onChange) {
+  const cards = databaseAbilities();
+  if (!cards.length) return null;
+  const toggle = el('button', { class: 'linkbutton', type: 'button', text: 'Use Supabase or another Postgres instead' });
+  toggle.setAttribute('aria-expanded', 'false');
+  const body = el('div', { class: 'memory__alternatives' });
+  body.hidden = true;
+  for (const card of cards) {
+    const where = whereLink(card.where);
+    body.append(el('section', { class: 'memory__card' }, [
+      el('h3', { class: 'memory__card-title', text: card.title }),
+      el('p', { class: 'field__hint', text: card.why || '' }),
+      ...card.rows.map((row) => field(row, { hideWhere: true, onChange })),
+      where ? el('p', { class: 'field__hint' }, ['Get it at ', where]) : null,
+    ]));
+  }
+  toggle.addEventListener('click', () => {
+    body.hidden = !body.hidden;
+    toggle.setAttribute('aria-expanded', String(!body.hidden));
+  });
+  return el('div', {}, [toggle, body]);
 }
 
 /**

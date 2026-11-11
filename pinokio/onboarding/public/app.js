@@ -1,104 +1,146 @@
 /**
- * app -- the step machine behind the wizard.
+ * app -- three screens: Rumi is asleep, plug in three things, launching.
  *
- * Steps render lazily when you arrive at them, because each one asks the server a
- * real question (what is in .env, what state is the database in, is WhatsApp
- * linked) and the answers change as you work. Re-entering a step re-asks.
+ * The plug-in screen holds three jacks (Memory, Brain, Voice) and the optional
+ * abilities. What is ON, OFF or LOCKED is decided in one place, jacks.js; this
+ * module keeps the inputs it needs (the catalogue, the database's state, whether
+ * WhatsApp is linked, the last result of each connection test) and repaints
+ * after anything that could change them.
  *
  * @module app
  */
 
 import { get } from './api.js';
 import { el, clear } from './dom.js';
+import { jackStates } from './jacks.js';
 
 import * as credentials from './steps/credentials.js';
 import * as database from './steps/database.js';
 import * as whatsapp from './steps/whatsapp.js';
 import * as done from './steps/done.js';
 
-const ORDER = ['welcome', 'credentials', 'database', 'whatsapp', 'done'];
+const SCREENS = ['asleep', 'plug', 'launching'];
+const LABEL = { on: 'ON', off: 'OFF', locked: 'LOCKED' };
 
-/** Cleanup to run when a step is left, for the steps that hold something open. */
-const LEAVING = {
-  whatsapp: () => whatsapp.stop(),
-  database: () => database.stop(),
-};
-
-/** Which steps own a region of the page, and what to call to fill it. */
-const RENDERERS = {
-  credentials: { host: 'credential-groups', render: credentials.render },
-  database: { host: 'database-body', render: database.render },
-  whatsapp: { host: 'whatsapp-body', render: whatsapp.render },
-  done: { host: 'done-body', render: done.render },
-};
-
-const completed = new Set();
 let capabilities = {};
 let current = null;
 
-const context = {
-  get capabilities() { return capabilities; },
-  markDone: (step) => { completed.add(step); paintRail(); },
-  refreshProgress: paintRail,
-};
+/** The inputs jackStates reads. `probes` is the last result per connection test. */
+const inputs = { catalog: null, probes: {}, db: null, whatsapp: { linked: false } };
 
-function panels() {
-  return document.querySelectorAll('[data-panel]');
+/** What each jack body was last rendered for, so a repaint never wipes work in progress. */
+const rendered = { memory: null, voice: null };
+let plugBuilt = false;
+let abilities = null;
+
+function byId(id) {
+  return document.getElementById(id);
 }
 
-async function show(step) {
-  if (!ORDER.includes(step)) return;
-
-  // Leaving a step stops whatever it was watching: pairing holds a session lock
-  // in a child process, and the schema run streams progress we no longer need.
-  if (current && current !== step) LEAVING[current]?.();
-
-  current = step;
-  for (const panel of panels()) {
-    panel.hidden = panel.dataset.panel !== step;
+async function show(screen) {
+  if (!SCREENS.includes(screen)) return;
+  // Leaving the plug-in screen drops the pairing stream and the schema commentary.
+  if (current === 'plug' && screen !== 'plug') {
+    whatsapp.stop();
+    database.stop();
+    rendered.voice = null;
+    rendered.memory = null;
   }
-  paintRail();
-  document.getElementById('content').focus({ preventScroll: true });
+  current = screen;
+  for (const panel of document.querySelectorAll('[data-panel]')) {
+    panel.hidden = panel.dataset.panel !== screen;
+  }
+  byId('content').focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (screen === 'plug') await enterPlug();
+}
 
-  const renderer = RENDERERS[step];
-  if (!renderer) return;
-
+async function enterPlug() {
   try {
-    await renderer.render(document.getElementById(renderer.host), context);
+    await refresh();
+    if (!plugBuilt) {
+      credentials.renderBrain(byId('brain-body'), onChange, { capabilities });
+      abilities = credentials.renderAbilities(byId('abilities-body'), onChange, { capabilities });
+      plugBuilt = true;
+    }
+    await paint();
   } catch (error) {
-    const host = document.getElementById(renderer.host);
+    const host = byId('abilities-body');
     clear(host);
     host.append(el('div', { class: 'notice notice--bad' }, [
-      el('b', { text: 'Something went wrong on this step.' }),
+      el('b', { text: 'Something went wrong on this screen.' }),
       el('p', { text: error.message }),
     ]));
   }
 }
 
-function paintRail() {
-  const counts = credentials.counts();
-  if (counts && counts.requiredSet >= counts.requiredTotal) completed.add('credentials');
+/** Re-ask the server everything jackStates needs. Each answer is optional. */
+async function refresh() {
+  const [state, db, wa] = await Promise.all([
+    credentials.load(),
+    capabilities.database ? get('/api/db/state').catch(() => null) : null,
+    get('/api/whatsapp/state').catch(() => ({ linked: false })),
+  ]);
+  inputs.catalog = state.catalog;
+  inputs.db = db;
+  inputs.whatsapp = wa || { linked: false };
+}
 
-  for (const node of document.querySelectorAll('.step')) {
-    const step = node.dataset.step;
-    node.dataset.state = stateFor(step);
+/** After any save, probe, database or pairing event: re-read, then repaint. */
+async function onChange(event = {}) {
+  if (event.probe) inputs.probes[event.probe] = event.ok ? 'pass' : 'fail';
+  try {
+    await refresh();
+  } catch { /* keep the last answers; the field already shows what went wrong */ }
+  await paint();
+}
+
+async function paint() {
+  const jacks = jackStates(inputs);
+  for (const name of ['memory', 'brain', 'voice']) paintJack(name, jacks[name]);
+
+  const memoryKey = `${jacks.memory}|${inputs.db ? `${inputs.db.driver}|${inputs.db.state}` : 'none'}`;
+  if (rendered.memory !== memoryKey) {
+    rendered.memory = memoryKey;
+    await database.renderMemory(byId('memory-body'), onChange, { capabilities, db: inputs.db });
   }
+
+  if (rendered.voice !== jacks.voice) {
+    rendered.voice = jacks.voice;
+    whatsapp.render(byId('voice-body'), {
+      capabilities,
+      markDone: () => { inputs.whatsapp = { linked: true }; onChange(); },
+    }, jacks.voice);
+  }
+
+  if (abilities) {
+    const counts = abilities.update({ catalog: inputs.catalog });
+    byId('extras-count').textContent = `${counts.on} of ${counts.total} on`;
+  }
+
+  byId('launch').disabled = !jacks.launchReady;
 }
 
-function stateFor(step) {
-  if (step === current) return 'active';
-  if (completed.has(step)) return 'done';
-  if (blocked(step)) return 'blocked';
-  return 'todo';
+function paintJack(name, state) {
+  byId(`jack-${name}`).setAttribute('data-state', state);
+  const status = byId(`status-${name}`);
+  status.textContent = LABEL[state];
+  status.setAttribute('data-state', state);
+  const icon = byId(`icon-${name}`);
+  icon.classList.toggle('jack-icon--on', state === 'on');
+  icon.classList.toggle('jack-icon--locked', state === 'locked');
 }
 
-/** A step whose module did not load cannot be completed here, and says so. */
-function blocked(step) {
-  if (step === 'credentials') return capabilities.credentials === false;
-  if (step === 'database') return capabilities.database === false;
-  if (step === 'whatsapp') return capabilities.whatsapp === false;
-  return false;
+/** Rumi's own doctor report, kept one click away under the Launch bar. */
+function wireCheck() {
+  const toggle = byId('check-toggle');
+  const body = byId('check-body');
+  toggle.addEventListener('click', () => {
+    const opening = body.hidden;
+    body.hidden = !opening;
+    toggle.setAttribute('aria-expanded', String(opening));
+    if (opening) done.render(body, { capabilities, markDone: () => {} });
+  });
 }
 
 function wireNavigation() {
@@ -108,24 +150,20 @@ function wireNavigation() {
       show(button.dataset.go);
     });
   }
-
-  for (const node of document.querySelectorAll('.step')) {
-    node.addEventListener('click', () => show(node.dataset.step));
-    node.style.cursor = 'pointer';
-  }
 }
 
 /** Anything the bridge could not load is said once, plainly, on the first screen. */
 function reportProblems(problems) {
   if (!problems || !problems.length) return;
-  const notice = document.getElementById('welcome-problems');
-  const list = document.getElementById('welcome-problems-list');
+  const notice = byId('welcome-problems');
+  const list = byId('welcome-problems-list');
   for (const problem of problems) list.append(el('li', { text: problem }));
   notice.hidden = false;
 }
 
 async function main() {
   wireNavigation();
+  wireCheck();
   try {
     const state = await get('/api/state');
     capabilities = state.capabilities || {};
@@ -133,7 +171,7 @@ async function main() {
   } catch (error) {
     reportProblems([`The setup server is not answering: ${error.message}`]);
   }
-  show('welcome');
+  show('asleep');
 }
 
 main();

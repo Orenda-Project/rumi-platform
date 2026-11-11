@@ -14,12 +14,32 @@ import { el, clear, verdict, slot } from '../dom.js';
 /** Closed when the step is left, so an abandoned attempt releases the session lock. */
 let source = null;
 
-export function render(host, context) {
+/**
+ * Render into the Voice jack.
+ *
+ * @param {HTMLElement} host
+ * @param {{capabilities: object, markDone: Function}} context
+ * @param {'locked'|'off'|'on'} [jack] Voice's state from jackStates
+ */
+export function render(host, context, jack = 'off') {
   clear(host);
   stop();
 
   if (!context.capabilities.whatsapp) {
     host.append(fallback());
+    return;
+  }
+
+  if (jack === 'locked') {
+    host.append(el('p', {
+      class: 'field__hint',
+      text: 'Unlocks once Memory and Brain are plugged in. You will need a second phone: Rumi answers as the number you link.',
+    }));
+    return;
+  }
+
+  if (jack === 'on') {
+    host.append(verdict('ok', 'WhatsApp is linked.'));
     return;
   }
 
