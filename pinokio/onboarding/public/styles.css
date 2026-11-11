@@ -254,6 +254,7 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 }
 
 .emoji { font-style: normal; }
+[data-panel="asleep"] .lede { font-size: calc(1.08rem + 2pt); }
 .wa-glyph { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -0.17em; }
 .wa-glyph__bubble { fill: #25d366; }
 .wa-glyph__phone { fill: #ffffff; }
