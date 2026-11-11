@@ -77,7 +77,9 @@ and how to apply them.
 
 - **No restart button.** On a laptop Rumi runs in your terminal and a button could stop it but not
   start it again. On Railway the restart policy is `ON_FAILURE`, so a clean exit *stops* the service
-  rather than restarting it. The console tells you the one thing to do instead.
+  rather than restarting it. The console tells you the one thing to do instead. The exception is
+  Pinokio: `pinokio/start.js` gives the bot `RUMI_PTERM` and `RUMI_RESTART_SCRIPT`, and then a
+  **Restart Rumi** button appears (it asks Pinokio to stop and start Rumi again).
 - **No message content, and no phone numbers.** The bot handles teachers' voice notes and children's
   names. The activity feed keeps an allowlist of operational fields — provider, model, timing,
   result — and drops everything else before it reaches the browser. There is no toggle to turn that

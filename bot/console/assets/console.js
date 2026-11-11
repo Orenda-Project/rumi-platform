@@ -179,6 +179,33 @@
     };
   });
 
+  // ── Restart Rumi (Pinokio only) ───────────────────────────────────────────
+  // The server is down for a while, so after a grace period poll /health and
+  // reload on the first answer that follows at least one failure.
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-restart]');
+    if (!btn) return;
+    btn.disabled = true;
+    api('/restart', { method: 'POST' }).then(function () {
+      var pending = document.querySelector('.banner.warn');
+      var note = document.getElementById('restarting');
+      if (pending && note && pending !== note) pending.hidden = true;
+      if (note) note.hidden = false;
+      document.querySelectorAll('[data-restart]').forEach(function (b) { b.disabled = true; });
+      var failed = false;
+      setTimeout(function poll() {
+        fetch('/health', { cache: 'no-store' }).then(function (r) {
+          if (r.ok && failed) { location.reload(); return; }
+          if (!r.ok) failed = true;
+          setTimeout(poll, 2000);
+        }).catch(function () { failed = true; setTimeout(poll, 2000); });
+      }, 3000);
+    }).catch(function (err) {
+      btn.disabled = false;
+      flash(btn, err.message, true);
+    });
+  });
+
   // ── Test one connection ───────────────────────────────────────────────────
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-test]');

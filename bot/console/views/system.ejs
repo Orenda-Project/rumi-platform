@@ -31,9 +31,18 @@
       <p class="muted">Nothing is waiting. What is saved is what is running.</p>
     <% } %>
 
+    <% if (canRestart) { %>
     <div class="banner info gap-md">
       <div class="grow">
-        <b>There is no restart button, on purpose</b>
+        <b>Running under Pinokio, so <%= branding.botName %> can restart itself from here</b>
+        Pinokio stops it and starts it again, and this page reloads when it answers.
+      </div>
+      <button class="btn accent" data-restart>Restart Rumi</button>
+    </div>
+    <% } %>
+    <div class="banner info gap-md">
+      <div class="grow">
+        <b><%= canRestart ? 'Without Pinokio' : 'There is no restart button, on purpose' %></b>
         On a laptop <%= branding.botName %> runs in your terminal, and a button that stopped it could not start
         it again. On Railway the restart policy is <code>ON_FAILURE</code>, so a clean exit would stop the
         service rather than restart it. Instead:

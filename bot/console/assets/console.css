@@ -285,6 +285,7 @@ input.mono { font-family: var(--mono); font-size: 12.5px; }
   display: flex; gap: 13px; align-items: flex-start;
   border: 1px solid; font-size: 14px;
 }
+.banner[hidden] { display: none; }
 .banner.warn { background: var(--warn-soft); border-color: #f0dcb4; color: #6b4700; }
 .banner.bad  { background: var(--bad-soft);  border-color: #f3c8c3; color: #8d271b; }
 .banner.first { background: var(--coral-soft); border-color: #f6cdbd; color: var(--coral-dark); }

@@ -31,5 +31,14 @@
       %><% if (pending.length > 6) { %> and <%= pending.length - 6 %> more<% } %>.
       Restart it to pick them up.
     </div>
+    <% if (typeof canRestart !== "undefined" && canRestart) { %><button class="btn accent" data-restart>Restart Rumi</button><% } %>
+  </div>
+<% } %>
+<% if (typeof canRestart !== "undefined" && canRestart) { %>
+<div class="banner warn" id="restarting" hidden>
+    <div class="grow">
+      <b>Restarting Rumi…</b>
+      Pinokio is stopping and starting it. This page comes back on its own when Rumi answers again, usually within a minute. Rumi won't answer teachers until it's back.
+    </div>
   </div>
 <% } %>

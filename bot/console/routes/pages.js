@@ -22,6 +22,8 @@ const { readEnvFile } = require('../../scripts/setup/env-file');
  * @param {{runtime: object, posture: object, mount: string}} deps
  * @returns {import('express').Router}
  */
+const { restartConfig } = require('../restart');
+
 module.exports = function pagesRouter({ runtime, posture, mount }) {
   const router = express.Router();
 
@@ -38,6 +40,7 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
       branding,
       standalone: runtime.standalone,
       pending: runtime.pendingRestart(),
+      canRestart: !!restartConfig(process.env, { standalone: runtime.standalone }),
       active: req.path.replace(/\/+$/, '') || '/',
       setupTally: null,
       featureTally: null,

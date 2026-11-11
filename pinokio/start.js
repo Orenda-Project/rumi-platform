@@ -56,7 +56,11 @@ module.exports = {
           // looked hours old and timed out on each message. Servers run in UTC.
           "TZ": "UTC",
           // Stop `rumi start` opening a system browser behind Pinokio's back.
-          "RUMI_NO_OPEN": "1"
+          "RUMI_NO_OPEN": "1",
+          // Together these switch on the console's Restart Rumi button (see
+          // bot/console/restart.js): Pinokio is asked to run restart.js.
+          "RUMI_PTERM": "{{which('pterm')}}",
+          "RUMI_RESTART_SCRIPT": "{{path.resolve(cwd, 'restart.js')}}"
         },
         message: "node bin/rumi.js start",
         on: [{
