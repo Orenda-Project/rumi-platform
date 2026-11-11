@@ -9,6 +9,9 @@
  */
 
 :root {
+  /* The wizard is light only, whatever the system theme. */
+  color-scheme: light;
+
   /* Roles, straight from the CLI's PALETTE. */
   --brand: #25d366;
   --brand-hi: #7de8cd;
@@ -39,27 +42,6 @@
   --normal: 280ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --link: #7dd3fc;
-    --surface: #14161a;
-    --surface-raised: #1b1e24;
-    --surface-sunken: #101216;
-    --text: #e8ebef;
-    --text-soft: #9aa5b1;
-    --line: #2a2f37;
-  }
-}
-
-:root[data-theme="dark"] {
-  --link: #7dd3fc;
-  --surface: #14161a;
-  --surface-raised: #1b1e24;
-  --surface-sunken: #101216;
-  --text: #e8ebef;
-  --text-soft: #9aa5b1;
-  --line: #2a2f37;
-}
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -206,10 +188,6 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .verdict[data-tone="ok"] { color: var(--brand-lo); }
 .verdict[data-tone="bad"] { color: var(--danger); }
 .verdict[data-tone="busy"] { color: var(--text-soft); }
-:root[data-theme="dark"] .verdict[data-tone="ok"] { color: var(--brand); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .verdict[data-tone="ok"] { color: var(--brand); }
-}
 
 /* ── Buttons ────────────────────────────────────────────────────────────── */
 
@@ -496,10 +474,6 @@ pre.sql {
   .extras { padding: 16px 14px 4px; }
 }
 
-:root[data-theme="dark"] .jack__status[data-state="on"] { color: var(--brand); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .jack__status[data-state="on"] { color: var(--brand); }
-}
 
 .brain__check { display: grid; gap: 8px; }
 .brain__check:empty { display: none; }
