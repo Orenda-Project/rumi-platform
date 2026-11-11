@@ -152,12 +152,12 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   background: repeating-linear-gradient(to bottom, var(--wire) 0 var(--dash), transparent var(--dash) calc(var(--dash) + var(--gap)));
   animation: wire-down 0.9s linear infinite;
 }
-.board__trunk { height: 28px; margin: 0 auto; }
+.board__trunk { position: relative; height: 28px; margin: 0 auto; }
 
+.board-wrap { position: relative; max-width: 1020px; margin: 0 auto 8px; }
 .board {
   position: relative;
-  list-style: none; margin: 0 auto 8px; padding: 0;
-  max-width: 1020px;
+  list-style: none; margin: 0; padding: 0;
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;
   text-align: left;
 }
@@ -199,6 +199,51 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 .socket__text { display: grid; gap: 3px; }
 .socket__text b { font-size: 1rem; }
 .socket__text span { color: var(--text-soft); font-size: 0.9rem; }
+
+/*
+ * A glowing spark: down the trunk, then it splits in three at the bus and
+ * arrives at every socket together. One 2.6s cycle shared by all four, so the
+ * hand-off at 30% lines up. Under reduced motion it ends hidden (opacity 0).
+ */
+.spark {
+  position: absolute; width: 10px; height: 10px; border-radius: 50%;
+  background: #ffd27a;
+  box-shadow: 0 0 6px 3px rgba(245, 176, 66, 0.9), 0 0 18px 7px rgba(245, 176, 66, 0.45);
+  transform: translate(-50%, -50%);
+  opacity: 0; pointer-events: none; z-index: 1;
+  animation: 2.6s linear infinite;
+}
+.spark--trunk { left: 1px; animation-name: spark-trunk; }
+.spark--left { animation-name: spark-left; }
+.spark--center { left: 50%; animation-name: spark-center; }
+.spark--right { animation-name: spark-right; }
+
+@keyframes spark-trunk {
+  0% { top: 0; opacity: 0; }
+  4% { opacity: 1; }
+  30% { top: 100%; opacity: 1; }
+  31%, 100% { top: 100%; opacity: 0; }
+}
+@keyframes spark-center {
+  0%, 29% { top: 1px; opacity: 0; }
+  30% { top: 1px; opacity: 1; }
+  92% { top: 25px; opacity: 1; }
+  100% { top: 25px; opacity: 0; }
+}
+@keyframes spark-left {
+  0%, 29% { left: 50%; top: 1px; opacity: 0; }
+  30% { left: 50%; top: 1px; opacity: 1; }
+  75% { left: calc((100% - 48px) / 6); top: 1px; }
+  92% { left: calc((100% - 48px) / 6); top: 25px; opacity: 1; }
+  100% { left: calc((100% - 48px) / 6); top: 25px; opacity: 0; }
+}
+@keyframes spark-right {
+  0%, 29% { left: 50%; top: 1px; opacity: 0; }
+  30% { left: 50%; top: 1px; opacity: 1; }
+  75% { left: calc(100% - (100% - 48px) / 6); top: 1px; }
+  92% { left: calc(100% - (100% - 48px) / 6); top: 25px; opacity: 1; }
+  100% { left: calc(100% - (100% - 48px) / 6); top: 25px; opacity: 0; }
+}
 
 .btn.btn--pill { border-radius: 28px; margin-top: 28px; }
 
@@ -372,6 +417,7 @@ pre.sql {
 @media (max-width: 760px) {
   .board { grid-template-columns: 1fr; gap: 0; }
   .board::before, .board::after { display: none; }
+  .spark--left, .spark--right { display: none; }
   .content { padding: 16px 16px 64px; }
 }
 

@@ -30,7 +30,7 @@ The design was explored in a clickable mockup (screens 1–10). This document is
 ## Part B — wizard (`pinokio/onboarding`, `pinokio/onboard.js`)
 
 **B1. Three screens replace the five-step rail.**
-1. *Asleep* — "Rumi is asleep." Lede: "An AI teaching companion that lives in WhatsApp. Plug in three things to wake it up. It takes about fifteen minutes." A plug board: the Rumi mark (two dots and a smile, navy) in a grey circle, wired by animated dashed lines (still under reduced motion) to three sockets (Memory "A database on this computer", Brain "An OpenRouter key", Voice "WhatsApp and a second phone", each with its jack icon, all the same size), then a **Wake Rumi** button. On a phone the sockets stack into one chain. Keeps today's problems notice.
+1. *Asleep* — "Rumi is asleep." Lede: "An AI teaching companion that lives in WhatsApp. Plug in three things to wake it up. It takes about fifteen minutes." A plug board: the Rumi mark (two dots and a smile, navy) in a grey circle, wired by animated dashed lines along which a glowing spark runs down and splits into three, one per socket (both still/hidden under reduced motion) to three sockets (Memory "A database on this computer", Brain "An OpenRouter key", Voice "WhatsApp and a second phone", each with its jack icon, all the same size), then a **Wake Rumi** button. On a phone the sockets stack into one chain. Keeps today's problems notice.
 2. *Plug in* — heading "Plug in three things. Rumi wakes up." Three jacks, then Optional abilities, then the Launch bar.
 3. *Launching* — see B3.
 
