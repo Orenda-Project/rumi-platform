@@ -38,6 +38,11 @@ function pickBotPort({ execFile, scriptsDir }) {
 function createLauncher({ env, spawn, pickPort, now = Date.now }) {
   let busy = false;
   let lastAt = null;
+  // The port handed out for the last launch, and whether Rumi was spawned on it.
+  // Once spawned, relaunches reuse it: pick-port would hand out a different
+  // port while the first Rumi still holds the remembered one.
+  let lastPort = null;
+  let spawned = false;
   const pterm = env && env.RUMI_PTERM;
   const script = env && env.RUMI_START_SCRIPT;
   const underPinokio = Boolean(pterm && script && path.isAbsolute(pterm) && path.isAbsolute(script));
@@ -45,22 +50,19 @@ function createLauncher({ env, spawn, pickPort, now = Date.now }) {
   return {
     async launch() {
       const t = now();
-      if (busy || (lastAt !== null && t - lastAt < COOLDOWN_MS)) return { ok: false, reason: 'already-launching' };
+      if (busy || (lastAt !== null && t - lastAt < COOLDOWN_MS)) return { ok: false, reason: 'already-launching', ...(lastPort ? { port: lastPort } : {}) };
       busy = true;
       try {
         let port;
         try {
-          port = await pickPort();
+          port = spawned ? lastPort : await pickPort();
         } catch {
-          busy = false;
           return { ok: false, reason: 'no-port' };
         }
-        if (!underPinokio) {
-          busy = false;
-          return { ok: true, port, manual: true };
-        }
+        lastPort = port;
+        if (!underPinokio) return { ok: true, port, manual: true };
         lastAt = now();
-        busy = false;
+        spawned = true;
         const child = spawn(pterm, ['start', script], { detached: true, stdio: 'ignore' });
         // A failed spawn emits 'error'; unhandled it would crash the wizard.
         // Log the code and free the guard so a retry works.
@@ -68,6 +70,8 @@ function createLauncher({ env, spawn, pickPort, now = Date.now }) {
           child.on('error', (err) => {
             console.error(`Launch could not start Rumi: ${err && err.code ? err.code : 'spawn failed'}`);
             lastAt = null;
+            lastPort = null;
+            spawned = false;
           });
         }
         if (child && typeof child.unref === 'function') child.unref();

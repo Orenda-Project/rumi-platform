@@ -43,8 +43,33 @@ describe('createLauncher', () => {
     const spawn = jest.fn(() => fakeChild());
     const launcher = createLauncher({ env, spawn, pickPort: async () => 51234 });
     await launcher.launch();
-    await expect(launcher.launch()).resolves.toEqual({ ok: false, reason: 'already-launching' });
+    await expect(launcher.launch()).resolves.toEqual({ ok: false, reason: 'already-launching', port: 51234 });
     expect(spawn).toHaveBeenCalledTimes(1);
+  });
+
+  test('after the cooldown a relaunch reuses the port without picking again', async () => {
+    let t = 1000;
+    const spawn = jest.fn(() => fakeChild());
+    const pickPort = jest.fn(async () => 51234);
+    const launcher = createLauncher({ env, spawn, pickPort, now: () => t });
+    await launcher.launch();
+    t += 200000;
+    await expect(launcher.launch()).resolves.toEqual({ ok: true, port: 51234 });
+    expect(pickPort).toHaveBeenCalledTimes(1);
+    expect(spawn).toHaveBeenCalledTimes(2);
+  });
+
+  test('after a child error the next launch picks a port again', async () => {
+    const first = fakeChild();
+    const spawn = jest.fn().mockReturnValueOnce(first).mockReturnValue(fakeChild());
+    const pickPort = jest.fn(async () => 51234);
+    const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const launcher = createLauncher({ env, spawn, pickPort });
+    await launcher.launch();
+    first.emit('error', new Error('x'));
+    await launcher.launch();
+    expect(pickPort).toHaveBeenCalledTimes(2);
+    errSpy.mockRestore();
   });
 
   test('concurrent launches: only one spawns', async () => {
