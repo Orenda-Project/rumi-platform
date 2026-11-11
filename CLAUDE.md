@@ -35,13 +35,12 @@ Architecture, cost, monitoring: [docs/architecture.md](docs/architecture.md) · 
   recorded in `schema_versions`).
 
 ## Map (generated)
-<!-- kg:map repo=rumi-platform gen=6a28011b38a6 -->
+<!-- kg:map repo=rumi-platform gen=9ce21ef157d0 -->
 | dir | what it is |
 |---|---|
 | `.claude/` | Claude Code config and agent skills for working on this open-source repo → `.claude/CLAUDE.md` |
 | `.cursor/` | (no door; 1 files) |
 | `.github/` | Repo community files and CI workflows (see workflows/ for what each gate checks) → `.github/CLAUDE.md` |
-| `.pinokio-temp/` | (no door; 4 files) |
 | `bin/` | (no door; 1 files) |
 | `bot/` | The WhatsApp bot service: web entry point, workers, services, setup CLI and tests → `bot/CLAUDE.md` |
 | `brief/` | Morning Brief: renders the daily/weekly programme-health panels and manifest → `brief/CLAUDE.md` |
