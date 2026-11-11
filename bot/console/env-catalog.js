@@ -32,6 +32,7 @@ const {
 const { KEY_SOURCES } = require('../scripts/setup/doctor');
 const { META_FIELDS, OPTIONAL_EXTRAS } = require('../scripts/setup/fields');
 const { describeVar } = require('./redaction');
+const { isLive } = require('./live-state');
 
 /**
  * Human labels for the core credentials. The wizard asks for these
@@ -241,9 +242,12 @@ function buildRow(key, env, meta = {}) {
  * @param {object} [env] defaults to process.env; pass a parsed `.env` to
  *   describe the FILE rather than the running process (they differ whenever a
  *   change has been saved but not applied, which is exactly what we need to show)
+ * @param {{liveEnv?: object|null}} [opts] the running process's env; an ability
+ *   that is on in `env` but not in `liveEnv` gets `pendingRestart`. null (the
+ *   default) means no running bot, so nothing is pending.
  * @returns {{groups: Array, channel: string, counts: object}}
  */
-function buildCatalog(env = process.env) {
+function buildCatalog(env = process.env, { liveEnv = null } = {}) {
   const byKey = featureByKey();
   const channel = resolveChannelDriver(env);
   const groups = new Map(GROUP_ORDER.map((g) => [g.id, { ...g, rows: [], abilities: [] }]));
@@ -291,6 +295,7 @@ function buildCatalog(env = process.env) {
       // semantics of FEATURES.keys, which is what actually gates it.
       on: rows.every((r) => r.set),
       partial: rows.some((r) => r.set) && !rows.every((r) => r.set),
+      pendingRestart: rows.every((r) => r.set) && !isLive(ability.keys, liveEnv),
     });
   }
 
@@ -311,6 +316,7 @@ function buildCatalog(env = process.env) {
       rows,
       on: rows.every((r) => r.set),
       partial: rows.some((r) => r.set) && !rows.every((r) => r.set),
+      pendingRestart: rows.every((r) => r.set) && !isLive(keys, liveEnv),
       guide: name,
     });
   }

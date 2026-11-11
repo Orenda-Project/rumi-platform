@@ -20,6 +20,7 @@ const {
 } = require('../shared/config/feature-availability');
 const { KEY_SOURCES } = require('../scripts/setup/doctor');
 const { OPTIONAL_EXTRAS } = require('../scripts/setup/fields');
+const { isLive } = require('./live-state');
 
 /**
  * Plain-language consequences. `FEATURES[].name` is written for a diagnostic
@@ -55,9 +56,11 @@ function whyFor(feature) {
  * One row per feature, with the three facts kept apart.
  *
  * @param {object} [env]
+ * @param {{liveEnv?: object|null}} [opts] the running process's env; a feature
+ *   that is on in `env` but whose keys are not in `liveEnv` is 'pending-restart'
  * @returns {{rows: Array, counts: object}}
  */
-function snapshot(env = process.env) {
+function snapshot(env = process.env, { liveEnv = null } = {}) {
   const rows = FEATURES.map((feature) => {
     const keys = feature.keys || feature.keysAny || [];
     const anyOf = Boolean(feature.keysAny);
@@ -68,6 +71,7 @@ function snapshot(env = process.env) {
     let state = 'on';
     if (!configured) state = 'needs-key';
     else if (!switchedOn) state = 'paused';
+    else if (!isLive(keys, liveEnv, { anyOf })) state = 'pending-restart';
 
     return {
       id: feature.id || null,
@@ -94,6 +98,7 @@ function snapshot(env = process.env) {
     counts: {
       total: rows.length,
       on: rows.filter((r) => r.state === 'on').length,
+      pendingRestart: rows.filter((r) => r.state === 'pending-restart').length,
       paused: rows.filter((r) => r.state === 'paused').length,
       needsKey: rows.filter((r) => r.state === 'needs-key').length,
     },

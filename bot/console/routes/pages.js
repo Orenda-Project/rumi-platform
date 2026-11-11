@@ -58,9 +58,10 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
   // ── Overview ───────────────────────────────────────────────────────────────
   router.get('/', async (req, res) => {
     const env = { ...process.env, ...readEnvFile(runtime.envPath) };
+    const liveEnv = runtime.standalone ? null : process.env;
     const { missingRequired, resolveChannelDriver, resolveActiveChannels, databaseRequiredVars } =
       require('../../shared/config/feature-availability');
-    const features = require('../features').snapshot(env);
+    const features = require('../features').snapshot(env, { liveEnv });
 
     let identity = { paired: false };
     let processState = { running: true, pid: process.pid };
@@ -94,7 +95,7 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
   // ── Setup: the key manager ─────────────────────────────────────────────────
   router.get('/setup', async (req, res) => {
     const env = readEnvFile(runtime.envPath);
-    await render(res, 'setup', { ...chrome(req), pageTitle: 'Setup', catalog: buildCatalog(env) });
+    await render(res, 'setup', { ...chrome(req), pageTitle: 'Setup', catalog: buildCatalog(env, { liveEnv: runtime.standalone ? null : process.env }) });
   });
 
   // ── Pipeline: the three layers ─────────────────────────────────────────────
@@ -106,7 +107,7 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
   // ── Features: the toggle board ─────────────────────────────────────────────
   router.get('/features', async (req, res) => {
     const env = { ...process.env, ...readEnvFile(runtime.envPath) };
-    await render(res, 'features', { ...chrome(req), pageTitle: 'Features', features: require('../features').snapshot(env) });
+    await render(res, 'features', { ...chrome(req), pageTitle: 'Features', features: require('../features').snapshot(env, { liveEnv: runtime.standalone ? null : process.env }) });
   });
 
   // ── Activity: live feed and traces ─────────────────────────────────────────

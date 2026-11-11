@@ -53,12 +53,13 @@
           <div class="row-top">
             <div>
               <div class="row-title">
-                <span class="dot <%= ability.on ? 'ok' : (ability.partial ? 'warn' : 'off') %>"></span><%= ability.title %>
+                <span class="dot <%= ability.pendingRestart ? 'warn' : ability.on ? 'ok' : (ability.partial ? 'warn' : 'off') %>"></span><%= ability.title %>
               </div>
               <p class="row-why"><%= ability.why %></p>
             </div>
             <div class="flex">
-              <% if (ability.on) { %><span class="pill ok">on</span>
+              <% if (ability.pendingRestart) { %><span class="pill warn">on after restart</span>
+              <% } else if (ability.on) { %><span class="pill ok">on</span>
               <% } else if (ability.partial) { %><span class="pill warn">half set up</span>
               <% } else { %><span class="pill">off</span><% } %>
             </div>
