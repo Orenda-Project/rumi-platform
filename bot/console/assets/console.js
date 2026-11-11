@@ -193,7 +193,16 @@
       if (note) note.hidden = false;
       document.querySelectorAll('[data-restart]').forEach(function (b) { b.disabled = true; });
       var failed = false;
+      var deadline = Date.now() + 120000;
       setTimeout(function poll() {
+        if (Date.now() > deadline) {
+          if (note) {
+            note.textContent = '';
+            note.appendChild(el('div', 'grow', "Rumi didn't restart. Check the Pinokio terminal, or press Start in the Pinokio sidebar."));
+          }
+          document.querySelectorAll('[data-restart]').forEach(function (b) { b.disabled = false; });
+          return;
+        }
         fetch('/health', { cache: 'no-store' }).then(function (r) {
           if (r.ok && failed) { location.reload(); return; }
           if (!r.ok) failed = true;

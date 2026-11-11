@@ -46,6 +46,19 @@ describe('createRestarter', () => {
     expect(r.restart()).toEqual({ ok: true });
     expect(spawn).toHaveBeenCalledTimes(2);
   });
+  it('survives a spawn error and lets the operator retry', () => {
+    const { EventEmitter } = require('events');
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const mk = () => Object.assign(new EventEmitter(), { unref: jest.fn() });
+    const first = mk();
+    const spawn = jest.fn().mockReturnValueOnce(first).mockReturnValue(mk());
+    const r = createRestarter({ config: { pterm: '/x/pterm', script: '/x/restart.js' }, spawn });
+    expect(r.restart()).toEqual({ ok: true });
+    expect(() => first.emit('error', Object.assign(new Error('nope'), { code: 'ENOENT' }))).not.toThrow();
+    expect(r.restart()).toEqual({ ok: true });
+    expect(spawn).toHaveBeenCalledTimes(2);
+    spy.mockRestore();
+  });
   it('is unavailable without a config', () => {
     const spawn = jest.fn();
     expect(createRestarter({ config: null, spawn }).restart()).toEqual({ ok: false, reason: 'unavailable' });

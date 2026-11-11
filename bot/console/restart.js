@@ -43,6 +43,14 @@ function createRestarter({ config, spawn, now = Date.now }) {
       if (lastAt !== null && t - lastAt < COOLDOWN_MS) return { ok: false, reason: 'already-restarting' };
       lastAt = t;
       const child = spawn(config.pterm, ['start', config.script], { detached: true, stdio: 'ignore' });
+      // A failed spawn (pterm moved, no permission) emits 'error'; unhandled it
+      // would take the bot down. Log it and free the cooldown so a retry works.
+      if (child && typeof child.on === 'function') {
+        child.on('error', (err) => {
+          console.error(`Console restart could not start: ${err && err.code ? err.code : 'spawn failed'}`);
+          lastAt = null;
+        });
+      }
       if (child && typeof child.unref === 'function') child.unref();
       return { ok: true };
     },
