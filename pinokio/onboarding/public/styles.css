@@ -504,3 +504,21 @@ pre.sql {
 .brain__check { display: grid; gap: 8px; }
 .brain__check:empty { display: none; }
 .brain__again { margin-top: 0; }
+
+/* ── Launching ──────────────────────────────────────────────────────────── */
+
+.wake-steps { list-style: none; padding: 0; margin: 0 auto 28px; max-width: 460px; text-align: left; display: flex; flex-direction: column; gap: 4px; }
+.wake-steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px; border-radius: 12px; background: var(--surface-sunken); opacity: 0.45; transition: opacity 0.25s ease; }
+.wake-steps li[data-state="run"], .wake-steps li[data-state="done"], .wake-steps li[data-state="fail"] { opacity: 1; }
+.wake-steps b { display: block; font-size: 0.92rem; }
+.wake-steps small { display: block; color: var(--text-soft); font-size: 0.8rem; margin-top: 2px; line-height: 1.45; }
+.ws-icon { flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; font-weight: 800; }
+li[data-state="run"] .ws-icon { border-top-color: var(--accent); animation: wake-spin 0.8s linear infinite; }
+li[data-state="done"] .ws-icon { background: var(--brand); border-color: var(--brand); color: #fff; }
+li[data-state="done"] .ws-icon::after { content: "\2713"; }
+li[data-state="fail"] .ws-icon { background: var(--danger); border-color: var(--danger); color: #fff; }
+li[data-state="fail"] .ws-icon::after { content: "!"; }
+@keyframes wake-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { li[data-state="run"] .ws-icon { animation: none; border-color: var(--accent); } }
+.wake-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+.wake-manual { max-width: 460px; margin: 0 auto 22px; text-align: left; font-weight: 600; }

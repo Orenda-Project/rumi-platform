@@ -18,6 +18,7 @@ import * as credentials from './steps/credentials.js';
 import * as database from './steps/database.js';
 import * as whatsapp from './steps/whatsapp.js';
 import * as done from './steps/done.js';
+import * as launching from './steps/launching.js';
 
 const SCREENS = ['asleep', 'plug', 'launching'];
 const LABEL = { on: 'ON', off: 'OFF', locked: 'LOCKED' };
@@ -40,6 +41,7 @@ function byId(id) {
 async function show(screen) {
   if (!SCREENS.includes(screen)) return;
   // Leaving the plug-in screen drops the pairing stream and the schema commentary.
+  if (current === 'launching' && screen !== 'launching') launching.cancel();
   if (current === 'plug' && screen !== 'plug') {
     whatsapp.stop();
     database.stop();
@@ -53,6 +55,7 @@ async function show(screen) {
   byId('content').focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (screen === 'plug') await enterPlug();
+  if (screen === 'launching') launching.run(byId('launching-body'), { onBack: () => show('plug') });
 }
 
 async function enterPlug() {
@@ -162,6 +165,7 @@ function wireCheck() {
 }
 
 function wireNavigation() {
+  byId('launch').addEventListener('click', () => show('launching'));
   for (const button of document.querySelectorAll('[data-go]')) {
     button.addEventListener('click', (event) => {
       event.preventDefault();
