@@ -34,3 +34,36 @@ describe('waitForHealth', () => {
     expect(t).toBeGreaterThanOrEqual(120000);
   });
 });
+
+describe('waitForHealth robustness', () => {
+  function fakeClock() {
+    const clock = { t: 0 };
+    clock.now = () => clock.t;
+    clock.sleep = jest.fn(async (ms) => { clock.t += ms; });
+    // A timer that "fires" at once, having advanced the clock by its delay.
+    clock.timer = jest.fn((ms) => ({ promise: Promise.resolve().then(() => { clock.t += ms; return 'timed-out'; }), cancel() {} }));
+    return clock;
+  }
+
+  it('still times out by the deadline when fetch never settles', async () => {
+    const c = fakeClock();
+    const fetchFn = jest.fn(() => new Promise(() => {}));
+    const result = await waitForHealth({ port: 1, fetchFn, sleep: c.sleep, now: c.now, timer: c.timer });
+    expect(result).toBe('timeout');
+    expect(c.t).toBeGreaterThanOrEqual(120000);
+    expect(c.timer.mock.calls[0][0]).toBe(5000);
+  });
+
+  it('returns stopped without further fetches once shouldStop is true', async () => {
+    const c = fakeClock();
+    let calls = 0;
+    const fetchFn = jest.fn().mockRejectedValue(new Error('refused'));
+    const shouldStop = () => calls++ >= 2;
+    const result = await waitForHealth({ port: 1, fetchFn, sleep: c.sleep, now: c.now, timer: c.timer, shouldStop });
+    expect(result).toBe('stopped');
+    expect(fetchFn.mock.calls.length).toBeLessThanOrEqual(2);
+    const before = fetchFn.mock.calls.length;
+    expect(await waitForHealth({ port: 1, fetchFn, sleep: c.sleep, now: c.now, shouldStop: () => true })).toBe('stopped');
+    expect(fetchFn.mock.calls.length).toBe(before);
+  });
+});

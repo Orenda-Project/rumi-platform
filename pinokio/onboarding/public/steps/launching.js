@@ -96,13 +96,14 @@ export async function run(host, { onBack } = {}) {
     actions.append(back());
     return;
   }
-  items.slice(0, 3).forEach((item) => setState(item, 'done'));
+  // Manual: only the saving happened. Nothing has closed or started yet.
+  (manual ? items.slice(0, 1) : items.slice(0, 3)).forEach((item) => setState(item, 'done'));
   setState(items[3], 'run');
 
   const result = await waitForHealth({
-    port, fetchFn: (...args) => fetch(...args), sleep, now: Date.now,
+    port, fetchFn: (...args) => fetch(...args), sleep, now: Date.now, shouldStop: () => !live(),
   });
-  if (!live()) return;
+  if (!live() || result === 'stopped') return;
 
   if (result === 'up') {
     setState(items[3], 'done');
