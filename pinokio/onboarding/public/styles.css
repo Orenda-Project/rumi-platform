@@ -137,9 +137,22 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   border-radius: 50%;
   background: var(--surface-sunken); border: 1px solid var(--line);
 }
-.board__core { width: 52px; height: 52px; border-radius: 50%; background: #c9c4bb; }
+.board__mark { width: 64px; height: auto; }
+.board__mark circle { fill: var(--navy); }
+.board__mark path { fill: none; stroke: var(--navy); stroke-width: 28; stroke-linecap: round; }
 
-.board__trunk { display: block; width: 0; height: 28px; margin: 0 auto; border-left: 2px dashed #c9c4bb; }
+/* Wires: dashes that run from Rumi out to the sockets (still under reduced motion). */
+:root { --wire: #c9c4bb; --dash: 6px; --gap: 6px; }
+@keyframes wire-down { to { background-position: 0 calc(var(--dash) + var(--gap)); } }
+@keyframes wire-left { to { background-position: calc(-1 * (var(--dash) + var(--gap))) 0; } }
+@keyframes wire-right { to { background-position: calc(var(--dash) + var(--gap)) 0; } }
+
+.board__trunk, .board__wire {
+  display: block; width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--wire) 0 var(--dash), transparent var(--dash) calc(var(--dash) + var(--gap)));
+  animation: wire-down 0.9s linear infinite;
+}
+.board__trunk { height: 28px; margin: 0 auto; }
 
 .board {
   position: relative;
@@ -149,16 +162,25 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   text-align: left;
 }
 /* The bus: from the first socket's centre to the last one's (3 columns, 2 gaps of 24px). */
+.board::before, .board::after {
+  content: ""; position: absolute; top: 0; height: 2px;
+  animation: 0.9s linear infinite;
+}
 .board::before {
-  content: ""; position: absolute; top: 0;
-  left: calc((100% - 48px) / 6); right: calc((100% - 48px) / 6);
-  border-top: 2px dashed #c9c4bb;
+  left: calc((100% - 48px) / 6); right: 50%;
+  background: repeating-linear-gradient(to left, var(--wire) 0 var(--dash), transparent var(--dash) calc(var(--dash) + var(--gap)));
+  animation-name: wire-left;
+}
+.board::after {
+  left: 50%; right: calc((100% - 48px) / 6);
+  background: repeating-linear-gradient(to right, var(--wire) 0 var(--dash), transparent var(--dash) calc(var(--dash) + var(--gap)));
+  animation-name: wire-right;
 }
 .board__socket { display: flex; flex-direction: column; align-items: center; }
-.board__wire { display: block; width: 0; height: 24px; border-left: 2px dashed #c9c4bb; }
+.board__wire { height: 24px; flex: none; }
 
 .socket {
-  width: 100%; box-sizing: border-box;
+  flex: 1; width: 100%; box-sizing: border-box;
   display: flex; align-items: center; gap: 14px;
   padding: 18px 20px;
   background: var(--surface-raised);
@@ -349,7 +371,7 @@ pre.sql {
 
 @media (max-width: 760px) {
   .board { grid-template-columns: 1fr; gap: 0; }
-  .board::before { display: none; }
+  .board::before, .board::after { display: none; }
   .content { padding: 16px 16px 64px; }
 }
 
