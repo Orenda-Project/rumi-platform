@@ -55,8 +55,12 @@
             <span class="jack-icon" id="icon-memory" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.6"/><path d="M5 5.5v12.6c0 1.45 3.13 2.6 7 2.6s7-1.15 7-2.6V5.5"/><path d="M5 11.8c0 1.45 3.13 2.6 7 2.6s7-1.15 7-2.6"/><path d="M15.5 9.6v.01M15.5 15.9v.01" stroke-width="2.4"/></svg></span>
             <div><b class="jack__title">Memory</b><small class="jack__sub">Database</small></div>
           </div>
-          <span class="jack__status" id="status-memory">OFF</span>
+          <div class="jack__end">
+            <span class="jack__status" id="status-memory">OFF</span>
+            <button class="info" type="button" data-info="info-memory" title="What is Memory for?" aria-label="What is Memory for?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></button>
+          </div>
         </div>
+        <div class="info-tip" id="info-memory" hidden><p>Rumi keeps teachers, lessons and assessments in a database on this computer. Nothing to sign up for.</p><p class="info-tip__meta">Service: the built-in database, or Supabase / your own Postgres</p></div>
         <div class="jack__body" id="memory-body" aria-live="polite"></div>
       </article>
 
@@ -66,8 +70,12 @@
             <span class="jack-icon" id="icon-brain" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5.5a2.6 2.6 0 0 0-4.9-1A3 3 0 0 0 4.6 8.3a3.1 3.1 0 0 0 .2 5.2 3 3 0 0 0 2.4 4.6A2.7 2.7 0 0 0 12 19.2z"/><path d="M12 5.5a2.6 2.6 0 0 1 4.9-1 3 3 0 0 1 2.5 3.8 3.1 3.1 0 0 1-.2 5.2 3 3 0 0 1-2.4 4.6 2.7 2.7 0 0 1-4.8 1.1"/><path d="M8.3 9.2c1 .1 1.9.8 2.1 1.8M15.7 9.2c-1 .1-1.9.8-2.1 1.8M8.6 14.6c.9-.5 2-.4 2.7.3M15.4 14.6c-.9-.5-2-.4-2.7.3"/></svg></span>
             <div><b class="jack__title">Brain</b><small class="jack__sub">OpenRouter</small></div>
           </div>
-          <span class="jack__status" id="status-brain">OFF</span>
+          <div class="jack__end">
+            <span class="jack__status" id="status-brain">OFF</span>
+            <button class="info" type="button" data-info="info-brain" title="What is Brain for?" aria-label="What is Brain for?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></button>
+          </div>
         </div>
+        <div class="info-tip" id="info-brain" hidden><p>The AI that reads what teachers send and writes every reply. Through one OpenRouter key Rumi can use many AI models.</p><p class="info-tip__meta">Service: openrouter.ai · Key: OPENROUTER_API_KEY</p></div>
         <div class="jack__body" id="brain-body" aria-live="polite"></div>
       </article>
 
@@ -77,8 +85,12 @@
             <span class="jack-icon jack-icon--locked" id="icon-voice" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 4h11A2.5 2.5 0 0 1 20 6.5v7.5a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3.6v-3.6A2.5 2.5 0 0 1 4 14V6.5A2.5 2.5 0 0 1 6.5 4z"/><path d="M9 8.8v2.7M12 7.4v5.5M15 8.8v2.7"/></svg></span>
             <div><b class="jack__title">Voice</b><small class="jack__sub">WhatsApp</small></div>
           </div>
-          <span class="jack__status" id="status-voice">LOCKED</span>
+          <div class="jack__end">
+            <span class="jack__status" id="status-voice">LOCKED</span>
+            <button class="info" type="button" data-info="info-voice" title="What is Voice for?" aria-label="What is Voice for?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></button>
+          </div>
         </div>
+        <div class="info-tip" id="info-voice" hidden><p>How teachers reach Rumi. Rumi links your WhatsApp the way WhatsApp Web does, so you cannot message yourself.</p><p class="info-tip__meta">Service: WhatsApp, as a linked device</p></div>
         <div class="jack__body" id="voice-body" aria-live="polite"></div>
       </article>
     </div>

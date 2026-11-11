@@ -10,7 +10,7 @@
  */
 
 import { get, post } from '../api.js';
-import { el, clear, mount, verdict, whereLink, slot } from '../dom.js';
+import { el, clear, mount, verdict, whereLink, slot, infoButton, infoToggle, serviceOf } from '../dom.js';
 
 /** Which connection test belongs to which variable. */
 const PROBE_FOR = {
@@ -272,9 +272,23 @@ function abilityItem(item, onChange) {
   ]);
   button.setAttribute('aria-expanded', 'false');
 
+  // The (i) says what the service is for without opening the item. Copy is the
+  // catalogue's own: its `why`, the host its `where` points at, and the keys.
+  const info = infoButton(`What does "${item.title}" do?`);
+  const service = serviceOf(item.where);
+  const keys = (item.rows || []).map((row) => row.key).join(', ');
+  const tip = el('div', { class: 'info-tip' }, [
+    item.why ? el('p', { text: item.why }) : null,
+    el('p', {
+      class: 'info-tip__meta',
+      text: [service ? `Service: ${service}` : null, keys ? `Key: ${keys}` : null].filter(Boolean).join(' · '),
+    }),
+  ]);
+  infoToggle(info, tip);
+
   const body = el('div', { class: 'ability__body' });
   body.hidden = true;
-  body.append(el('p', { class: 'field__hint', text: item.why || '' }));
+  // The `why` lives in the (i) tip above, so the open body is just the keys.
 
   if (item.guide) {
     body.append(el('p', { class: 'ability__note', text: "Set up from the console's Setup page after launch." }));
@@ -284,7 +298,8 @@ function abilityItem(item, onChange) {
   const where = whereLink(item.where);
   if (where) body.append(el('p', { class: 'field__hint ability__where' }, ['Get it at ', where]));
 
-  const node = el('div', { class: 'ability' }, [button, body]);
+  const head = el('div', { class: 'ability__head' }, [button, info]);
+  const node = el('div', { class: 'ability' }, [head, tip, body]);
   const entry = { node, button, body, pill };
   paintItem(entry, item);
   return entry;

@@ -11,7 +11,7 @@
  */
 
 import { get } from './api.js';
-import { el, clear } from './dom.js';
+import { el, clear, infoToggle } from './dom.js';
 import { jackStates } from './jacks.js';
 
 import * as credentials from './steps/credentials.js';
@@ -164,6 +164,13 @@ function wireCheck() {
   });
 }
 
+/** Each jack's (i) shows a short note on what that part is for. */
+function wireInfo() {
+  for (const button of document.querySelectorAll('[data-info]')) {
+    infoToggle(button, byId(button.dataset.info));
+  }
+}
+
 function wireNavigation() {
   byId('launch').addEventListener('click', () => show('launching'));
   for (const button of document.querySelectorAll('[data-go]')) {
@@ -185,6 +192,7 @@ function reportProblems(problems) {
 
 async function main() {
   wireNavigation();
+  wireInfo();
   wireCheck();
   try {
     const state = await get('/api/state');

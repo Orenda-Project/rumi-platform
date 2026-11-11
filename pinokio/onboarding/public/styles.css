@@ -439,7 +439,7 @@ pre.sql {
   font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--text-soft); font-weight: 600; margin: 0 0 8px;
 }
-.abilities { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.abilities { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; align-items: start; }
 
 .ability {
   border: 1px solid var(--line);
@@ -522,3 +522,36 @@ li[data-state="fail"] .ws-icon::after { content: "!"; }
 @media (prefers-reduced-motion: reduce) { li[data-state="run"] .ws-icon { animation: none; border-color: var(--accent); } }
 .wake-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
 .wake-manual { max-width: 460px; margin: 0 auto 22px; text-align: left; font-weight: 600; }
+
+/* ── Info (i) buttons and their tips ───────────────────────────────────── */
+
+.jack__end { display: flex; align-items: center; gap: 8px; }
+
+.info {
+  flex: none;
+  display: inline-grid; place-items: center;
+  width: 24px; height: 24px; padding: 0;
+  border: 1px solid var(--line); border-radius: 50%;
+  background: var(--surface-raised); color: var(--text-soft);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.info:hover, .info[aria-expanded="true"] { color: var(--text); border-color: var(--muted); }
+.info:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.info svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+
+.info-tip {
+  padding: 10px 12px;
+  background: var(--surface-sunken);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.86rem; line-height: 1.45; color: var(--text-soft);
+}
+.info-tip p { margin: 0; }
+.info-tip p + p { margin-top: 6px; }
+.info-tip__meta { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); overflow-wrap: anywhere; }
+.info-tip__meta:empty { display: none; }
+
+.ability__head { display: flex; align-items: center; gap: 6px; padding-right: 10px; }
+.ability__head .ability-item { flex: 1; width: auto; min-width: 0; flex-wrap: wrap; gap: 6px 8px; padding-right: 4px; }
+.ability > .info-tip { margin: 0 12px 12px; background: var(--surface-raised); }
