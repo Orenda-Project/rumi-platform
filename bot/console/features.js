@@ -40,14 +40,28 @@ const WHEN_OFF = {
   channel_matrix: 'Teachers can no longer reach Rumi on your Matrix messenger. Your other channels are unaffected.',
 };
 
+/**
+ * The wizard extra that describes this feature, if any. Its copy says "add this
+ * key and you get X", so it only fits the feature that key switches on by itself:
+ * same keys, and no extra flag of its own. Matching on the first key alone gave
+ * every feature sharing a key the same title (lp_fidelity also needs Soniox, and
+ * showed up as a second "Understand voice notes").
+ */
+function wizardExtraFor(feature) {
+  if (feature.flag) return null;
+  const keys = feature.keys || feature.keysAny || [];
+  return OPTIONAL_EXTRAS.find((e) =>
+    e.keys.length === keys.length && e.keys.every((k, i) => k === keys[i])) || null;
+}
+
 /** Human titles, borrowed from the wizard where it has one. */
 function titleFor(feature) {
-  const extra = OPTIONAL_EXTRAS.find((e) => e.keys[0] === (feature.keys || feature.keysAny || [])[0]);
+  const extra = wizardExtraFor(feature);
   return extra ? extra.title : feature.name;
 }
 
 function whyFor(feature) {
-  const extra = OPTIONAL_EXTRAS.find((e) => e.keys[0] === (feature.keys || feature.keysAny || [])[0]);
+  const extra = wizardExtraFor(feature);
   return extra ? extra.why : (feature.notes || null);
 }
 
