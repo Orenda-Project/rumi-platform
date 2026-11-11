@@ -111,6 +111,18 @@ export function renderBrain(host, onChange, context) {
   host.append(card, node);
 }
 
+/**
+ * The OpenRouter key on the landing card: the one key Rumi needs, pasted before
+ * the plug-in screen. Same field, same save and probe as Brain's.
+ */
+export function renderBrainField(host, onChange, context) {
+  clear(host);
+  if (context && context.capabilities && !context.capabilities.credentials) return;
+  const row = brainRow();
+  if (!row) return;
+  host.append(field(row, { bare: true, onChange, placeholder: 'Paste key' }));
+}
+
 function brainRow(source = state) {
   const core = groupsOf(source).find((group) => group.id === REQUIRED_GROUP);
   return core ? core.rows.find((item) => item.key === BRAIN_KEY) : null;
@@ -317,7 +329,7 @@ export function field(row, options = {}) {
     // "new-password" on the secrets stops browsers offering a saved login for a
     // field that wants a service API key; "off" does the same for the rest.
     autocomplete: secret ? 'new-password' : 'off',
-    placeholder: row.set ? row.display : 'Not set',
+    placeholder: row.set ? row.display : (options.placeholder || 'Not set'),
     id: `f-${row.key}`,
   });
 
@@ -334,13 +346,14 @@ export function field(row, options = {}) {
   // chip alone carries it.
   const named = row.label && row.label !== row.key;
 
+  // `bare`: the card around it already names and explains the key.
   mount(
     card,
-    el('div', { class: 'field__head' }, [
+    options.bare ? null : el('div', { class: 'field__head' }, [
       named ? el('span', { class: 'field__label', text: row.label }) : null,
       el('span', { class: 'field__key', text: row.key }),
     ]),
-    row.hint ? el('p', { class: 'field__hint', text: row.hint }) : null,
+    !options.bare && row.hint ? el('p', { class: 'field__hint', text: row.hint }) : null,
     el('div', { class: 'field__row' }, [input, save]),
     options.hideWhere ? null : whereLink(row.where),
     status.node,

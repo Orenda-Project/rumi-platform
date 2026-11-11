@@ -216,7 +216,11 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   30% { transform: rotate(-4deg); }
 }
 .socket__text b { font-size: 1rem; }
-.socket__text span { color: var(--text-soft); font-size: 0.9rem; line-height: 1.45; }
+.socket__text > span { color: var(--text-soft); font-size: 0.9rem; line-height: 1.45; }
+.socket__text { min-width: 0; }
+.socket__field .field { margin: 8px 0 0; padding: 0; background: none; border: 0; box-shadow: none; gap: 6px; }
+.socket__field .field__row input { min-width: 0; }
+.socket__field .link { font-size: 0.85rem; }
 
 /*
  * A glowing spark: down the trunk, then it splits in three at the bus and

@@ -198,6 +198,11 @@ async function main() {
     const state = await get('/api/state');
     capabilities = state.capabilities || {};
     reportProblems(state.problems);
+    await credentials.load();
+    // A key saved here is tested like Brain's; the plug-in screen reads the result.
+    credentials.renderBrainField(byId('landing-brain'), (event = {}) => {
+      if (event.probe) inputs.probes[event.probe] = event.pending ? 'pending' : (event.ok ? 'pass' : 'fail');
+    }, { capabilities });
   } catch (error) {
     reportProblems([`The setup server is not answering: ${error.message}`]);
   }
