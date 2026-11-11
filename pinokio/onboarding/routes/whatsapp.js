@@ -60,6 +60,11 @@ function whatsappRoutes({ express, bridge }) {
     leaving.once('exit', () => clearTimeout(force));
   }
 
+  /** Whether a number is already linked, so a re-opened wizard can show Voice as ON. */
+  router.get('/state', (req, res) => {
+    res.json({ linked: bridge.whatsappLinked() });
+  });
+
   router.get('/pair', (req, res) => {
     if (!capabilities.whatsapp) {
       return res.status(503).json({ error: 'Pairing is unavailable -- use Re-pair WhatsApp in the sidebar.' });
