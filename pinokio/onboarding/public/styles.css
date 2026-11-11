@@ -701,3 +701,9 @@ li[data-state="fail"] .ws-icon::after { content: "!"; }
 /* The database step (Supabase helper and tables) sits above the optional list. */
 .db-step:empty { display: none; }
 .db-step { margin: 0 0 16px; display: grid; gap: 10px; }
+
+/* Landing Brain card: the key field opens on click. */
+/* Outline, not border: the arrival glow animates the border. */
+.socket--reveal { cursor: pointer; outline: 2px solid transparent; outline-offset: 3px; transition: outline-color var(--fast) var(--ease); }
+.socket--reveal:hover { outline-color: rgba(245, 176, 66, 0.55); }
+.socket__reveal { justify-self: start; margin-top: 6px; font-size: 0.9rem; font-weight: 600; }

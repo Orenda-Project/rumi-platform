@@ -168,6 +168,31 @@ function wireCheck() {
   });
 }
 
+/**
+ * The landing Brain card keeps its key field folded away until the card is
+ * clicked. The "Add your key" button is the keyboard and screen-reader way in;
+ * a click anywhere else on the card does the same. Once open it stays open.
+ */
+function wireLandingReveal() {
+  const field = byId('landing-brain');
+  const reveal = byId('landing-brain-reveal');
+  if (!field.firstChild) return;
+  const card = reveal.closest('.socket');
+  reveal.hidden = false;
+  card.classList.add('socket--reveal');
+  const open = () => {
+    if (!field.hidden) return;
+    field.hidden = false;
+    reveal.hidden = true;
+    reveal.setAttribute('aria-expanded', 'true');
+    card.classList.remove('socket--reveal');
+    const input = field.querySelector('input');
+    if (input) input.focus();
+  };
+  reveal.addEventListener('click', (event) => { event.stopPropagation(); open(); });
+  card.addEventListener('click', open);
+}
+
 /** Each jack's (i) shows a short note on what that part is for. */
 function wireInfo() {
   for (const button of document.querySelectorAll('[data-info]')) {
@@ -207,6 +232,7 @@ async function main() {
     credentials.renderBrainField(byId('landing-brain'), (event = {}) => {
       if (event.probe) inputs.probes[event.probe] = event.pending ? 'pending' : (event.ok ? 'pass' : 'fail');
     }, { capabilities });
+    wireLandingReveal();
   } catch (error) {
     reportProblems([`The setup server is not answering: ${error.message}`]);
   }
