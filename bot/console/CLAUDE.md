@@ -1,7 +1,7 @@
 # console — Operator web console: setup, feature switches, pipeline and live activity
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/console kg=4487ffa5bdb1 gen=21b3b72e4513 overflow=11 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/console kg=6a725f8b2b3b gen=203b2e233472 overflow=12 rendered=2026-11-11 kg.py=1.1.0 -->
 
 ## Entry points
 - `index.js` — mountConsole(app) wires host guard, assets, pages and api routers at /console
@@ -15,8 +15,8 @@ Full index: `CLAUDE.index.md`
 | `assets/` | → (no door; 2 files) |
 | `routes/` | → (no door; 2 files) |
 | `views/` | EJS pages for the operator console screens → `views/CLAUDE.md` |
-| `env-catalog.js` | Groups the .env into labelled rows per DB_DRIVER and feature-availability, with cards for other databases; feeds Setup |
 | `features.js` | Builds the Features page data: configured vs switched-off vs effective state per feature |
+| `env-catalog.js` | Groups the .env into labelled rows per DB_DRIVER and feature-availability, with cards for other databases; feeds Setup |
 | `auth.js` | Decides console access: loopback token mode vs network password mode, host guard, bcrypt check, Redis session store |
 | `index.js` | mountConsole(app): mounts the operator console at /console with host guard, static assets, pages and /api routers |
 | … | 5 more → `CLAUDE.index.md` |

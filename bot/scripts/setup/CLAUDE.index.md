@@ -70,7 +70,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `discord-register-commands.js` ← `tests/scripts/discord-register-commands.test.js`
 - `doctor.js` ← `tests/coaching/fidelity/diarization-contract.test.js`
 - `env-file.js` ← `tests/db/bundled-database.test.js` · `tests/setup/env-file.test.js`
-- `fields.js` ← `tests/scripts/discord-register-commands.test.js` · `tests/setup/fields.test.js`
+- `fields.js` ← `tests/console/feature-titles.test.js` · `tests/scripts/discord-register-commands.test.js` · `tests/setup/fields.test.js`
 - `flow-configs.js` ← `tests/observe/observe-form-flow-json.test.js` · `tests/quiz/quiz-flow-endpoint.test.js` · `tests/setup/flow-config-conformance.test.js` · `tests/setup/flow-key-consistency.test.js` · `tests/setup/setup-state.test.js`
 - `graduate.js` ← `tests/setup/graduate.test.js`
 - `interactive-setup.js` ← `tests/setup/interactive-setup.test.js`?

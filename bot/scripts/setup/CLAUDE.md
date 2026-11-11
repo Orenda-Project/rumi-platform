@@ -1,7 +1,7 @@
 # setup — Code behind the rumi CLI: setup wizard, doctor, pair, graduate, Meta registration
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/scripts/setup kg=eba15eb5b4de gen=828f5b3dc195 overflow=61 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/scripts/setup kg=5b63cca4fcd5 gen=d0be0f719d04 overflow=62 rendered=2026-11-11 kg.py=1.1.0 -->
 
 ## Entry points
 - `interactive-setup.js` — `rumi setup` wizard, start here
@@ -33,7 +33,7 @@ Full index: `CLAUDE.index.md`
 ## Tests (generated)
 - `tests/setup/register-all-flows.test.js` (meta-api.js, register-all-flows.js, setup-state.js)
 - `tests/setup/validate-flows.test.js` (meta-api.js, setup-state.js, validate-flows.js)
-- … 21 more → `CLAUDE.index.md`
+- … 22 more → `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `setup`?

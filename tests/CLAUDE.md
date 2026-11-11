@@ -1,7 +1,7 @@
 # tests — Root Jest suite for bot, dashboard and portal; one folder per feature area
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests kg=f00e37005a8a gen=33136b337bb6 overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests kg=89cb1d8030e3 gen=5cfa8f95e95e overflow=0 rendered=2026-11-11 kg.py=1.1.0 -->
 
 ## Entry points
 - `jest.config.js` — Jest config: testMatch under tests/, module mappers that stub bot-only packages
@@ -13,7 +13,7 @@ Full index: `CLAUDE.index.md`
 | path | purpose |
 |---|---|
 | 10 sub-dirs, each with `CLAUDE.md` | `_helpers/` · `attendance/` · `coaching/` · `dashboard/` · `db/` · `messaging/` · `observe/` · `quiz/` · `setup/` · `testpaper/` |
-| 35 sub-dirs without a door | `__mocks__/` (14 tests) · `cache/` (2 tests) · `characterization/` (4 tests) · `config/` (3 tests) · `console/` (8 tests) · +30 more → `CLAUDE.index.md` |
+| 35 sub-dirs without a door | `__mocks__/` (14 tests) · `cache/` (2 tests) · `characterization/` (4 tests) · `config/` (3 tests) · `console/` (9 tests) · +30 more → `CLAUDE.index.md` |
 | `student-video-feedback.test.js` | Pins student-video-feedback.service thumbs-up/down survey rows and snapshot, mirroring lp-feedback tests |
 | `jest.config.js` | Jest config for the root suite: forces root node_modules resolution and stubs axios, pino, canvas and similar |
 | `setup.js` | Jest global setup: NODE_ENV=test and safe dummy Supabase, OpenRouter, Redis and WhatsApp env values |
