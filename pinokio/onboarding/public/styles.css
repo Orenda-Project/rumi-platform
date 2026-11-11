@@ -61,16 +61,15 @@ body {
 .topbar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   max-width: 1000px; margin: 0 auto;
-  padding: 22px clamp(16px, 1rem + 2vw, 40px);
+  padding: 14px clamp(16px, 1rem + 2vw, 40px);
   font-size: 0.88rem;
 }
 .topbar__brand { display: flex; align-items: center; gap: 10px; }
-.topbar__mark {
-  width: 11px; height: 11px; border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.2);
-}
-.topbar__name { font-family: var(--serif); font-size: 1.3rem; letter-spacing: 0.01em; }
+/* Same lockup as the portal and site: the navy smile mark, then "Rumi" in plain sans. */
+.topbar__mark { width: 26px; height: auto; }
+.topbar__mark circle { fill: var(--navy); }
+.topbar__mark path { fill: none; stroke: var(--navy); stroke-width: 28; stroke-linecap: round; }
+.topbar__name { font-family: var(--sans); font-size: 1.25rem; font-weight: 400; letter-spacing: -0.025em; color: var(--text); }
 
 .content {
   padding: clamp(12px, 0.5rem + 2vw, 40px) clamp(16px, 1rem + 2vw, 40px) 80px;
@@ -132,12 +131,12 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 /* ── Plug board (asleep screen) ────────────────────────────────────────── */
 
 .board__rumi {
-  width: 112px; height: 112px; margin: 0 auto 22px;
+  width: 92px; height: 92px; margin: 0 auto 14px;
   display: grid; place-items: center;
   border-radius: 50%;
   background: var(--surface-sunken); border: 1px solid var(--line);
 }
-.board__mark { width: 64px; height: auto; }
+.board__mark { width: 54px; height: auto; }
 .board__mark circle { fill: var(--navy); }
 .board__mark path { fill: none; stroke: var(--navy); stroke-width: 28; stroke-linecap: round; }
 
@@ -152,7 +151,7 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   background: repeating-linear-gradient(to bottom, var(--wire) 0 var(--dash), transparent var(--dash) calc(var(--dash) + var(--gap)));
   animation: wire-down 0.9s linear infinite;
 }
-.board__trunk { position: relative; height: 28px; margin: 0 auto; }
+.board__trunk { position: relative; height: 20px; margin: 0 auto; }
 
 .board-wrap { position: relative; max-width: 1020px; margin: 0 auto 8px; }
 .board {
@@ -306,7 +305,13 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 .wa-glyph__bubble { fill: #25d366; }
 .wa-glyph__phone { fill: #ffffff; }
 
-.btn.btn--pill { border-radius: 28px; margin-top: 28px; }
+.btn.btn--pill { border-radius: 28px; }
+
+/* The landing screen fits one laptop screen: no scroll on the hero. */
+#content:has(> [data-panel="asleep"]:not([hidden])) { padding-top: 8px; padding-bottom: 24px; }
+[data-panel="asleep"] h1 { margin-bottom: 12px; }
+[data-panel="asleep"] .lede { margin-bottom: 22px; }
+[data-panel="asleep"] .actions { margin-top: 22px; }
 
 /* ── Fields ─────────────────────────────────────────────────────────────── */
 
