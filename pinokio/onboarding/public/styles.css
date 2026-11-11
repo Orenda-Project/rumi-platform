@@ -129,16 +129,56 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   to { opacity: 1; transform: none; }
 }
 
-.needs { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; text-align: left; }
-.needs li {
-  display: grid; gap: 2px; align-content: start;
-  padding: 15px 18px;
+/* ── Plug board (asleep screen) ────────────────────────────────────────── */
+
+.board__rumi {
+  width: 112px; height: 112px; margin: 0 auto 22px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--surface-sunken); border: 1px solid var(--line);
+}
+.board__core { width: 52px; height: 52px; border-radius: 50%; background: #c9c4bb; }
+
+.board__trunk { display: block; width: 0; height: 28px; margin: 0 auto; border-left: 2px dashed #c9c4bb; }
+
+.board {
+  position: relative;
+  list-style: none; margin: 0 auto 8px; padding: 0;
+  max-width: 1020px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;
+  text-align: left;
+}
+/* The bus: from the first socket's centre to the last one's (3 columns, 2 gaps of 24px). */
+.board::before {
+  content: ""; position: absolute; top: 0;
+  left: calc((100% - 48px) / 6); right: calc((100% - 48px) / 6);
+  border-top: 2px dashed #c9c4bb;
+}
+.board__socket { display: flex; flex-direction: column; align-items: center; }
+.board__wire { display: block; width: 0; height: 24px; border-left: 2px dashed #c9c4bb; }
+
+.socket {
+  width: 100%; box-sizing: border-box;
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 20px;
   background: var(--surface-raised);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 14px;
 }
-.needs b { font-size: 0.98rem; }
-.needs span { color: var(--text-soft); font-size: 0.93rem; }
+.socket__icon {
+  flex: none; width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border: 2px solid var(--navy); border-radius: 50%; color: var(--navy);
+}
+.socket__icon svg {
+  width: 22px; height: 22px;
+  fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.socket__text { display: grid; gap: 3px; }
+.socket__text b { font-size: 1rem; }
+.socket__text span { color: var(--text-soft); font-size: 0.9rem; }
+
+.btn.btn--pill { border-radius: 28px; margin-top: 28px; }
 
 /* ── Fields ─────────────────────────────────────────────────────────────── */
 
@@ -308,7 +348,8 @@ pre.sql {
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 760px) {
-  .needs { grid-template-columns: 1fr; }
+  .board { grid-template-columns: 1fr; gap: 0; }
+  .board::before { display: none; }
   .content { padding: 16px 16px 64px; }
 }
 
