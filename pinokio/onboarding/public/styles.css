@@ -253,7 +253,41 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   100% { left: calc(100% - (100% - 48px) / 6); top: 25px; opacity: 0; }
 }
 
-.emoji { font-style: normal; }
+.emoji { display: inline-block; font-style: normal; }
+
+/* Each emoji moves in its own way; every cycle ends at rest, so reduced motion
+   (one 0.01ms run) leaves them still. */
+.emoji--sleep { transform-origin: 50% 80%; animation: emoji-sleep 3.2s ease-in-out infinite; }
+.emoji--plug { animation: emoji-plug 2.4s ease-in-out infinite; }
+.emoji--wake { transform-origin: 50% 100%; animation: emoji-wake 2.4s ease-in-out infinite; }
+.emoji--tick { transform-origin: 50% 50%; animation: emoji-tick 2s steps(1, end) infinite; }
+.emoji--pulse { transform-origin: 50% 50%; animation: emoji-pulse 2.4s ease-in-out infinite; }
+
+@keyframes emoji-sleep {
+  0%, 100% { transform: translateY(0) rotate(0) scale(1); }
+  50% { transform: translateY(-3px) rotate(-6deg) scale(1.06); }
+}
+@keyframes emoji-plug {
+  0%, 30%, 100% { transform: translateX(0); }
+  15% { transform: translateX(5px); }
+  20% { transform: translateX(3px); }
+}
+@keyframes emoji-wake {
+  0%, 40%, 100% { transform: translateY(0) scale(1); }
+  10% { transform: translateY(-6px) scale(1.12); }
+  20% { transform: translateY(0) scale(0.96, 1.04); }
+  28% { transform: translateY(-2px) scale(1.02); }
+}
+@keyframes emoji-tick {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(10deg); }
+  50% { transform: rotate(0); }
+  75% { transform: rotate(-10deg); }
+}
+@keyframes emoji-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
 [data-panel="asleep"] .lede { font-size: calc(1.08rem + 2pt); }
 .wa-glyph { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -0.17em; }
 .wa-glyph__bubble { fill: #25d366; }
