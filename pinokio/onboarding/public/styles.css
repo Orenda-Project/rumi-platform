@@ -500,3 +500,7 @@ pre.sql {
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .jack__status[data-state="on"] { color: var(--brand); }
 }
+
+.brain__check { display: grid; gap: 8px; }
+.brain__check:empty { display: none; }
+.brain__again { margin-top: 0; }

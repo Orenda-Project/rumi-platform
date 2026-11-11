@@ -24,7 +24,10 @@ function brainState(catalog, probes) {
   const core = ((catalog && catalog.groups) || []).find((group) => group.id === 'core');
   const row = core && (core.rows || []).find((item) => item.key === BRAIN_KEY);
   if (!row || row.set !== true) return 'off';
-  return (probes && probes.openrouter) === 'fail' ? 'off' : 'on';
+  // Only a passing probe lights Brain. No result at all means probes are
+  // unavailable here (the page records 'pending' while one runs).
+  const result = probes && probes.openrouter;
+  return result === undefined || result === 'pass' ? 'on' : 'off';
 }
 
 function abilityCounts(catalog) {

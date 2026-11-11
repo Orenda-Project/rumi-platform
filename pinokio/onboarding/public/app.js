@@ -64,6 +64,7 @@ async function enterPlug() {
       plugBuilt = true;
     }
     await paint();
+    await checkBrainOnEntry();
   } catch (error) {
     const host = byId('abilities-body');
     clear(host);
@@ -72,6 +73,21 @@ async function enterPlug() {
       el('p', { text: error.message }),
     ]));
   }
+}
+
+/**
+ * A key saved in an earlier session has never been tested in this one. Brain
+ * is ON only when the probe passes, so test it now (pending reads as OFF).
+ */
+async function checkBrainOnEntry() {
+  if (!capabilities.probes || inputs.probes.openrouter !== undefined) return;
+  if (!credentials.brainKeySet()) return;
+  inputs.probes.openrouter = 'pending';
+  await paint();
+  const result = await credentials.checkBrain();
+  // A save made meanwhile has its own, newer answer.
+  if (inputs.probes.openrouter === 'pending') inputs.probes.openrouter = result.ok ? 'pass' : 'fail';
+  await paint();
 }
 
 /** Re-ask the server everything jackStates needs. Each answer is optional. */
@@ -83,12 +99,14 @@ async function refresh() {
   ]);
   inputs.catalog = state.catalog;
   inputs.db = db;
-  inputs.whatsapp = wa || { linked: false };
+  // Once linked in this session it stays linked: the state route may read the
+  // session file before the pairing worker has flushed it.
+  inputs.whatsapp = { linked: inputs.whatsapp.linked || Boolean(wa && wa.linked) };
 }
 
 /** After any save, probe, database or pairing event: re-read, then repaint. */
 async function onChange(event = {}) {
-  if (event.probe) inputs.probes[event.probe] = event.ok ? 'pass' : 'fail';
+  if (event.probe) inputs.probes[event.probe] = event.pending ? 'pending' : (event.ok ? 'pass' : 'fail');
   try {
     await refresh();
   } catch { /* keep the last answers; the field already shows what went wrong */ }

@@ -46,9 +46,13 @@ describe('memory', () => {
 });
 
 describe('brain', () => {
-  test('on when the key is set and no probe failed', () => {
+  test('on when the key is set and the probe passed, or probes are unavailable', () => {
     expect(states().brain).toBe('on');
-    expect(states({ probes: { openrouter: 'ok' } }).brain).toBe('on');
+    expect(states({ probes: { openrouter: 'pass' } }).brain).toBe('on');
+  });
+  test('off while the probe is still running', () => {
+    expect(states({ probes: { openrouter: 'pending' } }).brain).toBe('off');
+    expect(states({ probes: { openrouter: 'pending' }, whatsapp: LINKED }).launchReady).toBe(false);
   });
   test('off when the key is set but the probe failed', () => {
     expect(states({ probes: { openrouter: 'fail' } }).brain).toBe('off');

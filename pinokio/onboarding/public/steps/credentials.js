@@ -79,6 +79,9 @@ export function databaseRows(source = state) {
   return core ? core.rows.filter((row) => row.key !== BRAIN_KEY && row.key !== 'REDIS_URL') : [];
 }
 
+/** Where Brain's entry-time connection test reports, under its field. */
+let brainCheck = null;
+
 /**
  * Brain: the OpenRouter key, with its connection test.
  *
@@ -87,17 +90,77 @@ export function databaseRows(source = state) {
  */
 export function renderBrain(host, onChange, context) {
   clear(host);
+  brainCheck = null;
   if (context && context.capabilities && !context.capabilities.credentials) {
     host.append(fallbackNotice());
     return;
   }
-  const core = groupsOf(state).find((group) => group.id === REQUIRED_GROUP);
-  const row = core && core.rows.find((item) => item.key === BRAIN_KEY);
+  const row = brainRow();
   if (!row) {
     host.append(el('p', { class: 'field__hint', text: 'The AI key is already handled.' }));
     return;
   }
-  host.append(field(row, { onChange }));
+  // A fresh save reports in the field itself, so the entry check steps aside.
+  const saved = (event) => {
+    if (brainCheck) clear(brainCheck.node);
+    onChange(event);
+  };
+  const node = el('div', { class: 'brain__check' });
+  const card = field(row, { onChange: saved });
+  brainCheck = { node, card, onChange };
+  host.append(card, node);
+}
+
+function brainRow(source = state) {
+  const core = groupsOf(source).find((group) => group.id === REQUIRED_GROUP);
+  return core ? core.rows.find((item) => item.key === BRAIN_KEY) : null;
+}
+
+/** Is the OpenRouter key in `.env` already (so it can be tested without a paste)? */
+export function brainKeySet(source = state) {
+  const row = brainRow(source);
+  return Boolean(row && row.set === true);
+}
+
+/**
+ * Test the saved OpenRouter key without asking for it again -- the same probe a
+ * save runs. A failure shows its message under the field with "Test again".
+ *
+ * @returns {Promise<{probe: string, ok: boolean}>}
+ */
+export async function checkBrain() {
+  const probe = PROBE_FOR[BRAIN_KEY];
+  const target = brainCheck;
+  if (target) {
+    clear(target.node);
+    target.node.append(verdict('busy', 'Testing the saved key…'));
+  }
+  let ok = false;
+  let detail = '';
+  try {
+    const result = await post(`/api/probe/${probe}`, {});
+    ok = Boolean(result.ok);
+    detail = humanise(result.detail, result.ok) || (ok ? 'Connected' : 'Could not connect');
+  } catch (error) {
+    detail = error.message;
+  }
+  if (target && target === brainCheck) {
+    clear(target.node);
+    target.card.setAttribute('data-state', ok ? 'ok' : 'bad');
+    if (ok) {
+      target.node.append(verdict('ok', detail));
+    } else {
+      const again = el('button', { class: 'btn btn--small', type: 'button', text: 'Test again' });
+      again.addEventListener('click', async () => {
+        again.disabled = true;
+        target.onChange({ key: BRAIN_KEY, probe, pending: true });
+        const retry = await checkBrain();
+        target.onChange({ key: BRAIN_KEY, ...retry });
+      });
+      target.node.append(verdict('bad', detail), el('div', { class: 'actions brain__again' }, [again]));
+    }
+  }
+  return { probe, ok };
 }
 
 /** The pill text for one ability. */
