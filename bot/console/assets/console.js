@@ -187,7 +187,7 @@
     if (!btn) return;
     btn.disabled = true;
     api('/restart', { method: 'POST' }).then(function () {
-      var pending = document.querySelector('.banner.warn');
+      var pending = document.getElementById('pending-changes');
       var note = document.getElementById('restarting');
       if (pending && note && pending !== note) pending.hidden = true;
       if (note) note.hidden = false;

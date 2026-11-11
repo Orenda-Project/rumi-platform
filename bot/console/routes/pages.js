@@ -17,15 +17,20 @@ const { buildCatalog, answeringOn } = require('../env-catalog');
 const { firstRunModel, REPLY_SENT_SOURCE } = require('../first-run');
 const { buildPipeline } = require('../pipeline-map');
 const { readEnvFile } = require('../../scripts/setup/env-file');
+const { restartConfig } = require('../restart');
 
 /**
  * @param {{runtime: object, posture: object, mount: string}} deps
  * @returns {import('express').Router}
  */
-const { restartConfig } = require('../restart');
-
 module.exports = function pagesRouter({ runtime, posture, mount }) {
   const router = express.Router();
+
+  /**
+   * What the running process really has. A save mirrors new keys into
+   * process.env, so the boot snapshot is the only honest comparison.
+   */
+  const liveEnv = () => (runtime.standalone ? null : runtime.bootEnv());
 
   /** Everything a page's chrome needs, on every render. */
   function chrome(req) {
@@ -62,10 +67,9 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
   // ── Overview ───────────────────────────────────────────────────────────────
   router.get('/', async (req, res) => {
     const env = { ...process.env, ...readEnvFile(runtime.envPath) };
-    const liveEnv = runtime.standalone ? null : process.env;
     const { missingRequired, resolveChannelDriver, resolveActiveChannels, databaseRequiredVars } =
       require('../../shared/config/feature-availability');
-    const features = require('../features').snapshot(env, { liveEnv });
+    const features = require('../features').snapshot(env, { liveEnv: liveEnv() });
 
     let identity = { paired: false };
     let processState = { running: true, pid: process.pid };
@@ -99,7 +103,7 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
   // ── Setup: the key manager ─────────────────────────────────────────────────
   router.get('/setup', async (req, res) => {
     const env = readEnvFile(runtime.envPath);
-    await render(res, 'setup', { ...chrome(req), pageTitle: 'Setup', catalog: buildCatalog(env, { liveEnv: runtime.standalone ? null : process.env }) });
+    await render(res, 'setup', { ...chrome(req), pageTitle: 'Setup', catalog: buildCatalog(env, { liveEnv: liveEnv() }) });
   });
 
   // ── Pipeline: the three layers ─────────────────────────────────────────────
@@ -111,7 +115,7 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
   // ── Features: the toggle board ─────────────────────────────────────────────
   router.get('/features', async (req, res) => {
     const env = { ...process.env, ...readEnvFile(runtime.envPath) };
-    await render(res, 'features', { ...chrome(req), pageTitle: 'Features', features: require('../features').snapshot(env, { liveEnv: runtime.standalone ? null : process.env }) });
+    await render(res, 'features', { ...chrome(req), pageTitle: 'Features', features: require('../features').snapshot(env, { liveEnv: liveEnv() }) });
   });
 
   // ── Activity: live feed and traces ─────────────────────────────────────────
@@ -124,7 +128,7 @@ module.exports = function pagesRouter({ runtime, posture, mount }) {
       stats = ring.stats();
     } catch { /* optional */ }
     const env = { ...process.env, ...readEnvFile(runtime.envPath) };
-    const firstRun = firstRunModel(req.query, buildCatalog(env, { liveEnv: runtime.standalone ? null : process.env }));
+    const firstRun = firstRunModel(req.query, buildCatalog(env, { liveEnv: liveEnv() }));
     await render(res, 'activity', { ...chrome(req), pageTitle: 'Activity', traces, stats, firstRun, REPLY_SENT_SOURCE });
   });
 

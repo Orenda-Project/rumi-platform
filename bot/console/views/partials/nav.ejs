@@ -23,7 +23,7 @@
 </aside>
 <main class="main">
 <% if (pending && pending.length) { %>
-  <div class="banner warn">
+  <div class="banner warn" id="pending-changes">
     <div class="grow">
       <b><%= pending.length %> saved change<%= pending.length === 1 ? '' : 's' %> not applied yet</b>
       Rumi is still running with the old values for

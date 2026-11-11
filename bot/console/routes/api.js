@@ -85,7 +85,8 @@ module.exports = function apiRouter({ runtime }) {
   router.post('/restart', (req, res) => {
     if (!restartCfg) return res.status(404).json({ error: 'Restart is not available here' });
     const result = restarter.restart();
-    return res.status(result.ok ? 200 : 429).json(result);
+    if (result.ok) return res.status(200).json(result);
+    return res.status(429).json({ ...result, error: 'Rumi is already restarting.' });
   });
 
   // ── Clear a value, keeping the line so it stays discoverable ───────────────

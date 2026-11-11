@@ -74,7 +74,7 @@ export async function run(host, { onBack } = {}) {
   const eyebrow = el('p', { class: 'eyebrow', text: 'Launching' });
   const title = el('h1', { text: 'Waking Rumi up…' });
   const lede = el('p', { class: 'lede', text: 'This takes about a minute. Keep this window open.' });
-  const manualNote = el('p', { class: 'notice notice--ok wake-manual', text: 'Press Start in the Pinokio sidebar' });
+  const manualNote = el('p', { class: 'notice wake-manual', text: 'Press Start in the Pinokio sidebar' });
   manualNote.hidden = true;
   const { list, items } = buildSteps();
   const actions = el('div', { class: 'wake-actions' });
@@ -89,7 +89,11 @@ export async function run(host, { onBack } = {}) {
   const { port, manual } = await requestLaunch();
   if (!live()) return;
 
-  if (manual) manualNote.hidden = false;
+  if (manual) {
+    title.textContent = 'Press Start in the Pinokio sidebar';
+    lede.textContent = 'Your keys are saved. Rumi starts when you press Start.';
+    manualNote.hidden = true;
+  }
   if (!port) {
     // Nothing to wait on: the person has to press Start themselves.
     setState(items[0], 'todo');
