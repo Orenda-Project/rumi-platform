@@ -195,28 +195,26 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   45%, 100% { border-color: var(--line); box-shadow: 0 0 0 0 rgba(245, 176, 66, 0); }
 }
 .socket__icon {
-  flex: none; width: 46px; height: 46px;
+  flex: none; width: 48px; height: 48px;
   display: grid; place-items: center;
-  border: 2px solid var(--navy); border-radius: 50%; color: var(--navy);
+  border-radius: 50%; background: var(--surface-sunken); border: 1px solid var(--line);
 }
-.socket__icon svg {
-  width: 22px; height: 22px;
-  fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
-}
+.socket__emoji { display: inline-block; font-size: 24px; line-height: 1; }
 .socket__text { display: grid; gap: 4px; }
 
-/* Icon life: Memory's lights blink, Brain pulses as if thinking, Voice's bars
-   move like a voice level. All end at rest for reduced motion. */
-.ico-blink { animation: ico-blink 1.8s ease-in-out infinite; }
-.ico-blink--2 { animation-delay: 0.9s; }
-.ico-think { transform-origin: 50% 50%; animation: ico-think 2.4s ease-in-out infinite; }
-.ico-bar { transform-box: fill-box; transform-origin: 50% 50%; animation: ico-bar 1.1s ease-in-out infinite; }
-.ico-bar--2 { animation-delay: 0.18s; }
-.ico-bar--3 { animation-delay: 0.36s; }
+/* Each socket's emoji moves in its own way; every cycle ends at rest (reduced motion). */
+.socket__emoji--store { animation: emoji-store 2.4s ease-in-out infinite; }
+.socket__emoji--think { transform-origin: 50% 50%; animation: emoji-think 2.4s ease-in-out infinite; }
+.socket__emoji--talk { transform-origin: 20% 90%; animation: emoji-talk 2.4s ease-in-out infinite; }
 
-@keyframes ico-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
-@keyframes ico-think { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
-@keyframes ico-bar { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.4); } }
+@keyframes emoji-store { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes emoji-think { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+@keyframes emoji-talk {
+  0%, 40%, 100% { transform: rotate(0); }
+  10% { transform: rotate(-10deg); }
+  20% { transform: rotate(8deg); }
+  30% { transform: rotate(-4deg); }
+}
 .socket__text b { font-size: 1rem; }
 .socket__text span { color: var(--text-soft); font-size: 0.9rem; line-height: 1.45; }
 
