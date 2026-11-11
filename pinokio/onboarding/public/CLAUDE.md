@@ -1,6 +1,6 @@
 # public — Browser UI of the wizard: step machine, DOM helpers, API client, styles
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public kg=9e4c3c3da1ae gen=577f056e61b8 overflow=0 rendered=2026-11-11 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public kg=92220f0c82bf gen=f9365dcdec9b overflow=0 rendered=2026-11-11 kg.py=1.1.0 -->
 
 ## Entry points
 - `app.js` — step machine
@@ -21,7 +21,7 @@
 
 ## Who reads this (generated)
 - `api.js` ← imported by `pinokio/onboarding/public/steps/credentials.js:12:8bc78e33` · `pinokio/onboarding/public/steps/database.js:10:0a179878` (+4)
-- `dom.js` ← imported by `pinokio/onboarding/public/steps/credentials.js:13:bc430a56` · `pinokio/onboarding/public/steps/database.js:11:f5110b47` (+4)
+- `dom.js` ← imported by `pinokio/onboarding/public/steps/credentials.js:13:dc6da53a` · `pinokio/onboarding/public/steps/database.js:11:f5110b47` (+4)
 - `jacks.js` ← imported by `pinokio/onboarding/public/app.js:15:cff10902`
 
 ## Never (human)
