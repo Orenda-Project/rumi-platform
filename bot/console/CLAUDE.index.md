@@ -40,7 +40,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Tests (all, generated)
 - `auth.js` ← `tests/console/auth-gate.test.js`
 - `env-catalog.js` ← `tests/console/channel-cards.test.js` · `tests/console/first-run.test.js` · `tests/console/live-state.test.js` · `tests/console/pages-live-env.test.js` · `tests/pinokio/jacks.test.js`
-- `features.js` ← `tests/console/channel-cards.test.js` · `tests/console/live-state.test.js`
+- `features.js` ← `tests/console/channel-cards.test.js` · `tests/console/feature-titles.test.js` · `tests/console/live-state.test.js`
 - `first-run.js` ← `tests/console/first-run.test.js`
 - `live-state.js` ← `tests/console/live-state.test.js`
 - `redaction.js` ← `tests/console/redaction.test.js`?
