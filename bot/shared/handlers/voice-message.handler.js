@@ -1277,7 +1277,7 @@ async function handleVoiceLessonPlanRequest(from, transcription, user, sessionId
     logToFile('Topic extracted', { topic });
 
     // Detect explicitly requested language from transcription (defaults to 'en')
-    const contentLanguage = detectRequestedLanguage(transcription);
+    const contentLanguage = detectRequestedLanguage(transcription, { preferredLanguage: user?.preferred_language });
     logToFile('Content language detected for voice lesson plan', { contentLanguage });
 
     // Queue lesson plan for async processing (survives server restarts)
@@ -1339,7 +1339,7 @@ async function handleVoicePresentationRequest(from, transcription, user, session
     logToFile('Topic extracted', { topic });
 
     // Detect explicitly requested language from transcription (defaults to 'en')
-    const contentLanguage = detectRequestedLanguage(transcription);
+    const contentLanguage = detectRequestedLanguage(transcription, { preferredLanguage: user?.preferred_language });
     logToFile('Content language detected for voice presentation', { contentLanguage });
 
     // Queue presentation for async processing (survives server restarts)
