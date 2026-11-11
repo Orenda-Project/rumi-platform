@@ -358,4 +358,4 @@ function knownKeys() {
   return keys;
 }
 
-module.exports = { buildCatalog, knownKeys, answeringOn, GROUP_ORDER, CORE_LABELS };
+module.exports = { buildCatalog, knownKeys, answeringOn, GROUP_ORDER, CORE_LABELS, DATABASE_CARDS };

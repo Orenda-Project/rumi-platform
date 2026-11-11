@@ -47,9 +47,6 @@ function humanise(detail, ok) {
 
 let state = null;
 
-/** Abilities that pick a database. They are offered under Memory, not in the list. */
-const DATABASE_KEYS = new Set(['DATABASE_URL', 'SUPABASE_URL']);
-
 /** The one core field Brain asks for. */
 const BRAIN_KEY = 'OPENROUTER_API_KEY';
 
@@ -61,22 +58,6 @@ export async function load() {
 
 function groupsOf(source) {
   return ((source && source.catalog && source.catalog.groups) || []);
-}
-
-/** Is this ability one of the database cards? */
-export function isDatabaseAbility(item) {
-  return (item.keys || []).some((key) => DATABASE_KEYS.has(key));
-}
-
-/** Every database card the catalogue offers, wherever it grouped them. */
-export function databaseAbilities(source = state) {
-  return groupsOf(source).flatMap((group) => (group.abilities || []).filter(isDatabaseAbility));
-}
-
-/** The core rows that belong to the database (whatever DB_DRIVER selects). */
-export function databaseRows(source = state) {
-  const core = groupsOf(source).find((group) => group.id === REQUIRED_GROUP);
-  return core ? core.rows.filter((row) => row.key !== BRAIN_KEY && row.key !== 'REDIS_URL') : [];
 }
 
 /** Where Brain's entry-time connection test reports, under its field. */
@@ -192,6 +173,51 @@ function stateFor(item) {
 
 const idOf = (item) => (item.keys || []).join('+');
 
+/** The optional group the database cards live in. */
+const DATABASE_GROUP = 'advanced';
+
+/**
+ * A database card that is in use: the catalogue lists its keys as required rows
+ * and drops the card, so rebuild it from `databaseCards` and those rows. It
+ * stays an optional ability: the built-in database needs none of this.
+ */
+function chosenDatabaseCards(source) {
+  const core = groupsOf(source).find((group) => group.id === REQUIRED_GROUP);
+  const rows = new Map(((core && core.rows) || []).map((row) => [row.key, row]));
+  return ((source && source.databaseCards) || [])
+    .filter((card) => card.keys.every((key) => rows.has(key)))
+    .map((card) => {
+      const cardRows = card.keys.map((key) => rows.get(key));
+      const set = cardRows.filter((row) => row.set).length;
+      return { ...card, rows: cardRows, on: set === cardRows.length, partial: set > 0 && set < cardRows.length };
+    });
+}
+
+/**
+ * Every optional ability as it stands now, by id. Choosing Supabase or your own
+ * Postgres moves that card's keys into the required rows and drops the card
+ * from the optional list, so it is rebuilt from those rows: on once every key
+ * is set, needing more while only some are.
+ */
+function abilitiesNow(source) {
+  const now = new Map();
+  for (const group of groupsOf(source)) {
+    if (group.id === REQUIRED_GROUP) continue;
+    for (const item of group.abilities || []) now.set(idOf(item), item);
+  }
+  const core = groupsOf(source).find((group) => group.id === REQUIRED_GROUP);
+  const rows = new Map(((core && core.rows) || []).map((row) => [row.key, row]));
+  return {
+    get(id) {
+      if (now.has(id)) return now.get(id);
+      const keys = id.split('+');
+      if (!keys.every((key) => rows.has(key))) return null;
+      const set = keys.filter((key) => rows.get(key).set);
+      return { on: set.length === keys.length, partial: set.length > 0 && set.length < keys.length };
+    },
+  };
+}
+
 /**
  * Optional abilities, inline: one button per ability, one open at a time.
  *
@@ -218,7 +244,7 @@ export function renderAbilities(host, onChange, context) {
 
   for (const group of groupsOf(state)) {
     if (group.id === REQUIRED_GROUP) continue;
-    const abilities = (group.abilities || []).filter((item) => !isDatabaseAbility(item));
+    const abilities = [...(group.abilities || []), ...(group.id === DATABASE_GROUP ? chosenDatabaseCards(state) : [])];
     if (!abilities.length) continue;
 
     const list = el('div', { class: 'abilities' });
@@ -240,13 +266,12 @@ export function renderAbilities(host, onChange, context) {
 
   const counts = (source = state) => {
     const result = { on: 0, total: 0 };
-    for (const group of groupsOf(source)) {
-      if (group.id === REQUIRED_GROUP) continue;
-      for (const item of group.abilities || []) {
-        if (isDatabaseAbility(item)) continue;
-        result.total += 1;
-        if (item.on) result.on += 1;
-      }
+    const now = abilitiesNow(source);
+    for (const id of items.keys()) {
+      const item = now.get(id);
+      if (!item) continue;
+      result.total += 1;
+      if (item.on) result.on += 1;
     }
     return result;
   };
@@ -254,11 +279,10 @@ export function renderAbilities(host, onChange, context) {
   return {
     counts,
     update(source) {
-      for (const group of groupsOf(source)) {
-        for (const item of group.abilities || []) {
-          const entry = items.get(idOf(item));
-          if (entry) paintItem(entry, item);
-        }
+      const now = abilitiesNow(source);
+      for (const [id, entry] of items) {
+        const item = now.get(id);
+        if (item) paintItem(entry, item);
       }
       return counts(source);
     },

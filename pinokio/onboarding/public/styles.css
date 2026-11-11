@@ -153,25 +153,25 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 }
 .board__trunk { position: relative; height: 20px; margin: 0 auto; }
 
-.board-wrap { position: relative; max-width: 1020px; margin: 0 auto 8px; }
+.board-wrap { position: relative; max-width: 720px; margin: 0 auto 8px; }
 .board {
   position: relative;
   list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;
   text-align: left;
 }
-/* The bus: from the first socket's centre to the last one's (3 columns, 2 gaps of 24px). */
+/* The bus: from the first socket's centre to the second's (2 columns, 1 gap of 24px). */
 .board::before, .board::after {
   content: ""; position: absolute; top: 0; height: 2px;
   animation: 0.9s linear infinite;
 }
 .board::before {
-  left: calc((100% - 48px) / 6); right: 50%;
+  left: calc((100% - 24px) / 4); right: 50%;
   background: repeating-linear-gradient(to left, var(--wire) 0 var(--dash), transparent var(--dash) calc(var(--dash) + var(--gap)));
   animation-name: wire-left;
 }
 .board::after {
-  left: 50%; right: calc((100% - 48px) / 6);
+  left: 50%; right: calc((100% - 24px) / 4);
   background: repeating-linear-gradient(to right, var(--wire) 0 var(--dash), transparent var(--dash) calc(var(--dash) + var(--gap)));
   animation-name: wire-right;
 }
@@ -203,11 +203,9 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 .socket__text { display: grid; gap: 4px; }
 
 /* Each socket's emoji moves in its own way; every cycle ends at rest (reduced motion). */
-.socket__emoji--store { animation: emoji-store 2.4s ease-in-out infinite; }
 .socket__emoji--think { transform-origin: 50% 50%; animation: emoji-think 2.4s ease-in-out infinite; }
 .socket__emoji--talk { transform-origin: 20% 90%; animation: emoji-talk 2.4s ease-in-out infinite; }
 
-@keyframes emoji-store { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 @keyframes emoji-think { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14); } }
 @keyframes emoji-talk {
   0%, 40%, 100% { transform: rotate(0); }
@@ -223,7 +221,7 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 .socket__field .link { font-size: 0.85rem; }
 
 /*
- * A glowing spark: down the trunk, then it splits in three at the bus and
+ * A glowing spark: down the trunk, then it splits in two at the bus and
  * arrives at every socket together. One 2.6s cycle shared by all four, so the
  * hand-off at 30% lines up. Under reduced motion it ends hidden (opacity 0).
  */
@@ -237,7 +235,6 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 }
 .spark--trunk { left: 1px; animation-name: spark-trunk; }
 .spark--left { animation-name: spark-left; }
-.spark--center { left: 50%; animation-name: spark-center; }
 .spark--right { animation-name: spark-right; }
 
 @keyframes spark-trunk {
@@ -246,25 +243,19 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   30% { top: 100%; opacity: 1; }
   31%, 100% { top: 100%; opacity: 0; }
 }
-@keyframes spark-center {
-  0%, 29% { top: 1px; opacity: 0; }
-  30% { top: 1px; opacity: 1; }
-  92% { top: 25px; opacity: 1; }
-  100% { top: 25px; opacity: 0; }
-}
 @keyframes spark-left {
   0%, 29% { left: 50%; top: 1px; opacity: 0; }
   30% { left: 50%; top: 1px; opacity: 1; }
-  75% { left: calc((100% - 48px) / 6); top: 1px; }
-  92% { left: calc((100% - 48px) / 6); top: 25px; opacity: 1; }
-  100% { left: calc((100% - 48px) / 6); top: 25px; opacity: 0; }
+  75% { left: calc((100% - 24px) / 4); top: 1px; }
+  92% { left: calc((100% - 24px) / 4); top: 25px; opacity: 1; }
+  100% { left: calc((100% - 24px) / 4); top: 25px; opacity: 0; }
 }
 @keyframes spark-right {
   0%, 29% { left: 50%; top: 1px; opacity: 0; }
   30% { left: 50%; top: 1px; opacity: 1; }
-  75% { left: calc(100% - (100% - 48px) / 6); top: 1px; }
-  92% { left: calc(100% - (100% - 48px) / 6); top: 25px; opacity: 1; }
-  100% { left: calc(100% - (100% - 48px) / 6); top: 25px; opacity: 0; }
+  75% { left: calc(100% - (100% - 24px) / 4); top: 1px; }
+  92% { left: calc(100% - (100% - 24px) / 4); top: 25px; opacity: 1; }
+  100% { left: calc(100% - (100% - 24px) / 4); top: 25px; opacity: 0; }
 }
 
 .emoji { display: inline-block; font-style: normal; }
@@ -518,7 +509,7 @@ pre.sql {
 
 .jacks {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin: 30px 0 26px;
   align-items: start;
@@ -706,3 +697,7 @@ li[data-state="fail"] .ws-icon::after { content: "!"; }
 .ability__head { display: flex; align-items: center; gap: 6px; padding-right: 10px; }
 .ability__head .ability-item { flex: 1; width: auto; min-width: 0; flex-wrap: wrap; gap: 6px 8px; padding-right: 4px; }
 .ability > .info-tip { margin: 0 12px 12px; background: var(--surface-raised); }
+
+/* The database step (Supabase helper and tables) sits above the optional list. */
+.db-step:empty { display: none; }
+.db-step { margin: 0 0 16px; display: grid; gap: 10px; }

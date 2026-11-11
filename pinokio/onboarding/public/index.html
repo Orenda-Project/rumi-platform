@@ -21,29 +21,21 @@
 
   <!-- Asleep -->
   <section class="panel panel--center" data-panel="asleep" hidden>
-    <!-- Plug board: Rumi (asleep) wired to the three things the next screen asks for. -->
+    <!-- Plug board: Rumi (asleep) wired to the two things the next screen asks for. -->
     <div class="board__rumi" aria-hidden="true">
       <svg class="board__mark" viewBox="180 380 720 300"><circle cx="271" cy="463" r="70"/><circle cx="806" cy="463" r="70"/><path d="M300 515 Q538 775 775 515"/></svg>
     </div>
     <h1>Rumi is asleep <span class="emoji emoji--sleep" aria-hidden="true">😴</span></h1>
     <p class="lede">
-      An AI teaching companion that lives in <svg class="wa-glyph emoji--pulse" viewBox="0 0 24 24" aria-hidden="true"><path class="wa-glyph__bubble" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/><path class="wa-glyph__phone" transform="translate(6.6 6.6) scale(0.45)" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>&nbsp;WhatsApp. Plug <span class="emoji emoji--plug" aria-hidden="true">🔌</span> in three things to wake <span class="emoji emoji--wake" aria-hidden="true">😃</span> it up.
+      An AI teaching companion that lives in <svg class="wa-glyph emoji--pulse" viewBox="0 0 24 24" aria-hidden="true"><path class="wa-glyph__bubble" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/><path class="wa-glyph__phone" transform="translate(6.6 6.6) scale(0.45)" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>&nbsp;WhatsApp. Plug <span class="emoji emoji--plug" aria-hidden="true">🔌</span> in two things to wake <span class="emoji emoji--wake" aria-hidden="true">😃</span> it up.
       It takes about fifteen minutes <span class="emoji emoji--tick" aria-hidden="true">🕒</span>.
     </p>
 
     <span class="board__trunk" aria-hidden="true"><span class="spark spark--trunk"></span></span>
     <div class="board-wrap">
     <span class="spark spark--left" aria-hidden="true"></span>
-    <span class="spark spark--center" aria-hidden="true"></span>
     <span class="spark spark--right" aria-hidden="true"></span>
     <ul class="board" aria-label="What you will plug in">
-      <li class="board__socket">
-        <span class="board__wire" aria-hidden="true"></span>
-        <div class="socket">
-          <span class="socket__icon" aria-hidden="true"><span class="socket__emoji socket__emoji--store">💾</span></span>
-          <span class="socket__text"><b>Memory</b><span>Where Rumi remembers its teachers, lessons and assessments. It lives on this computer, so there is nothing to sign up for.</span></span>
-        </div>
-      </li>
       <li class="board__socket">
         <span class="board__wire" aria-hidden="true"></span>
         <div class="socket">
@@ -74,24 +66,9 @@
 
   <!-- Plug in -->
   <section class="panel" data-panel="plug" hidden>
-    <h1 class="center">Plug in three things.<br>Rumi wakes up.</h1>
+    <h1 class="center">Plug in two things.<br>Rumi wakes up.</h1>
 
     <div class="jacks">
-      <article class="jack" id="jack-memory" data-state="off">
-        <div class="jack__head">
-          <div class="jack__id">
-            <span class="jack-icon" id="icon-memory" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.6"/><path d="M5 5.5v12.6c0 1.45 3.13 2.6 7 2.6s7-1.15 7-2.6V5.5"/><path d="M5 11.8c0 1.45 3.13 2.6 7 2.6s7-1.15 7-2.6"/><path d="M15.5 9.6v.01M15.5 15.9v.01" stroke-width="2.4"/></svg></span>
-            <div><b class="jack__title">Memory</b><small class="jack__sub">Database</small></div>
-          </div>
-          <div class="jack__end">
-            <span class="jack__status" id="status-memory">OFF</span>
-            <button class="info" type="button" data-info="info-memory" title="What is Memory for?" aria-label="What is Memory for?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></button>
-          </div>
-        </div>
-        <div class="info-tip" id="info-memory" hidden><p>Rumi keeps teachers, lessons and assessments in a database on this computer. Nothing to sign up for.</p><p class="info-tip__meta">Service: the built-in database, or Supabase / your own Postgres</p></div>
-        <div class="jack__body" id="memory-body" aria-live="polite"></div>
-      </article>
-
       <article class="jack" id="jack-brain" data-state="off">
         <div class="jack__head">
           <div class="jack__id">
@@ -132,11 +109,12 @@
         Not needed to wake Rumi up. Each one switches on the moment its key is added.
         Tap one to paste its key, or add it any time later from the console's Setup page.
       </p>
+      <div class="db-step" id="memory-body" aria-live="polite"></div>
       <div id="abilities-body"></div>
     </section>
 
     <div class="launchbar">
-      <p>Launch unlocks when all three jacks are lit. Optional abilities never block it.</p>
+      <p>Launch unlocks when both jacks are lit. Optional abilities never block it, except a database you chose: it has to be ready first.</p>
       <button class="btn btn--act btn--big" id="launch" type="button" disabled>Launch Rumi</button>
     </div>
 

@@ -60,6 +60,13 @@ The design was explored in a clickable mockup (screens 1–10). This document is
 - Feature gating stays presence-based: there are no "on" switches, only keys present or absent (plus the existing off-switches on Features).
 - Repo is public: no internal names, phone numbers or ticket ids in code or docs (CI: `tests/setup/source-hygiene.test.js`).
 
+## Revision: Memory is no longer a jack
+
+The built-in database needs nothing from the operator, so Memory is not something to plug in.
+- Landing: two sockets, Brain and Voice ("Plug in two things"). Plug-in screen: two jacks ("Plug in two things. Rumi wakes up."), Launch unlocks when both are lit.
+- "Keep the data in Supabase" and "Keep the data in your own Postgres" are ordinary optional abilities under Advanced. A chosen one keeps its card (rebuilt from `/api/state`'s `databaseCards` and the required rows its keys move into).
+- When a chosen database is not ready, a "Your database" block above the optional list shows the existing database step (helper paste, tables), Voice stays locked with "Unlocks once your database is ready: finish it under Optional abilities below.", and the Launch bar says a chosen database has to be ready first. `jackStates` is unchanged: `memory` still gates Voice and Launch.
+
 ## Deviations from the mockup
 
 - The mockup's separate "full descriptions" screen (4) is dropped: inline items already show the same `why` when opened.

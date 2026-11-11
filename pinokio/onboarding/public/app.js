@@ -118,7 +118,7 @@ async function onChange(event = {}) {
 
 async function paint() {
   const jacks = jackStates(inputs);
-  for (const name of ['memory', 'brain', 'voice']) paintJack(name, jacks[name]);
+  for (const name of ['brain', 'voice']) paintJack(name, jacks[name]);
 
   const memoryKey = `${jacks.memory}|${inputs.db ? `${inputs.db.driver}|${inputs.db.state}` : 'none'}`;
   if (rendered.memory !== memoryKey) {
@@ -126,10 +126,14 @@ async function paint() {
     await database.renderMemory(byId('memory-body'), onChange, { capabilities, db: inputs.db });
   }
 
-  if (rendered.voice !== jacks.voice) {
-    rendered.voice = jacks.voice;
+  // Voice waits for Brain, and for a chosen Supabase/Postgres to be ready.
+  const waitingFor = jacks.memory !== 'on' ? 'database' : 'brain';
+  const voiceKey = `${jacks.voice}|${waitingFor}`;
+  if (rendered.voice !== voiceKey) {
+    rendered.voice = voiceKey;
     whatsapp.render(byId('voice-body'), {
       capabilities,
+      waitingFor,
       markDone: () => { inputs.whatsapp = { linked: true }; onChange(); },
     }, jacks.voice);
   }

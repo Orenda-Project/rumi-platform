@@ -33,7 +33,9 @@ export function render(host, context, jack = 'off') {
   if (jack === 'locked') {
     host.append(el('p', {
       class: 'field__hint',
-      text: 'Unlocks once Memory and Brain are plugged in. You will need a second phone: Rumi answers as the number you link.',
+      text: context.waitingFor === 'database'
+        ? 'Unlocks once your database is ready: finish it under Optional abilities below.'
+        : 'Unlocks once Brain is plugged in. You will need a second phone: Rumi answers as the number you link.',
     }));
     return;
   }
