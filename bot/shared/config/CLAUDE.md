@@ -1,7 +1,7 @@
 # config — Env-driven config, language data and feature gating
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/config kg=94548cbe3074 gen=e6e04ab0a728 overflow=158 rendered=2026-11-05 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/config kg=5eda7e6c0808 gen=21e0ab776e63 overflow=161 rendered=2026-11-11 kg.py=1.1.0 -->
 
 ## Entry points
 - `feature-availability.js` — which features are live, by env key presence
@@ -20,7 +20,7 @@ Full index: `CLAUDE.index.md`
 
 ## Who reads this (generated)
 - `supabase.js` ← imported by `bot/scripts/attendance/link-school.js:25:50ccc192` · `bot/scripts/generate-coaching-excel.js:15:bdc9e340` (+141)
-- `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/pipeline-map.js:16:32a14f1b` (+25)
+- `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/live-state.js:11:32a14f1b` (+26)
 - `ux-strings.js` ← imported by `bot/shared/services/lesson-plan-availability.js:16:90174631` · `bot/shared/services/quiz/providers/lp-generated.provider.js:27:25374c99` (+24)
 - … 35 more → `CLAUDE.index.md`
 
@@ -32,7 +32,7 @@ Full index: `CLAUDE.index.md`
 ## Tests (generated)
 - `tests/language/french-language.test.js` (gamma-languages.config.js, language-prompts.js, supported-languages.js, tts-voices.js)
 - `tests/language/indian-languages.test.js` (gamma-languages.config.js, language-prompts.js, supported-languages.js, tts-voices.js)
-- … 113 more → `CLAUDE.index.md`
+- … 116 more → `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `digital-coach`? · `setup`?

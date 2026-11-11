@@ -11,31 +11,33 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `async-route.js` | Wraps an async express handler so a rejected promise reaches the error handler |
 | `bridge.js` | The only module that requires Rumi checkout code; each load is defensive so one rename disables one step |
 | `guards.js` | Loopback-only, Host allowlist, no-CORS and custom-header guards for the wizard's routes |
+| `launch.js` | (unmapped) |
 | `local-redis.js` | Starts a local Redis for the wizard only when a check needs one and REDIS_URL points at this machine |
 | `pair-worker.js` | Child process running WhatsApp pairing (baileys) so its global side effects stay out of the web server |
 | `probes.js` | Free read-only live checks for optional services (STT, TTS, etc.) the doctor only checks for presence |
-| `server.js` | Express server for the wizard: mounts Rumi's console beside the five-step UI and /api routes |
+| `server.js` | Express server for the wizard: mounts Rumi's console beside the three-screen UI and /api routes |
 | `sse.js` | Server-sent-events helper (anti-buffering headers) for streaming schema progress and QR codes |
 
 ## Who reads this (all, generated)
-- `async-route.js` ← imported by `pinokio/onboarding/routes/credentials.js:17:b351fbaa` · `pinokio/onboarding/routes/database.js:21:b351fbaa` · `pinokio/onboarding/routes/whatsapp.js:20:b351fbaa`
+- `async-route.js` ← imported by `pinokio/onboarding/routes/credentials.js:17:b351fbaa` · `pinokio/onboarding/routes/database.js:21:b351fbaa` · `pinokio/onboarding/routes/whatsapp.js:20:b351fbaa` · `pinokio/onboarding/server.js:25:50a54b3a`
 - `bridge.js` ← imported by `pinokio/onboarding/server.js:19:ad911989`
 - `guards.js` ← imported by `pinokio/onboarding/server.js:20:616552d5`
+- `launch.js` ← imported by `pinokio/onboarding/server.js:26:506524c3`
 - `local-redis.js` ← imported by `pinokio/onboarding/routes/credentials.js:18:4207b702` · `pinokio/onboarding/server.js:21:fa45a93c`
 - `probes.js` ← imported by `pinokio/onboarding/routes/credentials.js:19:3bba1de9`
 - `sse.js` ← imported by `pinokio/onboarding/routes/database.js:22:ee8d22b0` · `pinokio/onboarding/routes/whatsapp.js:21:ee8d22b0`
 - env `RUMI_APP_ROOT` read at `pinokio/onboarding/pair-worker.js:28:1a4be075`
 
 ## Tests (all, generated)
-- (none)
+- `launch.js` ← `tests/pinokio/launch.test.js`
 
 ## Related (all, generated)
-- docs: `pinokio/CLAUDE.md`? · `pinokio/README.md`?
+- docs: `docs/superpowers/plans/2026-11-11-wizard-three-jacks-and-launch.md`? · `docs/superpowers/specs/2026-11-11-pinokio-onboarding-redesign.md`? · `pinokio/CLAUDE.md`? · `pinokio/README.md`?
 
 ## Previous notes (human, unverified — moved here from the old CLAUDE.md)
 **Parent:** [../CLAUDE.md](../CLAUDE.md) · Deep knowledge: [.claude/skills/pinokio-launcher](../../.claude/skills/pinokio-launcher/SKILL.md)
 
-An Express app that replaces `rumi setup` with a five-step browser flow, and mounts Rumi's own operator
+An Express app that replaces `rumi setup` with a three-screen browser flow, and mounts Rumi's own operator
 console beside it. Started by `onboard.js` from the Pinokio sidebar; runnable directly with
 `node onboarding/server.js --port=4180`.
 

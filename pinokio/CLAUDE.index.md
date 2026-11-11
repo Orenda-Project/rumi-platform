@@ -6,7 +6,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Children (all, generated)
 | path | purpose |
 |---|---|
-| `onboarding/` | GUI setup wizard server: five steps beside Rumi's console, loopback only → `onboarding/CLAUDE.md` |
+| `onboarding/` | GUI setup wizard server: three screens beside Rumi's console, loopback only → `onboarding/CLAUDE.md` |
 | `scripts/` | Helper scripts the Pinokio launcher scripts call: Redis, ports, console wait → `scripts/CLAUDE.md` |
 | `.gitignore` | (unmapped) |
 | `README.md` | User guide for the Pinokio launcher: sidebar buttons, GUI setup wizard, what it does; current |
@@ -21,6 +21,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `pinokio.js` | Pinokio menu definition: which buttons show given install/config/running state (placeholder-aware .env check) |
 | `pinokio.json` | Pinokio app metadata: title, description, icon and website/GitHub links |
 | `reset.js` | Pinokio script removing bot/node_modules to return to fresh-clone dependencies, keeping .env and session |
+| `restart.js` | (unmapped) |
 | `setup.js` | Pinokio script running the interactive `rumi setup` wizard with QUEUE_DRIVER=bullmq |
 | `start.js` | Pinokio Start daemon: starts Redis and the bot, captures its port and prints the console URL |
 | `update.js` | Pinokio Update button: git pull then dependency refresh for launcher and bot |
@@ -30,11 +31,12 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Tests (all, generated)
 - `doctor.js` ← `tests/setup/doctor.test.js`?
+- `restart.js` ← `tests/console/restart.test.js`?
 - `setup.js` ← `bot/tests/setup.js`? · `dashboard/tests/setup.js`? · `portal/src/test/setup.ts`? · `tests/setup.js`?
 
 ## Related (all, generated)
 - skills: `pinokio-launcher`?
-- docs: `CLAUDE.md`? · `README.md`? · `pinokio/README.md`? · `pinokio/onboarding/CLAUDE.md`? · `pinokio/onboarding/public/CLAUDE.md`? · `pinokio/scripts/CLAUDE.md`?
+- docs: `CLAUDE.md`? · `README.md`? · `docs/console.md`? · `docs/superpowers/plans/2026-11-11-console-first-run-and-restart.md`? · `docs/superpowers/plans/2026-11-11-wizard-three-jacks-and-launch.md`? · `docs/superpowers/specs/2026-11-11-pinokio-onboarding-redesign.md`? · `pinokio/README.md`? · `pinokio/onboarding/CLAUDE.md`? · `pinokio/onboarding/public/CLAUDE.md`? · `pinokio/scripts/CLAUDE.md`?
 
 ## Previous notes (human, unverified — moved here from the old CLAUDE.md)
 **Parent:** [../CLAUDE.md](../CLAUDE.md) · Deep knowledge: [.claude/skills/pinokio-launcher](../.claude/skills/pinokio-launcher/SKILL.md)

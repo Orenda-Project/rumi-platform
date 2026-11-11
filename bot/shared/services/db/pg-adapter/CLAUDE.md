@@ -1,7 +1,7 @@
 # pg-adapter — supabase-js query API (from/rpc) compiled to SQL over a pg Pool
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/db/pg-adapter kg=66db3ba4da06 gen=7b6afc73c3f0 overflow=8 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/db/pg-adapter kg=5cbf9d064d05 gen=139c867af16f overflow=9 rendered=2026-11-11 kg.py=1.1.0 -->
 
 ## Entry points
 - `pg-client.js` — createPgClient(pool)
@@ -33,7 +33,7 @@ Full index: `CLAUDE.index.md`
 ## Tests (generated)
 - `tests/db/bundled-database.test.js` (drivers.js)
 - `tests/db/pg-client-real-schema.test.js` (pg-client.js)
-- … 1 more → `CLAUDE.index.md`
+- … 2 more → `CLAUDE.index.md`
 
 ## Related (generated)
 - docs: `bot/shared/services/db/CLAUDE.md`?

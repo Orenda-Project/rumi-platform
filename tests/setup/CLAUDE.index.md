@@ -96,4 +96,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `qa-testing`?
-- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `TEST_READY.md`? · `bot/marketing/README.md`? · `bot/scripts/setup/CLAUDE.md`? · `docs/customization.md`? · `docs/onboarding/sandbox-production-design.md`? · `infrastructure/local/CLAUDE.md`? · `infrastructure/scripts/CLAUDE.md`? · `tests/CLAUDE.md`?
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `TEST_READY.md`? · `bot/marketing/README.md`? · `bot/scripts/setup/CLAUDE.md`? · `docs/customization.md`? · `docs/onboarding/sandbox-production-design.md`? · `docs/superpowers/plans/2026-11-11-console-first-run-and-restart.md`? · `docs/superpowers/plans/2026-11-11-wizard-three-jacks-and-launch.md`? · `docs/superpowers/specs/2026-11-11-pinokio-onboarding-redesign.md`? · `infrastructure/local/CLAUDE.md`? · `infrastructure/scripts/CLAUDE.md`? · `tests/CLAUDE.md`?

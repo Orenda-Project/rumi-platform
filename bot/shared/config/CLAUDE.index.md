@@ -36,14 +36,14 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `ux-strings.js` | Quiz fixed-copy catalogue (en/ur) plus the language clamp; resolveUx(key, {user, language, params}) renders it |
 
 ## Who reads this (all, generated)
-- `branding.js` ← imported by `bot/console/routes/pages.js:31:c8e47c32` · `bot/shared/handlers/flow-response.handler.js:661:5b147366` · `bot/shared/handlers/portal-command.handler.js:16:f6ce7d02` · `bot/shared/routes/registration-endpoint.js:54:7a8e3c0a` (+15: `python3 kg/kg.py who-reads branding.js`)
+- `branding.js` ← imported by `bot/console/routes/pages.js:39:c8e47c32` · `bot/shared/handlers/flow-response.handler.js:661:5b147366` · `bot/shared/handlers/portal-command.handler.js:16:f6ce7d02` · `bot/shared/routes/registration-endpoint.js:54:7a8e3c0a` (+15: `python3 kg/kg.py who-reads branding.js`)
 - `capabilities.config.js` ← imported by `bot/shared/services/helper-agent.service.js:363:7bd0abf5`
 - `coaching-audio.js` ← imported by `bot/shared/handlers/voice-message.handler.js:773:2ae3bd4c` · `bot/shared/services/observe/observe-audio-router.js:31:a4d76d60` · `bot/whatsapp-bot.js:1765:fd05c91d`
 - `coaching-card.config.js` ← imported by `bot/shared/services/coaching/coaching-card/card-image.service.js:12:a3506bc7` · `bot/shared/services/coaching/report-generator.service.js:220:11c3a014`
 - `coaching-debrief.config.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:23:50bb8b0b` · `bot/shared/services/gpt5-mini.service.js:1383:425e6f0a`
 - `coaching-messages.js` ← imported by `bot/shared/services/coaching/analysis-processor.service.js:22:b8fde5d4` · `bot/shared/services/coaching/coaching-flow-buttons.js:9:b8fde5d4` · `bot/shared/services/coaching/coaching-session.service.js:17:b8fde5d4` · `bot/shared/services/coaching/fidelity/fidelity-report.js:13:9c9510f6` (+6: `python3 kg/kg.py who-reads coaching-messages.js`)
 - `discord-country-regions.js` ← imported by `bot/shared/routes/discord-views/registration.view.js:22:f72f4330` · `bot/shared/routes/slack-views/registration.view.js:34:f72f4330`
-- `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/pipeline-map.js:16:32a14f1b` · `bot/console/routes/api.js:128:d45d9207` · `bot/console/routes/pages.js:62:f097f31a` (+23: `python3 kg/kg.py who-reads feature-availability.js`)
+- `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/live-state.js:11:32a14f1b` · `bot/console/pipeline-map.js:16:32a14f1b` · `bot/console/routes/api.js:143:d45d9207` (+24: `python3 kg/kg.py who-reads feature-availability.js`)
 - `feature-overrides.js` ← imported by `bot/shared/services/coaching/fidelity/fidelity-orchestrator.js:66:75ac4cad` · `bot/shared/services/nudges/teacher-nudges.sweeper.js:44:aaed6883` · `bot/shared/services/observe/observe-gate.js:16:aaed6883` · `bot/shared/services/quiz/transcript-quiz-offer.service.js:75:0358a17e` (+1: `python3 kg/kg.py who-reads feature-overrides.js`)
 - `gamma-languages.config.js` ← imported by `bot/shared/services/content.service.js:5:488031ea`
 - `gender-neutral-address.js` ← imported by `bot/shared/services/quiz/video-quiz-report.service.js:37:5976149f`
@@ -81,7 +81,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `coaching-debrief.config.js` ← `tests/coaching/coaching-debrief-config.test.js`
 - `coaching-messages.js` ← `tests/coaching/fidelity/lp-step-flow.test.js` · `tests/setup/no-hardcoded-coaching-strings.test.js`
 - `discord-country-regions.js` ← `tests/config/discord-country-regions.test.js` · `tests/routes/slack-views.test.js`
-- `feature-availability.js` ← `tests/coaching/fidelity/fidelity-feature-entry.test.js` · `tests/console/channel-cards.test.js` · `tests/console/feature-overrides.test.js` · `tests/dashboard/portal-channels.test.js` · `tests/limits/expensive-job-caps.test.js` · `tests/limits/lesson-plan-availability.test.js` (+16: `python3 kg/kg.py who-reads bot/shared/config/feature-availability.js`)
+- `feature-availability.js` ← `tests/coaching/fidelity/fidelity-feature-entry.test.js` · `tests/console/channel-cards.test.js` · `tests/console/feature-overrides.test.js` · `tests/console/first-run.test.js` · `tests/console/live-state.test.js` · `tests/console/pages-live-env.test.js` (+19: `python3 kg/kg.py who-reads bot/shared/config/feature-availability.js`)
 - `feature-overrides.js` ← `tests/coaching/fidelity/fidelity-feature-entry.test.js` · `tests/console/feature-overrides.test.js` · `tests/observe/observe-gate.test.js` · `tests/observe/observe-portal-coach.service.test.js` · `tests/quiz/video-quiz-typed-answer-gate.test.js`
 - `gamma-languages.config.js` ← `tests/language/french-language.test.js` · `tests/language/indian-languages.test.js`
 - `inline-worker.js` ← `tests/messaging/baileys-inline-worker.test.js`

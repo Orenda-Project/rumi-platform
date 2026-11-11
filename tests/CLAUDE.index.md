@@ -13,7 +13,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `characterization/` | → (no door; 4 files: 2 test + 2 support) |
 | `coaching/` | Tests for coaching sessions, frameworks, hero reports and reflective debrief → `coaching/CLAUDE.md` |
 | `config/` | → (no door; 3 tests) |
-| `console/` | → (no door; 8 tests) |
+| `console/` | → (no door; 12 tests) |
 | `dashboard/` | Tests for the Express dashboard's CSP, HTML escaping, AMA routes and boot deps → `dashboard/CLAUDE.md` |
 | `database/` | → (no door; 2 tests) |
 | `db/` | Tests for the database layer: pg adapter parity, real schema, drivers, built-in DB → `db/CLAUDE.md` |
@@ -31,6 +31,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `nudges/` | → (no door; 9 tests) |
 | `observe/` | Tests for the /observe coach feature: capture, form, debrief, teacher report → `observe/CLAUDE.md` |
 | `pic-to-lp/` | → (no door; 11 tests) |
+| `pinokio/` | (no description yet) → `pinokio/CLAUDE.md` |
 | `portal/` | → (no door; 21 tests) |
 | `queue/` | → (no door; 7 tests) |
 | `quiz/` | Jest suites for the lesson quiz, class video quiz, figures and quiz PDFs → `quiz/CLAUDE.md` |
@@ -64,4 +65,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `qa-testing`?
-- docs: `AGENTS.md`? · `CLAUDE.md`? · `bot/console/views/CLAUDE.md`? · `bot/shared/services/cache/CLAUDE.md`? · `dashboard/CLAUDE.md`?
+- docs: `AGENTS.md`? · `CLAUDE.md`? · `bot/console/views/CLAUDE.md`? · `bot/shared/services/cache/CLAUDE.md`? · `dashboard/CLAUDE.md`? · `docs/superpowers/plans/2026-11-11-console-first-run-and-restart.md`? · `docs/superpowers/plans/2026-11-11-wizard-three-jacks-and-launch.md`?
