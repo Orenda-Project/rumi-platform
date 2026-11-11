@@ -253,6 +253,11 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
   100% { left: calc(100% - (100% - 48px) / 6); top: 25px; opacity: 0; }
 }
 
+.emoji { font-style: normal; }
+.wa-glyph { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -0.17em; }
+.wa-glyph__bubble { fill: #25d366; }
+.wa-glyph__phone { fill: #ffffff; }
+
 .btn.btn--pill { border-radius: 28px; margin-top: 28px; }
 
 /* ── Fields ─────────────────────────────────────────────────────────────── */
