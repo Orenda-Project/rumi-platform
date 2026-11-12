@@ -63,34 +63,6 @@ function groupsOf(source) {
 /** Where Brain's entry-time connection test reports, under its field. */
 let brainCheck = null;
 
-/**
- * Brain: the OpenRouter key, with its connection test.
- *
- * @param {HTMLElement} host
- * @param {(event: {key: string, probe: string|null, ok: boolean}) => void} onChange
- */
-export function renderBrain(host, onChange, context) {
-  clear(host);
-  brainCheck = null;
-  if (context && context.capabilities && !context.capabilities.credentials) {
-    host.append(fallbackNotice());
-    return;
-  }
-  const row = brainRow();
-  if (!row) {
-    host.append(el('p', { class: 'field__hint', text: 'The AI key is already handled.' }));
-    return;
-  }
-  // A fresh save reports in the field itself, so the entry check steps aside.
-  const saved = (event) => {
-    if (brainCheck) clear(brainCheck.node);
-    onChange(event);
-  };
-  const node = el('div', { class: 'brain__check' });
-  const card = field(row, { onChange: saved });
-  brainCheck = { node, card, onChange };
-  host.append(card, node);
-}
 
 /**
  * The OpenRouter key on the landing card: the one key Rumi needs, pasted before
@@ -98,10 +70,19 @@ export function renderBrain(host, onChange, context) {
  */
 export function renderBrainField(host, onChange, context) {
   clear(host);
+  brainCheck = null;
   if (context && context.capabilities && !context.capabilities.credentials) return;
   const row = brainRow();
   if (!row) return;
-  host.append(field(row, { bare: true, onChange, placeholder: 'Paste key' }));
+  // A fresh save reports in the field itself, so the entry check steps aside.
+  const saved = (event) => {
+    if (brainCheck) clear(brainCheck.node);
+    onChange(event);
+  };
+  const node = el('div', { class: 'brain__check' });
+  const card = field(row, { bare: true, onChange: saved, placeholder: 'Paste key' });
+  brainCheck = { node, card, onChange };
+  host.append(card, node);
 }
 
 function brainRow(source = state) {
@@ -172,6 +153,23 @@ function stateFor(item) {
 }
 
 const idOf = (item) => (item.keys || []).join('+');
+
+/** A picture for each optional ability, by its first key. Decoration only. */
+const ABILITY_EMOJI = {
+  SONIOX_API_KEY: '🎙️',
+  ELEVENLABS_API_KEY: '🔊',
+  AZURE_SPEECH_KEY: '🗣️',
+  UPLIFT_API_KEY: '🌏',
+  GAMMA_API_KEY: '📊',
+  KIE_API_KEY: '🎬',
+  SLACK_BOT_TOKEN: '💼',
+  DISCORD_BOT_TOKEN: '🎮',
+  MATRIX_HOMESERVER_URL: '🧩',
+  AXIOM_TOKEN: '📈',
+  AXIOM_DATASET: '📈',
+  DATABASE_URL: '🐘',
+  SUPABASE_URL: '⚡',
+};
 
 /** The optional group the database cards live in. */
 const DATABASE_GROUP = 'advanced';
@@ -302,8 +300,12 @@ function paintItem(entry, item) {
 
 function abilityItem(item, onChange) {
   const pill = el('span', { class: 'pill' });
+  const emoji = ABILITY_EMOJI[(item.keys || [])[0]];
   const button = el('button', { class: 'ability-item', type: 'button' }, [
-    el('span', { class: 'ability-item__title', text: item.title }),
+    el('span', { class: 'ability-item__name' }, [
+      emoji ? el('span', { class: 'ability-item__emoji', text: emoji }) : null,
+      el('span', { class: 'ability-item__title', text: item.title }),
+    ]),
     pill,
   ]);
   button.setAttribute('aria-expanded', 'false');

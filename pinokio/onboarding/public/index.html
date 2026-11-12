@@ -40,14 +40,14 @@
         <span class="board__wire" aria-hidden="true"></span>
         <div class="socket">
           <span class="socket__icon" aria-hidden="true"><span class="socket__emoji socket__emoji--think">🧠</span></span>
-          <span class="socket__text"><b>Brain</b><span>The AI that reads each message and writes the reply. Paste an OpenRouter key here; a few dollars goes a long way.</span><button class="linkbutton socket__reveal" type="button" id="landing-brain-reveal" aria-controls="landing-brain" aria-expanded="false" hidden>Add your key &rsaquo;</button><div class="socket__field" id="landing-brain" hidden></div></span>
+          <span class="socket__text"><b>Brain <span class="socket__status" id="hero-brain" data-state="off">OFF</span></b><span>The AI that reads each message and writes the reply. Paste an OpenRouter key here; a few dollars goes a long way.</span><button class="linkbutton socket__reveal" type="button" id="landing-brain-reveal" aria-controls="landing-brain" aria-expanded="false" hidden>Add your key &rsaquo;</button><div class="socket__field" id="landing-brain" hidden></div></span>
         </div>
       </li>
       <li class="board__socket">
         <span class="board__wire" aria-hidden="true"></span>
         <div class="socket">
           <span class="socket__icon" aria-hidden="true"><span class="socket__emoji socket__emoji--talk">💬</span></span>
-          <span class="socket__text"><b>Voice</b><span>How teachers talk to Rumi. You link a WhatsApp number, then message it from a second phone.</span></span>
+          <span class="socket__text"><b>Voice <span class="socket__status" id="hero-voice" data-state="locked">LOCKED</span></b><span>How teachers talk to Rumi. You link a WhatsApp number, then message it from a second phone.</span></span>
         </div>
       </li>
     </ul>
@@ -59,32 +59,13 @@
       <p>Everything else still works, and each of those steps will point you at the terminal instead.</p>
     </div>
 
-    <div class="actions actions--center">
-      <button class="btn btn--act btn--big btn--pill" data-go="plug">Wake Rumi</button>
+    <div class="actions actions--center" id="wake-actions">
+      <button class="btn btn--act btn--big btn--pill" id="wake" type="button" aria-controls="awake" aria-expanded="false">Wake Rumi</button>
     </div>
-  </section>
 
-  <!-- Plug in -->
-  <section class="panel" data-panel="plug" hidden>
-    <h1 class="center">Plug in two things.<br>Rumi wakes up.</h1>
-
-    <div class="jacks">
-      <article class="jack" id="jack-brain" data-state="off">
-        <div class="jack__head">
-          <div class="jack__id">
-            <span class="jack-icon" id="icon-brain" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5.5a2.6 2.6 0 0 0-4.9-1A3 3 0 0 0 4.6 8.3a3.1 3.1 0 0 0 .2 5.2 3 3 0 0 0 2.4 4.6A2.7 2.7 0 0 0 12 19.2z"/><path d="M12 5.5a2.6 2.6 0 0 1 4.9-1 3 3 0 0 1 2.5 3.8 3.1 3.1 0 0 1-.2 5.2 3 3 0 0 1-2.4 4.6 2.7 2.7 0 0 1-4.8 1.1"/><path d="M8.3 9.2c1 .1 1.9.8 2.1 1.8M15.7 9.2c-1 .1-1.9.8-2.1 1.8M8.6 14.6c.9-.5 2-.4 2.7.3M15.4 14.6c-.9-.5-2-.4-2.7.3"/></svg></span>
-            <div><b class="jack__title">Brain</b><small class="jack__sub">OpenRouter</small></div>
-          </div>
-          <div class="jack__end">
-            <span class="jack__status" id="status-brain">OFF</span>
-            <button class="info" type="button" data-info="info-brain" title="What is Brain for?" aria-label="What is Brain for?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></button>
-          </div>
-        </div>
-        <div class="info-tip" id="info-brain" hidden><p>The AI that reads what teachers send and writes every reply. Through one OpenRouter key Rumi can use many AI models.</p><p class="info-tip__meta">Service: openrouter.ai · Key: OPENROUTER_API_KEY</p></div>
-        <div class="jack__body" id="brain-body" aria-live="polite"></div>
-      </article>
-
-      <article class="jack" id="jack-voice" data-state="locked">
+    <!-- After Wake Rumi: link WhatsApp, optional abilities, Launch. -->
+    <section class="awake" id="awake" aria-label="Finish setting up" hidden>
+      <article class="jack jack--wide" id="jack-voice" data-state="locked">
         <div class="jack__head">
           <div class="jack__id">
             <span class="jack-icon jack-icon--locked" id="icon-voice" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 4h11A2.5 2.5 0 0 1 20 6.5v7.5a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3.6v-3.6A2.5 2.5 0 0 1 4 14V6.5A2.5 2.5 0 0 1 6.5 4z"/><path d="M9 8.8v2.7M12 7.4v5.5M15 8.8v2.7"/></svg></span>
@@ -98,7 +79,6 @@
         <div class="info-tip" id="info-voice" hidden><p>How teachers reach Rumi. Rumi links your WhatsApp the way WhatsApp Web does, so you cannot message yourself.</p><p class="info-tip__meta">Service: WhatsApp, as a linked device</p></div>
         <div class="jack__body" id="voice-body" aria-live="polite"></div>
       </article>
-    </div>
 
     <section class="extras" aria-labelledby="extras-title">
       <div class="extras__head">
@@ -114,7 +94,7 @@
     </section>
 
     <div class="launchbar">
-      <p>Launch unlocks when both jacks are lit. Optional abilities never block it, except a database you chose: it has to be ready first.</p>
+      <p>Launch unlocks when Brain and Voice are both on. Optional abilities never block it, except a database you chose: it has to be ready first.</p>
       <button class="btn btn--act btn--big" id="launch" type="button" disabled>Launch Rumi</button>
     </div>
 
@@ -122,8 +102,10 @@
       <button class="linkbutton" id="check-toggle" type="button" aria-expanded="false" aria-controls="check-body">Check everything</button>
       <div id="check-body" aria-live="polite" hidden></div>
     </div>
+    </section>
   </section>
 
+  <!-- Plug in -->
   <!-- Launching (its behaviour is wired by the launch step) -->
   <section class="panel panel--center" data-panel="launching" id="panel-launching" hidden>
     <div id="launching-body" aria-live="polite"></div>

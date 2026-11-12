@@ -67,6 +67,12 @@ The built-in database needs nothing from the operator, so Memory is not somethin
 - "Keep the data in Supabase" and "Keep the data in your own Postgres" are ordinary optional abilities under Advanced. A chosen one keeps its card (rebuilt from `/api/state`'s `databaseCards` and the required rows its keys move into).
 - When a chosen database is not ready, a "Your database" block above the optional list shows the existing database step (helper paste, tables), Voice stays locked with "Unlocks once your database is ready: finish it under Optional abilities below.", and the Launch bar says a chosen database has to be ready first. `jackStates` is unchanged: `memory` still gates Voice and Launch.
 
+## Revision: one page
+
+The plug-in screen is gone; setup is one page plus the launching screen.
+- Hero: the plug board with Brain (OpenRouter key field behind "Add your key ›") and Voice, each with an ON / OFF / LOCKED label.
+- **Wake Rumi** opens a section under the hero and scrolls to it: the Voice card (WhatsApp linking), Optional abilities (each with an emoji; a chosen database's "Your database" step above the list), the Launch bar and "Check everything". "Back to the jacks" on the launching screen returns here with that section open.
+
 ## Deviations from the mockup
 
 - The mockup's separate "full descriptions" screen (4) is dropped: inline items already show the same `why` when opened.

@@ -1,8 +1,10 @@
 /**
- * app -- three screens: Rumi is asleep, plug in three things, launching.
+ * app -- two screens: the setup page, then launching.
  *
- * The plug-in screen holds three jacks (Memory, Brain, Voice) and the optional
- * abilities. What is ON, OFF or LOCKED is decided in one place, jacks.js; this
+ * The setup page is one page. Its hero shows Brain (with the OpenRouter key
+ * field) and Voice; Wake Rumi opens the rest below it: linking WhatsApp, the
+ * optional abilities and Launch. What is ON, OFF or LOCKED is decided in one
+ * place, jacks.js; this
  * module keeps the inputs it needs (the catalogue, the database's state, whether
  * WhatsApp is linked, the last result of each connection test) and repaints
  * after anything that could change them.
@@ -20,7 +22,7 @@ import * as whatsapp from './steps/whatsapp.js';
 import * as done from './steps/done.js';
 import * as launching from './steps/launching.js';
 
-const SCREENS = ['asleep', 'plug', 'launching'];
+const SCREENS = ['asleep', 'launching'];
 const LABEL = { on: 'ON', off: 'OFF', locked: 'LOCKED' };
 
 let capabilities = {};
@@ -40,9 +42,9 @@ function byId(id) {
 
 async function show(screen) {
   if (!SCREENS.includes(screen)) return;
-  // Leaving the plug-in screen drops the pairing stream and the schema commentary.
+  // Leaving the setup page drops the pairing stream and the schema commentary.
   if (current === 'launching' && screen !== 'launching') launching.cancel();
-  if (current === 'plug' && screen !== 'plug') {
+  if (current === 'asleep' && screen !== 'asleep') {
     whatsapp.stop();
     database.stop();
     rendered.voice = null;
@@ -54,20 +56,25 @@ async function show(screen) {
   }
   byId('content').focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (screen === 'plug') await enterPlug();
-  if (screen === 'launching') launching.run(byId('launching-body'), { onBack: () => show('plug') });
+  if (screen === 'asleep') await enterPlug();
+  if (screen === 'launching') {
+    launching.run(byId('launching-body'), { onBack: async () => { await show('asleep'); wake(); } });
+  }
 }
 
 async function enterPlug() {
   try {
     await refresh();
     if (!plugBuilt) {
-      credentials.renderBrain(byId('brain-body'), onChange, { capabilities });
+      credentials.renderBrainField(byId('landing-brain'), onChange, { capabilities });
+      wireLandingReveal();
       abilities = credentials.renderAbilities(byId('abilities-body'), onChange, { capabilities });
       plugBuilt = true;
     }
     await paint();
     await checkBrainOnEntry();
+    // A saved key that failed its test: show the field and why, without a click.
+    if (inputs.probes.openrouter === 'fail') openLandingField(false);
   } catch (error) {
     const host = byId('abilities-body');
     clear(host);
@@ -118,7 +125,12 @@ async function onChange(event = {}) {
 
 async function paint() {
   const jacks = jackStates(inputs);
-  for (const name of ['brain', 'voice']) paintJack(name, jacks[name]);
+  paintJack('voice', jacks.voice);
+  for (const name of ['brain', 'voice']) {
+    const status = byId(`hero-${name}`);
+    status.textContent = LABEL[jacks[name]];
+    status.setAttribute('data-state', jacks[name]);
+  }
 
   const memoryKey = `${jacks.memory}|${inputs.db ? `${inputs.db.driver}|${inputs.db.state}` : 'none'}`;
   if (rendered.memory !== memoryKey) {
@@ -173,6 +185,8 @@ function wireCheck() {
  * clicked. The "Add your key" button is the keyboard and screen-reader way in;
  * a click anywhere else on the card does the same. Once open it stays open.
  */
+let openLandingField = () => {};
+
 function wireLandingReveal() {
   const field = byId('landing-brain');
   const reveal = byId('landing-brain-reveal');
@@ -180,17 +194,26 @@ function wireLandingReveal() {
   const card = reveal.closest('.socket');
   reveal.hidden = false;
   card.classList.add('socket--reveal');
-  const open = () => {
+  openLandingField = (focus = true) => {
     if (!field.hidden) return;
     field.hidden = false;
     reveal.hidden = true;
     reveal.setAttribute('aria-expanded', 'true');
     card.classList.remove('socket--reveal');
     const input = field.querySelector('input');
-    if (input) input.focus();
+    if (focus && input) input.focus();
   };
-  reveal.addEventListener('click', (event) => { event.stopPropagation(); open(); });
-  card.addEventListener('click', open);
+  reveal.addEventListener('click', (event) => { event.stopPropagation(); openLandingField(); });
+  card.addEventListener('click', () => openLandingField());
+}
+
+/** Wake Rumi: open the rest of setup under the hero and bring it into view. */
+function wake() {
+  const awake = byId('awake');
+  awake.hidden = false;
+  byId('wake-actions').hidden = true;
+  byId('wake').setAttribute('aria-expanded', 'true');
+  awake.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /** Each jack's (i) shows a short note on what that part is for. */
@@ -202,6 +225,7 @@ function wireInfo() {
 
 function wireNavigation() {
   byId('launch').addEventListener('click', () => show('launching'));
+  byId('wake').addEventListener('click', wake);
   for (const button of document.querySelectorAll('[data-go]')) {
     button.addEventListener('click', (event) => {
       event.preventDefault();
@@ -227,12 +251,6 @@ async function main() {
     const state = await get('/api/state');
     capabilities = state.capabilities || {};
     reportProblems(state.problems);
-    await credentials.load();
-    // A key saved here is tested like Brain's; the plug-in screen reads the result.
-    credentials.renderBrainField(byId('landing-brain'), (event = {}) => {
-      if (event.probe) inputs.probes[event.probe] = event.pending ? 'pending' : (event.ok ? 'pass' : 'fail');
-    }, { capabilities });
-    wireLandingReveal();
   } catch (error) {
     reportProblems([`The setup server is not answering: ${error.message}`]);
   }

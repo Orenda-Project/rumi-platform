@@ -707,3 +707,28 @@ li[data-state="fail"] .ws-icon::after { content: "!"; }
 .socket--reveal { cursor: pointer; outline: 2px solid transparent; outline-offset: 3px; transition: outline-color var(--fast) var(--ease); }
 .socket--reveal:hover { outline-color: rgba(245, 176, 66, 0.55); }
 .socket__reveal { justify-self: start; margin-top: 6px; font-size: 0.9rem; font-weight: 600; }
+
+/* ── One page: what Wake Rumi opens under the hero ─────────────────────── */
+
+.awake {
+  text-align: left;
+  display: grid; gap: 22px;
+  margin-top: 36px; padding-top: 32px;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 16px;
+  animation: rise var(--normal) var(--ease) both;
+}
+.awake .extras, .awake .launchbar, .awake .check { margin: 0; }
+.jack--wide { max-width: none; }
+
+/* ON / OFF / LOCKED beside each hero socket's name. */
+.socket__status {
+  margin-left: 8px; padding: 2px 8px; border-radius: 20px;
+  font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.08em; vertical-align: 2px;
+  color: var(--text-soft); background: var(--surface-sunken); border: 1px solid var(--line);
+}
+.socket__status[data-state="on"] { color: #0f5132; background: #dcf5e4; border-color: #a6e3bd; }
+
+/* Optional abilities: an emoji before each name. */
+.ability-item__name { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.ability-item__emoji { flex: none; font-size: 1.05rem; line-height: 1.25; }
