@@ -60,6 +60,49 @@ export function whereLink(where) {
 }
 
 /**
+ * The service a catalogue `where` points at, as a short host ("soniox.com"),
+ * or null when `where` is prose rather than a domain.
+ */
+export function serviceOf(where) {
+  if (!where) return null;
+  const host = String(where).replace(/^https?:\/\//, '').split(/[\s/]/)[0];
+  if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host)) return null;
+  return host.replace(/^(console|portal|platform|api|app|www)\./i, '');
+}
+
+const SVG = 'http://www.w3.org/2000/svg';
+
+/** A round (i) button. Pair it with a tip through `infoToggle`. */
+export function infoButton(label) {
+  const button = el('button', { class: 'info', type: 'button', title: label });
+  button.setAttribute('aria-label', label);
+  const svg = document.createElementNS(SVG, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const d of ['M12 11v6', 'M12 7.5v.01']) {
+    const path = document.createElementNS(SVG, 'path');
+    path.setAttribute('d', d);
+    svg.append(path);
+  }
+  button.append(svg);
+  return button;
+}
+
+/** Show or hide `tip` from `button`, keeping aria-expanded honest. */
+export function infoToggle(button, tip) {
+  tip.hidden = true;
+  button.setAttribute('aria-expanded', 'false');
+  if (tip.id) button.setAttribute('aria-controls', tip.id);
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const open = tip.hidden;
+    tip.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+  });
+}
+
+/**
  * A replaceable position in the DOM.
  *
  * Status lines here are swapped several times in a row -- saving, then testing,

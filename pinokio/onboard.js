@@ -28,6 +28,11 @@ module.exports = {
       method: "shell.run",
       params: {
         message: "node onboarding/server.js --port={{local.port}}",
+        // Lets POST /api/launch start Rumi through Pinokio (onboarding/launch.js).
+        env: {
+          "RUMI_PTERM": "{{which('pterm')}}",
+          "RUMI_START_SCRIPT": "{{path.resolve(cwd, 'start.js')}}"
+        },
         on: [{
           // The server prints its address on one line when it starts listening.
           "event": "/(http:\\/\\/\\S+)/",

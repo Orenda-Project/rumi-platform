@@ -149,6 +149,22 @@ function loadExpress() {
   return require(path.join(APP_ROOT, 'bot/node_modules/express'));
 }
 
+/**
+ * True when a WhatsApp session has already been linked (`creds.json` in the
+ * driver's auth folder). The connection module is required lazily and only for
+ * its `authDir`; any failure to load it or read the folder means "not linked".
+ *
+ * @returns {boolean}
+ */
+function whatsappLinked() {
+  try {
+    const { authDir } = require(path.join(APP_ROOT, 'bot/shared/services/messaging/baileys-connection.js'));
+    return fs.existsSync(path.join(authDir(), 'creds.json'));
+  } catch {
+    return false;
+  }
+}
+
 /** What the wizard can offer, given what actually loaded. */
 const capabilities = {
   console: Boolean(loaded.console),
@@ -171,6 +187,7 @@ module.exports = {
   capabilities,
   problems,
   isInstalled,
+  whatsappLinked,
   loadExpress,
   modules: loaded,
 };

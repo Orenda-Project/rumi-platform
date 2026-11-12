@@ -7,6 +7,26 @@
      stage by stage — which engine transcribed it, which model answered, where it failed.</p>
 </div>
 
+<% if (typeof firstRun !== 'undefined' && firstRun) { %>
+<div class="banner first" id="first-run" data-reply-pattern="<%= REPLY_SENT_SOURCE %>" data-no-arrival-ms="90000">
+  <div class="grow" id="fr-hello">
+    <b>Rumi is awake. Say hello.</b>
+    Send <code>Hi</code> from your second phone to the number you linked. You won't see your words here, but you'll see Rumi receive it, think, and reply, usually within a few seconds.
+    <% if (firstRun.abilitiesOn > 0) { %>
+      <a href="<%= mount %>/features"><%= firstRun.abilitiesOn %> optional abilit<%= firstRun.abilitiesOn === 1 ? 'y' : 'ies' %> on, see Features</a>
+    <% } %>
+  </div>
+  <div class="grow" id="fr-ok" hidden>
+    <b>✓ It works. Rumi answered your first message.</b>
+    <a href="<%= mount %>/">Go to Overview</a> · <a href="<%= mount %>/setup">Add more abilities on Setup</a>
+  </div>
+  <div class="grow" id="fr-wait" hidden>
+    <b>Nothing has arrived yet.</b>
+    Check you're messaging the number you linked, from a different phone. If it still doesn't show, use Re-pair WhatsApp in the Pinokio sidebar.
+  </div>
+</div>
+<% } %>
+
 <div class="banner info">
   <div class="grow">
     <b>Phone numbers and message content are never shown here</b>

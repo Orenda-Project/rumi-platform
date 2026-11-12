@@ -107,4 +107,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `setup`?
-- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `bot/shared/services/CLAUDE.md`? · `docs/features/attendance.md`? · `docs/features/public-limits.md`? · `docs/onboarding/sandbox-production-design.md`?
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `bot/shared/services/CLAUDE.md`? · `docs/features/attendance.md`? · `docs/features/public-limits.md`? · `docs/onboarding/sandbox-production-design.md`? · `docs/superpowers/plans/2026-11-11-wizard-three-jacks-and-launch.md`?

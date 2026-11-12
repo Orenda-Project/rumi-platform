@@ -57,7 +57,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `redact-url.js` ← imported by `bot/shared/handlers/exam-checker.handler.js:14:8f6a3ee5` · `bot/shared/handlers/image-message.handler.js:27:8f6a3ee5` · `bot/shared/handlers/voice-message.handler.js:16:8f6a3ee5` · `bot/shared/routes/student-videos-endpoint.js:22:8f6a3ee5` (+25: `python3 kg/kg.py who-reads redact-url.js`)
 - `region.js` ← imported by `bot/shared/handlers/text-message.handler.js:22:ccc8d66f` · `bot/shared/routes/pic-lp-endpoint.js:26:342576fb` · `bot/shared/services/pic-to-lp/completion-handler.service.js:22:5883247a` · `bot/shared/services/quiz/video-quiz-share.service.js:400:5883247a` (+2: `python3 kg/kg.py who-reads region.js`)
 - `setup-validator.js` ← imported by `bot/whatsapp-bot.js:2159:6cad87bc`
-- `structured-logger.js` ← imported by `bot/console/routes/api.js:105:0b8a1e8e` · `bot/gateway/adapters/whatsapp.js:25:dc0b40e1` · `bot/gateway/webhook.routes.js:21:86f8bff9` · `bot/shared/handlers/exam-checker.handler.js:15:6565d9d3` (+52: `python3 kg/kg.py who-reads structured-logger.js`)
+- `structured-logger.js` ← imported by `bot/console/routes/api.js:120:0b8a1e8e` · `bot/gateway/adapters/whatsapp.js:25:dc0b40e1` · `bot/gateway/webhook.routes.js:21:86f8bff9` · `bot/shared/handlers/exam-checker.handler.js:15:6565d9d3` (+52: `python3 kg/kg.py who-reads structured-logger.js`)
 - `telemetry.js` ← imported by `bot/scripts/setup/telemetry-consent.js:98:4493c478` · `bot/whatsapp-bot.js:2179:2d4cdc11`
 - `tex-to-unicode.js` ← imported by `bot/shared/services/quiz/quiz-math.js:37:9e842b49`
 - `text-format.js` ← imported by `bot/shared/services/quiz/video-quiz-report.service.js:28:b6cab053` · `bot/shared/templates/video-quiz-report.template.js:30:15111072`
@@ -65,7 +65,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `upload-digest.js` ← imported by `bot/shared/services/attendance-register-delivery.service.js:19:3c2e8d7f` · `bot/shared/services/messaging/baileys-channel.service.js:36:599175bb` · `bot/shared/services/messaging/discord-channel.service.js:65:599175bb` · `bot/shared/services/messaging/matrix-channel.service.js:46:599175bb` (+2: `python3 kg/kg.py who-reads upload-digest.js`)
 - `validators.js` ← imported by `bot/gateway/adapters/whatsapp.js:22:630238f1` · `bot/gateway/envelope.js:77:bcbb07a1` · `bot/whatsapp-bot.js:31:d625b49d`
 - `version-check.js` ← imported by `bot/whatsapp-bot.js:2169:7e4b5ef2`
-- `version.js` ← imported by `bot/console/routes/pages.js:148:af1dd056` · `bot/whatsapp-bot.js:1892:02c3f8b7`
+- `version.js` ← imported by `bot/console/routes/pages.js:159:af1dd056` · `bot/whatsapp-bot.js:1892:02c3f8b7`
 - `webhook-instructions.js` ← imported by `bot/whatsapp-bot.js:2125:468ce402`
 - `word-grid-generator.js` ← imported by `bot/shared/services/reading/passage-generation.service.js:29:ab676e5c`
 - column `users.preferred_language` (written by `language-cache.js`) ← read by `bot/scripts/observe-roster.js:81:44b70a83` · `bot/shared/routes/quiz-flow-endpoint.js:380:2f976336` · `bot/shared/routes/settings-endpoint.js:46:f26864bf` · `bot/shared/routes/student-videos-endpoint.js:303:cd922948` (+16: `python3 kg/kg.py who-reads users.preferred_language`)

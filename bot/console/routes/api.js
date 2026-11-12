@@ -16,6 +16,7 @@ const { readEnvFile } = require('../../scripts/setup/env-file');
 const validators = require('../../scripts/setup/validators');
 const { knownKeys } = require('../env-catalog');
 const { classify } = require('../redaction');
+const { restartConfig, createRestarter } = require('../restart');
 
 /**
  * @param {{runtime: object, posture: object, mount: string}} deps
@@ -23,6 +24,11 @@ const { classify } = require('../redaction');
 module.exports = function apiRouter({ runtime }) {
   const router = express.Router();
   router.use(express.json({ limit: '64kb' }));
+
+  // Built once: the cooldown lives in the restarter. Null config (no Pinokio
+  // variables, or a standalone console) means the route does not exist.
+  const restartCfg = restartConfig(process.env, { standalone: runtime.standalone });
+  const restarter = createRestarter({ config: restartCfg, spawn: require('child_process').spawn });
 
   /**
    * A cross-site form can send a POST but cannot set a custom header, so
@@ -72,6 +78,15 @@ module.exports = function apiRouter({ runtime }) {
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
+  });
+
+  // ── Restart Rumi (Pinokio only) ─────────────────────────────────────────────
+  // No request input reaches the command; see ../restart.js.
+  router.post('/restart', (req, res) => {
+    if (!restartCfg) return res.status(404).json({ error: 'Restart is not available here' });
+    const result = restarter.restart();
+    if (result.ok) return res.status(200).json(result);
+    return res.status(429).json({ ...result, error: 'Rumi is already restarting.' });
   });
 
   // ── Clear a value, keeping the line so it stays discoverable ───────────────

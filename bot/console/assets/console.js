@@ -179,6 +179,42 @@
     };
   });
 
+  // ── Restart Rumi (Pinokio only) ───────────────────────────────────────────
+  // The server is down for a while, so after a grace period poll /health and
+  // reload on the first answer that follows at least one failure.
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-restart]');
+    if (!btn) return;
+    btn.disabled = true;
+    api('/restart', { method: 'POST' }).then(function () {
+      var pending = document.getElementById('pending-changes');
+      var note = document.getElementById('restarting');
+      if (pending && note && pending !== note) pending.hidden = true;
+      if (note) note.hidden = false;
+      document.querySelectorAll('[data-restart]').forEach(function (b) { b.disabled = true; });
+      var failed = false;
+      var deadline = Date.now() + 120000;
+      setTimeout(function poll() {
+        if (Date.now() > deadline) {
+          if (note) {
+            note.textContent = '';
+            note.appendChild(el('div', 'grow', "Rumi didn't restart. Check the Pinokio terminal, or press Start in the Pinokio sidebar."));
+          }
+          document.querySelectorAll('[data-restart]').forEach(function (b) { b.disabled = false; });
+          return;
+        }
+        fetch('/health', { cache: 'no-store' }).then(function (r) {
+          if (r.ok && failed) { location.reload(); return; }
+          if (!r.ok) failed = true;
+          setTimeout(poll, 2000);
+        }).catch(function () { failed = true; setTimeout(poll, 2000); });
+      }, 3000);
+    }).catch(function (err) {
+      btn.disabled = false;
+      flash(btn, err.message, true);
+    });
+  });
+
   // ── Test one connection ───────────────────────────────────────────────────
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-test]');
@@ -228,17 +264,48 @@
       };
     }
 
-    var source = new EventSource(MOUNT + '/api/activity/stream');
-    source.onmessage = function (ev) {
-      if (paused) return;
-      var entry;
-      try { entry = JSON.parse(ev.data); } catch (err) { return; }
-      addRow(entry);
-    };
+    // First-run banner: only LIVE entries count, so an old feed can't turn it green.
+    var firstRun = document.getElementById('first-run');
+    var frReplyRe = null;
+    var frArrived = false;
+    var frDone = false;
+    if (firstRun) {
+      try { frReplyRe = new RegExp(firstRun.getAttribute('data-reply-pattern') || ''); } catch (err) { frReplyRe = null; }
+    }
+    function frShow(id) {
+      ['fr-hello', 'fr-ok', 'fr-wait'].forEach(function (b) {
+        var node = document.getElementById(b);
+        if (node) node.hidden = b !== id;
+      });
+      firstRun.className = 'banner first' + (id === 'fr-ok' ? ' ok' : id === 'fr-wait' ? ' waiting' : '');
+    }
+    function frSeeLive(entry) {
+      if (!firstRun) return;
+      frArrived = true;
+      if (!frDone && frReplyRe && typeof entry.msg === 'string' && frReplyRe.test(entry.msg)) {
+        frDone = true;
+        frShow('fr-ok');
+      }
+    }
+
+    function startLive() {
+      var source = new EventSource(MOUNT + '/api/activity/stream');
+      source.onmessage = function (ev) {
+        if (paused) return;
+        var entry;
+        try { entry = JSON.parse(ev.data); } catch (err) { return; }
+        addRow(entry);
+        frSeeLive(entry);
+      };
+      if (firstRun) {
+        var wait = parseInt(firstRun.getAttribute('data-no-arrival-ms'), 10) || 90000;
+        setTimeout(function () { if (!frArrived && !frDone) frShow('fr-wait'); }, wait);
+      }
+    }
 
     api('/activity?limit=60').then(function (res) {
       res.records.slice().reverse().forEach(addRow);
-    }).catch(function () { /* an empty feed is a fine starting state */ });
+    }).catch(function () { /* an empty feed is a fine starting state */ }).then(startLive);
 
     function addRow(entry) {
       var placeholder = feed.querySelector('.empty-state');

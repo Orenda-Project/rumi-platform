@@ -1,5 +1,6 @@
 /**
- * credentials -- the step that fills in `.env`.
+ * credentials -- the fields that fill in `.env`: Brain's key and the optional
+ * abilities, plus the field/save engine the Memory jack reuses.
  *
  * Everything shown here is read from the checkout's own catalogue, so the labels,
  * hints and "where to get it" links are the ones the terminal wizard uses. When
@@ -9,7 +10,7 @@
  */
 
 import { get, post } from '../api.js';
-import { el, clear, mount, verdict, whereLink, slot } from '../dom.js';
+import { el, clear, mount, verdict, whereLink, slot, infoButton, infoToggle, serviceOf } from '../dom.js';
 
 /** Which connection test belongs to which variable. */
 const PROBE_FOR = {
@@ -46,67 +47,303 @@ function humanise(detail, ok) {
 
 let state = null;
 
-export async function render(host, context) {
-  clear(host);
+/** The one core field Brain asks for. */
+const BRAIN_KEY = 'OPENROUTER_API_KEY';
 
-  if (!context.capabilities.credentials) {
-    host.append(fallbackNotice());
-    return;
-  }
-
+/** Re-read `/api/state`; every renderer here works from the latest answer. */
+export async function load() {
   state = await get('/api/state');
-  const groups = (state.catalog && state.catalog.groups) || [];
-
-  for (const group of groups) {
-    if (!group.rows.length && !group.abilities.length) continue;
-    host.append(group.id === REQUIRED_GROUP ? requiredGroup(group) : optionalGroup(group));
-  }
-
-  context.refreshProgress();
+  return state;
 }
 
-function requiredGroup(group) {
-  return el('section', { class: 'group' }, [
-    el('h2', { class: 'group__title', text: group.title }),
-    el('p', { class: 'group__blurb', text: group.blurb || '' }),
-    ...group.rows.map(field),
-  ]);
+function groupsOf(source) {
+  return ((source && source.catalog && source.catalog.groups) || []);
+}
+
+/** Where Brain's entry-time connection test reports, under its field. */
+let brainCheck = null;
+
+
+/**
+ * The OpenRouter key on the landing card: the one key Rumi needs, pasted before
+ * the plug-in screen. Same field, same save and probe as Brain's.
+ */
+export function renderBrainField(host, onChange, context) {
+  clear(host);
+  brainCheck = null;
+  if (context && context.capabilities && !context.capabilities.credentials) return;
+  const row = brainRow();
+  if (!row) return;
+  // A fresh save reports in the field itself, so the entry check steps aside.
+  const saved = (event) => {
+    if (brainCheck) clear(brainCheck.node);
+    onChange(event);
+  };
+  const node = el('div', { class: 'brain__check' });
+  const card = field(row, { bare: true, onChange: saved, placeholder: 'Paste key' });
+  brainCheck = { node, card, onChange };
+  host.append(card, node);
+}
+
+function brainRow(source = state) {
+  const core = groupsOf(source).find((group) => group.id === REQUIRED_GROUP);
+  return core ? core.rows.find((item) => item.key === BRAIN_KEY) : null;
+}
+
+/** Is the OpenRouter key in `.env` already (so it can be tested without a paste)? */
+export function brainKeySet(source = state) {
+  const row = brainRow(source);
+  return Boolean(row && row.set === true);
 }
 
 /**
- * Optional groups are collapsed. Someone setting Rumi up for the first time
- * needs four values; showing thirty with equal weight hides which four.
+ * Test the saved OpenRouter key without asking for it again -- the same probe a
+ * save runs. A failure shows its message under the field with "Test again".
  *
- * Their settings arrive as `abilities` rather than loose rows -- a key here
- * switches a whole feature on, so it is introduced by what it does for a teacher
- * rather than by the name of the vendor it belongs to.
+ * @returns {Promise<{probe: string, ok: boolean}>}
  */
-function optionalGroup(group) {
-  const summary = el('summary', { class: 'group__title' }, [
-    el('span', { text: `${group.title} — optional` }),
-  ]);
-  return el('details', { class: 'group' }, [
-    summary,
-    el('p', { class: 'group__blurb', text: group.blurb || '' }),
-    ...group.rows.map((row) => field(row)),
-    ...group.abilities.map(ability),
-  ]);
+export async function checkBrain() {
+  const probe = PROBE_FOR[BRAIN_KEY];
+  const target = brainCheck;
+  if (target) {
+    clear(target.node);
+    target.node.append(verdict('busy', 'Testing the saved key…'));
+  }
+  let ok = false;
+  let detail = '';
+  try {
+    const result = await post(`/api/probe/${probe}`, {});
+    ok = Boolean(result.ok);
+    detail = humanise(result.detail, result.ok) || (ok ? 'Connected' : 'Could not connect');
+  } catch (error) {
+    detail = error.message;
+  }
+  if (target && target === brainCheck) {
+    clear(target.node);
+    target.card.setAttribute('data-state', ok ? 'ok' : 'bad');
+    if (ok) {
+      target.node.append(verdict('ok', detail));
+    } else {
+      const again = el('button', { class: 'btn btn--small', type: 'button', text: 'Test again' });
+      again.addEventListener('click', async () => {
+        again.disabled = true;
+        target.onChange({ key: BRAIN_KEY, probe, pending: true });
+        const retry = await checkBrain();
+        target.onChange({ key: BRAIN_KEY, ...retry });
+      });
+      target.node.append(verdict('bad', detail), el('div', { class: 'actions brain__again' }, [again]));
+    }
+  }
+  return { probe, ok };
 }
 
-function ability(item) {
-  const state = item.on ? 'on' : (item.partial ? 'partial' : 'off');
-  return el('section', { class: 'ability', 'data-state': state }, [
-    el('div', { class: 'ability__head' }, [
-      el('h3', { class: 'ability__title', text: item.title }),
-      el('span', { class: 'ability__state', text: item.on ? 'on' : (item.partial ? 'needs more' : 'off') }),
+/** The pill text for one ability. */
+function pillFor(item) {
+  if (item.guide) return 'IN CONSOLE';
+  if (item.on) return 'ON';
+  if (item.partial) return 'NEEDS MORE';
+  return 'ADD KEY';
+}
+
+function stateFor(item) {
+  if (item.guide) return 'console';
+  if (item.on) return 'on';
+  if (item.partial) return 'partial';
+  return 'off';
+}
+
+const idOf = (item) => (item.keys || []).join('+');
+
+/** A picture for each optional ability, by its first key. Decoration only. */
+const ABILITY_EMOJI = {
+  SONIOX_API_KEY: '🎙️',
+  ELEVENLABS_API_KEY: '🔊',
+  AZURE_SPEECH_KEY: '🗣️',
+  UPLIFT_API_KEY: '🌏',
+  GAMMA_API_KEY: '📊',
+  KIE_API_KEY: '🎬',
+  SLACK_BOT_TOKEN: '💼',
+  DISCORD_BOT_TOKEN: '🎮',
+  MATRIX_HOMESERVER_URL: '🧩',
+  AXIOM_TOKEN: '📈',
+  AXIOM_DATASET: '📈',
+  DATABASE_URL: '🐘',
+  SUPABASE_URL: '⚡',
+};
+
+/** The optional group the database cards live in. */
+const DATABASE_GROUP = 'advanced';
+
+/**
+ * A database card that is in use: the catalogue lists its keys as required rows
+ * and drops the card, so rebuild it from `databaseCards` and those rows. It
+ * stays an optional ability: the built-in database needs none of this.
+ */
+function chosenDatabaseCards(source) {
+  const core = groupsOf(source).find((group) => group.id === REQUIRED_GROUP);
+  const rows = new Map(((core && core.rows) || []).map((row) => [row.key, row]));
+  return ((source && source.databaseCards) || [])
+    .filter((card) => card.keys.every((key) => rows.has(key)))
+    .map((card) => {
+      const cardRows = card.keys.map((key) => rows.get(key));
+      const set = cardRows.filter((row) => row.set).length;
+      return { ...card, rows: cardRows, on: set === cardRows.length, partial: set > 0 && set < cardRows.length };
+    });
+}
+
+/**
+ * Every optional ability as it stands now, by id. Choosing Supabase or your own
+ * Postgres moves that card's keys into the required rows and drops the card
+ * from the optional list, so it is rebuilt from those rows: on once every key
+ * is set, needing more while only some are.
+ */
+function abilitiesNow(source) {
+  const now = new Map();
+  for (const group of groupsOf(source)) {
+    if (group.id === REQUIRED_GROUP) continue;
+    for (const item of group.abilities || []) now.set(idOf(item), item);
+  }
+  const core = groupsOf(source).find((group) => group.id === REQUIRED_GROUP);
+  const rows = new Map(((core && core.rows) || []).map((row) => [row.key, row]));
+  return {
+    get(id) {
+      if (now.has(id)) return now.get(id);
+      const keys = id.split('+');
+      if (!keys.every((key) => rows.has(key))) return null;
+      const set = keys.filter((key) => rows.get(key).set);
+      return { on: set.length === keys.length, partial: set.length > 0 && set.length < keys.length };
+    },
+  };
+}
+
+/**
+ * Optional abilities, inline: one button per ability, one open at a time.
+ *
+ * Built once; `update(source)` repaints pills and the counter from a fresh
+ * `/api/state` without closing the open item or wiping its verdicts.
+ *
+ * @param {HTMLElement} host
+ * @param {(event: object) => void} onChange called after any save in an item
+ * @returns {{update: (source: object) => {on: number, total: number}, counts: () => {on: number, total: number}}}
+ */
+export function renderAbilities(host, onChange, context) {
+  clear(host);
+  const items = new Map();
+  if (context && context.capabilities && !context.capabilities.credentials) {
+    host.append(fallbackNotice());
+    return { update: () => ({ on: 0, total: 0 }), counts: () => ({ on: 0, total: 0 }) };
+  }
+
+  const closeOthers = (keep) => {
+    for (const entry of items.values()) {
+      if (entry !== keep) setOpen(entry, false);
+    }
+  };
+
+  for (const group of groupsOf(state)) {
+    if (group.id === REQUIRED_GROUP) continue;
+    const abilities = [...(group.abilities || []), ...(group.id === DATABASE_GROUP ? chosenDatabaseCards(state) : [])];
+    if (!abilities.length) continue;
+
+    const list = el('div', { class: 'abilities' });
+    for (const item of abilities) {
+      const entry = abilityItem(item, onChange);
+      entry.button.addEventListener('click', () => {
+        const opening = entry.body.hidden;
+        closeOthers(entry);
+        setOpen(entry, opening);
+      });
+      items.set(idOf(item), entry);
+      list.append(entry.node);
+    }
+    host.append(el('div', { class: 'abilities-group' }, [
+      el('h3', { class: 'abilities-group__title', text: group.title }),
+      list,
+    ]));
+  }
+
+  const counts = (source = state) => {
+    const result = { on: 0, total: 0 };
+    const now = abilitiesNow(source);
+    for (const id of items.keys()) {
+      const item = now.get(id);
+      if (!item) continue;
+      result.total += 1;
+      if (item.on) result.on += 1;
+    }
+    return result;
+  };
+
+  return {
+    counts,
+    update(source) {
+      const now = abilitiesNow(source);
+      for (const [id, entry] of items) {
+        const item = now.get(id);
+        if (item) paintItem(entry, item);
+      }
+      return counts(source);
+    },
+  };
+}
+
+function setOpen(entry, open) {
+  entry.body.hidden = !open;
+  entry.node.classList.toggle('ability--open', open);
+  entry.button.setAttribute('aria-expanded', String(open));
+}
+
+function paintItem(entry, item) {
+  entry.node.setAttribute('data-state', stateFor(item));
+  entry.pill.textContent = pillFor(item);
+}
+
+function abilityItem(item, onChange) {
+  const pill = el('span', { class: 'pill' });
+  const emoji = ABILITY_EMOJI[(item.keys || [])[0]];
+  const button = el('button', { class: 'ability-item', type: 'button' }, [
+    el('span', { class: 'ability-item__name' }, [
+      emoji ? el('span', { class: 'ability-item__emoji', text: emoji }) : null,
+      el('span', { class: 'ability-item__title', text: item.title }),
     ]),
-    el('p', { class: 'field__hint', text: item.why || '' }),
-    whereLink(item.where),
-    ...item.rows.map((row) => field(row, { hideWhere: true })),
+    pill,
   ]);
+  button.setAttribute('aria-expanded', 'false');
+
+  // The (i) says what the service is for without opening the item. Copy is the
+  // catalogue's own: its `why`, the host its `where` points at, and the keys.
+  const info = infoButton(`What does "${item.title}" do?`);
+  const service = serviceOf(item.where);
+  const keys = (item.rows || []).map((row) => row.key).join(', ');
+  const tip = el('div', { class: 'info-tip' }, [
+    item.why ? el('p', { text: item.why }) : null,
+    el('p', {
+      class: 'info-tip__meta',
+      text: [service ? `Service: ${service}` : null, keys ? `Key: ${keys}` : null].filter(Boolean).join(' · '),
+    }),
+  ]);
+  infoToggle(info, tip);
+
+  const body = el('div', { class: 'ability__body' });
+  body.hidden = true;
+  // The `why` lives in the (i) tip above, so the open body is just the keys.
+
+  if (item.guide) {
+    body.append(el('p', { class: 'ability__note', text: "Set up from the console's Setup page after launch." }));
+  } else {
+    for (const row of item.rows) body.append(field(row, { hideWhere: true, onChange }));
+  }
+  const where = whereLink(item.where);
+  if (where) body.append(el('p', { class: 'field__hint ability__where' }, ['Get it at ', where]));
+
+  const head = el('div', { class: 'ability__head' }, [button, info]);
+  const node = el('div', { class: 'ability' }, [head, tip, body]);
+  const entry = { node, button, body, pill };
+  paintItem(entry, item);
+  return entry;
 }
 
-function field(row, options = {}) {
+export function field(row, options = {}) {
   // A real form per field: browsers and password managers expect a credential
   // input to live in one, and it gives Enter-to-submit without a key handler.
   // autocomplete off: these are service API keys, not sign-in credentials, and a
@@ -118,7 +355,7 @@ function field(row, options = {}) {
     // "new-password" on the secrets stops browsers offering a saved login for a
     // field that wants a service API key; "off" does the same for the rest.
     autocomplete: secret ? 'new-password' : 'off',
-    placeholder: row.set ? row.display : 'Not set',
+    placeholder: row.set ? row.display : (options.placeholder || 'Not set'),
     id: `f-${row.key}`,
   });
 
@@ -127,7 +364,7 @@ function field(row, options = {}) {
   const save = el('button', { class: 'btn btn--small', type: 'submit', text: 'Save' });
   card.addEventListener('submit', (event) => {
     event.preventDefault();
-    saveField({ row, input, card, status, save });
+    saveField({ row, input, card, status, save, onChange: options.onChange });
   });
 
   // The catalogue falls back to the variable name when a row has no friendly
@@ -135,13 +372,14 @@ function field(row, options = {}) {
   // chip alone carries it.
   const named = row.label && row.label !== row.key;
 
+  // `bare`: the card around it already names and explains the key.
   mount(
     card,
-    el('div', { class: 'field__head' }, [
+    options.bare ? null : el('div', { class: 'field__head' }, [
       named ? el('span', { class: 'field__label', text: row.label }) : null,
       el('span', { class: 'field__key', text: row.key }),
     ]),
-    row.hint ? el('p', { class: 'field__hint', text: row.hint }) : null,
+    !options.bare && row.hint ? el('p', { class: 'field__hint', text: row.hint }) : null,
     el('div', { class: 'field__row' }, [input, save]),
     options.hideWhere ? null : whereLink(row.where),
     status.node,
@@ -149,7 +387,7 @@ function field(row, options = {}) {
   return card;
 }
 
-async function saveField({ row, input, card, status, save }) {
+export async function saveField({ row, input, card, status, save, onChange }) {
   const value = input.value.trim();
   if (!value) return;
 
@@ -166,7 +404,8 @@ async function saveField({ row, input, card, status, save }) {
     }
     input.value = '';
     input.placeholder = 'Saved';
-    await testConnection({ row, card, status });
+    const tested = await testConnection({ row, card, status });
+    if (onChange) onChange({ key: row.key, ...tested });
   } catch (error) {
     card.setAttribute('data-state', 'bad');
     status.set(verdict('bad', error.message));
@@ -183,7 +422,7 @@ async function testConnection({ row, card, status }) {
   if (!probe) {
     card.setAttribute('data-state', 'ok');
     status.set(verdict('ok', 'Saved'));
-    return;
+    return { probe: null, ok: true };
   }
 
   status.set(verdict('busy', 'Testing the connection…'));
@@ -191,6 +430,7 @@ async function testConnection({ row, card, status }) {
   const detail = humanise(result.detail, result.ok) || (result.ok ? 'Connected' : 'Could not connect');
   card.setAttribute('data-state', result.ok ? 'ok' : 'bad');
   status.set(verdict(result.ok ? 'ok' : 'bad', detail));
+  return { probe, ok: Boolean(result.ok) };
 }
 
 function fallbackNotice() {
@@ -200,9 +440,4 @@ function fallbackNotice() {
       text: 'Close this and run Terminal setup from the Pinokio sidebar instead — it does the same job.',
     }),
   ]);
-}
-
-/** How many required values are filled in, for the rail and the final screen. */
-export function counts() {
-  return (state && state.catalog && state.catalog.counts) || null;
 }

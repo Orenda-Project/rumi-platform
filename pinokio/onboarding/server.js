@@ -22,6 +22,8 @@ const { ensureLocalRedis } = require('./local-redis');
 const { credentialsRoutes } = require('./routes/credentials');
 const { databaseRoutes } = require('./routes/database');
 const { whatsappRoutes } = require('./routes/whatsapp');
+const { asyncRoute } = require('./async-route');
+const { createLauncher, pickBotPort } = require('./launch');
 
 /** Loopback only. The console's own posture check reads this to decide it needs no password. */
 const HOST = '127.0.0.1';
@@ -98,6 +100,18 @@ function buildApp() {
   app.use('/api', credentialsRoutes({ express, bridge, runtime }));
   app.use('/api/db', databaseRoutes({ express, bridge, runtime }));
   app.use('/api/whatsapp', whatsappRoutes({ express, bridge }));
+
+  const childProcess = require('child_process');
+  const launcher = createLauncher({
+    env: process.env,
+    spawn: childProcess.spawn,
+    pickPort: () => pickBotPort({ execFile: childProcess.execFile, scriptsDir: path.join(__dirname, '..', 'scripts') }),
+  });
+  const LAUNCH_STATUS = { 'already-launching': 409, 'no-port': 500 };
+  app.post('/api/launch', asyncRoute(async (req, res) => {
+    const result = await launcher.launch();
+    res.status(result.ok ? 200 : LAUNCH_STATUS[result.reason] || 500).json(result);
+  }));
   app.use('/api', (req, res) => res.status(404).json({ error: 'No such endpoint' }));
 
   app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));

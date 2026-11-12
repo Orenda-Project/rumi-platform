@@ -24,7 +24,7 @@
         <div class="row-top">
           <div>
             <div class="row-title">
-              <span class="dot <%= f.state === 'on' ? 'ok' : (f.state === 'paused' ? 'warn' : 'off') %>"></span>
+              <span class="dot <%= f.state === 'on' ? 'ok' : (f.state === 'paused' || f.state === 'pending-restart' ? 'warn' : 'off') %>"></span>
               <%= f.title %>
             </div>
             <% if (f.why) { %><p class="row-why"><%= f.why %></p><% } %>
@@ -35,7 +35,9 @@
             <% if (f.whenOff) { %><p class="row-when-off"><%= f.switchedOn && f.configured ? 'If you switch it off' : 'While it is off' %>: <%= f.whenOff %></p><% } %>
           </div>
           <div class="right-align">
-            <% if (f.switchable) { %>
+            <% if (f.state === 'pending-restart') { %>
+              <span class="pill warn">on after restart</span>
+            <% } else if (f.switchable) { %>
               <label class="switch" title="<%= f.switchOn ? 'Switch off' : 'Switch on' %>">
                 <input type="checkbox" data-feature="<%= f.id %>" <%= f.switchedOn ? 'checked' : '' %>>
                 <span class="track"></span>

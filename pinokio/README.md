@@ -28,8 +28,12 @@ come from the same commit.
 
 1. **Install** — installs Rumi's dependencies and the wizard's, creates `.env` at the repository root
    from Rumi's template, and installs a local Redis.
-2. **Set up Rumi** — opens the onboarding wizard in your browser and walks five steps:
-   welcome → credentials → database → WhatsApp → done.
+2. **Set up Rumi** — opens the onboarding wizard in your browser: one page with two things to plug in,
+   **Brain** (your OpenRouter key, tested live) and **Voice** (linking WhatsApp). **Wake Rumi** opens the
+   rest below: WhatsApp linking, optional abilities (including Supabase or your own Postgres instead of the
+   built-in database) and a second **Wake Rumi** button. When Brain and Voice are both on, that button starts
+   Rumi for you, closes the wizard, waits for Rumi to answer, and offers **Open the console**. If Pinokio's
+   command line is unavailable it asks you to press Start in the sidebar instead.
 3. **Start** — runs the bot. Opening Rumi in Pinokio after setup starts it automatically, and shows a
    start screen rather than the bot's terminal: it says "Starting Rumi…" until the bot answers, then an
    **Open Console** button takes you to the console. The terminal is still one click away under

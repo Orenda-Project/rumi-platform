@@ -65,11 +65,13 @@
   <div class="panel-body flush">
     <% features.rows.forEach(function (f) { %>
       <div class="row compact">
-        <span class="dot <%= f.state === 'on' ? 'ok' : (f.state === 'paused' ? 'warn' : 'off') %>"></span>
+        <span class="dot <%= f.state === 'on' ? 'ok' : (f.state === 'paused' || f.state === 'pending-restart' ? 'warn' : 'off') %>"></span>
         <span class="t-strong"><%= f.title %></span>
         <span class="right">
           <% if (f.state === 'on') { %>
             <span class="pill ok">on</span>
+          <% } else if (f.state === 'pending-restart') { %>
+            <span class="pill warn">on after restart</span>
           <% } else if (f.state === 'paused') { %>
             <span class="pill warn">switched off by you</span>
           <% } else { %>

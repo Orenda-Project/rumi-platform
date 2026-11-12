@@ -10,6 +10,9 @@
 import { get, post, stream } from '../api.js';
 import { el, clear, verdict, slot } from '../dom.js';
 
+/** The database Rumi runs itself (the same name jacks.js checks). */
+const BUILT_IN_DRIVER = 'bundled';
+
 /** What `inspectDatabase` can tell us, and what to show for each answer. */
 const VIEWS = {
   stopped: builtInView,
@@ -52,6 +55,29 @@ export async function render(host, context) {
     clear(host);
     host.append(verdict('bad', error.message));
   }
+}
+
+/**
+ * The database step, above Optional abilities.
+ *
+ * The built-in database is the default and needs nothing, so nothing shows.
+ * Once Supabase or your own Postgres is chosen (its keys are pasted in its
+ * optional ability), today's database step -- helper paste, tables, ready --
+ * appears, because Launch waits for it.
+ *
+ * @param {HTMLElement} host
+ * @param {(event?: object) => void} onChange the step reaching ready
+ * @param {{capabilities: object, db: object|null}} options
+ */
+export async function renderMemory(host, onChange, { capabilities, db }) {
+  clear(host);
+  stop();
+  if (!capabilities.database || !db || db.driver === BUILT_IN_DRIVER) return;
+  const context = { capabilities, markDone: () => onChange({ db: true }) };
+  host.append(el('b', { text: 'Your database' }));
+  const step = el('div', { class: 'memory__step' });
+  host.append(step);
+  await render(step, context);
 }
 
 /**

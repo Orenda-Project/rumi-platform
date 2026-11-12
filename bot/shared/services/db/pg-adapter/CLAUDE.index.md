@@ -26,7 +26,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `sql-compiler.js` ← imported by `bot/shared/services/db/pg-adapter/query-builder.js:14:352ecace` · `bot/shared/services/db/pg-adapter/rpc.js:13:48de49b2`
 
 ## Tests (all, generated)
-- `drivers.js` ← `tests/db/bundled-database.test.js`
+- `drivers.js` ← `tests/db/bundled-database.test.js` · `tests/pinokio/jacks.test.js`
 - `pg-client.js` ← `tests/db/pg-client-real-schema.test.js`
 - `postgrest-syntax.js` ← `tests/db/postgrest-syntax.test.js`
 

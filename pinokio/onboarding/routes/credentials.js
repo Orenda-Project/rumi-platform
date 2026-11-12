@@ -41,6 +41,9 @@ function credentialsRoutes({ express, bridge, runtime }) {
     const payload = { capabilities, problems, catalog: null, probeFor: optional.PROBE_FOR_KEY };
     if (capabilities.credentials) {
       payload.catalog = modules.catalog.buildCatalog(currentEnv());
+      // The database cards, so one in use keeps its card (the catalogue lists
+      // its keys as required rows instead). Older checkouts lack the export.
+      payload.databaseCards = modules.catalog.DATABASE_CARDS || [];
     }
     res.json(payload);
   }));

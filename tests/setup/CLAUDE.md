@@ -1,7 +1,7 @@
 # setup — Repo-wide guards and setup-CLI tests: schema, docs, links, requires, CI, hygiene
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests/setup kg=c80bcf856bb7 gen=8ed86eead95c overflow=54 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/setup kg=f4c4d795292d gen=406056c5bf82 overflow=53 rendered=2026-11-11 kg.py=1.1.0 -->
 
 ## Entry points
 - `source-hygiene.test.js` — public-repo guards that fail CI on internal ticket ids or internal names in docs
@@ -17,9 +17,10 @@ Full index: `CLAUDE.index.md`
 | `validate-flows.test.js` | Pins validate-flows pre-flight checking that all Flows and templates exist and are in the right state |
 | `cli-console.test.js` | Pins rumi commands keeping a real console instead of structured-logger's JSON replacement, even via WhatsApp modules |
 | `fields.test.js` | Pins that every channel-required var has human prompt copy in fields.js, so no var goes unasked in setup |
+| `source-hygiene.test.js` | Public-repo guards: no internal ticket ids or internal names in docs and source, and entry points parse |
 | `sql-statements.test.js` | Pins splitSqlStatements and exec-sql-helper handling one command per RPC over the real schema file |
-| `flow*` | 4 files; most used `flow-key-consistency.test.js`: Pins that setup-state and validate-flows require exactly the flows register-all-flows registers |
-| … | 74 more → `CLAUDE.index.md` |
+| `bootstrap-db.test.js` | Pins DatabaseBootstrapper applying the three canonical SQL files in order, stopping on error, with injected exec |
+| … | 73 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)
@@ -35,4 +36,4 @@ Full index: `CLAUDE.index.md`
 
 ## Related (generated)
 - skills: `qa-testing`?
-- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `TEST_READY.md`? · `bot/marketing/README.md`? · `bot/scripts/setup/CLAUDE.md`? · `docs/customization.md`? (+4)
+- docs: `CHANGELOG.md`? · `CLAUDE.md`? · `TEST_READY.md`? · `bot/marketing/README.md`? · `bot/scripts/setup/CLAUDE.md`? · `docs/customization.md`? (+7)

@@ -23,13 +23,22 @@
 </aside>
 <main class="main">
 <% if (pending && pending.length) { %>
-  <div class="banner warn">
+  <div class="banner warn" id="pending-changes">
     <div class="grow">
       <b><%= pending.length %> saved change<%= pending.length === 1 ? '' : 's' %> not applied yet</b>
       Rumi is still running with the old values for
       <% pending.slice(0, 6).forEach(function (p, i) { %><code><%= p.key %></code><%= i < Math.min(pending.length, 6) - 1 ? ', ' : '' %><% }) %><%
       %><% if (pending.length > 6) { %> and <%= pending.length - 6 %> more<% } %>.
       Restart it to pick them up.
+    </div>
+    <% if (typeof canRestart !== "undefined" && canRestart) { %><button class="btn accent" data-restart>Restart Rumi</button><% } %>
+  </div>
+<% } %>
+<% if (typeof canRestart !== "undefined" && canRestart) { %>
+<div class="banner warn" id="restarting" hidden>
+    <div class="grow">
+      <b>Restarting Rumi…</b>
+      Pinokio is stopping and starting it. This page comes back on its own when Rumi answers again, usually within a minute. Rumi won't answer teachers until it's back.
     </div>
   </div>
 <% } %>

@@ -28,7 +28,8 @@ const CSP = [
   "script-src 'self'",
   "style-src 'self'",
   "img-src 'self' data:",
-  "connect-src 'self'",
+  // 127.0.0.1:* so the page can poll the freshly launched bot's /health on its own port.
+  "connect-src 'self' http://127.0.0.1:*",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "base-uri 'none'",

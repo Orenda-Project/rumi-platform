@@ -35,8 +35,8 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Who reads this (all, generated)
 - `db-setup.js` ← imported by `bot/scripts/setup/doctor.js:187:d4fecce8`
-- `doctor.js` ← imported by `bot/console/features.js:21:20906285` · `bot/console/routes/api.js:113:a7bf3a46` · `bot/scripts/setup/graduate.js:105:bec54bc2` · `bot/scripts/setup/status.js:112:bec54bc2`
-- `env-file.js` ← imported by `bot/console/routes/api.js:15:49d2b5a3` · `bot/console/routes/pages.js:18:49d2b5a3` · `bot/console/runtime.js:24:4764eaed` · `infrastructure/db/bundled.js:15:4f7ef185` (+3: `python3 kg/kg.py who-reads env-file.js`)
+- `doctor.js` ← imported by `bot/console/features.js:21:20906285` · `bot/console/routes/api.js:128:a7bf3a46` · `bot/scripts/setup/graduate.js:105:bec54bc2` · `bot/scripts/setup/status.js:112:bec54bc2`
+- `env-file.js` ← imported by `bot/console/routes/api.js:15:49d2b5a3` · `bot/console/routes/pages.js:19:49d2b5a3` · `bot/console/runtime.js:24:4764eaed` · `infrastructure/db/bundled.js:15:4f7ef185` (+3: `python3 kg/kg.py who-reads env-file.js`)
 - `fields.js` ← imported by `bot/console/features.js:22:75643a55` · `bot/scripts/setup/discord-register-commands.js:20:55a36a96` · `bot/scripts/setup/graduate.js:44:0377019c`
 - `flow-configs.js` ← imported by `bot/scripts/setup/doctor.js:42:e92fd19a` · `bot/scripts/setup/register-all-flows.js:29:e92fd19a` · `bot/scripts/setup/setup-state.js:15:e7a2a00f` · `bot/scripts/setup/validate-flows.js:20:e7a2a00f`
 - `link-whatsapp.js` ← imported by `bot/scripts/setup/baileys-pair.js:33:aff6c371`
@@ -46,7 +46,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `register-all-templates.js` ← imported by `bot/scripts/setup/run-full-setup.js:41:34c766d9`
 - `setup-encryption.js` ← imported by `bot/scripts/setup/run-full-setup.js:39:c07ebf10`
 - `setup-state.js` ← imported by `bot/scripts/setup/register-all-flows.js:21:1a71048c` · `bot/scripts/setup/register-all-templates.js:22:1a71048c` · `bot/scripts/setup/setup-encryption.js:19:1a71048c` · `bot/scripts/setup/validate-flows.js:12:1a71048c`
-- `status.js` ← imported by `bot/console/routes/pages.js:68:e204a230`
+- `status.js` ← imported by `bot/console/routes/pages.js:77:e204a230`
 - `summary.js` ← imported by `bot/scripts/setup/status.js:30:16c1d0bd`
 - `ui.js` ← imported by `bot/console/server.js:53:478a3813` · `bot/scripts/setup/graduate.js:41:48393795` · `bot/scripts/setup/prompt.js:24:48393795` · `bot/scripts/setup/status.js:29:48393795` (+4: `python3 kg/kg.py who-reads ui.js`)
 - `validate-flows.js` ← imported by `bot/scripts/setup/run-full-setup.js:42:f485f730`
@@ -69,7 +69,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `db-setup.js` ← `tests/setup/db-setup.test.js`
 - `discord-register-commands.js` ← `tests/scripts/discord-register-commands.test.js`
 - `doctor.js` ← `tests/coaching/fidelity/diarization-contract.test.js`
-- `env-file.js` ← `tests/db/bundled-database.test.js` · `tests/setup/env-file.test.js`
+- `env-file.js` ← `tests/console/pages-live-env.test.js` · `tests/db/bundled-database.test.js` · `tests/setup/env-file.test.js`
 - `fields.js` ← `tests/console/feature-titles.test.js` · `tests/scripts/discord-register-commands.test.js` · `tests/setup/fields.test.js`
 - `flow-configs.js` ← `tests/observe/observe-form-flow-json.test.js` · `tests/quiz/quiz-flow-endpoint.test.js` · `tests/setup/flow-config-conformance.test.js` · `tests/setup/flow-key-consistency.test.js` · `tests/setup/setup-state.test.js`
 - `graduate.js` ← `tests/setup/graduate.test.js`
@@ -89,4 +89,4 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 
 ## Related (all, generated)
 - skills: `setup`?
-- docs: `CHANGELOG.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/templates/README.md`? · `docs/console.md`? · `docs/onboarding/sandbox-production-design.md`?
+- docs: `CHANGELOG.md`? · `bot/scripts/CLAUDE.md`? · `bot/scripts/templates/README.md`? · `docs/console.md`? · `docs/onboarding/sandbox-production-design.md`? · `docs/superpowers/plans/2026-11-11-wizard-three-jacks-and-launch.md`? · `docs/superpowers/specs/2026-11-11-pinokio-onboarding-redesign.md`?
