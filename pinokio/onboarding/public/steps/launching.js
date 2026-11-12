@@ -113,10 +113,10 @@ export async function run(host, { onBack } = {}) {
     setState(items[3], 'done');
     eyebrow.textContent = 'Launched';
     title.textContent = 'Rumi is awake.';
-    lede.textContent = 'Message Rumi from your second phone and try Hi.';
+    lede.textContent = 'Message 💬 Rumi from your second phone 📱 and try Hi 👋.';
     manualNote.hidden = true;
     actions.append(el('button', {
-      class: 'btn btn--act btn--big', type: 'button', text: 'Open the console',
+      class: 'btn btn--act btn--big btn--pill', type: 'button', text: 'Open the console',
       onclick: () => { location.href = consoleUrl(port); },
     }));
   } else {

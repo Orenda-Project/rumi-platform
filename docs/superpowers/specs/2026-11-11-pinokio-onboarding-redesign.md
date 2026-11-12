@@ -49,7 +49,7 @@ The design was explored in a clickable mockup (screens 1–10). This document is
 **B4. Launch actually starts Rumi.** Launch unlocks when all three jacks are `ON`. Pressing it:
 1. `POST /api/launch` → server picks the bot port (`node scripts/pick-port.js bot`, which `start.js` will reuse because it is free and remembered), then spawns `RUMI_PTERM start <abs start.js>` (env from `onboard.js`), returns `{ port }`.
 2. The page shows four steps with live state — "Saving your keys", "Closing the setup wizard", "Starting Rumi", "Waiting for Rumi to answer" — and polls `http://127.0.0.1:<port>/health` (no-cors, as `home.html` does) every 2 s.
-3. Answer → "Rumi is awake." with **Open the console** → `http://127.0.0.1:<port>/console/activity?first-run=1` in the same tab.
+3. Answer → "Rumi is awake." ("Message 💬 Rumi from your second phone 📱 and try Hi 👋.") with a rounded **Open the console** → `http://127.0.0.1:<port>/console/activity?first-run=1` in the same tab.
 4. No answer within 120 s → "Rumi is stirring, not awake." — "Rumi started but hasn't answered in two minutes. The terminal shows what it's stuck on, and tech support can read it too." with **Back to the jacks**.
 5. If `RUMI_PTERM` is missing, `/api/launch` returns `{ port, manual: true }` and the page says "Press Start in the Pinokio sidebar" and still polls.
 
