@@ -1,6 +1,6 @@
 # steps — One module per wizard step after welcome: credentials, database, whatsapp, done
 
-<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public/steps kg=572267f65b64 gen=9e47c2bc4f3b overflow=0 rendered=2026-11-11 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=pinokio/onboarding/public/steps kg=7a0a26dc5848 gen=5155e11b8f67 overflow=0 rendered=2026-11-12 kg.py=1.1.0 -->
 
 ## Entry points
 - `credentials.js` — the .env form
@@ -18,12 +18,12 @@
 | `launch-wait.js` | (unmapped) |
 
 ## Who reads this (generated)
-- `credentials.js` ← imported by `pinokio/onboarding/public/app.js:17:9b7a7322`
-- `database.js` ← imported by `pinokio/onboarding/public/app.js:18:91cc26ca`
-- `done.js` ← imported by `pinokio/onboarding/public/app.js:20:01bc2a49`
+- `credentials.js` ← imported by `pinokio/onboarding/public/app.js:19:9b7a7322`
+- `database.js` ← imported by `pinokio/onboarding/public/app.js:20:91cc26ca`
+- `done.js` ← imported by `pinokio/onboarding/public/app.js:22:01bc2a49`
 - `launch-wait.js` ← imported by `pinokio/onboarding/public/steps/launching.js:14:f08503fd`
-- `launching.js` ← imported by `pinokio/onboarding/public/app.js:21:d526a480`
-- `whatsapp.js` ← imported by `pinokio/onboarding/public/app.js:19:0a231094`
+- `launching.js` ← imported by `pinokio/onboarding/public/app.js:23:d526a480`
+- `whatsapp.js` ← imported by `pinokio/onboarding/public/app.js:21:0a231094`
 
 ## Never (human)
 _None found in code comments, tests or git log for this directory._
