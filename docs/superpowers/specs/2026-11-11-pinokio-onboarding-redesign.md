@@ -71,7 +71,7 @@ The built-in database needs nothing from the operator, so Memory is not somethin
 
 The plug-in screen is gone; setup is one page plus the launching screen.
 - Hero: the plug board with Brain (OpenRouter key field behind "Add your key ›") and Voice, each with an ON / OFF / LOCKED label.
-- **Wake Rumi** opens a section under the hero and scrolls to it: the Voice card (WhatsApp linking), Optional abilities (each with an emoji; a chosen database's "Your database" step above the list), the Launch bar and "Check everything". "Back to the jacks" on the launching screen returns here with that section open.
+- **Wake Rumi** opens a section under the hero and scrolls to it: the Voice card (WhatsApp linking), Optional abilities (each with an emoji; a chosen database's "Your database" step above the list), a centred, rounded second **Wake Rumi** button (the old Launch Rumi: it starts Rumi) with its note, and "Check everything". "Back to the jacks" on the launching screen returns here with that section open.
 
 ## Deviations from the mockup
 

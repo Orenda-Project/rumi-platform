@@ -732,3 +732,9 @@ li[data-state="fail"] .ws-icon::after { content: "!"; }
 /* Optional abilities: an emoji before each name. */
 .ability-item__name { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .ability-item__emoji { flex: none; font-size: 1.05rem; line-height: 1.25; }
+
+/* The final Wake Rumi (it starts Rumi): centred under its note, rounded like the hero's. */
+.awake .launchbar { flex-direction: column; justify-content: center; text-align: center; gap: 14px; }
+.awake .launchbar p { max-width: 60ch; }
+.awake .launchbar .btn--pill { margin: 0; }
+.awake .check { text-align: center; }
