@@ -30,6 +30,8 @@ const supabase = require('../config/supabase');
 const { detectRequestedLanguage } = require('../utils/language-detection');
 // Language cache for ASR routing based on user preference
 const { getUserLanguage, setUserLanguage } = require('../utils/language-cache');
+const tts = require('../services/tts'); // the voice gateway: TTS_PROVIDER* decides who speaks; unset = today's voice
+const { deliverTts } = require('../services/tts/deliver');
 
 /**
  * Handle voice message processing
@@ -125,8 +127,12 @@ async function handleVoiceMessage(message, from, user = null) {
               es: "No entendí tu nombre. ¿Puedes repetirlo?"
             };
             const retryMessage = retryMessages[userLanguage] || retryMessages.en;
-            const speechBuffer = await AudioService.generateSpeechForLanguage(retryMessage, userLanguage);
-            await WhatsAppService.sendAudio(from, speechBuffer, TEMP_DIR);
+            const retryVoice = await tts.synthesize({
+              text: retryMessage, language: userLanguage, useCase: 'conversation', site: 'name_retry',
+              legacy: () => AudioService.generateSpeechForLanguage(retryMessage, userLanguage),
+            });
+            const sendRetry = (buf) => WhatsAppService.sendAudio(from, buf, TEMP_DIR);
+            await deliverTts(retryVoice, { sendOgg: sendRetry, legacySend: sendRetry });
           }
 
           // Stop typing and return early
@@ -967,12 +973,14 @@ async function handleVoiceMessage(message, from, user = null) {
       };
 
       // Generate and send voice confirmation
-      const confirmationSpeech = await AudioService.generateSpeechForLanguage(
-        confirmations[overrideLanguage],
-        overrideLanguage
-      );
+      const confirmationSpeech = await tts.synthesize({
+        text: confirmations[overrideLanguage], language: overrideLanguage,
+        useCase: 'conversation', site: 'language_switch',
+        legacy: () => AudioService.generateSpeechForLanguage(confirmations[overrideLanguage], overrideLanguage),
+      });
       typingController.stop();
-      await WhatsAppService.sendAudio(from, confirmationSpeech, TEMP_DIR);
+      const sendConfirmation = (buf) => WhatsAppService.sendAudio(from, buf, TEMP_DIR);
+      await deliverTts(confirmationSpeech, { sendOgg: sendConfirmation, legacySend: sendConfirmation });
 
       logToFile('✅ Language switch confirmation sent via voice');
     }
@@ -1145,12 +1153,15 @@ async function handleVoiceMessage(message, from, user = null) {
     // catch, so the teacher received only "Sorry, an error occurred while
     // processing the voice message" and never saw the answer at all.
     logToFile('Step 7: Generating speech for language:', { language: detectedLanguage });
-    let speechBuffer = null;
+    let speech = null;
     try {
-      speechBuffer = await AudioService.generateSpeechForLanguage(aiResponse, detectedLanguage);
+      speech = await tts.synthesize({
+        text: aiResponse, language: detectedLanguage, useCase: 'conversation', site: 'voice_reply',
+        legacy: () => AudioService.generateSpeechForLanguage(aiResponse, detectedLanguage),
+      });
       logToFile('Speech generated', {
-        bufferSize: speechBuffer.length,
-        ttsService: detectedLanguage === 'en' ? 'ElevenLabs' : 'Uplift'
+        bufferSize: speech.audio.length,
+        provider: speech.provider,
       });
     } catch (ttsError) {
       logToFile('⚠️ Text-to-speech unavailable — replying in text instead', {
@@ -1159,18 +1170,30 @@ async function handleVoiceMessage(message, from, user = null) {
     }
 
     // Step 8: Send the reply — spoken when we have audio, written otherwise.
-    logToFile('Step 8: Sending response...', { spoken: Boolean(speechBuffer) });
+    logToFile('Step 8: Sending response...', { spoken: Boolean(speech) });
     typingController.stop();
-    if (speechBuffer) {
-      await WhatsAppService.sendAudio(from, speechBuffer, TEMP_DIR);
-    } else {
+    let voiceSent = false;
+    if (speech) {
+      const sendReply = (buf) => WhatsAppService.sendAudio(from, buf, TEMP_DIR);
+      try {
+        voiceSent = await deliverTts(speech, { sendOgg: sendReply, legacySend: sendReply });
+      } catch (sendError) {
+        if (speech.provider !== 'soniox') throw sendError; // today's voice keeps today's error path
+        logToFile('⚠️ Soniox voice reply send threw — replying in text instead', { error: sendError.message });
+        voiceSent = false;
+      }
+    }
+    // No audio at all, or a Soniox note that did not reach the teacher: the answer is already written, so
+    // it goes as text. Today's voice keeps today's behaviour (a failed send is not re-sent as text).
+    const sonioxUndelivered = Boolean(speech) && speech.provider === 'soniox' && voiceSent === false;
+    if (!speech || sonioxUndelivered) {
       // sendMessage strips the [emotion] tags the voice prompt adds for TTS
       // (_removeEmotionTags, in both channel drivers), so the written reply
       // doesn't leak them.
       await WhatsAppService.sendMessage(from, aiResponse);
     }
 
-    logToFile('✅ Voice acknowledgment sent successfully!', { spoken: Boolean(speechBuffer) });
+    logToFile('✅ Voice acknowledgment sent successfully!', { spoken: Boolean(speech) });
 
     // Step 8.5: Send loading sticker if intent is presentation or lesson plan
     if (intent.type === 'lesson_plan' || intent.type === 'presentation') {

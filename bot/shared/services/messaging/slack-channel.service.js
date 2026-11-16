@@ -48,6 +48,7 @@ const { noteUploadedBytes } = require('../../utils/upload-digest');
 const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const { prefixFor } = require('./channel-registry');
+const { audioKind } = require('./audio-kind');
 
 const META_SOURCE_PATH = path.join(__dirname, 'meta-channel.service.js');
 const SLACK_PREFIX = prefixFor('slack'); // 'slack' — kept indirect so a rename to CHANNEL_PREFIXES stays a one-line fix
@@ -323,7 +324,7 @@ async function sendDocument(to, filePath, filename, caption) {
 
 async function sendAudio(to, audioBuffer) {
   try {
-    return await uploadFile(to, audioBuffer, 'audio.mp3');
+    return await uploadFile(to, audioBuffer, `audio.${audioKind(audioBuffer).ext}`);
   } catch (error) {
     logToFile('❌ Slack: error sending audio', { ...slackErrorDetail(error) });
     return false;

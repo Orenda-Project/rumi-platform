@@ -18,6 +18,8 @@ const GPT5MiniService = require('../gpt5-mini.service');
 const WhatsAppService = require('../whatsapp.service');
 const CoachingSessionService = require('./coaching-session.service');
 const ElevenLabsService = require('../elevenlabs.service');
+const tts = require('../tts'); // the voice gateway: TTS_PROVIDER* decides who speaks; unset = today's voice
+const { deliverTts } = require('../tts/deliver');
 const { getUserLanguage, setUserLanguage } = require('../../utils/language-cache');
 const { TEMP_DIR } = require('../../utils/constants');
 const { NUM_REFLECTIVE_QUESTIONS } = require('../../config/coaching-debrief.config');
@@ -146,10 +148,20 @@ class ReflectiveConversationService {
       });
 
       // Generate voice from question text
-      const voiceBuffer = await ElevenLabsService.generateSpeechForLanguage(question, languageCode);
+      const voice = await tts.synthesize({
+        text: question, language: languageCode, useCase: 'coaching', site: 'question',
+        legacy: () => ElevenLabsService.generateSpeechForLanguage(question, languageCode),
+      });
 
       // Send voice question to teacher
-      await WhatsAppService.sendAudio(from, voiceBuffer, TEMP_DIR);
+      const sendQuestion = (buf) => WhatsAppService.sendAudio(from, buf, TEMP_DIR);
+      const questionSent = await deliverTts(voice, { sendOgg: sendQuestion, legacySend: sendQuestion });
+      // The teacher must hear or read the question to answer it, so a Soniox note that did not arrive goes
+      // as text. Today's voice keeps today's behaviour.
+      if (voice.provider === 'soniox' && questionSent === false) {
+        logToFile('⚠️ Soniox reflective question not sent — sending text', { coachingSessionId, questionNumber });
+        await WhatsAppService.sendMessage(from, question);
+      }
 
       // Update conversation state - STORE THE QUESTION
       const existingQuestions = session.conversation_state.questions || [];
@@ -321,8 +333,12 @@ class ReflectiveConversationService {
           const spokenForm = localised.replace(/\s*🙏\s*$/u, '');
 
           try {
-            const voiceBuffer = await ElevenLabsService.generateSpeechForLanguage(spokenForm, languageCode);
-            await WhatsAppService.sendAudio(from, voiceBuffer, TEMP_DIR);
+            const closeVoice = await tts.synthesize({
+              text: spokenForm, language: languageCode, useCase: 'coaching', site: 'closer',
+              legacy: () => ElevenLabsService.generateSpeechForLanguage(spokenForm, languageCode),
+            });
+            const sendCloser = (buf) => WhatsAppService.sendAudio(from, buf, TEMP_DIR);
+            await deliverTts(closeVoice, { sendOgg: sendCloser, legacySend: sendCloser });
           } catch (voiceError) {
             // Fallback to text if voice fails
             logToFile('⚠️  Voice generation failed for thank you message, sending text', { error: voiceError.message });

@@ -278,6 +278,12 @@ input.mono { font-family: var(--mono); font-size: 12.5px; }
 .switch input:disabled + .track { opacity: .4; }
 .switch input:focus-visible + .track { outline: 2px solid var(--coral); outline-offset: 2px; }
 
+/* The Soniox card's "also use Soniox for Rumi's voice" switch, with the
+   ElevenLabs key it asks for when switched off. */
+.voice-switch { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.voice-switch .row-why[hidden] { display: none; }
+.voice-fallback { margin-top: 4px; }
+
 /* ── Banners ───────────────────────────────────────────────────────────── */
 
 .banner {

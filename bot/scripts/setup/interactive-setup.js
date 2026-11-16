@@ -580,6 +580,8 @@ async function stepExtras(io, env, save, opts = {}) {
   if (choice === 'skip') return;
 
   for (const extra of remaining) {
+    // The ElevenLabs key may already have been asked under the Soniox voice question.
+    if (hasAll(env, extra.keys)) continue;
     console.log('');
     console.log(`  ${ui.paint('brandHi', extra.title)}`);
     console.log(ui.aside(extra.why));
@@ -604,9 +606,37 @@ async function stepExtras(io, env, save, opts = {}) {
     if (Object.keys(collected).length === extra.keys.length) {
       save(collected);
       console.log(ui.ok(`${extra.title} — on`));
+      // eslint-disable-next-line no-await-in-loop -- one question at a time, by design
+      if (extra.keys[0] === fields.SONIOX_VOICE.under) await askSonioxVoice(io, env, save);
     } else {
       console.log(ui.dim('  skipped'));
     }
+  }
+}
+
+/**
+ * Right after the Soniox key: should the same key give Rumi its voice? Yes is the
+ * default. No keeps Rumi's voice on ElevenLabs and asks for its key on the spot,
+ * so spoken replies keep working. Stored as TTS_PROVIDER (soniox / legacy).
+ */
+async function askSonioxVoice(io, env, save) {
+  const voice = fields.SONIOX_VOICE;
+  console.log(ui.aside(voice.hint));
+  const useSoniox = await io.confirm(`${voice.label}?`, true);
+  if (useSoniox) {
+    save({ [voice.key]: voice.on });
+    console.log(ui.ok('Rumi will speak with Soniox'));
+    return;
+  }
+  save({ [voice.key]: voice.off });
+  console.log(ui.aside(voice.offHint));
+  console.log(ui.aside(`Get a key: ${voice.fallback.where}`));
+  const key = await io.ask(voice.fallback.label, { secret: true, fallback: prefill(env, voice.fallback.key) });
+  if (key) {
+    save({ [voice.fallback.key]: key });
+    console.log(ui.ok('Rumi will speak with ElevenLabs'));
+  } else {
+    console.log(ui.dim('  skipped — Rumi will reply in text until a voice key is added'));
   }
 }
 

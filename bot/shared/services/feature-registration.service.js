@@ -20,6 +20,8 @@ const AudioService = require('./audio.service');
 const { TEMP_DIR } = require('../utils/constants');
 const { nativeFlowIdFor } = require('./messaging/channel-capabilities');
 const { ownCoaching } = require('./coaching/own-coaching');
+const tts = require('./tts'); // the voice gateway: TTS_PROVIDER* decides who speaks; unset = today's voice
+const { deliverTts } = require('./tts/deliver');
 
 // Greetings and acknowledgements that are not names (English, and the
 // romanized forms teachers commonly type in the supported languages).
@@ -346,8 +348,12 @@ class FeatureRegistrationService {
     try {
       if (format === 'voice') {
         // Generate and send voice message
-        const speechBuffer = await AudioService.generateSpeechForLanguage(message, language);
-        await WhatsAppService.sendAudio(phoneNumber, speechBuffer, TEMP_DIR);
+        const voice = await tts.synthesize({
+          text: message, language, useCase: 'conversation', site: 'name_question',
+          legacy: () => AudioService.generateSpeechForLanguage(message, language),
+        });
+        const send = (buf) => WhatsAppService.sendAudio(phoneNumber, buf, TEMP_DIR);
+        await deliverTts(voice, { sendOgg: send, legacySend: send });
       } else {
         // Send text message
         await WhatsAppService.sendMessage(phoneNumber, message);

@@ -25,6 +25,7 @@ const { redactUrl } = require('../../utils/redact-url');
 const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const { privateTempPath, removePrivateTemp } = require('../../utils/private-temp');
 const { digestingStream } = require('../../utils/upload-digest');
+const { audioKind } = require('./audio-kind');
 
 // Prefer ASSET_BASE_URL; fall back to legacy ASSETS_BASE_URL. Empty when
 // neither is set — the carousel template builder below guards against that.
@@ -426,17 +427,21 @@ class WhatsAppService {
       // the file only when the request body goes out, so a clock-named path
       // would be shared (and overwritten, or unlinked) by another send in the
       // same millisecond.
-      temp = privateTempPath(tempDir, 'audio.mp3', 'audio-');
+      // An Ogg Opus note (the voice gateway's Soniox voice) is sent as a WhatsApp voice message; an MP3
+      // is sent exactly as before.
+      const kind = audioKind(audioBuffer);
+      temp = privateTempPath(tempDir, `audio.${kind.ext}`, 'audio-');
       const audioPath = temp.filePath;
       fs.writeFileSync(audioPath, audioBuffer);
 
       // Upload media to WhatsApp
       const formData = new FormData();
       formData.append('file', fs.createReadStream(audioPath), {
-        contentType: 'audio/mpeg',
-        filename: 'audio.mp3',
+        contentType: kind.isOgg ? 'audio/ogg' : 'audio/mpeg',
+        filename: `audio.${kind.ext}`,
       });
       formData.append('messaging_product', 'whatsapp');
+      if (kind.isOgg) formData.append('type', 'audio/ogg');
 
       const uploadResponse = await axios.post(
         `${GRAPH_API_BASE}/${PHONE_NUMBER_ID}/media`,
@@ -458,9 +463,8 @@ class WhatsAppService {
           messaging_product: 'whatsapp',
           to: to,
           type: 'audio',
-          audio: {
-            id: mediaId,
-          },
+          // Meta draws a voice message only when the send says voice: true.
+          audio: kind.isOgg ? { id: mediaId, voice: true } : { id: mediaId },
         },
         {
           headers: {

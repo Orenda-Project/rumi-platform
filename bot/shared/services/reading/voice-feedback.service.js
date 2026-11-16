@@ -24,6 +24,7 @@ const fs = require('fs');
 const path = require('path');
 const { getClient } = require('../llm-client');
 const AudioService = require('../audio.service');
+const tts = require('../tts'); // the voice gateway: TTS_PROVIDER* decides who speaks; unset = today's voice
 const FluencyService = require('./fluency.service');
 const { logToFile } = require('../../utils/logger');
 const { redactUrl } = require('../../utils/redact-url');
@@ -63,7 +64,12 @@ class VoiceFeedbackService {
       });
 
       // Step 2: Convert script to speech using appropriate TTS
-      const audioBuffer = await AudioService.generateSpeechForLanguage(script, userLanguage);
+      // MP3 whoever speaks: the caller stores this on R2 as .mp3 and sends the link.
+      const voice = await tts.synthesize({
+        text: script, language: userLanguage, useCase: 'reading', site: 'feedback', format: 'mp3',
+        legacy: () => AudioService.generateSpeechForLanguage(script, userLanguage),
+      });
+      const audioBuffer = voice.audio;
 
       logToFile('✅ Voice feedback audio generated', {
         assessmentId: assessment.id,

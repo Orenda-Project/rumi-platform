@@ -28,9 +28,10 @@ const {
   FEATURES,
   isSet,
   resolveChannelDriver,
+  overrides,
 } = require('../shared/config/feature-availability');
 const { KEY_SOURCES } = require('../scripts/setup/doctor');
-const { META_FIELDS, OPTIONAL_EXTRAS } = require('../scripts/setup/fields');
+const { META_FIELDS, OPTIONAL_EXTRAS, SONIOX_VOICE, sonioxVoiceOn } = require('../scripts/setup/fields');
 const { describeVar } = require('./redaction');
 const { isLive } = require('./live-state');
 
@@ -218,6 +219,27 @@ function featureByKey() {
 }
 
 /**
+ * The feature an ability's keys switch on by themselves (same keys, no extra flag),
+ * so its card can show and flip the same switch as the Features page. Without
+ * this, a feature switched off there still read "on" here.
+ *
+ * @param {string[]} keys
+ * @returns {object|null}
+ */
+function featureForKeys(keys) {
+  return FEATURES.find((f) => {
+    const own = f.keys || f.keysAny || [];
+    return f.id && !f.flag && own.length === keys.length && own.every((k, i) => k === keys[i]);
+  }) || null;
+}
+
+/** Has the operator switched this feature off? Read from the file, as the bot reads it on boot. */
+function switchedOff(feature, env) {
+  if (!feature) return false;
+  return String(env[overrides.envVarFor(feature.id)] || '').trim().toLowerCase() === 'off';
+}
+
+/**
  * Build one displayable row for an env var.
  *
  * @param {string} key
@@ -233,6 +255,25 @@ function buildRow(key, env, meta = {}) {
     where: meta.where || KEY_SOURCES[key] || null,
     required: Boolean(meta.required),
     feature: meta.feature || null,
+  };
+}
+
+/**
+ * The "also use Soniox for Rumi's voice" switch on the Soniox card: whether it is
+ * on, the values it writes, and the ElevenLabs key a wizard asks for when it is off.
+ */
+function voiceSwitch(env) {
+  const { fallback } = SONIOX_VOICE;
+  return {
+    key: SONIOX_VOICE.key,
+    on: sonioxVoiceOn(env),
+    // Has the switch been written yet? A wizard writes the default with the key.
+    chosen: Boolean(String(env[SONIOX_VOICE.key] || '').trim()),
+    values: { on: SONIOX_VOICE.on, off: SONIOX_VOICE.off },
+    label: SONIOX_VOICE.label,
+    hint: SONIOX_VOICE.hint,
+    offHint: SONIOX_VOICE.offHint,
+    fallback: buildRow(fallback.key, env, { label: fallback.label, where: fallback.where }),
   };
 }
 
@@ -285,17 +326,24 @@ function buildCatalog(env = process.env, { liveEnv = null } = {}) {
         feature: byKey.get(key) ? byKey.get(key).name : null,
       });
     });
+    const feature = featureForKeys(ability.keys);
+    const configured = rows.every((r) => r.set);
+    const paused = configured && switchedOff(feature, env);
     group.abilities.push({
       title: ability.title,
       why: ability.why,
       where: ability.where,
       keys: ability.keys,
       rows,
-      // Every key present = the ability is switched on. Matches the AND
-      // semantics of FEATURES.keys, which is what actually gates it.
-      on: rows.every((r) => r.set),
-      partial: rows.some((r) => r.set) && !rows.every((r) => r.set),
-      pendingRestart: rows.every((r) => r.set) && !isLive(ability.keys, liveEnv),
+      // Every key present and not switched off on the Features page = the
+      // ability is on. Matches FEATURES.keys (AND) plus the operator override.
+      on: configured && !paused,
+      configured,
+      paused,
+      featureId: feature ? feature.id : null,
+      partial: rows.some((r) => r.set) && !configured,
+      pendingRestart: configured && !paused && !isLive(ability.keys, liveEnv),
+      ...(ability.keys[0] === SONIOX_VOICE.under ? { voice: voiceSwitch(env) } : {}),
     });
   }
 
@@ -354,6 +402,8 @@ function knownKeys() {
   for (const key of [
     'LLM_MODEL', 'VISION_MODEL', 'PIC_LP_CLASSIFIER_MODEL', 'PIC_LP_EXTRACTOR_MODEL',
     'ELEVENLABS_VOICE_ID', 'VIDEO_GENERATION_ENABLED', 'LOG_LEVEL',
+    // The Soniox card's voice switch.
+    SONIOX_VOICE.key,
   ]) keys.add(key);
   return keys;
 }

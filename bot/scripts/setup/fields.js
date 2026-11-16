@@ -97,7 +97,7 @@ const OPTIONAL_EXTRAS = [
   {
     keys: ['SONIOX_API_KEY'],
     title: 'Understand voice notes',
-    why: 'Teachers talk more than they type. With this, Rumi transcribes voice notes in English, Urdu, Arabic and Spanish — and it is what reading assessments run on.',
+    why: 'Teachers talk more than they type. With this, Rumi transcribes voice notes in English, Urdu, Arabic and Spanish — and it is what reading assessments run on. The same key can also give Rumi its voice.',
     where: 'console.soniox.com',
     secret: true,
   },
@@ -123,6 +123,43 @@ const OPTIONAL_EXTRAS = [
     secret: true,
   },
 ];
+
+// ── Soniox as Rumi's voice ───────────────────────────────────────────────────
+
+/**
+ * The switch under the Soniox key: the same key that understands voice notes can
+ * also speak Rumi's replies. On by default for a fresh setup. Off keeps Rumi's
+ * voice on ElevenLabs, so the ElevenLabs key is asked for right under it.
+ *
+ * It is stored as TTS_PROVIDER, the voice gateway's own switch
+ * (bot/shared/services/tts/routing.js): "soniox" or "legacy" (today's voices).
+ */
+const SONIOX_VOICE = {
+  key: 'TTS_PROVIDER',
+  on: 'soniox',
+  off: 'legacy',
+  // The ability whose card the switch sits in.
+  under: 'SONIOX_API_KEY',
+  label: "Also use Soniox for Rumi's voice",
+  hint: "One key for listening and speaking: Rumi's spoken replies come from Soniox. If Soniox can't speak a language, ElevenLabs or Uplift speaks it instead.",
+  offHint: 'Rumi will speak with ElevenLabs. Add its key so spoken replies keep working.',
+  fallback: { key: 'ELEVENLABS_API_KEY', label: 'ElevenLabs key', where: 'elevenlabs.io → API Keys' },
+};
+
+/**
+ * Is Soniox Rumi's voice? What TTS_PROVIDER says when it is set. Before it is set
+ * the switch reads on for a fresh setup (the default), and off where a Soniox key
+ * was already saved without it — that deployment is speaking with today's voice,
+ * and the switch must not claim otherwise.
+ *
+ * @param {object} env
+ * @returns {boolean}
+ */
+function sonioxVoiceOn(env = {}) {
+  const value = String(env[SONIOX_VOICE.key] || '').trim().toLowerCase();
+  if (value) return value === SONIOX_VOICE.on;
+  return !String(env[SONIOX_VOICE.under] || '').trim();
+}
 
 // ── Slack (an additive messaging channel, not an "optional ability") ────────
 // Deliberately NOT in OPTIONAL_EXTRAS — unlike Soniox/Gamma/Azure,
@@ -176,6 +213,8 @@ module.exports = {
   META_REMAINING_STEPS,
   fieldsFor,
   OPTIONAL_EXTRAS,
+  SONIOX_VOICE,
+  sonioxVoiceOn,
   SLACK_BOT_SCOPES,
   SLACK_SLASH_COMMANDS,
   SLACK_APP_WALKTHROUGH_INTRO,

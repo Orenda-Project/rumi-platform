@@ -50,6 +50,7 @@ const { prefixFor } = require('./channel-registry');
 const matrixIdentity = require('./matrix-identity');
 const pendingOptions = require('./pending-options');
 const { channelCommandCopy } = require('./command-words');
+const { audioKind } = require('./audio-kind');
 
 const META_SOURCE_PATH = path.join(__dirname, 'meta-channel.service.js');
 const MATRIX_PREFIX = prefixFor('matrix'); // 'matrix' -- kept indirect so a rename to CHANNEL_PREFIXES stays a one-line fix
@@ -849,7 +850,8 @@ async function sendDocument(to, filePath, filename, caption) {
 
 async function sendAudio(to, audioBuffer) {
   try {
-    await uploadAndSend(to, audioBuffer, 'audio/mpeg', 'audio.mp3', 'm.audio', undefined, { voice: true });
+    const kind = audioKind(audioBuffer);
+    await uploadAndSend(to, audioBuffer, kind.isOgg ? 'audio/ogg' : 'audio/mpeg', `audio.${kind.ext}`, 'm.audio', undefined, { voice: true });
     return true;
   } catch (error) {
     logToFile('❌ Matrix: error sending audio', { ...matrixErrorDetail(error) });

@@ -47,6 +47,7 @@ const {
 } = require('../../constants/scoring.constants');
 const { getReportTransformer } = require('./report-transformers/report-transformer-dispatch');
 const { ownCoaching } = require('./own-coaching');
+const tts = require('../tts'); // the voice gateway: TTS_PROVIDER* decides who speaks; unset = today's voice
 
 class ReportGeneratorService {
   /**
@@ -1385,7 +1386,12 @@ class ReportGeneratorService {
       }
 
       // Generate audio from script
-      const voiceBuffer = await AudioService.generateSpeechForLanguage(voiceScript, outputLanguage);
+      // MP3 whoever speaks: this note is stored on R2 as .mp3 and its length below is estimated from MP3 bytes.
+      const voice = await tts.synthesize({
+        text: voiceScript, language: outputLanguage, useCase: 'coaching', site: 'report_voicenote', format: 'mp3',
+        legacy: () => AudioService.generateSpeechForLanguage(voiceScript, outputLanguage),
+      });
+      const voiceBuffer = voice.audio;
 
       // Without object storage (R2 is optional) the voice note is sent from memory instead of by URL.
       if (!isR2Configured()) {

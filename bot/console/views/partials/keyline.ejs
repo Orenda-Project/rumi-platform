@@ -12,4 +12,8 @@
     <button class="btn sm" data-reveal="<%= row.key %>">Reveal</button>
   <% } %>
   <button class="btn sm" data-edit="<%= row.key %>"><%= row.set ? 'Replace' : 'Set' %></button>
+  <%# An optional key can be emptied again; a required one cannot, or Rumi would not start. %>
+  <% if (row.set && !row.required) { %>
+    <button class="btn quiet sm" data-clear="<%= row.key %>">Clear</button>
+  <% } %>
 </div>

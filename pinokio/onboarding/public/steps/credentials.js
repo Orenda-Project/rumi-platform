@@ -140,6 +140,8 @@ export async function checkBrain() {
 /** The pill text for one ability. */
 function pillFor(item) {
   if (item.guide) return 'IN CONSOLE';
+  // Key saved, but switched off on the console's Features page.
+  if (item.paused) return 'SWITCHED OFF';
   if (item.on) return 'ON';
   if (item.partial) return 'NEEDS MORE';
   return 'ADD KEY';
@@ -147,6 +149,7 @@ function pillFor(item) {
 
 function stateFor(item) {
   if (item.guide) return 'console';
+  if (item.paused) return 'partial';
   if (item.on) return 'on';
   if (item.partial) return 'partial';
   return 'off';
@@ -328,19 +331,95 @@ function abilityItem(item, onChange) {
   body.hidden = true;
   // The `why` lives in the (i) tip above, so the open body is just the keys.
 
+  const voice = item.voice ? voiceSwitch(item.voice, onChange) : null;
   if (item.guide) {
     body.append(el('p', { class: 'ability__note', text: "Set up from the console's Setup page after launch." }));
   } else {
-    for (const row of item.rows) body.append(field(row, { hideWhere: true, onChange }));
+    // Saving the Soniox key also writes the voice switch, so the default (on) takes effect with the key.
+    const keySaved = voice ? (event) => { voice.writeDefault(); if (onChange) onChange(event); } : onChange;
+    for (const row of item.rows) body.append(field(row, { hideWhere: true, onChange: keySaved }));
   }
   const where = whereLink(item.where);
   if (where) body.append(el('p', { class: 'field__hint ability__where' }, ['Get it at ', where]));
+  if (voice) body.append(voice.node);
 
   const head = el('div', { class: 'ability__head' }, [button, info]);
   const node = el('div', { class: 'ability' }, [head, tip, body]);
   const entry = { node, button, body, pill };
   paintItem(entry, item);
   return entry;
+}
+
+/**
+ * "Also use Soniox for Rumi's voice": a switch under the Soniox key, on by default.
+ * On, Soniox speaks Rumi's replies with the same key; off, Rumi speaks with
+ * ElevenLabs, so its key field opens right under the switch. Every flip is saved
+ * at once (TTS_PROVIDER), as a key is.
+ *
+ * @param {object} voice the catalogue's `voice` for the Soniox card
+ * @returns {{node: HTMLElement, writeDefault: () => Promise<void>}}
+ */
+function voiceSwitch(voice, onChange) {
+  let chosen = Boolean(voice.chosen);
+  const input = el('input', { type: 'checkbox', class: 'switch__input', id: `f-${voice.key}` });
+  input.checked = Boolean(voice.on);
+  const status = slot(el('div', { class: 'verdict', 'data-tone': 'idle' }));
+  const hint = el('p', { class: 'field__hint' });
+  const fallback = el('div', { class: 'voice-switch__fallback' }, [
+    field(voice.fallback, { onChange }),
+  ]);
+
+  const paint = () => {
+    hint.textContent = input.checked ? voice.hint : voice.offHint;
+    fallback.hidden = input.checked;
+  };
+
+  const write = async () => {
+    const value = input.checked ? voice.values.on : voice.values.off;
+    input.disabled = true;
+    status.set(verdict('busy', 'Saving…'));
+    try {
+      const result = await post('/api/env', { updates: { [voice.key]: value } });
+      const problem = result.errors && result.errors[voice.key];
+      if (problem) {
+        status.set(verdict('bad', problem));
+        return;
+      }
+      chosen = true;
+      status.set(verdict('ok', input.checked ? 'Soniox will speak' : 'ElevenLabs will speak'));
+      if (onChange) onChange({ key: voice.key, probe: null, ok: true });
+    } catch (error) {
+      status.set(verdict('bad', error.message));
+    } finally {
+      input.disabled = false;
+    }
+  };
+
+  input.addEventListener('change', () => {
+    paint();
+    write();
+  });
+  paint();
+
+  const node = el('div', { class: 'field voice-switch', 'data-state': 'ok' }, [
+    el('label', { class: 'switch', htmlFor: input.id }, [
+      input,
+      el('span', { class: 'switch__track', 'aria-hidden': 'true' }),
+      el('span', { class: 'field__label', text: voice.label }),
+    ]),
+    hint,
+    status.node,
+    fallback,
+  ]);
+
+  return {
+    node,
+    // The first Soniox key saved writes the switch as it stands (on, unless flipped), so the default is
+    // real in `.env` and not only on screen. After that only a flip writes it.
+    async writeDefault() {
+      if (!chosen) await write();
+    },
+  };
 }
 
 export function field(row, options = {}) {
