@@ -1,7 +1,7 @@
 # console — Operator web console: setup, feature switches, pipeline and live activity
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/console kg=48d82c3ba584 gen=e2df45452ff7 overflow=24 rendered=2026-11-11 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/console kg=5471a2be9376 gen=6c09ef00eda1 overflow=26 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `index.js` — mountConsole(app) wires host guard, assets, pages and api routers at /console
@@ -36,7 +36,7 @@ Full index: `CLAUDE.index.md`
 ## Tests (generated)
 - `tests/console/live-state.test.js` (env-catalog.js, features.js, live-state.js)
 - `tests/console/channel-cards.test.js` (env-catalog.js, features.js)
-- … 7 more → `CLAUDE.index.md`
+- … 9 more → `CLAUDE.index.md`
 
 ## Related (generated)
 - docs: `bot/CLAUDE.md`? · `docs/console.md`? · `docs/superpowers/plans/2026-11-11-console-first-run-and-restart.md`? · `docs/superpowers/specs/2026-11-11-pinokio-onboarding-redesign.md`?

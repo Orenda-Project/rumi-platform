@@ -38,9 +38,9 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Who reads this (all, generated)
 - `branding.js` ← imported by `bot/console/routes/pages.js:39:c8e47c32` · `bot/shared/handlers/flow-response.handler.js:661:5b147366` · `bot/shared/handlers/portal-command.handler.js:16:f6ce7d02` · `bot/shared/routes/registration-endpoint.js:54:7a8e3c0a` (+15: `python3 kg/kg.py who-reads branding.js`)
 - `capabilities.config.js` ← imported by `bot/shared/services/helper-agent.service.js:363:7bd0abf5`
-- `coaching-audio.js` ← imported by `bot/shared/handlers/voice-message.handler.js:773:2ae3bd4c` · `bot/shared/services/observe/observe-audio-router.js:31:a4d76d60` · `bot/whatsapp-bot.js:1765:fd05c91d`
-- `coaching-card.config.js` ← imported by `bot/shared/services/coaching/coaching-card/card-image.service.js:12:a3506bc7` · `bot/shared/services/coaching/report-generator.service.js:220:11c3a014`
-- `coaching-debrief.config.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:23:50bb8b0b` · `bot/shared/services/gpt5-mini.service.js:1383:425e6f0a`
+- `coaching-audio.js` ← imported by `bot/shared/handlers/voice-message.handler.js:779:2ae3bd4c` · `bot/shared/services/observe/observe-audio-router.js:31:a4d76d60` · `bot/whatsapp-bot.js:1765:fd05c91d`
+- `coaching-card.config.js` ← imported by `bot/shared/services/coaching/coaching-card/card-image.service.js:12:a3506bc7` · `bot/shared/services/coaching/report-generator.service.js:221:11c3a014`
+- `coaching-debrief.config.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:25:50bb8b0b` · `bot/shared/services/gpt5-mini.service.js:1383:425e6f0a`
 - `coaching-messages.js` ← imported by `bot/shared/services/coaching/analysis-processor.service.js:22:b8fde5d4` · `bot/shared/services/coaching/coaching-flow-buttons.js:9:b8fde5d4` · `bot/shared/services/coaching/coaching-session.service.js:17:b8fde5d4` · `bot/shared/services/coaching/fidelity/fidelity-report.js:13:9c9510f6` (+6: `python3 kg/kg.py who-reads coaching-messages.js`)
 - `discord-country-regions.js` ← imported by `bot/shared/routes/discord-views/registration.view.js:22:f72f4330` · `bot/shared/routes/slack-views/registration.view.js:34:f72f4330`
 - `feature-availability.js` ← imported by `bot/console/features.js:20:9962bd10` · `bot/console/live-state.js:11:32a14f1b` · `bot/console/pipeline-map.js:16:32a14f1b` · `bot/console/routes/api.js:143:d45d9207` (+24: `python3 kg/kg.py who-reads feature-availability.js`)
@@ -49,7 +49,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `gender-neutral-address.js` ← imported by `bot/shared/services/quiz/video-quiz-report.service.js:37:5976149f`
 - `inline-worker.js` ← imported by `bot/whatsapp-bot.js:2096:99708102` · `bot/workers/sqs-worker.js:1279:f88a55e0`
 - `language-config.js` ← imported by `bot/shared/services/gpt5-mini.service.js:1373:3cb050f1`
-- `language-prompts.js` ← imported by `bot/shared/services/openai.service.js:3:52971b2a` · `bot/shared/services/video/video-script.service.js:10:ebbe105c`
+- `language-prompts.js` ← imported by `bot/shared/services/openai.service.js:3:52971b2a` · `bot/shared/services/video/video-script.service.js:11:ebbe105c`
 - `model-registry.js` ← imported by `bot/shared/services/llm-client.js:108:fd844b66` · `bot/shared/services/quiz/transcript-quiz-key-verify.service.js:71:e1598755` · `bot/shared/services/quiz/transcript-quiz-llm.js:23:e1598755` · `bot/shared/services/quiz/transcript-quiz-summary-truth.js:33:e1598755` (+2: `python3 kg/kg.py who-reads model-registry.js`)
 - `passage-backgrounds.json` ← imported by `bot/shared/services/reading/passage-generation.service.js:37:164e702f`
 - `quiz-languages.js` ← imported by `bot/shared/services/quiz/transcript-quiz-language.js:19:cd9fa6e4` · `bot/shared/services/quiz/transcript-quiz-offer.service.js:40:761816bc`
@@ -59,7 +59,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `school-clock.js` ← imported by `bot/shared/services/limits/daily-caps.js:30:c2701331` · `bot/shared/services/quiz/providers/lp-generated.provider.js:28:d6c60a51` · `bot/shared/services/quiz/providers/topic.provider.js:28:d6c60a51` · `bot/shared/services/quiz/quiz-daily-cap.js:20:c2701331` (+6: `python3 kg/kg.py who-reads school-clock.js`)
 - `settings-config.js` ← imported by `bot/shared/routes/settings-endpoint.js:27:bcd9de0c`
 - `supabase.js` ← imported by `bot/scripts/attendance/link-school.js:25:50ccc192` · `bot/scripts/generate-coaching-excel.js:15:bdc9e340` · `bot/scripts/observe-roster.js:30:f5aef224` · `bot/scripts/testpaper/import-curriculum-corpus.js:352:1212d80c` (+139: `python3 kg/kg.py who-reads supabase.js`)
-- `supported-languages.js` ← imported by `bot/shared/handlers/image-message.handler.js:432:56d296f3` · `bot/shared/services/language-detector.service.js:3:91bc3638` · `bot/shared/services/messaging/baileys-channel.service.js:644:cef13774` · `bot/shared/services/messaging/discord-channel.service.js:576:cef13774` (+16: `python3 kg/kg.py who-reads supported-languages.js`)
+- `supported-languages.js` ← imported by `bot/shared/handlers/image-message.handler.js:432:56d296f3` · `bot/shared/services/language-detector.service.js:3:91bc3638` · `bot/shared/services/messaging/baileys-channel.service.js:647:cef13774` · `bot/shared/services/messaging/discord-channel.service.js:577:cef13774` (+16: `python3 kg/kg.py who-reads supported-languages.js`)
 - `tts-voices.js` ← imported by `bot/console/pipeline-map.js:149:5400166f` · `bot/shared/services/openai.service.js:4:39e31adf`
 - `ux-strings.js` ← imported by `bot/shared/services/lesson-plan-availability.js:16:90174631` · `bot/shared/services/quiz/providers/lp-generated.provider.js:27:25374c99` · `bot/shared/services/quiz/providers/topic.provider.js:27:25374c99` · `bot/shared/services/quiz/quiz-menu-entry.service.js:24:55a7aecc` (+22: `python3 kg/kg.py who-reads ux-strings.js`)
 - env `BOT_NAME` read at `bot/shared/config/branding.js:17:70091041`

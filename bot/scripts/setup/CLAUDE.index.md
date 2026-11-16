@@ -70,10 +70,10 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `discord-register-commands.js` ← `tests/scripts/discord-register-commands.test.js`
 - `doctor.js` ← `tests/coaching/fidelity/diarization-contract.test.js`
 - `env-file.js` ← `tests/console/pages-live-env.test.js` · `tests/db/bundled-database.test.js` · `tests/setup/env-file.test.js`
-- `fields.js` ← `tests/console/feature-titles.test.js` · `tests/scripts/discord-register-commands.test.js` · `tests/setup/fields.test.js`
+- `fields.js` ← `tests/console/feature-titles.test.js` · `tests/scripts/discord-register-commands.test.js` · `tests/setup/fields.test.js` · `tests/setup/soniox-voice-switch.test.js`
 - `flow-configs.js` ← `tests/observe/observe-form-flow-json.test.js` · `tests/quiz/quiz-flow-endpoint.test.js` · `tests/setup/flow-config-conformance.test.js` · `tests/setup/flow-key-consistency.test.js` · `tests/setup/setup-state.test.js`
 - `graduate.js` ← `tests/setup/graduate.test.js`
-- `interactive-setup.js` ← `tests/setup/interactive-setup.test.js`?
+- `interactive-setup.js` ← `tests/setup/soniox-voice-switch.test.js`
 - `meta-api.js` ← `tests/setup/meta-api.test.js` · `tests/setup/register-all-flows.test.js` · `tests/setup/validate-flows.test.js`
 - `prompt.js` ← `tests/setup/prompt.test.js`?
 - `register-all-flows.js` ← `tests/setup/flow-configs-paths.test.js` · `tests/setup/register-all-flows.test.js`
@@ -85,7 +85,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 - `telemetry-consent.js` ← `tests/telemetry/telemetry-consent.test.js`
 - `ui.js` ← `tests/setup/ui.test.js`
 - `validate-flows.js` ← `tests/setup/validate-flows.test.js`
-- `validators.js` ← `tests/setup/fields.test.js`
+- `validators.js` ← `tests/setup/fields.test.js` · `tests/setup/soniox-voice-switch.test.js`
 
 ## Related (all, generated)
 - skills: `setup`?

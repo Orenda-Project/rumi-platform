@@ -1,7 +1,7 @@
 # migrations — Versioned V<major.minor.patch>__name.sql changes for existing deployments
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=infrastructure/supabase/migrations kg=7fd8f6e4878d gen=ccf6b6e1b650 overflow=51 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=infrastructure/supabase/migrations kg=b9e5a105dd3e gen=812ff54e1ea1 overflow=51 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `V1.0.0__baseline.sql` — creates schema_versions
@@ -15,7 +15,7 @@ Full index: `CLAUDE.index.md`
 | `V1.0.0__baseline.sql` | Baseline marker migration: creates schema_versions; the full schema lives in 00_complete-schema.sql |
 
 ## Who reads this (generated)
-- table `coaching_sessions` whole row (`*`) (written by `V2.6.0__observe_coach_assistant.sql`) ← read by `bot/shared/handlers/text-message.handler.js:1262:d2b02c3e`? · `bot/shared/handlers/voice-message.handler.js:701:d2b02c3e`? (+14)
+- table `coaching_sessions` whole row (`*`) (written by `V2.6.0__observe_coach_assistant.sql`) ← read by `bot/shared/handlers/text-message.handler.js:1262:d2b02c3e`? · `bot/shared/handlers/voice-message.handler.js:707:d2b02c3e`? (+14)
 - column `coaching_sessions.observer_user_id` (written by `V2.6.0__observe_coach_assistant.sql`) ← read by `bot/shared/services/observe/observe-capture.service.js:183:6d26d258` · `bot/shared/services/observe/observe-debrief.service.js:119:2df9e8f4` (+6)
 - column `coaching_sessions.observation_type` (written by `V2.6.0__observe_coach_assistant.sql`) ← read by `bot/shared/services/coaching/own-coaching.js:38:eb90e6da` · `bot/shared/services/observe/observe-brief-card.js:38:49f65bf4` (+5)
 - column `quizzes.language` (written by `V2.9.0__lesson_quiz.sql`) ← read by `bot/shared/services/quiz/transcript-lesson-provider.js:161:77be8067` · `bot/shared/services/quiz/transcript-quiz-generate.service.js:1606:8753b523` (+5)

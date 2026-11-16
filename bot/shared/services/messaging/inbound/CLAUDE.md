@@ -1,7 +1,7 @@
 # inbound — Adapters turning each channel's events into webhook-shaped payloads
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/messaging/inbound kg=d8f97e824db2 gen=2e701cc16efe overflow=3 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/messaging/inbound kg=44cd969a3f2d gen=014c20a5d02c overflow=3 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `baileys-socket.adapter.js` — the pattern the others mirror, feeding handleWebhookPost
@@ -17,7 +17,7 @@ Full index: `CLAUDE.index.md`
 | `discord-events.adapter.js` | Converts Discord Gateway events into Meta-webhook-shaped payloads dispatched into handleWebhookPost |
 
 ## Who reads this (generated)
-- `matrix-events.adapter.js` ← imported by `bot/shared/services/messaging/matrix-channel.service.js:164:c64feb03` · `bot/whatsapp-bot.js:1975:a455635d` (+1)
+- `matrix-events.adapter.js` ← imported by `bot/shared/services/messaging/matrix-channel.service.js:165:c64feb03` · `bot/whatsapp-bot.js:1975:a455635d` (+1)
 - `slack-events.adapter.js` ← imported by `bot/gateway/adapters/slack.js:24:138e6f6a` · `bot/shared/routes/slack-interactions.routes.js:29:a2c45bb5`
 - `baileys-socket.adapter.js` ← imported by `bot/whatsapp-bot.js:1937:ad25cb1c`
 - `discord-events.adapter.js` ← imported by `bot/whatsapp-bot.js:1956:d0599a29`

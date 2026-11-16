@@ -1,7 +1,7 @@
 # reading — Reading assessment pipeline: passage, audio, fluency, pronunciation, report, feedback
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/reading kg=ad2a32ab3eeb gen=70a2356938a9 overflow=31 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/reading kg=a90f1ca95a7f gen=466e9e4f71bd overflow=31 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `analysis.service.js` — orchestrates the analysis pipeline and writes results to reading_assessments
@@ -19,8 +19,8 @@ Full index: `CLAUDE.index.md`
 | … | 7 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
-- table `reading_assessments` (written by `analysis.service.js` (+2)) ← read by `bot/shared/handlers/text-message.handler.js:1077:4337985e`? · `bot/shared/handlers/voice-message.handler.js:259:4337985e`? (+13)
-- column `reading_assessments.status` (written by `analysis.service.js` (+2)) ← read by `bot/shared/handlers/voice-message.handler.js:421:1099729a` · `bot/shared/services/context.service.js:170:a69ef692` (+5)
+- table `reading_assessments` (written by `analysis.service.js` (+2)) ← read by `bot/shared/handlers/text-message.handler.js:1077:4337985e`? · `bot/shared/handlers/voice-message.handler.js:265:4337985e`? (+13)
+- column `reading_assessments.status` (written by `analysis.service.js` (+2)) ← read by `bot/shared/handlers/voice-message.handler.js:427:1099729a` · `bot/shared/services/context.service.js:170:a69ef692` (+5)
 - … 27 more → `CLAUDE.index.md`
 
 ## Never (human)

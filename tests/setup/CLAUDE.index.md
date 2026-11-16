@@ -72,6 +72,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `setup-state.test.js` | Pins SetupState persisting flow, template and encryption registration status in .setup-state.json |
 | `setup-validator.test.js` | Pins validateBootRequirements checking Flow-related env vars at boot in utils/setup-validator |
 | `skill-md-video-claims.test.js` | Fails if the setup SKILL.md says R2 keys are required for video, which reads KIE_API_KEY and a feature flag |
+| `soniox-voice-switch.test.js` | (unmapped) |
 | `source-hygiene.test.js` | Public-repo guards: no internal ticket ids or internal names in docs and source, and entry points parse |
 | `sql-statements.test.js` | Pins splitSqlStatements and exec-sql-helper handling one command per RPC over the real schema file |
 | `status.test.js` | Pins rumi status reporting whether a Rumi process is up and which WhatsApp account it answers as, from disk files |

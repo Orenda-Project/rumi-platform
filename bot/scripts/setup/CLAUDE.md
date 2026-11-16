@@ -1,7 +1,7 @@
 # setup — Code behind the rumi CLI: setup wizard, doctor, pair, graduate, Meta registration
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/scripts/setup kg=fa39b9066777 gen=e6c9ac3279ab overflow=63 rendered=2026-11-11 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/scripts/setup kg=d086a94994db gen=bcfac9a0f491 overflow=64 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `interactive-setup.js` — `rumi setup` wizard, start here
@@ -16,8 +16,7 @@ Full index: `CLAUDE.index.md`
 | `env-file.js` | Patches individual keys in .env in place, preserving other lines; used by setup and graduate |
 | `fields.js` | Human-facing labels, rationale and where-to-find-it text for every value the rumi CLI collects |
 | `flow-configs.js` | Single source of truth for which WhatsApp Flows a deployment registers; read by registrar and validators |
-| `ui.js` | Terminal presentation layer for the rumi CLI; every printed line in setup, graduate, pair, status goes through it |
-| … | 21 more → `CLAUDE.index.md` |
+| … | 22 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - table `quizzes` (written by `import-video-quiz-library.js`) ← read by `bot/shared/routes/quiz-flow-endpoint.js:224:2c6afb51`? · `bot/shared/services/quiz/providers/lp-generated.provider.js:84:59272ccd`? (+19)
@@ -32,7 +31,7 @@ Full index: `CLAUDE.index.md`
 
 ## Tests (generated)
 - `tests/setup/register-all-flows.test.js` (meta-api.js, register-all-flows.js, setup-state.js)
-- `tests/setup/validate-flows.test.js` (meta-api.js, setup-state.js, validate-flows.js)
+- `tests/setup/soniox-voice-switch.test.js` (fields.js, interactive-setup.js, validators.js)
 - … 23 more → `CLAUDE.index.md`
 
 ## Related (generated)
