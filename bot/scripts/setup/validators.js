@@ -223,6 +223,13 @@ function webhookVerifyToken(input) {
   return ok(value);
 }
 
+/** @returns {Verdict} who speaks Rumi's voice notes: the voice gateway's TTS_PROVIDER switch */
+function ttsProvider(input) {
+  const value = clean(input).toLowerCase();
+  if (value === 'soniox' || value === 'legacy') return ok(value);
+  return no('Choose "soniox" (Soniox speaks) or "legacy" (ElevenLabs / Uplift speak, as before).');
+}
+
 /** Per-env-var validator lookup, so `graduate` and `setup` can't disagree. */
 const BY_ENV_VAR = {
   SUPABASE_URL: supabaseUrl,
@@ -234,6 +241,7 @@ const BY_ENV_VAR = {
   PHONE_NUMBER_ID: phoneNumberId,
   WABA_ID: wabaId,
   WEBHOOK_VERIFY_TOKEN: webhookVerifyToken,
+  TTS_PROVIDER: ttsProvider,
 };
 
 /** @returns {(input: string) => Verdict} a validator for `envVar`, or a presence check. */
@@ -244,6 +252,6 @@ function validatorFor(envVar) {
 module.exports = {
   clean, required, jwtRole, identifyForeignKey,
   supabaseUrl, supabaseServiceKey, databaseUrl, openrouterKey, redisUrl,
-  whatsappToken, phoneNumberId, wabaId, webhookVerifyToken,
+  whatsappToken, phoneNumberId, wabaId, webhookVerifyToken, ttsProvider,
   validatorFor, BY_ENV_VAR,
 };

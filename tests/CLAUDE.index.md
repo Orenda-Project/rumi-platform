@@ -13,7 +13,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `characterization/` | → (no door; 4 files: 2 test + 2 support) |
 | `coaching/` | Tests for coaching sessions, frameworks, hero reports and reflective debrief → `coaching/CLAUDE.md` |
 | `config/` | → (no door; 3 tests) |
-| `console/` | → (no door; 13 tests) |
+| `console/` | → (no door; 14 tests) |
 | `dashboard/` | Tests for the Express dashboard's CSP, HTML escaping, AMA routes and boot deps → `dashboard/CLAUDE.md` |
 | `database/` | → (no door; 2 tests) |
 | `db/` | Tests for the database layer: pg adapter parity, real schema, drivers, built-in DB → `db/CLAUDE.md` |
@@ -49,6 +49,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 | `telemetry/` | → (no door; 2 tests) |
 | `testpaper/` | Tests for the /testpaper feature: conversation, generation, rendering, worker → `testpaper/CLAUDE.md` |
 | `textbook-lp-v2/` | → (no door; 5 tests) |
+| `tts/` | (no description yet) → `tts/CLAUDE.md` |
 | `unit/` | → (no door; 15 tests) |
 | `video/` | → (no door; 2 tests) |
 | `whatsapp/` | → (no door; 4 tests) |

@@ -53,22 +53,50 @@
           <div class="row-top">
             <div>
               <div class="row-title">
-                <span class="dot <%= ability.pendingRestart ? 'warn' : ability.on ? 'ok' : (ability.partial ? 'warn' : 'off') %>"></span><%= ability.title %>
+                <span class="dot <%= ability.pendingRestart || ability.paused ? 'warn' : ability.on ? 'ok' : (ability.partial ? 'warn' : 'off') %>"></span><%= ability.title %>
               </div>
               <p class="row-why"><%= ability.why %></p>
             </div>
             <div class="flex">
               <% if (ability.pendingRestart) { %><span class="pill warn">on after restart</span>
+              <% } else if (ability.paused) { %><span class="pill warn">switched off</span>
               <% } else if (ability.on) { %><span class="pill ok">on</span>
               <% } else if (ability.partial) { %><span class="pill warn">half set up</span>
               <% } else { %><span class="pill">off</span><% } %>
+              <%# The same switch as the Features page, so the two pages can never disagree. %>
+              <% if (ability.featureId && ability.configured) { %>
+                <label class="switch" title="<%= ability.paused ? 'Switch on' : 'Switch off' %>">
+                  <input type="checkbox" data-feature="<%= ability.featureId %>" <%= ability.paused ? '' : 'checked' %>>
+                  <span class="track"></span>
+                </label>
+              <% } %>
             </div>
           </div>
           <% ability.rows.forEach(function (row) { %>
             <%- include('partials/keyline', { row: row }) %>
           <% }) %>
-          <% if (ability.where && !ability.on) { %>
+          <% if (ability.where && !ability.configured) { %>
             <div class="where gap-sm">Get a key at <b><%= ability.where %></b></div>
+          <% } %>
+          <% if (ability.voice) { var voice = ability.voice; %>
+            <div class="voice-switch" data-voice-switch="<%= voice.key %>"
+                 data-voice-on="<%= voice.values.on %>" data-voice-off="<%= voice.values.off %>"
+                 data-voice-chosen="<%= voice.chosen ? '1' : '0' %>" data-voice-under="<%= ability.keys[0] %>">
+              <label class="switch">
+                <input type="checkbox" data-voice-toggle <%= voice.on ? 'checked' : '' %>>
+                <span class="track"></span>
+                <span class="t-strong"><%= voice.label %></span>
+              </label>
+              <p class="row-why" data-voice-hint="on"<% if (!voice.on) { %> hidden<% } %>><%= voice.hint %></p>
+              <p class="row-why" data-voice-hint="off"<% if (voice.on) { %> hidden<% } %>><%= voice.offHint %></p>
+              <span class="small" data-voice-status></span>
+              <div class="voice-fallback <%= voice.on ? 'hidden' : '' %>" data-voice-fallback>
+                <%- include('partials/keyline', { row: voice.fallback }) %>
+                <% if (voice.fallback.where && !voice.fallback.set) { %>
+                  <div class="where gap-sm">Get a key at <b><%= voice.fallback.where %></b></div>
+                <% } %>
+              </div>
+            </div>
           <% } %>
         </div>
       <% }) %>

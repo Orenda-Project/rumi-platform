@@ -7,6 +7,7 @@
 const { logToFile } = require('../../utils/logger');
 const { makeVoiceoverSpeakable } = require('../../utils/tts-preprocessor');
 const OpenAIService = require('../openai.service');
+const tts = require('../tts'); // the voice gateway: TTS_PROVIDER* decides who speaks; unset = today's voice
 const { LANGUAGE_PROMPTS } = require('../../config/language-prompts');
 const fs = require('fs');
 const path = require('path');
@@ -95,7 +96,8 @@ class VideoScriptService {
         const { audioUrl, duration } = await this.generateVoiceover(
           speakableText,
           videoRequestId,
-          i + 1
+          i + 1,
+          language
         );
 
         audioData.push({
@@ -342,15 +344,12 @@ Respond in JSON format:
   }
 
   /**
-   * Generate voiceover using ElevenLabs
+   * Today's narration voice: ElevenLabs eleven_v3 with emotion tags. The voice gateway calls this as its
+   * legacy path, so with no TTS_PROVIDER set every video sounds as it always has.
    * @param {string} text - Text to speak
-   * @param {string} videoRequestId - For organizing files
-   * @param {number} slideId - Slide number
-   * @returns {Object} { audioUrl, duration }
+   * @returns {Promise<Buffer>} MP3
    */
-  static async generateVoiceover(text, videoRequestId, slideId) {
-    logToFile('Generating voiceover', { videoRequestId, slideId, textLength: text.length });
-
+  static async renderVoiceoverElevenLabs(text) {
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
       method: 'POST',
       headers: {
@@ -372,8 +371,26 @@ Respond in JSON format:
       throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
     }
 
-    // Get audio buffer
-    const audioBuffer = await response.arrayBuffer();
+    return Buffer.from(await response.arrayBuffer());
+  }
+
+  /**
+   * Generate voiceover. The voice gateway decides who speaks (TTS_PROVIDER_VIDEO); with nothing set it is
+   * today's ElevenLabs call (renderVoiceoverElevenLabs), unchanged. MP3 whoever speaks: the file is saved as .mp3 and timed with ffprobe.
+   * @param {string} text - Text to speak
+   * @param {string} videoRequestId - For organizing files
+   * @param {number} slideId - Slide number
+   * @param {string} [language] - The video's language, which picks the Soniox voice
+   * @returns {Object} { audioUrl, duration }
+   */
+  static async generateVoiceover(text, videoRequestId, slideId, language = 'en') {
+    logToFile('Generating voiceover', { videoRequestId, slideId, textLength: text.length });
+
+    const voice = await tts.synthesize({
+      text, language, useCase: 'video', site: 'narration', format: 'mp3',
+      legacy: () => this.renderVoiceoverElevenLabs(text),
+    });
+    const audioBuffer = voice.audio;
 
     // Save to temp file to get duration
     const tempDir = path.join('/tmp', 'video-generation', videoRequestId);

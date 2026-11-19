@@ -1,6 +1,6 @@
 # reflective-questions — Prompts, guardrails and LLM failover for the 3-question reflective chat
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/reflective-questions kg=ec7ec9e713cc gen=e482527d274e overflow=0 rendered=2026-10-29 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services/coaching/reflective-questions kg=4b696fbafc38 gen=2609020c91c7 overflow=0 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `question-prompt.js` — builds one question's prompt from corpus and prior answers
@@ -18,8 +18,8 @@
 | `question-prompt.js` | Builds the system prompt for one reflective question (Q1-Q3 chain) from corpus and prior answers; used by gpt5-mini |
 
 ## Who reads this (generated)
-- `guardrails.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:91:6e560a9c` · `bot/shared/services/gpt5-mini.service.js:710:d5aeeb7e`
-- `language-profiles.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:92:cb1b4a9f` · `bot/shared/services/gpt5-mini.service.js:671:e574b931`
+- `guardrails.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:93:6e560a9c` · `bot/shared/services/gpt5-mini.service.js:710:d5aeeb7e`
+- `language-profiles.js` ← imported by `bot/shared/services/coaching/reflective-conversation.service.js:94:cb1b4a9f` · `bot/shared/services/gpt5-mini.service.js:671:e574b931`
 - `corpus-prompt.js` ← imported by `bot/shared/services/gpt5-mini.service.js:672:86d791bc`
 - `llm-router.service.js` ← imported by `bot/shared/services/gpt5-mini.service.js:673:7c9a8fe1`
 - `question-prompt.js` ← imported by `bot/shared/services/gpt5-mini.service.js:708:ef82afe5`

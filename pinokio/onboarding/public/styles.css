@@ -335,6 +335,26 @@ code, .mono { font-family: var(--mono); font-size: 0.88em; }
 
 .field__row { display: flex; gap: 8px; }
 
+/* The Soniox card's "also use Soniox for Rumi's voice" switch. */
+.voice-switch { margin-top: 4px; }
+.voice-switch__fallback .field { margin: 6px 0 0; }
+.switch { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.switch__input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch__track {
+  flex: none; position: relative; width: 38px; height: 22px; border-radius: 999px;
+  background: var(--surface-sunken); border: 1px solid var(--line);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.switch__track::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--surface-raised); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform var(--fast) var(--ease);
+}
+.switch__input:checked + .switch__track { background: var(--brand); border-color: var(--brand); }
+.switch__input:checked + .switch__track::after { transform: translateX(16px); }
+.switch__input:focus-visible + .switch__track { box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.35); }
+.switch__input:disabled + .switch__track { opacity: 0.6; }
+
 input[type="text"], input[type="password"] {
   flex: 1;
   min-width: 0;

@@ -1,7 +1,7 @@
 # setup — Repo-wide guards and setup-CLI tests: schema, docs, links, requires, CI, hygiene
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=tests/setup kg=f4c4d795292d gen=406056c5bf82 overflow=53 rendered=2026-11-11 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=tests/setup kg=3449ca65c05c gen=c36076276703 overflow=54 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `source-hygiene.test.js` — public-repo guards that fail CI on internal ticket ids or internal names in docs
@@ -13,14 +13,14 @@ Full index: `CLAUDE.index.md`
 | path | purpose |
 |---|---|
 | `_audit-helpers/` | Shared require-graph builder behind the circular, orphan and unresolved-require guards → `_audit-helpers/CLAUDE.md` |
+| `soniox-voice-switch.test.js` | (unmapped) |
 | `register-all-flows.test.js` | Pins registerAllFlows registering the WhatsApp Flows via a mocked MetaAPI and SetupState |
-| `validate-flows.test.js` | Pins validate-flows pre-flight checking that all Flows and templates exist and are in the right state |
 | `cli-console.test.js` | Pins rumi commands keeping a real console instead of structured-logger's JSON replacement, even via WhatsApp modules |
 | `fields.test.js` | Pins that every channel-required var has human prompt copy in fields.js, so no var goes unasked in setup |
 | `source-hygiene.test.js` | Public-repo guards: no internal ticket ids or internal names in docs and source, and entry points parse |
 | `sql-statements.test.js` | Pins splitSqlStatements and exec-sql-helper handling one command per RPC over the real schema file |
-| `bootstrap-db.test.js` | Pins DatabaseBootstrapper applying the three canonical SQL files in order, stopping on error, with injected exec |
-| … | 73 more → `CLAUDE.index.md` |
+| `validate-flows.test.js` | Pins validate-flows pre-flight checking that all Flows and templates exist and are in the right state |
+| … | 74 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - (none)

@@ -1,7 +1,7 @@
 # services — Feature services of the bot: attendance, LP, coaching, quiz, reading, video, messaging
 Full index: `CLAUDE.index.md`
 
-<!-- kg:meta repo=rumi-platform dir=bot/shared/services kg=9087ccf97b83 gen=bd1a3875250e overflow=279 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=bot/shared/services kg=5a969b59acba gen=a60ebfca2c8c overflow=279 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `whatsapp.service.js` — facade over the active messaging driver (Meta/Baileys); every send call goes through it
@@ -12,9 +12,9 @@ Full index: `CLAUDE.index.md`
 ## Children (generated)
 | path | purpose |
 |---|---|
-| 15 sub-dirs, each with `CLAUDE.md` | `cache/` · `coaching/` · `db/` · `exam-checker/` · `limits/` · `messaging/` · `nudges/` · `observe/` · `pedagogy/` · `pic-to-lp/` · `queue/` · `quiz/` · `reading/` · `testpaper/` · `video/` |
+| 16 sub-dirs, each with `CLAUDE.md` | `cache/` · `coaching/` · `db/` · `exam-checker/` · `limits/` · `messaging/` · `nudges/` · `observe/` · `pedagogy/` · `pic-to-lp/` · `queue/` · `quiz/` · `reading/` · `testpaper/` · `tts/` · `video/` |
 | 1 sub-dirs without a door | `__mocks__/` (16 tests) |
-| … | 66 more → `CLAUDE.index.md` |
+| … | 67 more → `CLAUDE.index.md` |
 
 ## Who reads this (generated)
 - `whatsapp.service.js` ← imported by `bot/gateway/adapters/whatsapp.js:21:12642918` · `bot/shared/config/coaching-audio.js:26:0204868e` (+94)

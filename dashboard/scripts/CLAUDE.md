@@ -1,6 +1,6 @@
 # scripts — One-off ops scripts: SQS queue setup, backfills, Railway linking, funnel checks
 
-<!-- kg:meta repo=rumi-platform dir=dashboard/scripts kg=b6c34871c91c gen=95592bfc94a5 overflow=0 rendered=2026-11-02 kg.py=1.1.0 -->
+<!-- kg:meta repo=rumi-platform dir=dashboard/scripts kg=921c55203937 gen=b147e3373f0f overflow=0 rendered=2026-11-16 kg.py=1.1.0 -->
 
 ## Entry points
 - `deployment/setup-portal-sqs.sh` — creates the portal's own FIFO SQS queue
@@ -19,7 +19,7 @@
 ## Who reads this (generated)
 - table `coaching_sessions` (written by `backfill-processed-transcripts.js`) ← read by `bot/scripts/generate-coaching-excel.js:23:5911672a`? · `bot/shared/handlers/image-message.handler.js:107:5911672a`? (+51)
 - column `coaching_sessions.analysis_data` (written by `backfill-processed-transcripts.js`) ← read by `bot/scripts/generate-coaching-excel.js:35:32a5a57f` · `bot/shared/services/coaching/coaching-trend.service.js:82:8162476b` (+19)
-- table `coaching_sessions` whole row (`*`) (written by `backfill-processed-transcripts.js`) ← read by `bot/shared/handlers/text-message.handler.js:1262:d2b02c3e`? · `bot/shared/handlers/voice-message.handler.js:701:d2b02c3e`? (+8)
+- table `coaching_sessions` whole row (`*`) (written by `backfill-processed-transcripts.js`) ← read by `bot/shared/handlers/text-message.handler.js:1262:d2b02c3e`? · `bot/shared/handlers/voice-message.handler.js:707:d2b02c3e`? (+8)
 - env read here: `OPENAI_API_KEY`
 
 ## Never (human)

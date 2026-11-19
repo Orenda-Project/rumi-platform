@@ -39,6 +39,7 @@ const { downloadFromR2, extractKeyFromUrl } = require('../../storage/r2');
 const connection = require('./baileys-connection');
 const pendingOptions = require('./pending-options');
 const textFlow = require('./text-flow');
+const { audioKind } = require('./audio-kind');
 
 const META_SOURCE_PATH = path.join(__dirname, 'meta-channel.service.js');
 
@@ -418,7 +419,9 @@ async function sendDocument(to, filePath, filename, caption) {
 async function sendAudio(to, audioBuffer) {
   try {
     const sock = await getSock();
-    await sock.sendMessage(toJid(to), { audio: audioBuffer, mimetype: 'audio/mpeg', ptt: false });
+    // An Ogg Opus note is sent as a voice message (ptt); an MP3 as an audio file, as before.
+    const kind = audioKind(audioBuffer);
+    await sock.sendMessage(toJid(to), { audio: audioBuffer, mimetype: kind.mime, ptt: kind.isOgg });
     return true;
   } catch (error) {
     logToFile('❌ Baileys: error sending audio', { error: error.message });

@@ -163,6 +163,14 @@
     save.onclick = function () {
       var updates = {};
       updates[key] = input.value;
+      // The first Soniox key saved also writes the voice switch as it stands
+      // (on by default), so the default is real in .env and not only on screen.
+      var voice = document.querySelector('[data-voice-under="' + key + '"][data-voice-chosen="0"]');
+      if (voice && input.value.trim()) {
+        var toggle = voice.querySelector('[data-voice-toggle]');
+        updates[voice.getAttribute('data-voice-switch')] = toggle && toggle.checked
+          ? voice.getAttribute('data-voice-on') : voice.getAttribute('data-voice-off');
+      }
       save.disabled = true;
       msg.className = 'small t-muted';
       msg.textContent = 'Checking…';
@@ -177,6 +185,58 @@
         save.disabled = false;
       });
     };
+  });
+
+  // ── Clear an optional value ───────────────────────────────────────────────
+  // Leaves the line in .env, empty, so it stays discoverable; the feature it
+  // fed goes off after a restart.
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-clear]');
+    if (!btn) return;
+    var key = btn.getAttribute('data-clear');
+    if (!window.confirm('Clear ' + key + '? Whatever it switches on goes off after a restart.')) return;
+    btn.disabled = true;
+    api('/env/clear', { method: 'POST', body: { key: key } }).then(function () {
+      location.reload();
+    }).catch(function (err) {
+      btn.disabled = false;
+      flash(btn, err.message, true);
+    });
+  });
+
+  // ── Soniox as Rumi's voice ────────────────────────────────────────────────
+  // On: Soniox speaks. Off: ElevenLabs speaks, so its key opens right under the
+  // switch. Every flip is saved at once, as the wizards do.
+  document.addEventListener('change', function (e) {
+    var input = e.target.closest('[data-voice-toggle]');
+    if (!input) return;
+    var box = input.closest('[data-voice-switch]');
+    var key = box.getAttribute('data-voice-switch');
+    var on = input.checked;
+    box.querySelectorAll('[data-voice-hint]').forEach(function (p) {
+      p.hidden = p.getAttribute('data-voice-hint') !== (on ? 'on' : 'off');
+    });
+    var fallback = box.querySelector('[data-voice-fallback]');
+    if (fallback) fallback.classList.toggle('hidden', on);
+    var status = box.querySelector('[data-voice-status]');
+    var updates = {};
+    updates[key] = box.getAttribute(on ? 'data-voice-on' : 'data-voice-off');
+    input.disabled = true;
+    status.className = 'small t-muted';
+    status.textContent = 'Saving…';
+    api('/env', { method: 'POST', body: { updates: updates } }).then(function () {
+      box.setAttribute('data-voice-chosen', '1');
+      status.className = 'small t-ok';
+      status.textContent = (on ? 'Soniox will speak' : 'ElevenLabs will speak') + '. Restart to apply.';
+    }).catch(function (err) {
+      input.checked = !on;
+      box.querySelectorAll('[data-voice-hint]').forEach(function (p) {
+        p.hidden = p.getAttribute('data-voice-hint') !== (on ? 'off' : 'on');
+      });
+      if (fallback) fallback.classList.toggle('hidden', !on);
+      status.className = 'small t-bad';
+      status.textContent = (err.data && err.data.errors && err.data.errors[key]) || err.message;
+    }).then(function () { input.disabled = false; });
   });
 
   // ── Restart Rumi (Pinokio only) ───────────────────────────────────────────

@@ -14,7 +14,7 @@ Every row the door could not hold, ungrouped. Not auto-loaded; same hop as `CLAU
 ## Who reads this (all, generated)
 - `baileys-socket.adapter.js` ← imported by `bot/whatsapp-bot.js:1937:ad25cb1c`
 - `discord-events.adapter.js` ← imported by `bot/whatsapp-bot.js:1956:d0599a29`
-- `matrix-events.adapter.js` ← imported by `bot/shared/services/messaging/matrix-channel.service.js:164:c64feb03` · `bot/whatsapp-bot.js:1975:a455635d` · `bot/scripts/matrix-smoke.js:41:77f80764`
+- `matrix-events.adapter.js` ← imported by `bot/shared/services/messaging/matrix-channel.service.js:165:c64feb03` · `bot/whatsapp-bot.js:1975:a455635d` · `bot/scripts/matrix-smoke.js:41:77f80764`
 - `slack-events.adapter.js` ← imported by `bot/gateway/adapters/slack.js:24:138e6f6a` · `bot/shared/routes/slack-interactions.routes.js:29:a2c45bb5`
 - env `MATRIX_WELCOME_ROOM_ALIAS` read at `bot/shared/services/messaging/inbound/matrix-events.adapter.js:1176:b5c282f8`
 
