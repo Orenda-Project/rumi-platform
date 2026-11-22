@@ -3,9 +3,9 @@
 Turn a folder of official textbook PDFs into a faithful, quality-gated **lesson-plan corpus** —
 agent-driven, plug-and-play, credential-free but for your own model key.
 
-[![Watch the walkthrough — textbooks in, lesson plans out](curriculum_film_poster.png)](https://github.com/Orenda-Project/rumi-platform/releases/download/v2.1.0/Curriculum_Textbooks_In_Lesson_Plans_Out.mp4)
+https://github.com/user-attachments/assets/1d79cc2b-f1b3-490a-b288-e16dc6f08e3d
 
-*A 105-second walkthrough (click to play). The curriculum, as a knowledge graph:*
+*A 105-second walkthrough ([download the mp4](https://github.com/Orenda-Project/rumi-platform/releases/download/v2.1.0/Curriculum_Textbooks_In_Lesson_Plans_Out.mp4) if it doesn't play here). The curriculum, as a knowledge graph:*
 
 ![The curriculum knowledge graph — lessons linked to outcomes, outcomes ordered](curriculum_knowledge_graph.gif)
 
