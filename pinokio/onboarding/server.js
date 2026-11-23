@@ -106,8 +106,10 @@ function buildApp() {
     env: process.env,
     spawn: childProcess.spawn,
     pickPort: () => pickBotPort({ execFile: childProcess.execFile, scriptsDir: path.join(__dirname, '..', 'scripts') }),
+    // Only set when the desktop app spawned this server with an IPC channel.
+    notify: typeof process.send === 'function' ? (message) => process.send(message) : null,
   });
-  const LAUNCH_STATUS = { 'already-launching': 409, 'no-port': 500 };
+  const LAUNCH_STATUS = { 'already-launching': 409, 'no-port': 500, 'no-desktop': 500 };
   app.post('/api/launch', asyncRoute(async (req, res) => {
     const result = await launcher.launch();
     res.status(result.ok ? 200 : LAUNCH_STATUS[result.reason] || 500).json(result);

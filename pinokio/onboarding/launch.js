@@ -33,9 +33,19 @@ function pickBotPort({ execFile, scriptsDir }) {
 }
 
 /**
- * @param {{env: object, spawn: Function, pickPort: () => Promise<number>, now?: () => number}} deps
+ * Two ways to start Rumi, checked in this order:
+ *
+ *  - Desktop (RUMI_DESKTOP=1): a desktop app wrapping this wizard started
+ *    this server as its child, and starts Rumi itself. Launch only picks the
+ *    port and tells the app through `notify` (the IPC channel to the parent).
+ *  - Pinokio (RUMI_PTERM + RUMI_START_SCRIPT): `pterm start start.js`.
+ *
+ * With neither, the port is reported and the person starts Rumi by hand.
+ *
+ * @param {{env: object, spawn: Function, pickPort: () => Promise<number>,
+ *   notify?: ((message: object) => void)|null, now?: () => number}} deps
  */
-function createLauncher({ env, spawn, pickPort, now = Date.now }) {
+function createLauncher({ env, spawn, pickPort, notify = null, now = Date.now }) {
   let busy = false;
   let lastAt = null;
   // The port handed out for the last launch, and whether Rumi was spawned on it.
@@ -46,6 +56,7 @@ function createLauncher({ env, spawn, pickPort, now = Date.now }) {
   const pterm = env && env.RUMI_PTERM;
   const script = env && env.RUMI_START_SCRIPT;
   const underPinokio = Boolean(pterm && script && path.isAbsolute(pterm) && path.isAbsolute(script));
+  const underDesktop = Boolean(env && env.RUMI_DESKTOP === '1' && typeof notify === 'function');
 
   return {
     async launch() {
@@ -60,6 +71,18 @@ function createLauncher({ env, spawn, pickPort, now = Date.now }) {
           return { ok: false, reason: 'no-port' };
         }
         lastPort = port;
+        if (underDesktop) {
+          try {
+            notify({ type: 'rumi:launch', port });
+          } catch (err) {
+            console.error(`Launch could not reach the desktop app: ${err && err.message ? err.message : 'notify failed'}`);
+            lastPort = null;
+            return { ok: false, reason: 'no-desktop' };
+          }
+          lastAt = now();
+          spawned = true;
+          return { ok: true, port };
+        }
         if (!underPinokio) return { ok: true, port, manual: true };
         lastAt = now();
         spawned = true;
