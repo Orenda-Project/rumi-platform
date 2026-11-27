@@ -97,6 +97,55 @@ describe('createLauncher', () => {
     await expect(launcher.launch()).resolves.toEqual({ ok: true, port: 51234 });
   });
 
+  describe('desktop mode (RUMI_DESKTOP=1, started by the desktop app)', () => {
+    const desktopEnv = { RUMI_DESKTOP: '1' };
+
+    test('hands the port to the desktop app and spawns nothing itself', async () => {
+      const spawn = jest.fn();
+      const notify = jest.fn();
+      const launcher = createLauncher({ env: desktopEnv, spawn, notify, pickPort: async () => 51234 });
+      await expect(launcher.launch()).resolves.toEqual({ ok: true, port: 51234 });
+      expect(notify).toHaveBeenCalledWith({ type: 'rumi:launch', port: 51234 });
+      expect(spawn).not.toHaveBeenCalled();
+    });
+
+    test('wins over Pinokio env when both are present', async () => {
+      const spawn = jest.fn();
+      const notify = jest.fn();
+      const launcher = createLauncher({ env: { ...env, ...desktopEnv }, spawn, notify, pickPort: async () => 51234 });
+      await launcher.launch();
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(spawn).not.toHaveBeenCalled();
+    });
+
+    test('keeps the cooldown, and a relaunch reuses the port', async () => {
+      let t = 1000;
+      const notify = jest.fn();
+      const pickPort = jest.fn(async () => 51234);
+      const launcher = createLauncher({ env: desktopEnv, spawn: jest.fn(), notify, pickPort, now: () => t });
+      await launcher.launch();
+      await expect(launcher.launch()).resolves.toEqual({ ok: false, reason: 'already-launching', port: 51234 });
+      t += 200000;
+      await expect(launcher.launch()).resolves.toEqual({ ok: true, port: 51234 });
+      expect(pickPort).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledTimes(2);
+    });
+
+    test('without a way to reach the desktop app it falls back to manual', async () => {
+      const launcher = createLauncher({ env: desktopEnv, spawn: jest.fn(), notify: null, pickPort: async () => 51234 });
+      await expect(launcher.launch()).resolves.toEqual({ ok: true, port: 51234, manual: true });
+    });
+
+    test('a notify that throws frees the guard so a retry works', async () => {
+      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const notify = jest.fn().mockImplementationOnce(() => { throw new Error('channel closed'); });
+      const launcher = createLauncher({ env: desktopEnv, spawn: jest.fn(), notify, pickPort: async () => 51234 });
+      await expect(launcher.launch()).resolves.toEqual({ ok: false, reason: 'no-desktop' });
+      await expect(launcher.launch()).resolves.toEqual({ ok: true, port: 51234 });
+      errSpy.mockRestore();
+    });
+  });
+
   test('a child error event does not throw and frees the guard', async () => {
     const first = fakeChild();
     const spawn = jest.fn().mockReturnValueOnce(first).mockReturnValue(fakeChild());
